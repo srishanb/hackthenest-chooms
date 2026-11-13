@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -59,6 +59,8 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Surface API/auth errors in the log instead of a bare is_error:true (private repo, so logs aren't public)
+          show_full_output: true
           claude_args: >-
             --max-turns 20
             --allowedTools "Read,Glob,Grep,${{ steps.guard.outputs.tools }}"
