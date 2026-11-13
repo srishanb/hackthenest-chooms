@@ -21,7 +21,8 @@ EOF
 # $1 = worktree name (e.g. "codex-auth"). Empty output = no PORT written.
 pick_port() {
   local name="$1"
-  # TODO(human)
+  # Stable per name: same worktree always gets the same port in [BASE_PORT, BASE_PORT+99]
+  echo $(( BASE_PORT + $(printf '%s' "$name" | cksum | cut -d' ' -f1) % 100 ))
 }
 
 cmd_new() {
