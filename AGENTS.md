@@ -16,6 +16,9 @@ Several agents work at the same time. Never share a working directory.
 - Work, commit, and push **only** inside your own worktree. Do not edit files in other `wt-*` folders or in `codebase/` (main).
 - Before starting a new task: `scripts/wt.sh sync` (rebases onto `origin/main`).
 - Finish with a PR into `main`. Keep branches small and short-lived (merge within a few hours).
+- PRs are reviewed by the `ai-review` workflow: clean → auto squash-merged; issues → `needs-human` label
+  and a comment. Open as **draft** while still working; add `no-automerge` to opt out. PRs touching
+  shared files (below) never auto-merge.
 - Use the `PORT` in your worktree's `.env.local` for any dev server.
 
 ## Lanes (avoid overlapping edits)
