@@ -1,0 +1,21 @@
+# env (keep .env.example tracked)
+.env
+.env.*
+!.env.example
+
+# deps / builds
+node_modules/
+.venv/
+__pycache__/
+dist/
+build/
+.next/
+
+# os / editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# agent-local state
+.claude/settings.local.json
