@@ -16,3 +16,12 @@ it('keeps normal scenery healthy and reveals decay only beyond the normal bounda
   expect(sceneryCorruption(0.6)).toBeGreaterThan(0);
   expect(sceneryCorruption(1)).toBe(1);
 });
+
+it('brings the shadow into view early instead of consuming an offscreen radius buffer', () => {
+  const farX = 480, farY = 270;
+  const corner = Math.hypot(farX, farY);
+  expect(radius(1, 0, farX, farY)).toBe(corner);
+  expect(radius(0.9, 0, farX, farY) * (15 / 12)).toBeLessThan(corner);
+  expect(radius(0.5, 0, farX, farY)).toBeLessThan(130);
+  expect(radius(0.5, 1, farX, farY)).toBeLessThan(radius(0.5, 0, farX, farY));
+});

@@ -11,3 +11,7 @@ Follow-up: Neil noticed decay in normal world. Earlier reveal tuning mistakenly 
 Local integration follow-up: imported origin/claude/restore-lantern-fuel into this branch without merging its draft to main. Resolved climb-scene conflicts to consume actual this.fuel.value directly; removed missing-resource full-fuel fallback. Resource burn/refill/ember/victory wiring restored.495 tests/76 files and build pass; no unmerged paths remain. PR stays draft pending owner coordination with107/109. Manual browser validation still outstanding.
 
 Faint candle-light follow-up requested by Neil: added two bounded canvas-gradient images, warm halo under fuel darkness plus faint transparent-centre shading above it. Normal shade10%, corrupted32%; halo12% normal/4% corrupted scaled by fuel. No flicker/motion, no new assets/dependencies. Full-fuel viewport remains visible with gentle falloff; existing fuel radius still controls darkness. Manual visual tuning not performed.
+
+Fuel falloff follow-up: user reported decreasing fuel without visible shadow shrink. Diagnosed oversized full-diagonal light buffer plus1x–2x soft fade. Use actual farthest camera-corner distances from candle, exponent3 normal/4.5 corrupted, and fade1x–1.25x. Full fuel still clears actual viewport;90% fuel now brings fully dark corners into view in centred regression. New texture key regenerates cached texture. Regression initially exposed too-wide fade at1.333x; tightened to1.25x. Manual visual check outstanding.
+
+Final falloff validation:496 tests/76 files, TypeScript and production build pass.

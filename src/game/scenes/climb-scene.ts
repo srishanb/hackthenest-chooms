@@ -253,8 +253,12 @@ export class ClimbScene extends Phaser.Scene {
   }
 
   private visibleRadius(_base: number, _airborne: boolean, _visualCorruption?: number): number {
+    const camera = this.cameras.main;
+    const x = this.state.x - camera.scrollX, y = this.state.y - camera.scrollY;
+    const farX = Math.max(Math.abs(x), Math.abs(camera.width - x));
+    const farY = Math.max(Math.abs(y), Math.abs(camera.height - y));
     return fuelVisibilityRadius(this.fuel.value, _visualCorruption ?? this.deps.stores.effects.get().forestCorruption,
-      this.deps.gameConfig.view.width, this.deps.gameConfig.view.height);
+      farX, farY);
   }
 
   private returnToEmber(anchor: EmberAnchor | null): void {
