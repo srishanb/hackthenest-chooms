@@ -14,6 +14,7 @@ import { calibration } from './components/calibration/calibration';
 import { captions } from './components/captions/captions';
 import { debugOverlay } from './components/debug-overlay/debug-overlay';
 import { emberPrompt } from './components/ember-prompt/ember-prompt';
+import { finishScreen } from './components/finish-screen/finish-screen';
 import { hud } from './components/hud/hud';
 import { mainMenu } from './components/main-menu/main-menu';
 import { pauseMenu } from './components/pause-menu/pause-menu';
@@ -35,6 +36,7 @@ export const COMPONENTS: readonly UiComponent[] = [
   captions,
   calibration,
   emberPrompt,
+  finishScreen,
   debugOverlay,
 ];
 

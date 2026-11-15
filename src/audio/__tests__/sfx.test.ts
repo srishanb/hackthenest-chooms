@@ -33,7 +33,7 @@ describe('game SFX mapping', () => {
   });
   it('ignores non-cue events', () => {
     for (const event of [{ type: 'pause' }, { type: 'resume' }, { type: 'signal_lost' },
-      { type: 'narrator_line', lineId: 'line' }] as GameEvent[]) expect(sfxForEvent(event, 300)).toBeNull();
+      { type: 'narrator_line', lineId: 'line', text: 'A line.', durationMs: 2000 }] as GameEvent[]) expect(sfxForEvent(event, 300)).toBeNull();
   });
 });
 

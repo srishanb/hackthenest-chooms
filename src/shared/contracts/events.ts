@@ -33,8 +33,8 @@ export type GameEvent =
   | { type: 'calibration_result'; ok: boolean; reasonKey?: string }
   | { type: 'pause' }
   | { type: 'resume' }
-  /** The narrator started a line. Captions subscribe to this. */
-  | { type: 'narrator_line'; lineId: string }
+  /** The narrator started a line. Captions subscribe to this and show `text` for `durationMs`, so they need no content lookup. */
+  | { type: 'narrator_line'; lineId: string; text: string; durationMs: number }
   | { type: 'stage_completed'; stageId: string; index: number }
   | { type: 'finish' };
 
