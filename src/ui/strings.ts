@@ -49,6 +49,8 @@ export const STRINGS = {
   'credits.font.label': 'Typography',
   'credits.font.body': 'Pixelify Sans — Stefie Justprince · SIL Open Font License 1.1',
 
+  'forest.preview.title': 'Corruption preview · visuals only',
+  'forest.preview.toggle': 'Preview corruption',
   'forest.preview.restore': 'Restore normal input',
   'forest.preview.normal': 'Following normal input',
   'forest.preview.target': 'Visual target:',
