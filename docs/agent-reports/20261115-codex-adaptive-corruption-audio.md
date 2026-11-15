@@ -16,3 +16,5 @@ Soundfile Vorbis encoding exited prematurely; discarded partial generated output
 Audio index, asset list, SFX ID extension, world-soundtrack/ambience modules, config, tests/audition page,2 music derivatives and10 original effects, CREDITS and own plan/report. No shared/game/UI code changes. No new human tasks; no dependencies requested from teammates. High confidence in routing/lifecycle; medium subjective sound balance pending Neil listening. Public helper exports noted in audio INDEX.
 
 Local validation:515 tests/82 files, TypeScript and production build pass before latest baseline sync. Browser real decoding/output validated; subjective listening remains open.
+
+Final integration: merged main78eaccf baseline narration, resolved append conflicts in audio config/INDEX/CREDITS by preserving both, and kept baseline narrator default and its new moments.525 tests/83 files, TypeScript and production build pass. No unresolved merge paths. Browser smoke preceded baseline merge; narrator integration covered by full tests.
