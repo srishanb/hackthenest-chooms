@@ -89,7 +89,7 @@ The `section_reset` event stays in the contract but nothing emits it.
 | Who owns the darkness sheet's alpha: P5 says shadows set it and P8.4's flicker multiplies on top | Ali, Neil | P5.3, P8.4 |
 | The `shadowDepth` row's neutral (0.4) is too thin to be the darkness: Neil changes it before P5.3 starts | Neil | P5.3 |
 | The settings panel plan has no landing-shake control and no fixed-mode toggle | Amrit | P2, P5.5, P12 |
-| The project name: "lighten" on `main`, "Lighten Up" in PR 12 and P8.1 | Team (H-11) | P9 |
+| The project name: settled as "Lighten Up" (D-23) | Srishan | P9 |
 | List ElevenLabs separately from the AI tools on Devpost? | Srishan | P9 |
 
 ## What the plans assume or could not verify

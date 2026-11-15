@@ -59,7 +59,7 @@ const COMMANDS = [
 
 /** @param {import('./run/_lib.mjs').Feature[]} features */
 function printMenu(features) {
-  heading('lighten: run and test');
+  heading('Lighten Up: run and test');
   console.log('Usage: node run.mjs <command>\n');
   for (const [name, what] of COMMANDS) console.log(`  ${String(name).padEnd(22)} ${what}`);
   heading('Features (node run.mjs <name>, or node run/<name>.mjs)');

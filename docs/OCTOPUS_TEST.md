@@ -12,7 +12,7 @@ Written for a person with the board; the builder has not run these steps on real
 7. Click **Connect Octopus 16** and pick the board in the Bluetooth list. The `sample age` should drop below 500 ms.
 8. **Check quality:** `quality` should be above 0.5 and `contact` close to 1.00. If a `link` line says contact is low or packets are lost, re-seat the pins, wet them slightly or move the board closer to the laptop, then wait 10 s.
 9. Click **Run checkpoint** and follow the prompts: eyes open 15 s, eyes closed 15 s, twice. Sit still, jaw relaxed. The first 3 s of each segment are ignored.
-10. The overlay shows `closed/open <ratio>`. Above 1.3 counts as a clear separation. A labelled recording downloads (`lighten-recording-<time>.jsonl`).
+10. The overlay shows `closed/open <ratio>`. Above 1.3 counts as a clear separation. A labelled recording downloads (`lighten-up-recording-<time>.jsonl`).
 11. **Save the file** into `recordings/` in the repo and tell Srishan. Name it with the date and who wore it.
 12. Check it offline: `npm run eval -- intensity-v2 recordings/<file>.jsonl`. The `Resting separation` section lists each label and the closed/open ratio.
 13. Optional: **Calibrate resting** then **Calibrate active** (clench the jaw in the second half). A failed step prints a reason in the overlay.

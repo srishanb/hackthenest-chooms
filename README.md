@@ -1,4 +1,4 @@
-# lighten (working title)
+# Lighten Up
 
 Hack The Nest 2026 (Nov 14–15, Eastern Michigan University), Mind and Machine (BCI) track.
 
