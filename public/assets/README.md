@@ -4,7 +4,7 @@ Owner: Neil Pawar. P8.1 prepares files; it does not change the game/audio loader
 
 ## Integration status
 
-Every media file is **prepared, not wired**. `inventory.json` records exact paths (relative to this folder), authors, source URLs, CC0 license evidence, file sizes, SHA-256 hashes, PNG dimensions and Ogg durations. Runtime URLs start with `assets/`; use the project's relative base rather than a CDN or a hard-coded hostname.
+This README began as a P8.1 handoff, when every media file was prepared but not wired. As of Sun 15 Nov the game loads the forest art and the local music, sound effects and narrator clips (see `src/game/forest/textures.ts` and `src/audio/asset-list.ts`); the handoff notes below describe the original plan. `inventory.json` records exact paths (relative to this folder), authors, source URLs, CC0 license evidence, file sizes, SHA-256 hashes, PNG dimensions and Ogg durations. Runtime URLs start with `assets/`; use the project's relative base rather than a CDN or a hard-coded hostname.
 
 ### Art handoff: Ali
 

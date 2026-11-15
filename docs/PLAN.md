@@ -34,7 +34,7 @@ Credit: the charge-jump climb is in the style of *Jump King*; the narrator's ton
 
 | Piece | How to use it |
 |---|---|
-| Worktrees | `scripts/wt.sh new <agent> <task>` creates `../wt-<agent>-<task>` on branch `<agent>/<task>`. `scripts/wt.sh sync` rebases onto `origin/main`. `ls` and `rm` list and remove. |
+| Worktrees | `scripts/wt.sh new <agent> <task>` creates `../wt-<agent>-<task>` on branch `<agent>/<task>`. `scripts/wt.sh sync` merges `origin/main` into the branch (never a rebase). `ls` and `rm` list and remove. |
 | Per-worktree port | `wt.sh` writes a stable `PORT` (3000 to 3099) into the worktree's `.env.local` and copies untracked `.env*` files in. |
 | Agent rules | `AGENTS.md` is the single source of truth. `CLAUDE.md` and `GEMINI.md` import it. |
 | AI review | `.github/workflows/ai-review.yml` reviews every non-draft PR. Clean: squash-merged. Problems: `needs-human` label plus a comment. PRs touching shared files or labelled `no-automerge` never auto-merge (a deterministic shell check, not the model, decides this). |
