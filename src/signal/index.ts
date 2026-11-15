@@ -125,7 +125,7 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
 
   async function startReplay(): Promise<void> {
     if (!params.replay) throw new Error('replay needs ?replay=<name>.jsonl (a file under /recordings/)');
-    const recording = parseRecording(await fetchText(`/recordings/${params.replay}`));
+    const recording = parseRecording(await fetchText(`recordings/${params.replay}`));
     await startSource(createReplaySource({ frames: recording.frames }));
   }
 
