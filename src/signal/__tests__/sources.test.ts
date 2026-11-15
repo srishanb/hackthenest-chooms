@@ -161,6 +161,14 @@ describe('recording format', () => {
     expect(() => parseRecording(`${header}\n{"type":"frame","t":1}`)).toThrow(/line 2 is not a valid frame/);
     expect(() => parseRecording('{"type":"header","format":"other","version":1}')).toThrow(/unsupported/);
   });
+
+  it('reads a frame with no spectrum key as spectrum null, and rejects a bad spectrum or an infinite time', () => {
+    const header = JSON.stringify(createHeader('SIMULATED', null));
+    const bands = '"bands":{"delta":1,"theta":1,"alpha":1,"beta":1,"gamma":1}';
+    expect(parseRecording(`${header}\n{"type":"frame","t":1,${bands}}`).frames[0]?.spectrum).toBeNull();
+    expect(() => parseRecording(`${header}\n{"type":"frame","t":1,${bands},"spectrum":{}}`)).toThrow(/line 2 is not a valid frame/);
+    expect(() => parseRecording(`${header}\n{"type":"frame","t":1e999,${bands},"spectrum":null}`)).toThrow(/line 2 is not a valid frame/);
+  });
 });
 
 describe('ReplaySource', () => {

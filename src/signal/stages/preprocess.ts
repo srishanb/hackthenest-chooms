@@ -33,9 +33,12 @@ export function isValidBandFrame(frame: BandFrame): boolean {
     return false;
   }
 
-  if (frame.spectrum !== null) {
-    const { freqsHz, psd } = frame.spectrum;
-    if (freqsHz.length !== psd.length) return false;
+  // Frames from files or other code may carry no spectrum or a malformed one: invalid, never a throw.
+  const spectrum: unknown = frame.spectrum;
+  if (spectrum !== null) {
+    if (typeof spectrum !== 'object') return false;
+    const { freqsHz, psd } = spectrum as Partial<NonNullable<BandFrame['spectrum']>>;
+    if (!Array.isArray(freqsHz) || !Array.isArray(psd) || freqsHz.length !== psd.length) return false;
     for (let i = 0; i < psd.length; i += 1) {
       if (!Number.isFinite(freqsHz[i]) || !isFiniteNonNegative(psd[i]!)) {
         return false;
