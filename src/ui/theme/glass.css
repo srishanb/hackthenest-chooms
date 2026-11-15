@@ -1,0 +1,30 @@
+/* Borderless glass presentation requested by Ali. Focus outlines remain for keyboard access. */
+#ui .menu-panel,
+#ui .menu-panel button,
+#ui .menu-panel fieldset,
+#ui .tutorial-keys,
+#ui .tutorial-replay,
+#ui .source-badge,
+#ui .forest-preview,
+#ui .forest-preview button,
+#ui .hud__flame,
+#ui .hud__lantern meter,
+#ui .hud__metrics,
+#ui .hud__metrics > div + div,
+#ui .hud__pause,
+#ui .hud__checkpoint > div:first-child,
+#ui .hud__compass,
+#ui .hud__context {
+  border: 0;
+  box-shadow: none;
+}
+#ui .menu-panel button,
+#ui .tutorial-replay,
+#ui .forest-preview button { background: var(--color-inset); }
+#ui .menu-panel .menu-primary { background: var(--color-primary-glass); color: var(--color-accent); }
+#ui .menu-panel button:hover,
+#ui .menu-panel button:focus-visible,
+#ui .tutorial-replay:hover,
+#ui .hud__pause:hover { background: var(--color-hover); box-shadow: none; }
+#ui .hud__lantern meter,
+#ui .hud__lantern meter::-webkit-meter-bar { background: var(--color-inset); }
