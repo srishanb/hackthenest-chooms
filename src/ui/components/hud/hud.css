@@ -9,34 +9,18 @@
 .hud__metrics .ui-icon { color: var(--color-accent); width: calc(1.8 * var(--hud-u)); height: calc(1.8 * var(--hud-u)); }
 .hud__pause { position: absolute; right: var(--hud-corner); top: var(--hud-corner); width: calc(4.4 * var(--hud-u)); height: calc(4.4 * var(--hud-u)); border: 2px solid var(--color-panel-border); border-radius: var(--radius); color: var(--color-text); background: var(--color-panel); pointer-events: auto; cursor: pointer; }
 .hud__pause:hover { color: var(--color-accent); border-color: var(--color-accent); box-shadow: var(--gold-glow); }
-/* Bottom right: the 9u compass, and the ember panel bottom-aligned beside it. */
+/* Bottom right: the 9u compass on its own; a ball of flaming wax sits over its centre. */
 .hud__checkpoint { position: absolute; bottom: var(--hud-corner); right: var(--hud-corner); display: flex; align-items: flex-end; gap: var(--hud-gap); color: var(--color-accent); }
-.hud__checkpoint > div:first-child { display: grid; align-content: center; gap: calc(.6 * var(--hud-u)); min-height: calc(6 * var(--hud-u)); padding: var(--hud-u) calc(1.5 * var(--hud-u)); box-sizing: border-box; background: var(--color-panel); border: 2px solid var(--color-accent); border-radius: var(--radius); box-shadow: var(--gold-glow); max-width: calc(20 * var(--hud-u)); font-size: var(--hud-text-s); }
-.hud__checkpoint strong { font-size: var(--hud-text-m); }
-.hud__checkpoint .hud__recover-hint { font-size: var(--hud-text-s); }
 .hud__compass { width: calc(9 * var(--hud-u)); height: calc(9 * var(--hud-u)); flex-shrink: 0; position: relative; border: 2px solid var(--color-accent); border-radius: 50%; background: var(--color-panel); box-shadow: var(--gold-glow); }
-.hud__needle { position: absolute; inset: 14% 38%; background: linear-gradient(90deg, var(--color-accent) 50%, var(--hud-needle) 50%); clip-path: polygon(50% 0, 100% 65%, 50% 50%, 0 65%); transform-origin: center; }
-.hud__compass i { position: absolute; font: inherit; font-size: var(--hud-text-s); line-height: 1; transform: translate(-50%, -50%); }
-.hud__compass [data-direction='N'] { top: 12%; left: 50%; }
-.hud__compass [data-direction='S'] { top: 88%; left: 50%; }
-.hud__compass [data-direction='E'] { left: 88%; top: 50%; }
-.hud__compass [data-direction='W'] { left: 12%; top: 50%; }
+.hud__needle { position: absolute; inset: 8% 40%; z-index: 0; transition: none; background: linear-gradient(90deg, var(--color-accent) 50%, var(--hud-needle) 50%); clip-path: polygon(50% 0, 100% 65%, 50% 50%, 0 65%); transform-origin: center; }
 .hud__compass.is-empty { opacity: .4; }
 .hud__compass.is-empty .hud__needle { visibility: hidden; }
 /* Bottom left: the 12u candle portrait is drawn in the canvas at the 2u edge; the hint panel starts one gap to its right. */
 .hud__context { position: absolute; bottom: var(--hud-corner); left: calc(var(--hud-corner) + 12 * var(--hud-u) + var(--hud-gap)); display: grid; gap: var(--space-1); max-width: calc(min(440px, 43cqw) - 13.96cqw); padding: var(--space-2) var(--space-3); border-left: 2px solid var(--color-panel-border); background: var(--color-panel); border-radius: var(--radius); color: var(--color-text-dim); font-size: var(--hud-text-s); }
 /* Preserved from origin/main (#108) before HUD scale unification (#115):
 .hud__checkpoint { position: absolute; bottom: var(--hud-corner); right: var(--hud-corner); display: flex; align-items: center; gap: var(--space-3); color: var(--color-accent); }
-.hud__checkpoint > div:first-child { display: grid; gap: var(--space-2); padding: var(--space-3); background: var(--color-panel); border: 2px solid var(--color-accent); border-radius: var(--radius); box-shadow: var(--gold-glow); max-width: 190px; }
-.hud__checkpoint strong { font-size: var(--text-md); }
-.hud__checkpoint .hud__recover-hint { font-size: var(--text-xs); }
 .hud__compass { width: 90px; height: 90px; position: relative; border: 2px solid var(--color-accent); border-radius: 50%; background: var(--color-panel); box-shadow: var(--gold-glow); }
 .hud__needle { position: absolute; inset: 13px 34px; background: linear-gradient(90deg, var(--color-accent) 50%, var(--hud-needle) 50%); clip-path: polygon(50% 0, 100% 65%, 50% 50%, 0 65%); transform-origin: center; }
-.hud__compass i { position: absolute; font: inherit; font-size: var(--text-xs); }
-.hud__compass [data-direction='N'] { top: 4px; left: 40px; }
-.hud__compass [data-direction='S'] { bottom: 4px; left: 40px; }
-.hud__compass [data-direction='E'] { right: 5px; top: 38px; }
-.hud__compass [data-direction='W'] { left: 5px; top: 38px; }
 .hud__compass.is-empty { opacity: .4; }
 .hud__compass.is-empty .hud__needle { visibility: hidden; }
 .hud__context { position: absolute; bottom: var(--hud-corner); left: calc(13.96cqw + var(--space-2)); display: grid; gap: var(--space-1); max-width: calc(min(440px, 43cqw) - 13.96cqw); padding: var(--space-2) var(--space-3); border-left: 2px solid var(--color-panel-border); background: var(--color-panel); border-radius: var(--radius); color: var(--color-text-dim); font-size: var(--text-xs); } */
@@ -61,3 +45,8 @@
 /* Preview scales anchor each card to its original corner. */
 .hud__metrics { transform: scale(var(--ui-stats-scale, 1)); transform-origin: top right; }
 .hud__context { transform: scale(var(--ui-tutorial-scale, 1)); transform-origin: bottom left; max-width: min(440px, calc(43cqw / var(--ui-tutorial-scale, 1))); }
+
+/* The flaming wax ball (drawn by the game lane) over the needle's pivot. Its 16 x 26 box puts the
+   ball itself on the compass centre, with the flame rising above it. */
+.hud__wax-ball { position: absolute; z-index: 1; left: 50%; top: 50%; height: 78%; aspect-ratio: 16 / 26;
+  transform: translate(-50%, -66%); image-rendering: pixelated; pointer-events: none; }

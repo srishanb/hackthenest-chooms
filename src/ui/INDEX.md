@@ -45,3 +45,5 @@ HUD Fuel metric reads optional GameSnapshot.lanternFuel01; actual candle resourc
 
 `mountNarratorVoiceControl` (`components/settings-panel/narrator-voice-control.ts`) adds a saved stock-voice selector, Preview/Stop and preview caption in Settings. It publishes a validated local event defined in audio config; it never imports audio or alters game state.
 `mountStageEditor`, `EditorDeps` (`components/stage-editor/stage-editor.ts`) provide authoring controls through injected render/save/test callbacks; no gameplay imports.
+
+Compass (bottom right): no ember box or N/S/E/W; the needle eases toward the nearest ember checkpoint (`stepNeedle`, `shortestTurn` in `components/hud/needle.ts`), and a flaming wax ball drawn by the game lane (`drawWaxBall` in UiDeps, from main.ts) sits over its centre. The distance is in the compass's accessible label.
