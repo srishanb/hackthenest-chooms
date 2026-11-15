@@ -8,7 +8,7 @@ import { createUiActions } from '../../ui-actions';
 import { remapKey } from './settings-editor';
 import '../../theme/menus.css';
 export const settingsPanel: UiComponent = {
-  id: 'settings-panel', visibleIn: ['paused'],
+  id: 'settings-panel', visibleIn: ['paused', 'menu'],
   mount(root, { stores, actions = createUiActions() }) {
     const panel = document.createElement('section'); panel.className = 'menu-panel';
     panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true');
@@ -57,7 +57,10 @@ export const settingsPanel: UiComponent = {
     panel.append(bindings, hint);
     const back = menuButton(t('menu.back'), () => actions.settingsOpen.set(false)); panel.append(back); root.append(panel);
     const render = (): void => {
-      panel.hidden = !actions.settingsOpen.get() || stores.snapshot.get().phase !== 'paused';
+      const phase = stores.snapshot.get().phase;
+      // Opened from the pause menu or from the start menu; Back returns to whichever opened it.
+      panel.hidden = !actions.settingsOpen.get() || (phase !== 'paused' && phase !== 'menu');
+      back.textContent = t(phase === 'menu' ? 'menu.backToStart' : 'menu.back');
       for (const fn of renders) fn(stores.settings.get());
     };
     const onKey = (event: KeyboardEvent): void => {
