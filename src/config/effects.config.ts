@@ -3,7 +3,7 @@
  *
  * Why a table: each effect needs a hard cap, a smoothing time and a written never-rule so a
  * noisy signal can never make the game unfair. To remove an effect, set `enabled: false`.
- * Only lanternRadius is enabled in the foundation; the rest are starting guesses for P5.
+ * lanternRadius, forestCorruption and musicTenseMix are enabled; the rest are starting guesses.
  */
 import type { EffectRule } from '../shared/contracts/effects';
 
@@ -72,14 +72,17 @@ export const EFFECTS_TABLE: EffectRule[] = [
   },
   {
     id: 'musicTenseMix',
-    enabled: false,
+    enabled: true,
     atIntensity0: 0,
-    atIntensity1: 1,
+    atIntensity1: 0.8,
+    // 0 is the calm bed alone, 1 the tense loop alone (equal-power crossfade). The cap leaves a little of the
+    // calm bed under the tense loop, whose recording has near-silent stretches, so the music never drops out.
     min: 0,
-    max: 1,
+    max: 0.8,
     unit: '0..1',
     tauMs: 4000,
-    neutral: 0.3,
+    // With no usable signal the music sits mostly on the calm bed rather than guessing a mood.
+    neutral: 0.15,
     holdWhileAirborne: false,
     reducedMotionScale: 1,
     never: 'Music never masks jump and landing sounds.',
