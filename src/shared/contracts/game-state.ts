@@ -23,6 +23,8 @@ export interface EmberSnapshot {
 }
 
 export interface GameSnapshot {
+  /** Optional exploration goal and temporary wax light bonus; unrelated to the signal. */
+  wax?: { collected: number; total: number; boostRemainingMs: number };
   phase: GamePhase;
   sectionId: string | null;
   /** True while the player stands inside a refuge (audio quiets, the refuge is lit). */
