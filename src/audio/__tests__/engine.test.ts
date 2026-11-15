@@ -1,6 +1,6 @@
 /** Exercise lifecycle and gain wiring without speakers, network services or real timers. */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AUDIO_CONFIG } from '../../config/audio.config';
+import { AUDIO_CONFIG, INTRO_MUSIC_DUCK } from '../../config/audio.config';
 import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state';
 import { DEFAULT_SETTINGS } from '../../shared/contracts/settings';
 import type { EffectsFrame } from '../../shared/contracts/effects';
@@ -92,6 +92,19 @@ describe('audio engine', () => {
     data.stores.settings.set({ ...data.stores.settings.get(), volumes: { ...data.stores.settings.get().volumes, music: 0 } });
     expect(audio.getDiagnostics().gains.tense).toBe(0);
     audio.dispose(); expect(vi.getTimerCount()).toBe(0);
+  });
+  it('releases the music duck while a narrator line is parked by mute', async () => {
+    vi.useFakeTimers(); const fake = fakeContext(), data = { ...deps(), narratorLines: [{ id: 'intro-test', text: 'Hello.', clip: 'assets/audio/narrator/test.mp3' }] };
+    fake.raw.state = 'running';
+    const audio = createAudio(data, { createContext: () => fake.context, gestures: new EventTarget(),
+      baseURL: new URL('http://localhost/'), fetcher: fetchAudio(), sfxAssets: {}, assets: { quiet: null, tense: null } });
+    await audio.ready; const full = audio.getDiagnostics().gains.quiet;
+    vi.advanceTimersByTime(100); expect(audio.getDiagnostics().narratorLine).toBe('intro-test');
+    expect(audio.getDiagnostics().gains.quiet).toBeCloseTo(full * INTRO_MUSIC_DUCK);
+    const settings = data.stores.settings.get();
+    data.stores.settings.set({ ...settings, volumes: { ...settings.volumes, narrator: 0 } });
+    vi.advanceTimersByTime(100); expect(audio.getDiagnostics().gains.quiet).toBeCloseTo(full);
+    audio.dispose();
   });
   it('fails quietly if no audio context exists', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});

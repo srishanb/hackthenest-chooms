@@ -60,7 +60,7 @@ export function createAudio(deps: AudioDeps, environment?: AudioEnvironment): Au
     const mix = computeMix({ tenseMix01: deps.stores.effects.get().musicTenseMix,
       volumes: deps.stores.settings.get().volumes, phase: snapshot.phase,
       inRefuge: snapshot.inRefuge, emberActive: snapshot.ember.active }, deps.config);
-    const duck = narrator.getActiveLine() === null ? 1 : INTRO_MUSIC_DUCK;
+    const duck = narrator.isSpeaking() ? INTRO_MUSIC_DUCK : 1;
     engine.apply({ ...mix, quiet: mix.quiet * duck, tense: mix.tense * duck }, force);
     dirty = false;
   };
@@ -106,7 +106,7 @@ export function createAudio(deps: AudioDeps, environment?: AudioEnvironment): Au
   let wasNarrating = false;
   const timer = setInterval(() => {
     narrator.tick();
-    const narrating = narrator.getActiveLine() !== null;
+    const narrating = narrator.isSpeaking();
     if (narrating !== wasNarrating) { wasNarrating = narrating; dirty = true; }
     if (dirty) apply();
   }, 100);
