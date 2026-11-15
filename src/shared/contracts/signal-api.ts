@@ -44,4 +44,6 @@ export interface SignalHandle {
   reader: ComposureReader;
   control: SignalControl;
   getDiagnostics(): SignalDiagnostics;
+  /** Everything recorded since page load as JSONL (header, frame, state, event lines), for download and `?source=replay`. */
+  exportRecording(): string;
 }

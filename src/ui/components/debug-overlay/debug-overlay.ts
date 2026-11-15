@@ -31,7 +31,7 @@ function triggerJsonlDownload(jsonl: string): void {
 export const debugOverlay: UiComponent = {
   id: 'debug-overlay',
   visibleIn: 'always',
-  mount(root, { bus, signal, stores }) {
+  mount(root, { signal, stores }) {
     const panel = document.createElement('section');
     panel.className = 'debug-overlay';
     panel.hidden = true;
@@ -84,21 +84,8 @@ export const debugOverlay: UiComponent = {
     panel.append(title, hint, rows, actions, status, legend);
     root.append(panel);
 
-    const recordedLines: string[] = [];
-    const startedAt = new Date().toISOString();
-
     const downloadCurrentRecording = (): void => {
-      const current = signal.reader.getState();
-      const header = {
-        type: 'header',
-        format: 'lighten-recording',
-        version: 1,
-        createdAt: startedAt,
-        source: current.source,
-        algo: current.algo,
-      };
-      const jsonl = `${[JSON.stringify(header), ...recordedLines].join('\n')}\n`;
-      triggerJsonlDownload(jsonl);
+      triggerJsonlDownload(signal.exportRecording());
       status.dataset.tone = 'ok';
       status.textContent = t('debug.recordingDownloaded');
     };
@@ -182,17 +169,12 @@ export const debugOverlay: UiComponent = {
 
     window.addEventListener('keydown', onKey);
     const unsubscribeSignal = signal.reader.subscribe((state) => {
-      recordedLines.push(JSON.stringify({ type: 'state', ...state }));
       render(state);
-    });
-    const unsubscribeBus = bus.onAny((event, tMs) => {
-      recordedLines.push(JSON.stringify({ type: 'event', t: tMs, event }));
     });
 
     return () => {
       window.removeEventListener('keydown', onKey);
       unsubscribeSignal();
-      unsubscribeBus();
     };
   },
 };
