@@ -12,11 +12,12 @@ export function createBackdropGardens(scene: Scene) {
     const snowySoil = scene.add.tileSprite(0, 0, 180, 48, 'snowforest-middle').setOrigin(0.5, 0).setTileScale(2).setDepth(-6);
     const snowySkirt = scene.add.tileSprite(0, 0, 130, 24, 'snowforest-middle').setOrigin(0.5, 0).setTileScale(2).setDepth(-6);
     const snowyGrass = scene.add.tileSprite(0, 0, 180, 12, 'snowforest-middle').setOrigin(0.5, 0).setTileScale(2).setDepth(-5);
-    const plants = ['forest-fern', 'forest-mushrooms', 'grass-bush'].map((key) =>
+    const plants = ['forest-fern', 'forest-mushrooms', 'grass-bush', 'forest-mushrooms', 'forest-fern'].map((key) =>
       scene.add.image(0, 0, key).setOrigin(0.5, 1).setScale(1).setDepth(-5));
-    const winterPlants = ['snowforest-pine', 'winter-crystal', 'snowforest-pine'].map((key) =>
+    const winterPlants = ['snowforest-pine', 'winter-bush', 'winter-crystal', 'winter-bush', 'snowforest-pine'].map((key) =>
       scene.add.image(0, 0, key).setOrigin(0.5, 1).setScale(key === 'snowforest-pine' ? 0.4 : 1).setDepth(-5));
-    return { soil, skirt, grass, redGrass, plants, snowySoil, snowySkirt, snowyGrass, winterPlants };
+    const vines = [-0.3, 0.3].map(() => scene.add.image(0, 0, 'hanging-vine').setOrigin(0.5, 0).setDepth(-6).setScale(0.7));
+    return { vines, soil, skirt, grass, redGrass, plants, snowySoil, snowySkirt, snowyGrass, winterPlants };
   });
   return {
     setSnow(value: number) { snow = unit(value); },
@@ -38,12 +39,15 @@ export function createBackdropGardens(scene: Scene) {
         garden.snowySoil.setPosition(x, y).setSize(width, depth).setTint(tint).setAlpha(0.5 * snow);
         garden.snowySkirt.setPosition(x, y + depth - 2).setSize(width * 0.65, 12).setTint(tint).setAlpha(0.45 * snow);
         garden.snowyGrass.setPosition(x, y).setSize(width, 12).setTint(tint).setAlpha(0.5 * snow);
+        for (const [j, vine] of garden.vines.entries()) vine.setScrollFactor(0)
+          .setPosition(x + (j ? 0.3 : -0.3) * width, y + depth - scroll - 4)
+          .setTint(tint).setAlpha(0.4);
         // These objects live in parallax world space, not the gameplay camera's world coordinates.
         for (const image of [garden.soil, garden.skirt, garden.grass, garden.redGrass, garden.snowySoil, garden.snowySkirt, garden.snowyGrass]) {
           image.setScrollFactor(0); image.y -= scroll;
         }
         for (const [j, plant] of garden.plants.entries()) {
-          plant.setScrollFactor(0).setPosition(x + (j - 1) * width * 0.3, y - scroll + 2)
+          plant.setScrollFactor(0).setPosition(x + (j - 2) * width * 0.18, y - scroll + 2)
             .setTint(tint).setAlpha(0.48 * (1 - snow));
           garden.winterPlants[j]!.setScrollFactor(0).setPosition(plant.x, plant.y)
             .setTint(tint).setAlpha(0.48 * snow);

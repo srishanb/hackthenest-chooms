@@ -133,3 +133,5 @@ Clastic Artistic, Abstract Textures, texture (25): https://clastic-artistic.itch
 ### Current narrator voice choices
 - Current selectable recordings: ElevenLabs stock Chris (`iP95p4xoKVk53GoZ742B`) and Bill (`pqHfZKP75CvOlQylNhV4`), generated with Eleven v4 on 2026-11-15 through Amrit's paid account. Original shorter text edited by Amrit's Codex agent. Six local clips per voice. Previous George recordings remain archived and are not selected by the current bank. No real-person voice imitation or cloning.
 - Voice metadata source: https://api.elevenlabs.io/v1/voices. Model/settings source: https://elevenlabs.io/docs/overview/models and https://github.com/elevenlabs/skills/blob/main/text-to-speech/references/voice-settings.md. Final subjective voice choice belongs to Amrit.
+
+Additional Pixel Platformer Tileset Vol.4 by reodesuxz game decorations: native climb/vine_hanging.png and ice/snowy_bush.png, copied to assets/winter. Same existing Vol.4 license applies; used only as integrated game art.
