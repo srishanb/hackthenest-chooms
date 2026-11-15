@@ -103,7 +103,10 @@ export class ClimbScene extends Phaser.Scene {
       if (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, button, [contenteditable="true"]')) return;
       if (!event.repeat && event.code === stores.settings.get().keys.recover) {
         if (stores.snapshot.get().phase === 'ember') this.ember.cancel();
-        else this.ember.request(this.state);
+        else if (this.ember.request(this.state)) {
+          const signal = this.deps.composure.getState();
+          if (signal.mode === 'fixed' || !signal.calibrated) this.returnToEmber(this.ember.assist());
+        }
         event.preventDefault(); return;
       }
       if (!this.phase.isRunning()) return;

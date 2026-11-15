@@ -14,9 +14,10 @@ import { getPlatformType } from '../world/platform-types/registry';
 interface RecoveryDeps {
   sections: readonly SectionData[]; gameConfig: GameConfig; config: EmberConfig;
   bus: EventBus; snapshot: Store<GameSnapshot>; storage?: SaveStorage;
+  now?: () => number;
 }
 
-export function createRecoveryEmber({ sections, gameConfig, config, bus, snapshot, storage = createMemorySaveStorage() }: RecoveryDeps) {
+export function createRecoveryEmber({ sections, gameConfig, config, bus, snapshot, storage = createMemorySaveStorage(), now = Date.now }: RecoveryDeps) {
   const first = sections[0];
   if (!first) throw new Error('Recovery needs a starting section');
   const platforms = sections.flatMap((section) => section.platforms);
@@ -32,19 +33,23 @@ export function createRecoveryEmber({ sections, gameConfig, config, bus, snapsho
   let progress: SavedProgress = loaded && (!loaded.anchor || safe(loaded.anchor)) ? loaded : { v: 2, anchor: null };
   let elapsed = 0;
   let lastTick: number | null = null;
+  const cooldownRemaining = (): number => Math.ceil(Math.max(0, (progress.readyAtMs ?? 0) - now()) / 1000) * 1000;
   const startingSection = sections.find((section) => section.platforms.some((p) => p.id === progress.anchor?.platformId)) ?? first;
   snapshot.set({ ...snapshot.get(), sectionId: startingSection.id, inRefuge: false,
-    ember: { available: true, active: false, progress01: 0, canAssist: false },
+    ember: { available: true, active: false, progress01: 0, canAssist: false, cooldownRemainingMs: cooldownRemaining() },
     promptKey: progress.anchor ? 'ember.placedHint' : 'ember.placeHint' });
 
   function publish(active: boolean): void {
     snapshot.set({ ...snapshot.get(), ember: {
       available: true, active, progress01: Math.min(1, elapsed / config.targetValidMs), canAssist: active,
+      cooldownRemainingMs: cooldownRemaining(),
     } });
   }
   function recover(via: 'eeg' | 'assist'): EmberAnchor | null {
     if (snapshot.get().phase !== 'ember' || !progress.anchor || !safe(progress.anchor)) return null;
     const destination = { ...progress.anchor };
+    progress = { ...progress, readyAtMs: now() + (config.cooldownMs ?? 5000) };
+    writeSave(storage, progress);
     elapsed = 0; lastTick = null;
     snapshot.set({ ...snapshot.get(), phase: 'playing', promptKey: 'ember.pickupHint' });
     publish(false); bus.emit({ type: 'ember_returned', via });
@@ -61,18 +66,19 @@ export function createRecoveryEmber({ sections, gameConfig, config, bus, snapsho
       if (snapshot.get().phase !== 'playing' || !player.grounded || player.charging || !player.platformId) return false;
       if (progress.anchor) {
         if (!near(player)) return false;
-        progress = { v: 2, anchor: null };
+        progress = { ...progress, anchor: null };
         writeSave(storage, progress);
         snapshot.set({ ...snapshot.get(), promptKey: 'ember.placeHint' });
         return true;
       }
       const anchor = { platformId: player.platformId, x: player.x, y: player.y };
       if (!safe(anchor)) return false;
-      progress = { v: 2, anchor }; writeSave(storage, progress);
+      progress = { ...progress, anchor }; writeSave(storage, progress);
       snapshot.set({ ...snapshot.get(), promptKey: 'ember.pickupHint' });
       return true;
     },
     request(player: PlayerState): boolean {
+      if (cooldownRemaining() > 0) return false;
       if (snapshot.get().phase !== 'playing' || !player.grounded ||
         !progress.anchor || !safe(progress.anchor) || player.y <= progress.anchor.y + gameConfig.player.height) return false;
       elapsed = 0; lastTick = null;
@@ -98,9 +104,11 @@ export function createRecoveryEmber({ sections, gameConfig, config, bus, snapsho
     },
     refreshPrompt(player: PlayerState): void {
       if (snapshot.get().phase !== 'playing') return;
-      const promptKey = !progress.anchor ? 'ember.placeHint' : near(player) ? 'ember.pickupHint' :
+      const promptKey = cooldownRemaining() > 0 ? 'ember.cooldownHint' : !progress.anchor ? 'ember.placeHint' : near(player) ? 'ember.pickupHint' :
         player.grounded && player.y > progress.anchor.y + gameConfig.player.height ? 'ember.returnHint' : 'ember.placedHint';
-      if (snapshot.get().promptKey !== promptKey) snapshot.set({ ...snapshot.get(), promptKey });
+      if (snapshot.get().promptKey !== promptKey || snapshot.get().ember.cooldownRemainingMs !== cooldownRemaining()) {
+        snapshot.set({ ...snapshot.get(), promptKey, ember: { ...snapshot.get().ember, cooldownRemainingMs: cooldownRemaining() } });
+      }
     },
     clear(): void { clearSave(storage); },
     restart(): { x: number; y: number } {

@@ -7,6 +7,7 @@
 import type { EmberConfig } from '../shared/contracts/config';
 
 export const EMBER_CONFIG: EmberConfig = {
+  cooldownMs: 5000,
   targetValidMs: 4000, // about four valid seconds
   bigFallPx: 300,
   minFallPxToOffer: 120,

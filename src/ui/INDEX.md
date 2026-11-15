@@ -13,7 +13,7 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 | `mainMenu` | `components/main-menu/` | First-launch controls tutorial, persistent completion and replay button; publishes pause/resume through the bus. |
 | `hasSeenTutorial`, `rememberTutorial`, `TUTORIAL_STORAGE_KEY` | `components/main-menu/tutorial-storage.ts` | Safely remember the completed/skipped guide independently of checkpoint saves. |
 | `captions`, `calibration` | `components/<id>/` | **P0 stubs:** registered, render nothing. |
-| `emberPrompt` | `components/ember-prompt/` | Recovery progress, labelled ordinary-input rescue, cancellation and a new-run button after finish. |
+| `emberPrompt` | `components/ember-prompt/` | New-run button after finish; no recovery popup. Progress and cooldown live in the HUD. |
 | `pauseMenu`, `settingsPanel` | `components/pause-menu/`, `components/settings-panel/` | Pause/resume bus controls and live settings; main-menu start route remains pending. |
 | `createUiActions`, `UiActions` | `ui-actions.ts` | UI-local settings visibility shared by menu components. |
 | `remapKey` | `components/settings-panel/settings-editor.ts` | Swap existing bindings on a duplicate choice. |

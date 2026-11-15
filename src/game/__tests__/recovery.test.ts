@@ -26,12 +26,13 @@ function signal(t: number, valid = true): ComposureState {
     held: false, calibrated: true, mode: 'adaptive', source: 'SIMULATED', algo: 'test' };
 }
 function setup(storage = createMemorySaveStorage(), targetValidMs = 4000) {
+  let wallTime = 0;
   const bus = createEventBus(() => 0); const events: GameEvent[] = [];
   bus.onAny((event) => events.push(event));
   const snapshot = createStore({ ...INITIAL_GAME_SNAPSHOT, ember: { ...INITIAL_GAME_SNAPSHOT.ember } });
   const ember = createRecoveryEmber({ sections, gameConfig: GAME_CONFIG,
-    config: { ...EMBER_CONFIG, targetValidMs }, bus, snapshot, storage });
-  return { ember, snapshot, events, storage };
+    config: { ...EMBER_CONFIG, targetValidMs }, bus, snapshot, storage, now: () => wallTime });
+  return { ember, snapshot, events, storage, setTime: (value: number) => { wallTime = value; } };
 }
 
 describe('one reusable manually placed ember', () => {
@@ -54,8 +55,9 @@ describe('one reusable manually placed ember', () => {
   });
 
   it('supports repeated returns without consuming or relocating the ember', () => {
-    const { ember, snapshot, events } = setup(); ember.placeOrPickup(upper);
+    const { ember, snapshot, events, setTime } = setup(); ember.placeOrPickup(upper);
     for (let repeat = 0; repeat < 3; repeat++) {
+      setTime(repeat * 5001);
       expect(ember.request(lower)).toBe(true);
       expect(snapshot.get().phase).toBe('ember');
       expect(ember.assist()).toEqual({ platformId: 'upper', x: 480, y: 172 });
@@ -64,6 +66,30 @@ describe('one reusable manually placed ember', () => {
       expect(ember.getAnchor()?.platformId).toBe('upper');
     }
     expect(events.filter((event) => event.type === 'ember_returned')).toHaveLength(3);
+  });
+
+  it('blocks repeated returns for five seconds, even across pickup, replacement and reload', () => {
+    const first = setup(); first.ember.placeOrPickup(upper); first.ember.request(lower); first.ember.assist();
+    expect(first.ember.request(lower)).toBe(false);
+    first.ember.placeOrPickup(upper); first.ember.placeOrPickup(upper);
+    expect(first.ember.request(lower)).toBe(false);
+    const reloaded = setup(first.storage);
+    expect(reloaded.ember.request(lower)).toBe(false);
+    reloaded.setTime(4999); expect(reloaded.ember.request(lower)).toBe(false);
+    reloaded.setTime(5000); expect(reloaded.ember.request(lower)).toBe(true);
+    expect(reloaded.ember.assist()?.platformId).toBe('upper');
+  });
+
+  it('exposes cooldown seconds to the HUD and makes recovery ready again when it expires', () => {
+    const { ember, snapshot, setTime } = setup();
+    ember.placeOrPickup(upper); ember.request(lower); ember.assist();
+    expect(snapshot.get().ember.cooldownRemainingMs).toBe(5000);
+    setTime(1500); ember.refreshPrompt(lower);
+    expect(snapshot.get().ember.cooldownRemainingMs).toBe(4000);
+    expect(snapshot.get().promptKey).toBe('ember.cooldownHint');
+    setTime(5000); ember.refreshPrompt(lower);
+    expect(snapshot.get().ember.cooldownRemainingMs).toBe(0);
+    expect(snapshot.get().promptKey).toBe('ember.returnHint');
   });
 
   it('persists only a deliberate marker; pickup removes the reload destination', () => {

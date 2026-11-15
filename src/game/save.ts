@@ -12,6 +12,7 @@ export interface EmberAnchor {
 export interface SavedProgress {
   v: 2;
   anchor: EmberAnchor | null;
+  readyAtMs?: number;
 }
 
 /** Validate data from disk before gameplay trusts it. Unknown versions start a fresh run. */
@@ -31,7 +32,8 @@ export function parseSave(text: string | null): SavedProgress | null {
         typeof candidate.y !== 'number' || !Number.isFinite(candidate.y)) return null;
       anchor = { platformId: candidate.platformId, x: candidate.x, y: candidate.y };
     }
-    return { v: 2, anchor };
+    if (saved.readyAtMs !== undefined && (typeof saved.readyAtMs !== 'number' || !Number.isFinite(saved.readyAtMs) || saved.readyAtMs < 0)) return null;
+    return { v: 2, anchor, ...(saved.readyAtMs === undefined ? {} : { readyAtMs: saved.readyAtMs as number }) };
   } catch {
     return null;
   }
