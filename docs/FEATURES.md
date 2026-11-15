@@ -1,6 +1,6 @@
 # Features
 
-Status: PROVISIONAL
+Status: FINAL (10:31 PM)
 
 <!-- A human changes the line above to "Status: FINAL (<name>, <date>)" when the list is finalised (H-01),
      and the integrator adds a line to DECISIONS.md. Until then only P0 to P3 may be built. -->
@@ -25,7 +25,6 @@ affected phases. Removing a row never requires code outside one lane (see PLAN.m
 | PLT-5 | Platforming | Wind section | Visible direction cues and predictable gusts in a dedicated section; independent of EEG. | Expansion | P11 |
 | PLT-6 | Platforming | Slippery surfaces | Distinct-looking surfaces with consistent reduced friction. | Expansion | P11 |
 | FAL-1 | Falling | No death system | Missed jumps lose height. No health bar, lives or death screen. | Core | P4.3 |
-| FAL-2 | Falling | Bounded progress loss | Falling below the active section boundary returns the player to its checkpoint. | Core | P4.3 |
 | LAN-1 | Lantern | EEG-driven intensity | A personalised EEG feature controls environmental intensity. Not presented as verified stress detection. | Core | P1, P5.1 |
 | LAN-2 | Lantern | Adaptive light radius | Higher intensity reduces distant illumination; lower restores it. No fuel depletion. | Core | P5.2 |
 | LAN-3 | Lantern | Protected visibility | The current platform, immediate reachable landing edges and nearby hazards stay readable. | Core | P5.2 |
