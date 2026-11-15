@@ -6,6 +6,8 @@
  * state refer to text by key, never by literal string.
  */
 export const STRINGS = {
+  'start.begin': 'Start climbing',
+  'start.intro.body': "Welcome to Lighten Up. You're carrying a small candle up a very tall climb. Hold jump to charge, aim, then release. Collect wax along the way to keep your candle burning, and place your Ember on a safe ledge so you have somewhere to return to. Your signal shapes the atmosphere, never your movement. Take your time. The next ledge is enough.",
   'narrator.voice.baseline': 'Selected narrator · baseline',
   'worldTutorial.label': 'Tutorial controls',
   'worldTutorial.control.move': 'Move',

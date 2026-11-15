@@ -82,3 +82,14 @@ it('mute remains an explicit interruption and resumes the existing speech',async
   s.raw.currentTime=5;s.stores.settings.set(settings);
   expect(s.sources[1]!.start).toHaveBeenCalledWith(5,2);s.player.dispose();
 });
+
+it('explains the game before start without stepping gameplay or repeating the welcome after Play',async()=>{
+  const s=setup();await s.player.ready;s.bus.emit({type:'narrator_intro_requested'});
+  expect(s.stores.snapshot.get().phase).toBe('menu');expect(s.sources).toHaveLength(1);
+  s.start();expect(s.sources).toHaveLength(1);expect(s.sources[0]!.stop).not.toHaveBeenCalled();
+  s.raw.currentTime=1;s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'paused'});
+  expect(s.sources[0]!.stop).toHaveBeenCalledTimes(1);
+  s.raw.currentTime=3;s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'playing'});
+  expect(s.sources[1]!.start).toHaveBeenCalledWith(3,1);s.sources[1]!.onended?.();
+  s.bus.emit({type:'start'});s.player.tick();expect(s.sources).toHaveLength(2);s.player.dispose();
+});

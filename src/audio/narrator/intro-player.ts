@@ -14,7 +14,7 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
   random: () => number = Math.random, voicePrefix: string | null = null, initialBestPx = 0) {
   const buffers = new Map<string, AudioBuffer | null>(), used = new Map<string, number>();
   const levels = new Map<string, number>();
-  let previewing = false, previewLine: NarratorLine | null = null;
+  let introducing = false, previewing = false, previewLine: NarratorLine | null = null;
   let disposed = false, loaded = false, served = false;
   let pending = stores.snapshot.get().phase === 'playing', speech: Speech | null = null, lastStart = -Infinity;
   const queue: Array<{moment: NarratorMoment; at: number}> = [];
@@ -35,17 +35,17 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
     try { node.stop(); } catch { /* Already ended. */ }
     node.disconnect(); value.gain?.disconnect(); value.gain = null; clearCaption(value.line.id);
   };
-  const cancel = (): void => { if (speech) detach(speech); speech = null; previewLine = null; previewing = false; };
-  const blocked = (): boolean => (!previewing && !['playing', 'ember', 'finished'].includes(stores.snapshot.get().phase)) ||
+  const cancel = (): void => { if (speech) detach(speech); speech = null; previewLine = null; previewing = false; introducing = false; };
+  const blocked = (): boolean => (!previewing && !['playing', 'ember', 'finished', ...(introducing ? ['menu'] : [])].includes(stores.snapshot.get().phase)) ||
     stores.settings.get().volumes.master <= 0 || stores.settings.get().volumes.narrator <= 0;
   const startSpeech = (value: Speech): void => {
     const remaining = value.buffer.duration - value.offset;
-    if (remaining <= 0.02) { speech = null; previewing = false; return; }
+    if (remaining <= 0.02) { speech = null; previewing = false; introducing = false; return; }
     const source = context.createBufferSource(); source.buffer = value.buffer;
     const gain = context.createGain(); gain.gain.setValueAtTime(levels.get(value.line.id) ?? 1, context.currentTime);
     source.connect(gain); gain.connect(output); value.gain = gain;
     value.node = source; value.startedAt = context.currentTime;
-    source.onended = () => { if (value.node !== source) return; value.node = null; source.disconnect(); gain.disconnect(); value.gain = null; if (speech === value) { speech = null; previewing = false; clearCaption(value.line.id); } };
+    source.onended = () => { if (value.node !== source) return; value.node = null; source.disconnect(); gain.disconnect(); value.gain = null; if (speech === value) { speech = null; previewing = false; introducing = false; clearCaption(value.line.id); } };
     source.start(context.currentTime, value.offset);
     bus.emit({type:'narrator_line',lineId:value.line.id,text:value.line.text,durationMs:remaining*1000});
   };
@@ -55,9 +55,10 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
     if (context.state !== 'running' || !loaded) return;
     if (previewLine) {
       const line = previewLine; previewLine = null;
+      if (introducing) { lastStart = context.currentTime * 1000; used.set(line.id, lastStart); }
       const buffer = buffers.get(line.id);
       if (buffer) { speech = {line,buffer,offset:0,startedAt:context.currentTime,node:null,gain:null}; startSpeech(speech); }
-      else { previewing = false; bus.emit({type:'narrator_line',lineId:line.id,text:line.text,durationMs:4000}); }
+      else { previewing = false; introducing = false; bus.emit({type:'narrator_line',lineId:line.id,text:line.text,durationMs:4000}); }
       return;
     }
     if (speech) { if (!speech.node) startSpeech(speech); return; }
@@ -83,7 +84,11 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
     }
     speech = {line,buffer,offset:0,startedAt:context.currentTime,node:null,gain:null}; startSpeech(speech);
   };
-  const cleanups = [bus.on('start', () => { if (!served) pending = true; tick(); }),
+  const cleanups = [bus.on('narrator_intro_requested', () => {
+    const line = lines.find(candidate => matchesVoice(candidate) && candidate.moment === 'welcome') ?? lines.find(matchesVoice);
+    if (!line || disposed || stores.snapshot.get().phase !== 'menu') return;
+    cancel(); served = true; pending = false; introducing = true; previewLine = line; tick();
+  }), bus.on('start', () => { if (!served) pending = true; tick(); }),
     bus.on('run_restart', () => { cancel(); queue.length = 0; served = false; pending = true; tick(); }),
     bus.on('finish', () => { pending = false; queue.length = 0; }),
     watchNarratorMoments(bus, stores.snapshot, request, initialBestPx),

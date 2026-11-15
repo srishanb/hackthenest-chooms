@@ -3,9 +3,9 @@ import type { NarratorLine } from '../../shared/contracts/content';
 export const NARRATOR_LINES: readonly NarratorLine[] = [
   {
     "id": "intro-baseline-welcome",
-    "text": "Alright, thanks for coming with me on this trip. I'll understand if you have to take a break at any point.",
+    "text": "Welcome to Lighten Up. You're carrying a small candle up a very tall climb. Hold jump to charge, aim, then release. Collect wax along the way to keep your candle burning, and place your Ember on a safe ledge so you have somewhere to return to. Your signal shapes the atmosphere, never your movement. Take your time. The next ledge is enough.",
     "moment": "welcome",
-    "clip": "assets/audio/narrator/intro-baseline-welcome-900e9db6932d.mp3"
+    "clip": "assets/audio/narrator/intro-baseline-welcome-35b745a3a24d.mp3"
   },
   {
     "id": "intro-baseline-tutorial",

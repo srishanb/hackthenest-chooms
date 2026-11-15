@@ -91,3 +91,5 @@ restart, voice switching and explicit preview controls keep normal lifecycle beh
 The game only uses downloaded local files; keys and runtime API calls are absent.
 
 Low-fuel follow-up: the seventh line is an original reminder requested by Amrit, not a transcript excerpt. It triggers once below 25% actual candle fuel, never at empty or from the wax pickup counter. Refilling above 50% rearms it. A queued warning waits for ongoing speech/cooldown and is cancelled if fuel recovers or reaches empty.
+
+Pre-game welcome: first Play requests the explanatory welcome while phase stays menu. Start climbing begins immediately when chosen; ongoing narration continues, without a duplicate welcome. Instructions remain visible without audio and use binding-independent control wording. Existing saved-run Continue skips the introduction. The opening is original game-specific text requested by Amrit; five remaining excerpts and the fuel reminder are unchanged.

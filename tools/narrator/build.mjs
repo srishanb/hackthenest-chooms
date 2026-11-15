@@ -25,7 +25,7 @@ function validatePack(value, moments = false) {
   const seen = new Set();
   return value.map((line) => {
     if (!line || !/^intro-[a-z0-9-]+$/.test(line.id) || seen.has(line.id) || typeof line.text !== 'string' ||
-        line.text.trim().length < 20 || line.text.length > 240 || /[\r\n<>]/.test(line.text)) throw Error('Invalid intro pack. Review ids and text.');
+        line.text.trim().length < 20 || line.text.length > (moments ? 600 : 240) || /[\r\n<>]/.test(line.text)) throw Error('Invalid intro pack. Review ids and text.');
     if (/\b(stress|diagnos\w*|therap\w*|emotion\w*)\b/i.test(line.text)) throw Error('Review narrator framing before generation.');
     if (moments && !['welcome','tutorial','height','fall','stage','finish','low-fuel'].includes(line.moment)) throw Error('Invalid narrator moment.');
     seen.add(line.id); return { id: line.id, text: line.text.trim(), ...(moments ? {moment:line.moment} : {}) };

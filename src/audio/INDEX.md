@@ -21,3 +21,5 @@ Voice polish: `createIntroPlayer` accepts a bank prefix and exposes `setVoice`, 
 - `watchNarratorMoments` (`narrator/moments.ts`): subscribes to actual big-fall/stage/finish events and read-only navigation; requests approved welcome/tutorial/height/fall/stage/finish content through the existing local player. Uses saved personal best, sparse cooldowns, queue deduplication and expiry. No game writes. Tests: `__tests__/narrator-moments.test.ts`.
 
 Narration continues through `precision_window`/jumps and phase `ember`; only actual pause/menu/calibration or explicit audio/session lifecycle controls interrupt it. Regression: `__tests__/intro-player.test.ts`.
+
+`narrator_intro_requested` lets the launch screen play the selected welcome in menu phase, marks it served, and preserves normal pause/resume if the player begins early. The game stays stopped until Start climbing is chosen.
