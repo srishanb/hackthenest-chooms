@@ -9,13 +9,17 @@
  * while its flame flares up and burns blue at the base, then springs back. Reduced motion shows
  * one still frame. Pure maths come from the existing candle modules; nothing feeds gameplay.
  */
-import { createCandleGenome } from './candle-genome';
+import { createCandleGenome, type CandleGenome } from './candle-genome';
 import { bodyShape, INITIAL_POSE, type PoseTracker } from './candle-pose';
 import { rasterCandle } from './candle-raster';
 import { FLAME_FPS, rasterFlame } from './flame';
 
-/** Canvas size in art pixels, and screen pixels per art pixel. */
-const ART = 30;
+/**
+ * Drawing box in art pixels, sized so the tallest candle in its tallest pose plus the largest
+ * flared flame (and its licks) always fit: nothing is ever cut off. Screen px per art px.
+ */
+export const EMBLEM_W = 28;
+export const EMBLEM_H = 46;
 const PX = 4;
 const LOOP_MS = 3200;
 const CHARGE_FROM_MS = 2000;
@@ -32,10 +36,29 @@ export function emblemMoment(timeMs: number): { tracker: PoseTracker; charge01: 
   return { tracker: { ...INITIAL_POSE, pose: 'rise', elapsedMs: t - RELEASE_AT_MS }, charge01: 0, flare01: 1 - (t - RELEASE_AT_MS) / (LOOP_MS - RELEASE_AT_MS) };
 }
 
+export interface EmblemPixel {
+  x: number;
+  y: number;
+  color: number;
+}
+
+/** Every pixel of the emblem at `timeMs`, in box coordinates (0..EMBLEM_W-1, 0..EMBLEM_H-1). */
+export function emblemPixels(genome: CandleGenome, timeMs: number, still: boolean): EmblemPixel[] {
+  const { tracker, charge01, flare01 } = emblemMoment(timeMs);
+  const body = rasterCandle(genome, bodyShape(tracker, charge01), 1, false);
+  const flame = rasterFlame(genome, { size01: 1, timeMs, reducedMotion: still, lean: 0, fall01: 0.55 * flare01 });
+  const feetX = EMBLEM_W / 2;
+  const feetY = EMBLEM_H - 1;
+  return [
+    ...body.pixels.map((p) => ({ x: feetX + p.x, y: feetY + p.y, color: p.color })),
+    ...flame.map((p) => ({ x: feetX + body.wickTip.x + p.x, y: feetY + body.wickTip.y + p.y, color: p.color })),
+  ];
+}
+
 /** Draw the animated candle into `canvas`. Returns a function that stops the animation. */
 export function mountCandleEmblem(canvas: HTMLCanvasElement, seed: number, reducedMotion: () => boolean): () => void {
-  canvas.width = ART * PX;
-  canvas.height = ART * PX;
+  canvas.width = EMBLEM_W * PX;
+  canvas.height = EMBLEM_H * PX;
   const context = canvas.getContext('2d');
   if (!context) return () => {};
   const genome = createCandleGenome(seed);
@@ -49,19 +72,10 @@ export function mountCandleEmblem(canvas: HTMLCanvasElement, seed: number, reduc
     const frame = Math.floor((timeMs / 1000) * FLAME_FPS);
     if (frame !== lastFrame) {
       lastFrame = frame;
-      const { tracker, charge01, flare01 } = emblemMoment(timeMs);
-      const body = rasterCandle(genome, bodyShape(tracker, charge01), 1, false);
-      const flame = rasterFlame(genome, { size01: 1, timeMs, reducedMotion: still, lean: 0, fall01: 0.55 * flare01 });
       context.clearRect(0, 0, canvas.width, canvas.height);
-      const feetX = ART / 2;
-      const feetY = ART - 1;
-      for (const p of body.pixels) {
+      for (const p of emblemPixels(genome, timeMs, still)) {
         context.fillStyle = `#${p.color.toString(16).padStart(6, '0')}`;
-        context.fillRect((feetX + p.x) * PX, (feetY + p.y) * PX, PX, PX);
-      }
-      for (const p of flame) {
-        context.fillStyle = `#${p.color.toString(16).padStart(6, '0')}`;
-        context.fillRect((feetX + body.wickTip.x + p.x) * PX, (feetY + body.wickTip.y + p.y) * PX, PX, PX);
+        context.fillRect(p.x * PX, p.y * PX, PX, PX);
       }
     }
     if (!still) raf = requestAnimationFrame(draw);
