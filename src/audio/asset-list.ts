@@ -1,5 +1,6 @@
-/** Licensed local music, both CC0 (see CREDITS.md). `quiet` is the calm bed; `tense` is the layer the
- * music crossfades to as the real signal rises (effects row musicTenseMix). A missing file stays silent.
+/** Local music and one-shot cue file paths. Licences are logged in CREDITS.md. `quiet` is the calm bed;
+ * `tense` is the layer the music crossfades to as the real signal rises (effects row musicTenseMix);
+ * `transition` and `metal` are extra beds. A missing file stays silent.
  */
 export interface MusicAssets { quiet: string | null; tense: string | null; transition?: string | null; metal?: string | null }
 export const MUSIC_ASSETS: MusicAssets = {

@@ -1,4 +1,5 @@
-/** Narrower upper-climb draft, in the same world coordinates as section one. */
+/** Early upper-corridors draft: narrower ledges, in the same world coordinates as section one.
+ * Kept for reference and tests; the game runs on `SECTIONS` from index.ts. */
 import type { SectionData } from '../../shared/contracts/content';
 
 export const SECTION_TWO_DRAFT: SectionData = {
