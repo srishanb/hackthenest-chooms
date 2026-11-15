@@ -12,8 +12,9 @@ its owner approves it. Written Sat 14 Nov 2026, 11:15 PM Eastern. Feature freeze
 3. If it is wrong, edit the plan first (or tell your agent what to change), then approve it.
 4. Tell your agent: "the plan is approved, claim the first task". Each sub-phase (P4.1, P4.2, …) is one claimable task.
 
-Pull requests need no human review: the reviewer agent merges them (AGENTS.md, "Review and merge"). Only this
-approval is yours.
+Pull requests need no human review: the reviewer agent merges them (AGENTS.md, "Review and merge"). Since Decision
+D-22 an approval is a recommendation: a pull request is held only if it breaks something or goes against the ethos
+of the game. Approving your plan is still how you tell agents what you want built.
 
 ## The plans
 
