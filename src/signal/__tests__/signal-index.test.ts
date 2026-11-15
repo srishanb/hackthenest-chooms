@@ -88,6 +88,26 @@ describe('createSignal', () => {
     expect(events.filter((type) => type === 'signal_lost')).toHaveLength(1);
   });
 
+  it('a failed connect (picker cancelled) keeps the running source and its label', async () => {
+    const createAdapter = (() => ({
+      connect: async () => {
+        throw Object.assign(new Error('chooser closed'), { name: 'NotFoundError' });
+      },
+      disconnect: vi.fn(),
+      triggerSimEvent: vi.fn(),
+    })) as unknown as NonNullable<SignalDeps['live']>['createAdapter'];
+    const signal = createSignal(createEventBus(), SIGNAL_CONFIG, {
+      search: '?source=replay&replay=run.jsonl&algo=passthrough-v0',
+      fetchText: async () => recordingText(),
+      live: { createAdapter, navigatorLike: { bluetooth: {} } },
+    });
+    await vi.advanceTimersByTimeAsync(500);
+    await expect(signal.control.connect('LIVE_EEG')).rejects.toThrow(/No board was chosen/);
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(signal.reader.getState().valid).toBe(true); // the replay kept playing
+    expect(signal.reader.getState().source).toBe('REPLAY');
+  });
+
   it('calibrate() runs for the configured time and emits calibration_result', async () => {
     const bus = createEventBus();
     const results: boolean[] = [];
