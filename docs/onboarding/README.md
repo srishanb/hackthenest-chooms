@@ -13,14 +13,16 @@ Rules every agent follows are in [AGENTS.md](../../AGENTS.md); the schedule and 
 3. The agent builds, runs `npm run check`, and writes an after-job report in `docs/agent-reports/`.
 4. The PR is marked ready. The reviewer agent (an Opus 5.5 session) reviews it, runs the checks, and squash-merges it or comments with what to fix. No human review is needed.
 
-You approve plans for your own lane. Pull requests need no human review: the reviewer agent merges them.
+You approve plans for your own lane. Pull requests need no human review: the reviewer agent merges them. Since
+Decision D-22 a plan and its approval are guidance, not a gate: a pull request is held only if it breaks something or
+goes against the game's rules (see [AGENTS.md](../../AGENTS.md)).
 
 ## Commands (Git Bash on Windows)
 
 | Command | Does |
 |---|---|
 | `scripts/wt.sh new <agent> <task>` | New worktree `../wt-<agent>-<task>`, branch `<agent>/<task>`. `<agent>` = `claude`, `codex`, `ag`, or your name |
-| `scripts/wt.sh sync` | Rebase your branch onto `origin/main`. Run before a new task |
+| `scripts/wt.sh sync` | Merge `origin/main` into your branch (never a rebase). Run before a new task |
 | `scripts/wt.sh ls` / `rm <agent> <task>` | List or remove worktrees |
 | `npm ci` | Install exact dependencies (once per worktree) |
 | `npm run check` | Type check and unit tests. Must pass before a PR |
@@ -36,11 +38,12 @@ One agent, one worktree. Never edit another `wt-*` folder or `codebase/`. Put ke
 | Codex | `AGENTS.md` |
 | Antigravity | `AGENTS.md` and `GEMINI.md` (which points to `AGENTS.md`) |
 
-Current assignment (humans may reassign): Claude Code on Opus 5.5, medium effort, does integration and sensitive
-work. The Codex instance takes the P1 stages (agent B in `docs/plans/P1.md`, which is in [PR 5](https://github.com/srishanb/hackthenest-chooms/pull/5) until Srishan approves and merges it). The Antigravity instance takes the P1 tools
-(agent C in the same plan). Pick whichever tool is free for UI, content and game tasks.
+Pick whichever tool is free. Check [STATUS.md](../STATUS.md) and the open pull requests first so you do not duplicate work.
 
 ## Start prompts (copy, fill in the angle brackets)
+
+These prompts take the careful path (plan, then wait for approval). Since Decision D-22 the wait is optional: if you
+want the agent to build straight away, delete the "STOP" sentence.
 
 Claude Code:
 ```

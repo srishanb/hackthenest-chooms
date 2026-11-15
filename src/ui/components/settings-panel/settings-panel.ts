@@ -7,13 +7,14 @@ import { CAPTION_SCALE_RANGE, validateSettings } from '../../settings-store';
 import { t, type StringKey } from '../../strings';
 import type { UiComponent } from '../../types';
 import { createUiActions } from '../../ui-actions';
+import { mountSignalPresetsControl } from '../signal-presets/signal-presets';
 import { mountNarratorVoiceControl } from './narrator-voice-control';
 import { remapKey } from './settings-editor';
 import '../../theme/menus.css';
 export const settingsPanel: UiComponent = {
   id: 'settings-panel', visibleIn: ['paused', 'menu'],
-  mount(root, { stores, bus, actions = createUiActions() }) {
-    const panel = document.createElement('section'); panel.className = 'menu-panel';
+  mount(root, { stores, bus, signal, actions = createUiActions() }) {
+    const panel = document.createElement('section'); panel.className = 'menu-panel settings-panel';
     panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true');
     panel.setAttribute('aria-label', t('menu.settings'));
     const title = document.createElement('h2'); title.textContent = t('menu.settings'); panel.append(title);
@@ -36,6 +37,7 @@ export const settingsPanel: UiComponent = {
     const removeNarratorVoices = mountNarratorVoiceControl(panel, actions.settingsOpen, bus);
     range('settings.captionSize', CAPTION_SCALE_RANGE.min, CAPTION_SCALE_RANGE.max, 0.05,
       (s) => s.captions.scale, (s, scale) => ({ ...s, captions: { ...s.captions, scale } }));
+    const removeSignalPresets = mountSignalPresetsControl(panel, signal);
     const removeForestPreview = mountForestPreview(panel);
     range('settings.effects', 0, 1, 0.05, (s) => s.effectStrength, (s, effectStrength) => ({ ...s, effectStrength }));
     function checkbox(labelKey: StringKey, read: (s: Settings) => boolean, write: (s: Settings, value: boolean) => Settings): void {
@@ -92,6 +94,6 @@ export const settingsPanel: UiComponent = {
       if (open) queueMicrotask(() => { if (panel.isConnected && !panel.hidden) panel.querySelector<HTMLElement>('input')?.focus(); });
     });
     render();
-    return () => { removeForestPreview(); removeNarratorVoices(); window.removeEventListener('keydown', onKey, true); offSettings(); offSnapshot(); offActions(); panel.remove(); };
+    return () => { removeSignalPresets(); removeForestPreview(); removeNarratorVoices(); window.removeEventListener('keydown', onKey, true); offSettings(); offSnapshot(); offActions(); panel.remove(); };
   },
 };

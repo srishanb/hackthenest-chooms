@@ -21,6 +21,7 @@ import { pauseMenu } from './components/pause-menu/pause-menu';
 import { settingsPanel } from './components/settings-panel/settings-panel';
 import { startMenu } from './components/start-menu/start-menu';
 import { sourceBadge } from './components/source-badge/source-badge';
+import './theme/fonts.css';
 import './theme/tokens.css';
 import './theme/layout.css';
 import './theme/glass.css';

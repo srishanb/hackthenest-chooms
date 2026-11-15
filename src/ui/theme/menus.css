@@ -4,18 +4,21 @@
   max-width: var(--panel-max-width); box-sizing: border-box;
   background: var(--color-panel); color: var(--color-text);
   border: 1px solid var(--color-panel-border); border-radius: var(--radius);
-  box-shadow: var(--panel-shadow); border-top: 3px solid var(--color-accent);
+  box-shadow: var(--panel-shadow); border-top: 2px solid var(--color-accent);
+  background-image: linear-gradient(135deg, #20334533, transparent 42%),
+    radial-gradient(ellipse at 50% 0, #d69b3820, transparent 65%);
+  position: relative;
 }
 .menu-panel h2, .menu-panel p { margin: 0; }
 .menu-panel h2 { font-family: var(--font-display); color: var(--color-accent); font-weight: 400; }
 .menu-panel button, .menu-panel input { font: inherit; }
 .menu-panel button {
   padding: var(--space-2) var(--space-3); color: var(--color-text);
-  background: var(--color-bg); border: 1px solid var(--color-panel-border);
+  background: linear-gradient(110deg, #152130, #0c121d 68%); border: 1px solid var(--color-panel-border);
   border-radius: var(--radius); cursor: pointer;
   min-height: 40px; transition: background-color 120ms ease;
 }
-.menu-panel button:hover, .menu-panel button:focus-visible { background: var(--color-hover); border-color: var(--color-accent); }
+.menu-panel button:hover, .menu-panel button:focus-visible { background: linear-gradient(110deg, #293847, #101722 68%); border-color: var(--color-accent); }
 .menu-panel fieldset { background: var(--color-inset); }
 .menu-panel legend { color: var(--color-accent); }
 .menu-row { justify-content: space-between; line-height: 1.6; }
@@ -27,13 +30,14 @@
 .menu-row output { color: var(--color-accent); font-family: var(--font-mono); }
 /* Reference panels retain the existing settings and keyboard focus behavior. */
 .ui-icon { width: 24px; height: 24px; flex: 0 0 auto; vertical-align: middle; }
-.menu-panel { border: 2px solid var(--color-panel-border); padding: clamp(20px, 4vw, 40px); gap: var(--space-3); }
-.menu-panel h2 { text-align: center; font-size: clamp(24px, 4vw, 34px); font-weight: 700; color: var(--color-text); margin-bottom: var(--space-3); }
-.menu-panel h2::before, .menu-panel h2::after { content: '—'; padding: 0 var(--space-3); color: var(--color-text-dim); }
-.menu-panel button { min-height: 46px; border: 2px solid var(--color-panel-border); display: flex; align-items: center; justify-content: center; gap: var(--space-3); transition: background 120ms ease, box-shadow 120ms ease; }
+.menu-panel { border: 1px solid var(--color-panel-border); padding: clamp(20px, 4vw, 40px); gap: var(--space-3); }
+.menu-panel h2 { text-align: center; font-family: var(--font-display); font-size: clamp(24px, 4vw, 34px); font-weight: 600; color: var(--color-text); margin-bottom: var(--space-3); letter-spacing: .04em; }
+.menu-panel h2::before, .menu-panel h2::after { content: '✦'; padding: 0 var(--space-3); color: var(--color-accent); font-family: var(--font-ui); font-size: .5em; vertical-align: middle; }
+.menu-panel button { min-height: 46px; border: 1px solid var(--color-panel-border); display: flex; align-items: center; justify-content: center; gap: var(--space-3); transition: background 140ms ease, box-shadow 140ms ease, transform 140ms ease; }
 .menu-panel button:hover, .menu-panel button:focus-visible, .menu-panel .menu-primary { color: var(--color-accent); border-color: var(--color-accent); box-shadow: var(--gold-glow); background: var(--color-hover); }
 .menu-panel button:disabled { opacity: .45; cursor: default; box-shadow: none; border-color: var(--color-panel-border); }
 .pause-menu { width: min(420px, 92vw); }
+.pause-menu, .settings-panel { backdrop-filter: blur(14px); }
 .pause-menu small { color: var(--color-text-dim); text-align: center; line-height: 1.5; }
 .menu-panel .menu-tertiary { border: 0; min-height: 30px; font-size: var(--text-xs); background: transparent; box-shadow: none; }
 #app:has(#ui[data-phase='paused']) #game { filter: blur(3px) brightness(.48); }
@@ -43,3 +47,8 @@
 .narrator-voice-control select { font: inherit; min-width: 0; max-width: 100%; color: var(--color-text); background: var(--color-inset); border: 1px solid var(--color-panel-border); padding: var(--space-2); }
 .narrator-voice-control { display: grid !important; }
 .narrator-voice-control small { color: var(--color-text-dim); }
+#ui[data-phase='menu']::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 52%, transparent 10%, #070b12a8 82%), linear-gradient(90deg, #09121c55, transparent 35%, #09121c55); }
+.menu-panel::before, .menu-panel::after { content: ''; position: absolute; width: 28px; height: 28px; pointer-events: none; }
+.menu-panel::before { top: 7px; left: 7px; border-top: 1px solid var(--color-accent); border-left: 1px solid var(--color-accent); }
+.menu-panel::after { right: 7px; bottom: 7px; border-right: 1px solid var(--color-accent); border-bottom: 1px solid var(--color-accent); }
+@media (prefers-reduced-motion: no-preference) { .menu-panel button:hover { transform: translateY(-1px); } }

@@ -6,18 +6,21 @@
  * lane touches a device, a frame or the SDK.
  *
  * Source and algorithm come from the URL (`?source=sim|replay|live`, `?algo=`, `?mode=fixed`,
- * `?replay=`), see url-params.ts. `?source=live` starts nothing: the Connect Octopus 16 button
+ * `?replay=`, `?preset=`), see url-params.ts. Replay presets (built-in or saved) are chosen at runtime through `presets`. `?source=live` starts nothing: the Connect Octopus 16 button
  * calls `control.connect('LIVE_EEG')` from a click. The pipeline publishes about 12 times a second.
  */
 import type { ComposureState, InputSourceKind } from '../shared/contracts/composure';
 import type { SignalConfig } from '../shared/contracts/config';
 import type { EventBus } from '../shared/contracts/events';
 import type { SignalHandle } from '../shared/contracts/signal-api';
+import type { SourceChoice } from '../shared/contracts/signal-api';
+import type { KeyValueStorage } from '../shared/safe-storage';
 import type { BandFrame, Source } from '../shared/contracts/signal-internal';
 import { ALGORITHMS, resolveAlgorithm } from './algorithms/registry';
 import { createPipeline } from './pipeline';
 import { createRecorder } from './recorder';
 import { parseRecording } from './sources/recording-format';
+import { createPresetController } from './presets/controller';
 import { createPiEEGSource, type PiEEGSourceDeps } from './sources/pieeg-source';
 import { createReplaySource } from './sources/replay-source';
 import { createSimSource } from './sources/sim-source';
@@ -32,6 +35,8 @@ export interface SignalDeps {
   fetchText?: (url: string) => Promise<string>;
   /** Replaces the live board source's adapter and `navigator`. For tests. */
   live?: Pick<PiEEGSourceDeps, 'createAdapter' | 'navigatorLike'>;
+  /** Where saved presets are kept. Omit for none (saving then reports a readable error). */
+  storage?: KeyValueStorage;
 }
 
 const defaultFetchText = async (url: string): Promise<string> => {
@@ -126,7 +131,24 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
 
   const startSim = (): Promise<void> => startSource(createSimSource({ config, onError: (error) => console.error('[signal] simulator error', error) }));
 
+  const startFrames = (frames: BandFrame[], onEnd: () => void): Promise<void> => startSource(createReplaySource({ frames, onEnd }));
+  const initialChoice: SourceChoice = params.preset ? { kind: 'preset', id: params.preset } : startKind === 'LIVE_EEG' ? { kind: 'live' } : startKind === 'REPLAY' ? { kind: 'preset', id: 'url-replay' } : { kind: 'sim' };
+  const presets = createPresetController({
+    fetchText,
+    storage: deps.storage,
+    now,
+    startSim,
+    startLive,
+    startFrames,
+    exportRecording: () => recorder.toJSONL(),
+    getBaselines: () => pipeline.getBaselines(),
+    setBaselines: (baselines) => pipeline.setBaselines(baselines),
+    algo: entry.algorithm.id,
+    initial: initialChoice,
+  });
+
   async function startFromParams(): Promise<void> {
+    if (params.preset) return presets.select({ kind: 'preset', id: params.preset });
     if (params.source === 'replay') return startReplay();
     if (params.source === 'live') return; // wait for the Connect button: Web Bluetooth needs a click
     return startSim();
@@ -170,5 +192,6 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
     },
     getDiagnostics: () => pipeline.getDiagnostics(),
     exportRecording: () => recorder.toJSONL(),
+    presets,
   };
 }

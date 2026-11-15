@@ -1,7 +1,7 @@
 /*
  * Design tokens: every colour, font, size, spacing and layer used by the UI.
  * Component CSS uses only var(--...) from this file, so one edit here restyles everything.
- * Fonts are system fonts on purpose: nothing is fetched from the network.
+ * Local font files keep the interface typography available offline.
  */
 :root {
   --color-bg: #0b1b20;
@@ -41,26 +41,26 @@
 }
 /* Reference palette: midnight glass, pale blue edging and warm lantern gold. */
 :root {
-  --color-bg: #0b121d;
-  --color-panel: #101b2b9c;
-  --color-panel-border: #9db7ca;
-  --color-text: #f3f0df;
-  --color-text-dim: #b8c4cf;
-  --color-accent: #ffda70;
-  --color-hover: #29303a99;
-  --color-inset: #14213288;
+  --color-bg: #080d16;
+  --color-panel: rgba(10, 17, 29, 0.96);
+  --color-panel-border: #687b86;
+  --color-text: #f2ead5;
+  --color-text-dim: #b3b6b3;
+  --color-accent: #e6b85d;
+  --color-hover: #202b36;
+  --color-inset: #111b25;
+  --radius: 3px;
   --font-display: 'Courier New', ui-monospace, monospace;
   --font-ui: 'Courier New', ui-monospace, monospace;
-  --radius: 14px;
-  --panel-shadow: none;
-  --gold-glow: none;
+  --panel-shadow: 0 24px 80px #000b, inset 0 0 54px #182c3c88;
+  --gold-glow: 0 0 8px #e6b85d88, 0 0 28px #c7772e44;
   --hud-corner: clamp(12px, 2vw, 28px);
   --hud-needle: #ffb63f;
-  --overlay-dim: #030a1470;
+  --overlay-dim: #050914a8;
 }
 
 @font-face { font-family: 'Pixelify Sans'; src: url('./fonts/PixelifySans[wght].ttf') format('truetype'); font-style: normal; font-weight: 400 700; font-display: swap; }
-:root { --font-ui: 'Pixelify Sans', ui-monospace, monospace; --font-display: 'Pixelify Sans', ui-monospace, monospace; }
+:root { --font-ui: 'Alegreya Sans SC', 'Pixelify Sans', sans-serif; --font-display: 'IM Fell English SC', 'Pixelify Sans', serif; }
 
 /* Launch-only atmosphere; gameplay colors and layout stay unchanged. */
 :root {

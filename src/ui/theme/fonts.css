@@ -1,0 +1,4 @@
+/* Display and UI fonts (SIL Open Font License, from google/fonts), bundled locally:
+   no network at runtime. A browser downloads only the families a page actually uses. */
+@font-face { font-family: 'IM Fell English SC'; src: url('./fonts/imfellenglishsc/IMFeENsc28P.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Alegreya Sans SC'; src: url('./fonts/alegreyasanssc/AlegreyaSansSC-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }

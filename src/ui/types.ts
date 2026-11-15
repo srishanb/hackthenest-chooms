@@ -18,6 +18,8 @@ export interface UiDeps {
   bus: EventBus;
   stores: Stores;
   signal: SignalHandle;
+  /** Draws the animated candle emblem into a canvas (given by main.ts from the game lane). Returns a stop function. */
+  drawEmblem?: (canvas: HTMLCanvasElement) => () => void;
 }
 
 export interface UiComponent {
