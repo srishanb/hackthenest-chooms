@@ -108,7 +108,7 @@ If even that fails, the game plays fine with no signal: **Use steady light** in 
 - It changes only the lantern, fog and music, and gates the Ember return when resting calibration has passed.
 - It **never changes controls or physics.** The player code does not import the signal contract.
 - Nothing is uploaded. The game needs no network to play.
-- Avoid the words "emotion", "mood" or any health claim when answering questions.
+- Do not describe it as measuring feelings, and make no health claim, when answering questions.
 
 ## Likely judge questions
 
@@ -129,5 +129,5 @@ If even that fails, the game plays fine with no signal: **Use steady light** in 
 - Live board needs desktop Chrome or Edge with Web Bluetooth.
 - Muscle activity and movement affect the signal; it cannot separate them fully.
 - Eye closure is not proof of calm. The calibration screen says so.
-- A replay under `/recordings/` by `?replay=` works only on the dev server; presets work everywhere.
+- `?replay=<file>.jsonl` needs that file under `/recordings/`. The full build copies `recordings/*.jsonl` into `dist/recordings/` (`tools/pipeline/build.mjs`); `src/signal/url-params.ts` still says dev server only (unverified in a browser). Presets work everywhere.
 - That the hosted page runs the latest `main` is unverified here.
