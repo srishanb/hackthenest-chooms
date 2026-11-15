@@ -14,8 +14,10 @@ export interface PlatformData {
   y: number;
   width: number;
   height: number;
-  /** Registry id of the platform type. Only 'static' exists in the foundation. */
+  /** Registry id: static, moving or slippery. */
   type: string;
+  /** Deterministic tutorial motion; distance is the maximum offset from the authored centre. */
+  motion?: { axis: 'x' | 'y'; distance: number; periodMs: number };
 }
 
 /** A rectangular zone (refuge, finish). Centre position and size in world pixels, like `PlatformData`. */
@@ -27,11 +29,14 @@ export interface AreaData {
 }
 
 export interface SectionData {
+  lesson?: 'basics' | 'moving' | 'slippery' | 'wind' | 'finish';
+  /** Authored wind zones; independent of the signal and applied only while airborne. */
+  wind?: Array<AreaData & { accelerationX: number; periodMs: number }>;
   id: string;
   /** Where the player appears in this section. */
   spawn: { x: number; y: number };
   platforms: PlatformData[];
-  /** The safe zone of this section where progress is saved, or null if it has none. */
+  /** Optional rest area; entering never saves or refills an ember. */
   refuge: (AreaData & { id: string }) | null;
   /** The winning zone. Set on the last section only. */
   finish: AreaData | null;

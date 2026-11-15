@@ -22,10 +22,11 @@ affected phases. Removing a row never requires code outside one lane (see PLAN.m
 | MOV-4 | Movement | Consistent physics | EEG never changes gravity, friction, jump strength, speed or steering. Environmental effects follow fixed rules. | Core | P4.1, lane-boundary test |
 | PLT-1 | Platforming | Vertical climb | Ascend an authored sequence of increasingly difficult sections. | Core | P4.2, P8.2 |
 | PLT-2 | Platforming | Stationary platforms | The foundation of the climb. | Core | P4.2 |
-| PLT-3 | Platforming | Moving platforms | Predictable, visible cycles independent of EEG. | Expansion | P11 |
+| COL-1 | Exploration | Collectible wax | Randomly choose 1–3 optional gold drops per tutorial run, on safe stationary ledges. Only the next uncollected drop is active or visible. Each gives a capped, 10-second wider lantern glow and a pickup pulse; pickups refresh rather than stack. HUD shows the collection goal. Selection and pickups persist across reloads; a new run rerolls. Pause/recovery freeze timers and light stays fixed while airborne. No physics or EEG-dependent reward changes. | Core presentation | P4 extension |
+| PLT-3 | Platforming | Moving platforms | Tutorial introduces a broad green shuttle on a predictable visible cycle. It carries standing/charging riders; later sections may add harder cycles. Independent of EEG; no ember placement on moving ledges. | Expansion | P4 tutorial preview, P11 extension |
 | PLT-4 | Platforming | Disappearing platforms | Clear warning before disappearing on fixed cycles; introduced above catch platforms. | Expansion | P11 |
-| PLT-5 | Platforming | Wind section | Visible direction cues and predictable gusts in a dedicated section; independent of EEG. | Expansion | P11 |
-| PLT-6 | Platforming | Slippery surfaces | Distinct-looking surfaces with consistent reduced friction. | Expansion | P11 |
+| PLT-5 | Platforming | Wind section | Tutorial introduces a marked zone with rightward arrows and mild, bounded airborne gusts. Grounded players are unaffected. Fixed cycles independent of EEG; later courses may add harder sections. | Expansion | P4 tutorial preview, P11 extension |
+| PLT-6 | Platforming | Slippery surfaces | Tutorial introduces a blue icy shelf: slower acceleration and sliding after release. Charging stops drift. No ember placement on ice; broad normal ledges catch misses. Later courses may expand the mechanic. | Expansion | P4 tutorial preview, P11 extension |
 | FAL-1 | Falling | No death system | Missed jumps lose height. No health bar, lives or death screen. | Core | P4.3 |
 | LAN-1 | Lantern | EEG-driven intensity | A personalised EEG feature controls environmental intensity. Not presented as verified stress detection. | Core | P1, P5.1 |
 | LAN-2 | Lantern | Adaptive light radius | Higher intensity reduces distant illumination; lower restores it. No fuel depletion. | Core | P5.2 |
@@ -64,4 +65,4 @@ affected phases. Removing a row never requires code outside one lane (see PLAN.m
 | DIA-2 | Diagnostics | Debug overlay | Feature value, quality, sample age, intensity, thresholds, ember progress. | Core | P1.6 |
 | END-1 | Completion | Reach the finish | Win by completing the physical climb, independent of physiological performance. | Core | P4.5 |
 
-Counts (48 rows): 37 Core, 3 Core presentation, 1 Core production, 1 Core polish, 1 BCI option, 4 Expansion, 1 Polish.
+Counts (49 rows): 37 Core, 4 Core presentation, 1 Core production, 1 Core polish, 1 BCI option, 4 Expansion, 1 Polish.

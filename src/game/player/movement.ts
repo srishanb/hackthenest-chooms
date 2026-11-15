@@ -24,13 +24,17 @@ export function teleportPlayer(x: number, y: number): PlayerState {
 
 const NO_EVENTS: StepEvents = { jumped: null, landed: null };
 
-export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: readonly PlatformBox[], worldWidth: number, config: GameConfig, dtMs: number): { state: PlayerState; events: StepEvents } {
+export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: readonly PlatformBox[], worldWidth: number, config: GameConfig, dtMs: number,
+  environment: { windAccelerationX?: number } = {}): { state: PlayerState; events: StepEvents } {
   const dt = dtMs / 1000;
   const { width, height } = config.player;
   const dir = direction(input);
   let { x, y, vx, vy, grounded, platformId, charging, chargeMs, jumpLatch, launchVx, takeoffBottomY } = state;
   let jumped: StepEvents['jumped'] = null;
   let landed: StepEvents['landed'] = null;
+  let windVx = state.windVx ?? 0;
+  const support = grounded ? platforms.find((platform) => platform.id === platformId) : undefined;
+  if (support) { x += support.dx ?? 0; y += support.dy ?? 0; }
 
   // The latch frees on a release; a press made in the air or at boot is not a fresh press.
   if (!input.jump) jumpLatch = false;
@@ -45,6 +49,7 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
         const charge = charge01(chargeMs, config);
         ({ vx, vy } = launchVelocity(charge, dir, config));
         launchVx = vx;
+        windVx = 0;
         takeoffBottomY = y + height / 2;
         jumped = { charge01: charge };
         grounded = false;
@@ -57,10 +62,17 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
       chargeMs = Math.min(dtMs, config.jump.maxChargeMs);
       vx = 0;
     } else {
-      vx = dir * config.walkSpeed;
+      if (support?.type === 'slippery' && config.surfaces) {
+        const target = dir * config.walkSpeed;
+        if (dir === 0) vx *= Math.exp(-config.surfaces.iceDrag * dt);
+        else vx += Math.max(-config.surfaces.iceAcceleration * dt, Math.min(config.surfaces.iceAcceleration * dt, target - vx));
+      } else vx = dir * config.walkSpeed;
     }
   } else {
-    vx = steeredVx(launchVx, dir, config);
+    const maxWind = config.surfaces?.maxWindSpeed ?? 0;
+    windVx = Math.max(-maxWind, Math.min(maxWind,
+      (windVx + (environment.windAccelerationX ?? 0) * dt) * Math.exp(-(config.surfaces?.windDecay ?? 0) * dt)));
+    vx = steeredVx(launchVx, dir, config) + windVx;
   }
 
   const prevBottom = y + height / 2;
@@ -75,6 +87,7 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
       grounded = false;
       platformId = null;
       launchVx = vx;
+      windVx = 0;
       takeoffBottomY = prevBottom;
     }
   }
@@ -88,6 +101,7 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
       y = top - height / 2;
       vy = 0;
       vx = 0;
+      windVx = 0;
       grounded = true;
       platformId = platform.id;
       landed = { platformId: platform.id, fallHeightPx: Math.max(0, top - takeoffBottomY) };
@@ -96,6 +110,6 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
     }
   }
 
-  const next: PlayerState = { x, y, vx, vy, grounded, platformId, charging, chargeMs, jumpLatch, launchVx, takeoffBottomY };
+  const next: PlayerState = { x, y, vx, vy, grounded, platformId, charging, chargeMs, jumpLatch, launchVx, takeoffBottomY, windVx };
   return { state: next, events: jumped || landed ? { jumped, landed } : NO_EVENTS };
 }

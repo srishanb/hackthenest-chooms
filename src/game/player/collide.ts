@@ -23,7 +23,8 @@ export function findLanding(platforms: readonly PlatformBox[], bodyX: number, bo
   let best: PlatformBox | null = null;
   for (const platform of platforms) {
     const top = platformTop(platform);
-    if (top < prevBottom - EDGE_EPSILON || top > newBottom + EDGE_EPSILON) continue;
+    const previousTop = top - (platform.dy ?? 0);
+    if (previousTop < prevBottom - EDGE_EPSILON || top > newBottom + EDGE_EPSILON) continue;
     if (!overlapsX(bodyX, bodyWidth, platform)) continue;
     if (best === null || top < platformTop(best)) best = platform;
   }

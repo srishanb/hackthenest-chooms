@@ -8,6 +8,7 @@
  */
 
 export type GameEvent =
+  | { type: 'wax_collected'; id: string; x: number; y: number; collected: number; total: number }
   | { type: 'jump'; charge01: number }
   | { type: 'land'; platformId: string; fallHeightPx: number }
   | { type: 'fall'; heightPx: number; big: boolean }
