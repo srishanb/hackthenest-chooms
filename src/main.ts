@@ -56,7 +56,7 @@ const stores: Stores = {
 };
 
 // The signal lane is the only one that will ever touch a device.
-const signal = createSignal(bus, SIGNAL_CONFIG);
+const signal = createSignal(bus, SIGNAL_CONFIG, { storage: browserStorage });
 
 // The game gets the read-only signal, never the control surface or a device.
 createGame({

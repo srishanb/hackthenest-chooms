@@ -41,6 +41,10 @@ export interface Pipeline {
   /** `ingest` then `step`. */
   process(frame: BandFrame, nowMs: number): ComposureState;
   setMode(mode: SignalMode): void;
+  /** The baselines in force; a saved preset stores these so it replays on the same scale. */
+  getBaselines(): Baselines;
+  /** Replace the baselines (a preset brings its own; null entries clear one). Runs through the same scoring as a calibration. */
+  setBaselines(next: Baselines): void;
   getState(): ComposureState;
   getDiagnostics(): SignalDiagnostics;
   calibrationDurationMs(step: CalibrationStep): number;
@@ -180,6 +184,10 @@ export function createPipeline(deps: PipelineDeps): Pipeline {
       };
     },
     calibrationDurationMs,
+    getBaselines: () => ({ active: baselines.active && { ...baselines.active }, resting: baselines.resting && { ...baselines.resting } }),
+    setBaselines(next) {
+      baselines = { active: next.active && { ...next.active }, resting: next.resting && { ...next.resting } };
+    },
     startCalibration(stepName, nowMs) {
       calibration = { step: stepName, startMs: nowMs, low: createCalibrationCollector(), high: createCalibrationCollector() };
     },
