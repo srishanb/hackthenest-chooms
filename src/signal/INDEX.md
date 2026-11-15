@@ -4,7 +4,7 @@ Owner: Srishan. Search here before adding a function.
 
 | Export | File | What it does |
 |---|---|---|
-| `createSignal(bus, config, deps?)` | `index.ts` | Returns the `SignalHandle` (reader, control, diagnostics): the real pipeline, fed by a sim, replay or live-board source chosen from the URL params, published at 12 Hz. `deps` (`search`, `now`, `fetchText`, `live`) is for tests. |
+| `createSignal(bus, config, deps?)`, `SignalDeps` | `index.ts` | Returns the `SignalHandle` (reader, control, diagnostics): the real pipeline, fed by a sim, replay or live-board source chosen from the URL params, published at 12 Hz. `deps` (`search`, `now`, `fetchText`, `live`) is for tests. |
 | `getPiEEGConstructor()`, `PiEEG*` types | `vendor/pieeg-types.ts` | Typed subset of the vendored SDK. The only place the global `PiEEG` is read. |
 | `createPiEEGAdapter(config, callbacks)`, `toBandFrame(...)` | `sources/pieeg-adapter.ts` | SDK to `BandFrame`. `connect('simulator')` needs no click; `connect('ble')` must run in a click handler. |
 | `createPiEEGSource(deps)` | `sources/pieeg-source.ts` | `Source` for the real board over `connect('ble')`. Starts in the click handler; readable errors for no Web Bluetooth or a cancelled picker; an SDK error or disconnect ends it once. |
@@ -13,12 +13,12 @@ Owner: Srishan. Search here before adding a function.
 | `createHeader`, `serializeRecording`, `parseRecording`, `Recording`, `RecordingHeader` | `sources/recording-format.ts` | JSONL recording format (`header` + `frame` lines; unknown types skipped). |
 | `createPipeline(deps)`, `Pipeline`, `PipelineDeps` | `pipeline.ts` | Wires preprocess, features, quality, scorer, gates and smoother into `ingest(frame, now)` / `step(now)`; also calibration and mode control. |
 | `ALGORITHMS`, `resolveAlgorithm`, `listAlgorithmIds`, `AlgorithmEntry` | `algorithms/registry.ts` | Algorithm id to entry map. Unknown id falls back to the default with a console warning. `needsCalibration` lets an algorithm be valid uncalibrated. |
-| `intensityV1`, `intensityV2`, `passthroughV0` | `algorithms/intensity-v1.ts`, `algorithms/intensity-v2.ts`, `algorithms/passthrough-v0.ts` | v1: beta share (cannot separate clench on the simulator). v2 (default): log absolute 13-30 Hz power, mostly muscle. passthrough: raw, no calibration. |
+| `intensityV1`, `intensityV2`, `extractFeaturesV2`, `passthroughV0` | `algorithms/intensity-v1.ts`, `algorithms/intensity-v2.ts` (also `extractFeaturesV2`), `algorithms/passthrough-v0.ts` | v1: beta share (cannot separate clench on the simulator). v2 (default): log absolute 13-30 Hz power, mostly muscle. passthrough: raw, no calibration. |
 | `parseSignalUrlParams` | `url-params.ts` | Reads `?source`, `?algo`, `?mode=fixed`, `?replay`, `?preset`. |
-| `createPresetController` | `presets/controller.ts` | Runtime source switch (simulator, live, replay preset), loop, save/import/export/delete. Returned as `SignalHandle.presets`. |
-| `parsePreset`, `serializePreset`, `compactFrames`, `shiftFrames` | `presets/preset-file.ts` | Recording plus a `baselines` line; moves frames onto the current clock. |
-| `createPresetStore` | `presets/preset-store.ts` | Saved presets in browser storage (`lighten.presets.v1`, at most 4). |
-| `buildPresets`, `presetBaselines` | `tools/presets/presets.ts` | The deterministic built-in presets in `public/recordings/presets/` (`npm run presets:build`). |
+| `createPresetController`, `PRESET_BASE_URL`, `SAVE_KEEP_MS`, `PresetControllerDeps` | `presets/controller.ts` | Runtime source switch (simulator, live, replay preset), loop, save/import/export/delete. Returned as `SignalHandle.presets`. |
+| `parsePreset`, `serializePreset`, `durationMs`, `compactFrames`, `shiftFrames`, `PresetData` | `presets/preset-file.ts` | Recording plus a `baselines` line; moves frames onto the current clock. |
+| `createPresetStore`, `cleanLabel`, `PRESET_STORAGE_KEY`, `MAX_SAVED_PRESETS`, `SavedPreset`, `PresetStore` | `presets/preset-store.ts` | Saved presets in browser storage (`lighten.presets.v1`, at most 4); `cleanLabel` tidies a preset name. |
+| `buildPresets`, `presetBaselines`, `PRESET_SPECS` | `tools/presets/presets.ts` (repo root `tools/`, not under `src/signal/`) | The deterministic built-in presets in `public/recordings/presets/` (`npm run presets:build`). |
 | `Pipeline.getBaselines`, `setBaselines` | `pipeline.ts` | A preset brings its own baselines and the old ones return when you leave it. |
 | `smooth` | `stages/smoother.ts` | Time-based exponential smoothing. |
 | `normalise`, `scoreWithBaselines` | `stages/scorer.ts` | Feature to 0..1 against a baseline; neutral defaults before calibration. |
@@ -26,7 +26,7 @@ Owner: Srishan. Search here before adding a function.
 | `preprocess`, `isValidBandFrame` | `stages/preprocess.ts` | Frame sanity checks and cleanup (P1.2). |
 | `extractFeatures` | `stages/features.ts` | `BandFrame` to features (P1.2). |
 | `estimateQuality` | `stages/quality.ts` | Signal quality 0..1 (P1.2). |
-| `calibrateBaseline`, `createCalibrationCollector`, `stepCalibrationCollector`, `quantile` | `stages/calibration.ts` | Baseline calibration windows and the quantile helper (P1.3). |
+| `calibrateBaseline`, `createCalibrationCollector`, `stepCalibrationCollector`, `quantile`, `MIN_WINDOW_SAMPLES`, `MAX_HALF_DIFF_RATIO`, `MIN_SEPARATION_RATIO`, `ACTIVE_HIGH_QUANTILE` | `stages/calibration.ts` | Baseline calibration windows and the quantile helper (P1.3). |
 | `createRecorder(options)`, `downloadRecording`, `Recorder`, `RecorderOptions` | `recorder.ts` | In-memory JSONL recorder (band frames, states, bus events; never raw EEG samples). `createSignal` feeds it and exposes `exportRecording()`. |
 | `CHECKPOINT_PLAN`, `summariseCheckpoint`, `appendLabels`, `CHECKPOINT_PASS_RATIO` | `../ui/components/debug-overlay/checkpoint.ts` | The guided eyes-open / eyes-closed checkpoint used by the debug overlay (signal lane owns the overlay). |
 

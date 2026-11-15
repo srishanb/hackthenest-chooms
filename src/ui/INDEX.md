@@ -20,6 +20,11 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 | `finishScreen`, `finishScreenVisible`, `restartsOnKey` | `components/finish-screen/` | Shown in phase 'finished': Play again (button or Enter) emits `run_restart`. |
 | `pauseMenu`, `settingsPanel` | `components/pause-menu/`, `components/settings-panel/` | Pause/resume bus controls and live settings. The start menu (below) is the launch screen. |
 | `createUiActions`, `UiActions` | `ui-actions.ts` | UI-local settings, guide and calibration navigation; hides unavailable menu routes. |
+| `icon`, `IconName` | `icons.ts` | Local SVG interface symbols (flame, height, wax, trophy, pause, play, flag, settings, home). |
+| `mountSignalPresetsControl` | `components/signal-presets/signal-presets.ts` | Settings control for the signal presets; uses only `SignalHandle.presets`. |
+| `mountForestPreview` | `components/source-badge/forest-preview.ts` | Opt-in development-only forest corruption preview; absent in production. |
+| `keyLabel` | `components/world-tutorial/layout.ts` | Turns a key code into the label shown in the control reminder. |
+| `CAPTION_MIN_MS`, `CAPTION_MAX_MS` | `components/captions/captions-state.ts` | Bounds for how long a caption stays on screen. |
 | `menuButton`, `trapMenuFocus` | `menu-dom.ts` | Shared menu button and focus-trap helpers. |
 | `CHECKPOINT_PLAN`, `summariseCheckpoint` | `components/debug-overlay/checkpoint.ts` | Guided eyes-open / eyes-closed checkpoint (signal lane). |
 | `remapKey`, `remapAllowed` | `components/settings-panel/settings-editor.ts` | Swap existing bindings on a duplicate choice; refuse remaps (or swaps) onto the fixed KeyE ember key or the KeyP/Escape pause keys. |
@@ -28,6 +33,7 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 | `createCredits` | `components/start-menu/credits.ts` | Menu-only credit card drawn from actual project/asset attribution. |
 | `startMenuVisible`, `startsOnKey` | `components/start-menu/start-menu-state.ts` | Pure show/hide and Enter-to-play rules. |
 | `hud` | `components/hud/hud.ts` | Ember status, running wax count/boost timer/pickup feedback, stage progress, signal quality and qualitative signal intensity. |
+| `recoveryHintKey` | `components/hud/hud-state.ts` | Picks the recovery hint string key, depending on whether a checkpoint exists. |
 | `hudState`, `hudEssentials`, `persistsBest`, `waxToastKey`, `percent`, `intensityLabel` | `components/hud/hud-state.ts` | Presentation mapping and bounded percentage formatting; `hudEssentials` keeps recovery progress, ember cooldown and finish-blocking lessons visible with stage details off; `persistsBest` skips saving the best height on `?editorTest` runs; `waxToastKey` picks the suppressed wax toast with the fuel refill's own threshold. |
 | `calibration`, `createCueTone` | `components/calibration/` | Pause-entry modal, timed instructions, source connect, safe fallback and local sound cues. |
 | `createCalibrationFlow`, `stepFlow`, `messageKey`, `preferCalibrationFallback`, flow types | `components/calibration/calibration-flow.ts` | Pure calibration navigation, timed halfway instructions, ordered commands and reviewed failure wording. Screens are P6.1.2. |
