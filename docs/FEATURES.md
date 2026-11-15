@@ -28,7 +28,7 @@ affected phases. Removing a row never requires code outside one lane (see PLAN.m
 | PLT-5 | Platforming | Wind stages | Tutorial previews mild wind. Windy and Snowy and Windy stages use stronger bounded airborne gusts, directional arrows and gradual zone-edge fades. Grounded players are unaffected; fixed cycles independent of EEG. | Expansion | P4 tutorial preview, P11 extension |
 | PLT-6 | Platforming | Snow and slippery surfaces | Tutorial previews ice; Snow and Snowy and Windy ramp authored ice strength, changing acceleration and stopping distance. Charging stops drift. Stationary ordinary and slippery ledges permit manual ember placement. Snow particles gradually blend into the existing forest before stage boundaries; no automatic saves. | Expansion | P4 tutorial preview, P11 extension |
 | FAL-1 | Falling | No death system | Missed jumps lose height. No health bar, lives or death screen. | Core | P4.3 |
-| LAN-1 | Lantern | EEG-driven intensity | A personalised EEG feature controls environmental intensity. Not presented as verified stress detection. | Core | P1, P5.1 |
+| LAN-1 | Lantern | EEG-driven intensity | A personalised EEG feature controls environmental intensity. Not presented as verified tension detection. | Core | P1, P5.1 |
 | LAN-2 | Lantern | Adaptive light radius | Higher intensity reduces distant illumination; lower restores it. No fuel depletion. | Core | P5.2 |
 | LAN-3 | Lantern | Protected visibility | The current platform, immediate reachable landing edges and nearby hazards stay readable. | Core | P5.2 |
 | LAN-4 | Lantern | Smooth, bounded changes | Gradual transitions within limits. Light radius is fixed from takeoff to landing. | Core | P5.1 |
@@ -91,3 +91,50 @@ as far as the tests and a simulator run show. **Nothing here has been verified o
 | Extra | A simple authored stage editor (`/?editor=1`) and a candle-appearance seed (`?candleSeed=`, dev only) exist. They are not in the list above and do not touch the signal. |
 
 Counts (49 rows): 37 Core, 4 Core presentation, 1 Core production, 1 Core polish, 1 BCI option, 4 Expansion, 1 Polish.
+
+## As built at submission (Sun 15 Nov 2026, 11:30 AM Eastern)
+
+The FINAL table above is unchanged. This section gives one status per feature id for the submitted build, checked
+against `src/` on `origin/main`. Status words: **Built** (matches the row), **Partly built** (part of the row exists),
+**Changed** (built, but differently from the row), **Not built**. It adds to the 8:30 AM section above; where the two
+differ, this one is newer. **Nothing here was verified on a real PiEEG Octopus 16.** The only recording in the repo is
+`recordings/sim-fixture.jsonl`, which is simulated.
+
+| ID | Status | Proof (file) and note |
+|---|---|---|
+| MOV-1, MOV-2 | Built | `src/game/player/movement.ts`, `src/game/player/charge-jump.ts`; test `src/game/__tests__/movement.test.ts`. |
+| MOV-3 | Built | `src/game/player/movement.ts`; test `src/game/__tests__/descent-control.test.ts`. |
+| MOV-4 | Built | `src/game/player/` does not import the composure contract (lane-boundary test). |
+| PLT-1, PLT-2 | Built | `src/game/world/stage-progress.ts`, `src/game/world/section-loader.ts`; tests `stage-progress.test.ts`, `stage-layouts.test.ts`. |
+| PLT-3, PLT-5, PLT-6 | Built | `src/game/world/environment.ts`, `src/game/world/stage-weather.ts`; test `environment.test.ts`. |
+| PLT-4 | Not built | Only `src/game/world/platform-types/static.ts` exists; no disappearing platforms. |
+| COL-1 | Built | `src/game/wax/rewards.ts`, `src/game/candle/wax-ball.ts`; tests `wax.test.ts`, `wax-ball.test.ts`. Wax also refills lantern fuel (see LAN-2). |
+| FAL-1 | Built | `src/game/world/fall-tracker.ts`; test `falling.test.ts`. |
+| LAN-1 | Changed | The light source is the candle flame; the signal sets its radius via `src/config/effects.config.ts`. Described as a composure feature, not verified tension detection. |
+| LAN-2 | Changed | Fuel depletion exists: `src/game/forest/lantern-fuel.ts`, `src/config/lantern-fuel.config.ts`. Owner decision D-25: fuel stays. The row's "No fuel depletion" no longer holds. Fuel affects light radius only. |
+| LAN-3 | Changed | `src/game/effects/outline-fade.ts`, `src/game/effects/protected-visibility.ts`; outlines fade at the edge of the light (test `outline-fade.test.ts`). |
+| LAN-4 | Built | `src/game/effects/effects-engine.ts`; test `effects-engine.test.ts`. |
+| ATM-1 | Partly built | `src/audio/music-layers.ts`, `src/audio/mix-rules.ts`; one ambient loop with a bounded mix, no separate tense stem. |
+| ATM-2 | Changed | `src/game/forest/forest-effects.ts`; effects reverse, but fuel accumulates over play time. |
+| ATM-3 | Built | `src/game/forest/atmosphere.ts`; test `atmosphere.test.ts`. |
+| ATM-4 | Changed | `src/game/forest/corruption-screen.ts`, `src/game/forest/corruption-filter.ts`; bounded shake and glitch filter on the rendered screen, off under reduced motion. |
+| CHK-1, CHK-2, CHK-3 | Built | `src/game/ember/recovery.ts`, `src/game/world/refuge.ts`, `src/game/save.ts`; tests `recovery.test.ts`, `refuge.test.ts`, `save.test.ts`. |
+| EMB-1 to EMB-6, EMB-8, EMB-9 | Built | `src/game/ember/recovery.ts`, `src/ui/components/ember-prompt/`; test `recovery.test.ts`. Tested in the simulator and unit tests only. |
+| EMB-7 | Not built | No eyes-closed interaction exists. |
+| BCI-1 | Partly built | `src/signal/sources/pieeg-source.ts` is written against a fake SDK; `src/signal/__tests__/real-sdk.test.ts` exercises the vendored SDK. Not run against a real board. |
+| BCI-2 | Built | `src/signal/pipeline.ts`, `src/ui/components/calibration/`; test `calibration.test.ts`. |
+| BCI-3, BCI-4 | Built | `src/signal/pipeline.ts`; tests `quality.test.ts`, `pipeline.test.ts`. Real-board behaviour unverified. |
+| BCI-5 | Partly built | Poor signal eases effects to neutral (tested). Whether reconnect and recalibration are offered during a run is unverified. |
+| BCI-6 | Built | `src/signal/pipeline.ts`; test `active-response.test.ts`. |
+| NAR-1 | Changed | `src/audio/narrator/intro-player.ts` plays original intro clips; `src/audio/narrator/moments.ts` adds sparse event-driven requests (for example height steps and low fuel). It never comments on the player's feelings or worth. |
+| NAR-2, NAR-3 | Built | Clips are local files under `public/assets/`; generation tools are in `tools/narrator/`. Human listening review of the clip bank is unverified. |
+| NAR-4 | Built | `src/audio/narrator/level.ts`, `src/ui/components/captions/`. |
+| UX-1 | Built | `src/ui/components/hud/hud.ts`. The stage details card is hidden by default and shown by a Settings toggle (`showStageDetails` in `src/shared/contracts/settings.ts`); decision D-26. |
+| UX-2 | Built | `src/ui/components/settings-panel/settings-panel.ts`, `src/ui/components/pause-menu/`. |
+| UX-3 | Not built | `landingShake` exists in `src/shared/contracts/settings.ts` but no code reads it. |
+| DIA-1 | Built | `src/ui/components/source-badge/`; the simulator is labelled Simulated Input. |
+| DIA-2 | Built | `src/ui/components/debug-overlay/`. |
+| END-1 | Built | `src/game/world/finish.ts`, `src/ui/components/finish-screen/`; test `finish.test.ts`. |
+
+Beyond the list: tension replay presets (`src/signal/presets/`, `src/ui/components/signal-presets/`), a stage editor
+(`src/ui/components/stage-editor/`, `src/game/editor/`) and a Settings voice picker. None changes controls or physics.
