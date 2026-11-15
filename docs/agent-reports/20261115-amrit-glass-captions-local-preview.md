@@ -1,7 +1,7 @@
 # After-job report: glass captions — approved preview
 
 - Agent: Amrit / Codex
-- Branch: amrit/narrator-game-moments; preview was kept local; Amrit approved its push in chat. Follow-up branch/PR will carry the reviewed diff.
+- Branch and PR: amrit/baseline-captions, https://github.com/srishanb/hackthenest-chooms/pull/126. Preview was kept local; Amrit approved its push in chat. Original baseline #96 merged before publication, so this carries only the approved follow-up on current main.
 - Phase: P7.3 local presentation preview.
 - Started and finished: Nov 15, this session.
 
@@ -46,3 +46,5 @@ Amrit requested welcome on the game screen, replacing the just-added separate me
 ## 7. Can a teammate explain this?
 
 Narration now has a translucent caption panel inside the game frame. Long speeches show a few words at a time, and pausing/resuming keeps the active caption chunk. These changes are local until Amrit approves the preview.
+
+Publication validation: carried the approved two commits onto current main (45d7e45, including the newer soundtrack), with no conflicts or audio regeneration. Re-ran npm run check: 527 tests / 83 files and typecheck passed. npm run build passed. Existing narrator lifecycle fixes in PR #124 are a separate task; this follow-up changes only caption offset publication on that player plus UI presentation. No edits made to the other branch.
