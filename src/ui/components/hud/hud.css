@@ -12,4 +12,6 @@
 }
 .hud__status { color: var(--color-text); }
 .hud__prompt { color: var(--color-accent); }
+.hud__wax, .hud__wax-reward { color: var(--color-accent); }
+.hud__lesson { color: var(--color-ok); max-width: var(--panel-max-width); }
 .hud progress { max-width: 100%; accent-color: var(--color-accent); }
