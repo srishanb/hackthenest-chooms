@@ -51,6 +51,7 @@ export function createGame(deps: GameDeps): Phaser.Game {
         sections: deps.sections,
         gameConfig: deps.gameConfig,
         effectsTable: deps.effectsTable,
+        emberConfig: deps.emberConfig,
       }),
     ],
   });
