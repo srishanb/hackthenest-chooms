@@ -13,7 +13,7 @@ Usage: scripts/wt.sh <command> [args]
   new <agent> <task>   create ../wt-<agent>-<task> on branch <agent>/<task>
   ls                   list worktrees
   rm <agent> <task>    remove worktree (branch is kept)
-  sync                 rebase the current branch onto origin/$BASE_BRANCH
+  sync                 merge origin/$BASE_BRANCH into the current branch
 EOF
 }
 
@@ -35,6 +35,7 @@ cmd_new() {
     start="origin/$BASE_BRANCH"
   fi
   git -C "$ROOT" worktree add -b "$branch" "$dir" "$start"
+  git -C "$ROOT" config core.hooksPath .githooks
 
   # Untracked env files are not carried into new worktrees; copy them over.
   (cd "$ROOT" && find . -name '.env*' ! -name '.env.example' \
@@ -62,7 +63,7 @@ cmd_rm() {
 
 cmd_sync() {
   git fetch -q origin "$BASE_BRANCH"
-  git rebase "origin/$BASE_BRANCH"
+  git merge --no-edit "origin/$BASE_BRANCH"
 }
 
 case "${1:-}" in
