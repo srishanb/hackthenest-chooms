@@ -23,6 +23,9 @@ One line per decision. Only the integrator edits this file. A **Decision** was c
 | D-14 | 14 Nov 2026 | Srishan | The g.tec Unicorn headset is removed from the project: it is no longer borrowable. Hardware is the Octopus 16 plus test data (simulator and recordings). |
 | D-15 | 14 Nov 2026 | Srishan | Current priority: reach a state where we can build and test on a real Octopus 16. |
 | D-16 | 14 Nov 2026 | Srishan | One continuous Sonnet 5.5 builder session works through `docs/QUEUE.md` task by task. Queue tasks are approved by the human merge of the queue PR. Every agent claims a task with an empty commit, a pushed branch and a draft PR before building. |
+| D-17 | 14 Nov 2026 | Srishan | Never delete git history: no force pushes, no rebasing pushed commits, no deleting branches or tags. The most important rule in the repo; enforced by a pre-push hook, a Claude Code hook, a workflow and the watcher. GitHub's "delete head branches on merge" setting was turned off. |
+| D-18 | 14 Nov 2026 | Srishan | No manual review for pull requests. Anyone may push to their own branch and open a PR. A reviewer agent (Claude Opus 5.5 session, Remote Control on) reviews and squash-merges every ready PR, comments when it finds issues and notifies Srishan's phone. The GitHub Action no longer reviews or merges; it only runs the checks. Plan approval lines stay human. If the reviewer is down, any teammate may merge by hand after the check passes. |
+| D-19 | 14 Nov 2026 | Srishan | A Sonnet 5.5 bug-hunter session looks for bugs on `main` and fixes each in its own small, tested PR. It is queue task Q-07, a standing task claimed per bug. No features, refactors or rule changes. |
 
 ## Recommendations in force (overrule by adding a Decision row)
 

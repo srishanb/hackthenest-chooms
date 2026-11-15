@@ -22,19 +22,6 @@ import { fileURLToPath } from 'node:url';
 const tool = process.argv[2] ?? 'claude';
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
-/** @param {string[]} args @returns {string} stdout, or '' if git fails */
-function git(args) {
-  try {
-    return execFileSync('git', args, {
-      cwd: scriptDir,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
-  } catch {
-    return '';
-  }
-}
-
 /** @returns {Record<string, unknown>} the hook input JSON, or {} */
 function readInput() {
   if (process.stdin.isTTY) return {};
@@ -42,6 +29,24 @@ function readInput() {
     return JSON.parse(readFileSync(0, 'utf8') || '{}');
   } catch {
     return {};
+  }
+}
+
+const input = readInput();
+// The hook input names the folder the agent works in. The script may live in another checkout
+// (a shared copy in the main repo), so git must run where the agent is, not where the script is.
+const repoDir = typeof input.cwd === 'string' && input.cwd !== '' ? input.cwd : scriptDir;
+
+/** @param {string[]} args @returns {string} stdout, or '' if git fails */
+function git(args) {
+  try {
+    return execFileSync('git', args, {
+      cwd: repoDir,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    return '';
   }
 }
 
@@ -62,7 +67,6 @@ function block(reason) {
 /** @param {string} path */
 const isReport = (path) => /^docs\/agent-reports\/(?!TEMPLATE\.md$).+\.md$/.test(path);
 
-const input = readInput();
 // Already continuing because of a stop hook (Claude Code, Codex), or background work still running (Antigravity).
 if (input.stop_hook_active === true || input.fullyIdle === false) allow();
 

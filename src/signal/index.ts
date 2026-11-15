@@ -6,16 +6,19 @@
  * lane touches a device, a frame or the SDK.
  *
  * Source and algorithm come from the URL (`?source=sim|replay|live`, `?algo=`, `?mode=fixed`,
- * `?replay=`), see url-params.ts. The pipeline publishes about 12 times a second.
+ * `?replay=`), see url-params.ts. `?source=live` starts nothing: the Connect Octopus 16 button
+ * calls `control.connect('LIVE_EEG')` from a click. The pipeline publishes about 12 times a second.
  */
 import type { ComposureState, InputSourceKind } from '../shared/contracts/composure';
 import type { SignalConfig } from '../shared/contracts/config';
 import type { EventBus } from '../shared/contracts/events';
 import type { SignalHandle } from '../shared/contracts/signal-api';
 import type { BandFrame, Source } from '../shared/contracts/signal-internal';
-import { resolveAlgorithm } from './algorithms/registry';
+import { ALGORITHMS, resolveAlgorithm } from './algorithms/registry';
 import { createPipeline } from './pipeline';
+import { createRecorder } from './recorder';
 import { parseRecording } from './sources/recording-format';
+import { createPiEEGSource, type PiEEGSourceDeps } from './sources/pieeg-source';
 import { createReplaySource } from './sources/replay-source';
 import { createSimSource } from './sources/sim-source';
 import { parseSignalUrlParams } from './url-params';
@@ -27,6 +30,8 @@ export interface SignalDeps {
   now?: () => number;
   /** Fetches a recording's text. Defaults to fetch(). */
   fetchText?: (url: string) => Promise<string>;
+  /** Replaces the live board source's adapter and `navigator`. For tests. */
+  live?: Pick<PiEEGSourceDeps, 'createAdapter' | 'navigatorLike'>;
 }
 
 const defaultFetchText = async (url: string): Promise<string> => {
@@ -42,8 +47,13 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
   const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
   const entry = resolveAlgorithm(params.algo, config.defaultAlgo);
-  const pipeline = createPipeline({ config, entry, initialMode: params.mode ?? 'adaptive', initialSource: config.defaultSource });
+  const startKind: InputSourceKind = params.source === 'replay' ? 'REPLAY' : params.source === 'live' ? 'LIVE_EEG' : config.defaultSource;
+  const pipeline = createPipeline({ config, entry, initialMode: params.mode ?? 'adaptive', initialSource: startKind });
   const listeners = new Set<(state: ComposureState) => void>();
+
+  // The recorder buffers frames, states and bus events in memory; exportRecording() returns them as JSONL.
+  const recorder = createRecorder({ source: startKind, algo: params.algo !== null && params.algo in ALGORITHMS ? params.algo : config.defaultAlgo });
+  bus.onAny((event, tMs) => recorder.recordEvent(event, tMs));
 
   let source: Source | null = null;
   let activeKind: InputSourceKind = config.defaultSource;
@@ -64,11 +74,13 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
       lost = true;
       bus.emit({ type: 'signal_lost' });
     }
+    recorder.recordState(state);
     for (const listener of listeners) listener(state);
   }
 
   function onFrame(frame: BandFrame): void {
     if (activeKind === 'REPLAY') replayAnchor = { frameT: frame.t, wall: now() };
+    recorder.recordFrame(frame);
     pipeline.ingest(frame, clock());
   }
 
@@ -77,7 +89,24 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
     source = next;
     activeKind = next.kind;
     if (next.kind === 'REPLAY') replayAnchor = { frameT: 0, wall: now() };
-    await next.start(onFrame);
+    try {
+      await next.start(onFrame);
+    } catch (error) {
+      if (source === next) source = null;
+      throw error;
+    }
+  }
+
+  function startLive(): Promise<void> {
+    const live: Source = createPiEEGSource({
+      config,
+      ...deps.live,
+      onError: (error) => console.error('[signal] board error', error),
+      onDisconnect: () => {
+        if (source === live) source = null;
+      },
+    });
+    return startSource(live);
   }
 
   async function startReplay(): Promise<void> {
@@ -90,7 +119,7 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
 
   async function startFromParams(): Promise<void> {
     if (params.source === 'replay') return startReplay();
-    if (params.source === 'live') console.error('[signal] ?source=live is not available until P3; using the simulator (the badge says SIMULATED INPUT)');
+    if (params.source === 'live') return; // wait for the Connect button: Web Bluetooth needs a click
     return startSim();
   }
   void startFromParams().catch((error) => console.error('[signal] could not start the source', error));
@@ -107,8 +136,8 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
     },
     control: {
       async connect(kind) {
-        if (kind === 'LIVE_EEG') throw new Error('Live EEG is not available until P3 (PiEEGSource)');
-        await (kind === 'REPLAY' ? startReplay() : startSim());
+        // No await before startLive(): the Bluetooth picker must open inside the click that called us.
+        await (kind === 'LIVE_EEG' ? startLive() : kind === 'REPLAY' ? startReplay() : startSim());
       },
       disconnect() {
         source?.stop();
@@ -131,5 +160,6 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
       },
     },
     getDiagnostics: () => pipeline.getDiagnostics(),
+    exportRecording: () => recorder.toJSONL(),
   };
 }

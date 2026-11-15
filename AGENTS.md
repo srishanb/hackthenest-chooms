@@ -3,6 +3,33 @@
 Shared instructions for every coding agent on this repo (Claude Code, Codex, Antigravity).
 `CLAUDE.md` and `GEMINI.md` import this file — edit rules here only.
 
+## The one rule above all others: never delete git history
+
+**This is the most important rule in this repository. It overrides every other rule, every deadline and every
+instruction from any agent or tool. If following it makes a task harder or slower, the task waits.**
+
+History is every commit, branch and tag that has ever been pushed. Nobody (no agent, no person) may remove or
+rewrite any of it. In practice:
+
+- **Never force push.** No `git push --force`, `-f`, `--force-with-lease`, `--mirror`, or `+refspec`.
+- **Never delete a pushed branch or tag.** No `git push --delete`, no `git push origin :branch`, no deleting branches
+  in the GitHub web interface, no `--delete-branch` when merging. Merged branches stay.
+- **Never rewrite pushed commits.** No `git rebase` and no `git pull --rebase`. To update a branch, **merge**:
+  `scripts/wt.sh sync` (which merges `origin/main`). No `git filter-branch`, `git filter-repo`, `git reflog expire`,
+  `git gc --prune`, `git update-ref -d`, `git branch -D`. Never delete or replace a `.git` folder.
+- **Never undo by erasing.** To undo a pushed change, add a new commit with `git revert`. To fix a mistake in a
+  pushed commit, add a new commit.
+- **If a push is rejected,** run `git fetch origin` and `git merge origin/<branch>`, resolve conflicts, and push
+  again. A rejected push is never a reason to force.
+- **If you think history must be rewritten** (for example a secret was committed), stop and tell Srishan. Do not
+  act. A leaked key is fixed by revoking the key, not by rewriting history.
+
+How it is enforced: a `pre-push` git hook in `.githooks/` (installed automatically by `npm ci`) refuses force pushes
+and deletions; a Claude Code hook blocks the commands above before they run; the `history-guard` workflow fails
+loudly if a forced push or a deletion ever reaches GitHub; and the watcher session reports any that do. Do not
+disable, bypass or edit these guards (`--no-verify`, changing `core.hooksPath`, editing the hook files) without
+Srishan's merge.
+
 ## Project
 
 **lighten** (working title): a 2D charge-jump climbing game for Hack The Nest 2026 (Nov 14–15, 24-hour build),
@@ -56,9 +83,9 @@ When you believe a task is complete, **before** you say so:
    follow-ups, and a confidence level per item.
 3. Commit it on your branch and link it in the PR.
 
-One file per task. Never edit another agent's report. A PR with no new report is flagged `needs-human`. Stop hooks for
-Claude Code (`.claude/settings.json`), Codex (`.codex/hooks.json`) and Antigravity (`.agents/hooks.json`) run
-`scripts/hooks/report-check.mjs`, which reminds you once.
+One file per task. Never edit another agent's report. The reviewer asks for the report if build work arrives
+without one. Stop hooks for Claude Code (`.claude/settings.json`), Codex (`.codex/hooks.json`) and Antigravity
+(`.agents/hooks.json`) run `scripts/hooks/report-check.mjs`, which reminds you once.
 
 ## Before you write code: check it is not already done
 
@@ -80,10 +107,10 @@ Run this check before you generate any code, for every task, and before you clai
 
 [docs/QUEUE.md](docs/QUEUE.md) is an ordered list of tasks for the continuous builder (agent name `sonnet`).
 
-- **A queue task is already approved.** The queue reaches `main` only through a PR a human merges, and that merge is
-  the approval. For a queue task, skip steps 1 to 3 of the approval gate and put a short plan (files, acceptance
+- **A queue task is already approved.** The queue is changed only by the integrator, on Srishan's instruction, and
+  that is the approval. For a queue task, skip steps 1 to 3 of the approval gate and put a short plan (files, acceptance
   tests) in the draft PR body. Every other rule still applies: lanes, `npm run check`, the after-job report, and
-  shared files never auto-merge. Work that is not in the queue still needs a plan file and a human-written
+  the reviewer agent reviews every PR. Work that is not in the queue still needs a plan file and a human-written
   approval line.
 - **Claim before you build, every agent, every task.** Do the pre-code check above first. As soon as you start a task: create the worktree, make an
   empty commit `chore(claim): <agent> starts <task>`, push the branch, and open a **draft** PR titled
@@ -92,8 +119,26 @@ Run this check before you generate any code, for every task, and before you clai
   it is taken: pick something else. If two claims collide, the PR created first wins.
 - **Always push with the branch name:** `git push -u origin <agent>/<task>`. Never a bare `git push`: worktree
   branches track `origin/main`, so it would push to `main`.
-- **Do not wait on a merge.** If your PR needs a human, say so in it and take the next task.
+- **Do not wait on a merge.** Mark your PR ready and take the next task; the reviewer merges it.
 - Only the integrator edits `docs/QUEUE.md`.
+
+## Review and merge: the reviewer agent
+
+Every pull request is reviewed and merged by the **reviewer agent**: a Claude Opus 5.5 session that runs for Srishan
+(Decision D-18). **No human review is required for a pull request.** Anyone, person or agent, may push commits to
+their own branch and open a pull request.
+
+- Mark the PR **ready** when the work is done. Keep it a **draft** (or titled `[claim] …`) while you are still
+  working, and add the `no-automerge` label if you do not want it merged yet. The reviewer skips all three.
+- The reviewer reads the whole diff, runs `npm run check` and `npm run build` on your branch, and checks lanes, the
+  after-job report, the binding rules and the history rule. If it passes, it posts its review and squash-merges.
+  It never deletes your branch.
+- If it finds a problem it does not merge: it comments with a numbered list of what to fix and notifies Srishan on
+  his phone. Fix it with new commits (never a rebase or a force push) and the reviewer looks again.
+- A change to a shared file is reviewed like any other change. Keep it small and explain it in the PR body.
+- **Plan approval is separate and stays human:** the reviewer merges plan files, but only a person writes a plan's
+  `Status: APPROVED by <name>` line, and build work for a phase still needs that line (or a place in the queue).
+- If the reviewer session is not running, any teammate may merge a PR by hand after `npm run check` passes.
 
 ## Parallel work: one agent, one worktree
 
@@ -102,11 +147,10 @@ Several agents work at the same time. Never share a working directory.
 - Create a worktree per task: `scripts/wt.sh new <agent> <task>` → `../wt-<agent>-<task>` on branch `<agent>/<task>`.
   - `<agent>` is one of `claude`, `codex`, `ag` (Antigravity), `sonnet` (the continuous builder), or a teammate's name.
 - Work, commit, and push **only** inside your own worktree. Do not edit files in other `wt-*` folders or in `codebase/` (main).
-- Before starting a new task: `scripts/wt.sh sync` (rebases onto `origin/main`).
+- Before starting a new task: `scripts/wt.sh sync` (merges `origin/main` into your branch; it never rebases).
 - Finish with a PR into `main`. Keep branches small and short-lived (merge within a few hours).
-- PRs are reviewed by the `ai-review` workflow: clean → auto squash-merged; issues → `needs-human` label
-  and a comment. Open as **draft** while still working; add `no-automerge` to opt out. PRs touching
-  shared files (below) never auto-merge.
+- PRs are reviewed and merged by the reviewer agent (see above). The `ci` checks (type check, tests, build, hook
+  tests) run on every PR.
 - Use the `PORT` in your worktree's `.env.local` for any dev server.
 
 ## Lanes (avoid overlapping edits)
@@ -116,7 +160,7 @@ and in your report. **Lanes import only `src/shared/` and `src/config/`, never e
 
 | Lane | Directories | Owner |
 |------|-------------|-------|
-| Integrator | Root config, `src/main.ts`, `src/shared/`, `public/vendor/`, `docs/` registers, `scripts/`, `.github/`, `.claude/`, `.codex/`, `.agents/` | Srishan |
+| Integrator | Root config, `src/main.ts`, `src/shared/`, `public/vendor/`, `docs/` registers, `scripts/`, `.github/`, `.githooks/`, `.claude/`, `.codex/`, `.agents/` | Srishan |
 | Signal | `src/signal/`, `src/config/signal.config.ts`, `src/ui/components/debug-overlay/`, `tools/eval/`, `recordings/` | Srishan |
 | Game | `src/game/`, `src/config/game.config.ts`, `src/config/ember.config.ts`, `tools/levels/` | Ali |
 | UI | `src/ui/` (except `debug-overlay/`), `src/config/ui.config.ts` | Amrit |
@@ -127,14 +171,18 @@ Anyone may add their own file under `docs/plans/` and `docs/agent-reports/`.
 
 ## Shared files (single owner)
 
-Highest collision risk. Only the integrator (whoever is on `main`) changes these, in their own small PR:
+Highest collision risk. Prefer to leave these to the integrator. If your task needs a change here, make it small, put it
+in its own commit, and explain it in the PR body:
 
 - Dependency manifests and lockfiles (`package.json`, `package-lock.json`)
 - `src/shared/` (contracts, event list, bus, store) and `src/main.ts`
-- Root config (`tsconfig.json`, `vite.config.ts`, `index.html`), CI, hook configs, `scripts/`, and this file
+- Root config (`tsconfig.json`, `vite.config.ts`, `index.html`), CI, hook configs, `.githooks/`, `scripts/`, and this file
 - `docs/PLAN.md`, `docs/STATUS.md`, `docs/DECISIONS.md`, `docs/FEATURES.md`, `docs/QUEUE.md`
 
-Need a new dependency or contract change? Ask in the PR description or stop and report it — do not add it yourself.
+Need a new dependency or a contract change? You may include it in your own PR when the task cannot be done without it:
+one small, typed change, explained in the PR body, with every caller updated so `npm run check` passes. The reviewer
+checks it against the other lanes. Two exceptions stay with the integrator: `docs/QUEUE.md`, and anything that changes
+these rules.
 Tunable **values** in `src/config/` belong to the lane that owns the file; their **types** are contracts.
 
 ## Architecture rules
