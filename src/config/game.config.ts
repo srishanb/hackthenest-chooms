@@ -20,4 +20,5 @@ export const GAME_CONFIG: GameConfig = {
     angleDeg: 62,
   },
   airSteer01: 0.15,
+  fallSteer01: 0.24, // +19.8 px/s of correction only after vertical velocity becomes positive
 };

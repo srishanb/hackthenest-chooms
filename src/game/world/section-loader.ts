@@ -36,6 +36,7 @@ export function loadSections(sections: readonly SectionData[], width: number): L
       if (!platform.id.trim() || platformIds.has(platform.id)) fail(platform.id, 'duplicate or empty platform id');
       platformIds.add(platform.id);
       checkArea(platform, platform.id, width);
+      if (platform.ice01 !== undefined && (!Number.isFinite(platform.ice01) || platform.ice01 < 0 || platform.ice01 > 1)) fail(platform.id, 'ice strength must be 0..1');
       if (!getPlatformType(platform.type)) fail(platform.id, `unknown platform type ${platform.type}`);
       if (platform.type === 'moving' && !platform.motion) fail(platform.id, 'moving platform needs a motion cycle');
       if (platform.motion) {
@@ -56,9 +57,16 @@ export function loadSections(sections: readonly SectionData[], width: number): L
       if (index !== sections.length - 1) fail(section.id, 'finish belongs in the last section');
       checkArea(section.finish, `${section.id}/finish`, width);
     }
+    if (section.stage) {
+      const final = section.platforms.find((platform) => platform.id === section.stage!.finalPlatformId);
+      if (!final || final.y !== Math.min(...section.platforms.map((platform) => platform.y))) fail(section.id, 'stage final platform must be its highest ledge');
+      if (section.finish) fail(section.id, 'stage uses landing completion, not a finish box');
+      if (![section.stage.snow01, section.stage.wind01].every((value) => Number.isFinite(value) && value >= 0 && value <= 1)) fail(section.id, 'invalid stage weather');
+    }
     for (const [index, wind] of (section.wind ?? []).entries()) {
       checkArea(wind, `${section.id}/wind-${index}`, width);
       if (!Number.isFinite(wind.accelerationX) || !Number.isFinite(wind.periodMs) || wind.periodMs <= 0) fail(section.id, 'invalid wind cycle');
+      if (wind.fadePx !== undefined && (!Number.isFinite(wind.fadePx) || wind.fadePx <= 0)) fail(section.id, 'invalid wind fade');
     }
   }
   const first = sections[0]!;

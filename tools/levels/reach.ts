@@ -58,8 +58,15 @@ export function checkReachability(sections: readonly SectionData[], config: Game
   if (initial.platformId) reachPlatform(initial.platformId);
   for (let index = 0; index < pending.length; index++) {
     const authored = pending[index]!;
+    // A staged climb has no off-platform goal zones. Stop once every possible higher
+    // target is reached, rather than resimulating thousands of falls through 50 ledges.
+    const stagedCourse = sections.every((section) => section.stage && !section.finish && !section.refuge);
+    const maxRise = config.jump.maxSpeed ** 2 / (2 * config.gravityY);
+    const targets = world.platforms.filter((platform) => platform.y < authored.y &&
+      authored.y - platform.y <= maxRise + (platform.motion?.distance ?? 0) + (authored.motion?.distance ?? 0));
+    if (stagedCourse && targets.every((platform) => reachable.has(platform.id))) continue;
     // Sample waiting at several cycle phases, using the same moving geometry as play.
-    for (const startTime of world.platforms.some((platform) => platform.motion) ? [0, 1000, 2000, 3000] : [0]) {
+    search: for (const startTime of world.platforms.some((platform) => platform.motion) ? [0, 1000, 2000, 3000] : [0]) {
     const source = platformsAt([authored], startTime)[0]!;
     const minX = Math.max(config.player.width / 2, source.x - source.width / 2 + config.player.width / 2);
     const maxX = Math.min(world.width - config.player.width / 2, source.x + source.width / 2 - config.player.width / 2);
@@ -87,6 +94,7 @@ export function checkReachability(sections: readonly SectionData[], config: Game
               const id = result.events.landed.platformId;
               if (!reachable.has(id)) reachPlatform(id);
               visitZones(state);
+              if (stagedCourse && targets.every((platform) => reachable.has(platform.id))) break search;
               break;
             }
             if (state.y > world.bottom + config.player.height) break;

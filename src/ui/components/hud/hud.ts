@@ -20,6 +20,7 @@ export const hud: UiComponent = {
     const ember = document.createElement('div');
     const wax = document.createElement('div'); wax.className = 'hud__wax';
     const lesson = document.createElement('div'); lesson.className = 'hud__lesson';
+    const stage = document.createElement('div'); stage.className = 'hud__status'; stage.setAttribute('aria-live', 'polite');
     const reward = document.createElement('div'); reward.className = 'hud__wax-reward';
     reward.setAttribute('role', 'status'); reward.setAttribute('aria-live', 'polite'); reward.hidden = true;
     let rewardTimer: ReturnType<typeof setTimeout> | undefined;
@@ -30,7 +31,7 @@ export const hud: UiComponent = {
     const prompt = document.createElement('div');
     prompt.className = 'hud__prompt';
     prompt.setAttribute('role', 'status');
-    panel.append(status, quality, lesson, ember, progress, wax, reward, composure, prompt);
+    panel.append(stage, status, quality, lesson, ember, progress, wax, reward, composure, prompt);
     root.append(panel);
     let signalState = signal.reader.getState();
     const text = (element: HTMLElement, value: string): void => {
@@ -41,6 +42,10 @@ export const hud: UiComponent = {
       const flags = stores.settings.get().hud;
       const view = hudState(snapshot, signalState, SIGNAL_CONFIG.staleAfterMs);
       const lessonKey = snapshot.lessonKey;
+      const stageKey = `stage.${snapshot.stage?.id}`;
+      text(stage, snapshot.stage && Object.hasOwn(STRINGS, stageKey) ?
+        `${snapshot.stage.index + 1}/${snapshot.stage.total} · ${t(stageKey as StringKey)}` : '');
+      stage.hidden = !flags.showStatus || !snapshot.stage;
       text(lesson, lessonKey && Object.hasOwn(STRINGS, lessonKey) ? t(lessonKey as StringKey) : '');
       lesson.hidden = !flags.showStatus || !lessonKey;
       text(status, t(view.statusKey));
