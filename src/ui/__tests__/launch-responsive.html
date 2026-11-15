@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Menu responsive checks</title><style>body{margin:16px;background:#07121f;color:#eee;font:16px system-ui}.sample{height:420px;overflow:hidden;margin:20px 0}iframe{border:0;transform-origin:top left}#desktop{width:1440px;height:900px;transform:scale(.4)}#phone{width:375px;height:812px;transform:scale(.5)}output{white-space:pre-wrap}button{padding:12px}</style></head><body>
+<button id="check">Check responsive layouts</button><output id="result"></output>
+<div class="sample"><iframe id="desktop" title="Desktop menu" src="/?source=sim&mode=fixed"></iframe></div>
+<div class="sample"><iframe id="phone" title="Phone menu" src="/?source=sim&mode=fixed"></iframe></div>
+<script>
+// Dev-only viewport frames; actual production menu runs at both intrinsic viewport widths.
+document.querySelector('#check').onclick=()=>{
+ const lines=[];
+ for(const id of ['desktop','phone']){
+  const frame=document.getElementById(id),doc=frame.contentDocument,win=frame.contentWindow;
+  const screen=doc.querySelector('.launch-screen'),nav=doc.querySelector('.launch-actions');
+  const bounds=nav?.getBoundingClientRect();
+  const fits=!!screen&&!screen.hidden&&bounds.left>=0&&bounds.right<=win.innerWidth+1&&screen.scrollWidth<=win.innerWidth+1;
+  const frameFree=nav&&getComputedStyle(nav).borderWidth==='0px';
+  lines.push(`${fits&&frameFree?'PASS':'FAIL'} ${id} ${win.innerWidth}×${win.innerHeight}: buttons fit horizontally, no panel borders`);
+ }
+ document.querySelector('#result').textContent='\n'+lines.join('\n');
+};
+</script></body></html>
+
