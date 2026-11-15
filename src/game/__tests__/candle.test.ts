@@ -102,7 +102,7 @@ describe('raster', () => {
 
 describe('flame', () => {
   const genome = createCandleGenome(11);
-  const flame = (size01: number, timeMs = 0, reducedMotion = false) => rasterFlame(genome, { size01, timeMs, reducedMotion, vx: 0 });
+  const flame = (size01: number, timeMs = 0, reducedMotion = false) => rasterFlame(genome, { size01, timeMs, reducedMotion, lean: 0 });
 
   it('a bigger light gives a taller, larger flame', () => {
     expect(flameHeight(0)).toBe(FLAME_MIN_HEIGHT);

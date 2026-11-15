@@ -7,9 +7,11 @@ export interface UiActions {
   openCalibration(from: CalibrationOrigin): void;
   settingsOpen: Store<boolean>;
   settingsAvailable: boolean;
+  tutorialOpen: Store<boolean>;
+  tutorialAvailable: boolean;
 }
-export function createUiActions(settingsAvailable = true, calibrationAvailable = true): UiActions {
+export function createUiActions(settingsAvailable = true, calibrationAvailable = true, tutorialAvailable = true): UiActions {
   const calibrationFrom = createStore<CalibrationOrigin | null>(null);
-  return { settingsOpen: createStore(false), settingsAvailable, calibrationFrom, calibrationAvailable,
+  return { settingsOpen: createStore(false), settingsAvailable, tutorialOpen: createStore(false), tutorialAvailable, calibrationFrom, calibrationAvailable,
     openCalibration(from) { if (calibrationAvailable) calibrationFrom.set(from); } };
 }

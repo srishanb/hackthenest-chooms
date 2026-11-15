@@ -7,9 +7,9 @@ import type { createWaxRewards } from './rewards';
 export function createWaxView(scene: Scene, wax: ReturnType<typeof createWaxRewards>, bus: EventBus) {
   const marks = wax.drops.map((drop) => ({
     drop,
-    glow: scene.add.circle(drop.x, drop.y, WAX_CONFIG.dropHeightPx, WAX_CONFIG.waxColor, 0.15).setDepth(200),
-    body: scene.add.ellipse(drop.x, drop.y, WAX_CONFIG.dropWidthPx, WAX_CONFIG.dropHeightPx, WAX_CONFIG.waxColor).setDepth(201),
-    shine: scene.add.circle(drop.x - 2, drop.y - 3, 2, WAX_CONFIG.highlightColor).setDepth(202),
+    glow: scene.add.circle(drop.x, drop.y, WAX_CONFIG.dropHeightPx, WAX_CONFIG.waxColor, 0.15).setDepth(200).setVisible(false),
+    body: scene.add.ellipse(drop.x, drop.y, WAX_CONFIG.dropWidthPx, WAX_CONFIG.dropHeightPx, WAX_CONFIG.waxColor).setDepth(201).setVisible(false),
+    shine: scene.add.circle(drop.x - 2, drop.y - 3, 2, WAX_CONFIG.highlightColor).setDepth(202).setVisible(false),
   }));
   let reducedMotion = false;
   let animationMs = 0;

@@ -26,11 +26,6 @@
   color: var(--color-accent); background: var(--color-inset); border: 1px solid var(--color-panel-border);
   padding: var(--space-2); border-radius: var(--radius); cursor: pointer;
 }
-/* Diagnostics must not obscure existing modal flows, especially on narrow screens. */
-#ui:has([data-component='settings-panel']:not([hidden])) .forest-preview,
-#ui:has([data-component='pause-menu']:not([hidden])) .forest-preview,
-#ui:has([data-component='start-menu']:not([hidden])) .forest-preview,
-#ui:has(dialog[open]) .forest-preview { display: none; }
 /* Keep the honest source label clear of the new right-hand metrics. */
 .ui-slot[data-slot='top-right']:has([data-component='source-badge']) { right: auto; left: 50%; transform: translateX(-50%); align-items: center; }
 @media (max-width: 600px) { .ui-slot[data-slot='top-right']:has([data-component='source-badge']) { top: 112px; left: auto; right: var(--hud-corner); transform: none; } }
@@ -42,3 +37,6 @@
   #ui[data-phase='paused'] .ui-slot[data-slot='top-right'],
   #ui[data-phase='menu'] .ui-slot[data-slot='top-right'] { top: var(--space-1); left: 50%; right: auto; transform: translateX(-50%); z-index: 2; }
 }
+
+/* The shared preview now belongs to the settings dialog, which remains keyboard accessible. */
+#ui [data-component='settings-panel'] .forest-preview { display: grid; max-width: none; }

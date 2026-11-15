@@ -42,18 +42,18 @@
 /* Reference palette: midnight glass, pale blue edging and warm lantern gold. */
 :root {
   --color-bg: #0b121d;
-  --color-panel: #101b2bea;
+  --color-panel: #101b2b9c;
   --color-panel-border: #9db7ca;
   --color-text: #f3f0df;
   --color-text-dim: #b8c4cf;
   --color-accent: #ffda70;
-  --color-hover: #29303a;
-  --color-inset: #142132;
+  --color-hover: #29303a99;
+  --color-inset: #14213288;
   --font-display: 'Courier New', ui-monospace, monospace;
   --font-ui: 'Courier New', ui-monospace, monospace;
   --radius: 14px;
-  --panel-shadow: 0 12px 45px #0007, inset 0 0 24px #172b3b55;
-  --gold-glow: 0 0 5px #ffc74488, 0 0 20px #f8a82233;
+  --panel-shadow: none;
+  --gold-glow: none;
   --hud-corner: clamp(12px, 2vw, 28px);
   --hud-needle: #ffb63f;
   --overlay-dim: #030a1470;
@@ -61,6 +61,18 @@
 
 @font-face { font-family: 'Pixelify Sans'; src: url('./fonts/PixelifySans[wght].ttf') format('truetype'); font-style: normal; font-weight: 400 700; font-display: swap; }
 :root { --font-ui: 'Pixelify Sans', ui-monospace, monospace; --font-display: 'Pixelify Sans', ui-monospace, monospace; }
+
+/* Launch-only atmosphere; gameplay colors and layout stay unchanged. */
+:root {
+  --launch-veil: #071219d9;
+  --launch-floor: #030b12;
+  --launch-glass: var(--color-panel);
+  --color-primary-glass: #8e743a40;
+  --launch-mist: #bbd9c41a;
+  --launch-max-width: 1120px;
+  --launch-title: clamp(58px, 8.4vw, 112px);
+  --launch-spacing: clamp(24px, 5vw, 72px);
+}
 
 /* Slightly larger, lighter statistics card. */
 :root { --hud-stats-background: #101b2b99; --hud-stats-font: 15px; --hud-stats-font-small: 12px; }

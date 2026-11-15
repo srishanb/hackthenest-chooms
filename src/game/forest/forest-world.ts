@@ -1,12 +1,18 @@
 /** Bounded forest scenery and platform skins. All positions are decorative, never collision bodies. */
+import { ENVIRONMENT_ASSETS } from '../../config/environment-assets.config';
 import type { GameObjects, Scene } from 'phaser';
 import { FOREST_CONFIG as C } from '../../config/forest.config';
 import type { LoadedWorld } from '../world/section-loader';
 import type { PlatformBox } from '../player/types';
-import { mixColor, reveal, stableUnit } from './presentation';
+import type { VisualEnvironment } from '../../config/atmosphere.config';
+import { createVerticalForest } from './vertical-forest';
+import { createAtmosphere } from './atmosphere';
+import { createBackdropGardens } from './backdrop-gardens';
+import { fitPropScale, mixColor, reveal, stableUnit } from './presentation';
 
 export interface ForestWorld {
-  update(corruption: number, deltaMs: number, reducedMotion: boolean, paused: boolean): void;
+  update(corruption: number, deltaMs: number, reducedMotion: boolean, paused: boolean, strength?: number): void;
+  setEnvironment(value: Partial<VisualEnvironment>): void;
   syncPlatforms(platforms: readonly PlatformBox[]): void;
 }
 
@@ -14,20 +20,9 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
   const camera = scene.cameras.main;
   const width = scene.scale.width, height = scene.scale.height;
   const sky = scene.add.rectangle(0, 0, width, height, C.sky.calm).setOrigin(0).setScrollFactor(0).setDepth(-40);
-  const layers: Array<{ image: GameObjects.TileSprite; factor: number; dark: boolean }> = [];
-  for (const [i, key] of ['forest-back', 'forest-front'].entries()) {
-    const factor = C.parallax[i]!;
-    for (const dark of [false, true]) {
-      const image = scene.add.tileSprite(0, 0, width, height, key).setOrigin(0).setScrollFactor(0)
-        .setTileScale(C.pixelScale).setDepth(-30 + i * 4 + (dark ? 1 : 0));
-      image.setTint(dark ? 0x945a8a : 0x9ec99a);
-      layers.push({ image, factor, dark });
-    }
-  }
-  const canopy = scene.add.tileSprite(0, 0, width, height, 'forest-dark-canopy').setOrigin(0).setScrollFactor(0)
-    .setTileScale(C.pixelScale).setTint(0x78516e).setDepth(-22);
-  const leaves = scene.add.tileSprite(0, 0, width, height, 'forest-dark-leaves').setOrigin(0).setScrollFactor(0)
-    .setTileScale(C.pixelScale).setTint(0xb45f80).setDepth(-20);
+  const background = createVerticalForest(scene);
+  const atmosphere = createAtmosphere(scene);
+  const gardens = createBackdropGardens(scene);
   const mist = scene.add.tileSprite(0, 0, width, height, 'forest-mist').setOrigin(0).setScrollFactor(0)
     .setTileScale(C.pixelScale).setDepth(-8);
   const terrain: Array<GameObjects.TileSprite | GameObjects.Image> = [];
@@ -37,27 +32,43 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
     image: GameObjects.Image | GameObjects.TileSprite | GameObjects.Rectangle; x: number; y: number;
   }> }> = [];
   for (const platform of world.platforms) {
+    const winter = world.sections.some((section) => (section.stage?.snow01 ?? 0) > 0 && section.platforms.some((row) => row.id === platform.id));
+    const skin = winter ? ENVIRONMENT_ASSETS.winter : ENVIRONMENT_ASSETS.forest;
     const terrainStart = terrain.length, rimStart = rims.length, propStart = props.length;
     const left = platform.x - platform.width / 2, top = platform.y - platform.height / 2;
-    terrain.push(scene.add.tileSprite(left, top, platform.width, platform.height, 'forest-middle')
+    terrain.push(scene.add.tileSprite(left, top, platform.width, Math.min(6, platform.height), skin.middle)
       .setOrigin(0).setTileScale(C.pixelScale).setDepth(0));
+    // A tapered, stepped island silhouette rather than a full rectangular slab.
+    // These are render-only soil columns; the original landing boxes are authoritative.
+    const columns = 13, columnWidth = platform.width / columns;
+    for (let column = 0; column < columns; column++) {
+      const normalized = (column + 0.5) / columns * 2 - 1;
+      const variation = Math.floor(stableUnit(`soil:${platform.id}:${column}`) * 2) * 2;
+      const depth = 2 + Math.round(Math.sqrt(1 - normalized * normalized) * 24 / 2) * 2 + variation;
+      const inset = column === 0 || column === columns - 1 ? 6 : 0;
+      terrain.push(scene.add.tileSprite(left + column * columnWidth + (column === 0 ? inset : 0),
+        top + 4, columnWidth - inset, depth, winter ? skin.middle : 'grass-soil')
+        .setOrigin(0).setTileScale(C.pixelScale).setDepth(-1));
+    }
     const capWidth = Math.min(32, platform.width / 2);
-    for (const [x, key] of [[left, 'forest-left'], [left + platform.width - capWidth, 'forest-right']] as const) {
-      terrain.push(scene.add.tileSprite(x, top, capWidth, platform.height, key)
+    for (const [x, key] of [[left, skin.left], [left + platform.width - capWidth, skin.right]] as const) {
+      terrain.push(scene.add.tileSprite(x, top, capWidth, Math.min(6, platform.height), key)
         .setOrigin(0).setTileScale(C.pixelScale).setDepth(0));
     }
     rims.push(scene.add.rectangle(platform.x, top + 1, platform.width, 2, C.rim.calm).setDepth(1));
     if (props.length < C.maxProps) {
+      // Both edges receive seeded vegetation within the fixed 100-pair budget.
       for (const side of [-1, 1]) {
         if (props.length >= C.maxProps) break;
         const seed = stableUnit(`${platform.id}:${side}`);
         const x = platform.x + side * (platform.width / 2 - Math.min(28, platform.width / 4));
-        const healthy = scene.add.image(x, top + 3, seed > 0.5 ? 'forest-fern' : 'forest-mushrooms')
+        const healthy = scene.add.image(x, top + 3, winter ? skin.plant : seed > 0.75 ? skin.plant : seed > 0.5 ? 'forest-fern' : seed > 0.12 ? 'forest-mushrooms' : 'grass-stone')
           .setOrigin(0.5, 1).setScale(C.pixelScale).setDepth(-2);
-        const decayed = scene.add.image(x, top + 3, seed > 0.5 ? 'forest-thorns' : 'forest-dark-mushrooms')
+        healthy.setScale(Math.min(C.pixelScale, 48 / healthy.height));
+        const decayed = scene.add.image(x, top + 3, winter ? skin.decay : seed > 0.5 ? 'forest-thorns' : 'forest-dark-mushrooms')
           .setOrigin(0.5, 1).setScale(C.pixelScale).setDepth(-1).setAlpha(0);
         // Match the healthy prop's height instead of growing a tall atlas fragment over a landing.
-        decayed.setScale(C.pixelScale * healthy.height / decayed.height);
+        decayed.setScale(fitPropScale(decayed.height, healthy.displayHeight));
         props.push({ healthy, decayed, threshold: seed * 0.65 });
       }
     }
@@ -73,7 +84,19 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
     image: scene.add.rectangle(0, 0, i % 3 === 0 ? 3 : 2, 2, 0xffdba4).setScrollFactor(0).setDepth(4),
   }));
   let clock = 0;
+  const floor = world.platforms.find((platform) => platform.width >= world.width * 0.9);
+  if (floor) for (let i = 1; i <= 8; i++) {
+    const plant = scene.add.image(i / 9 * world.width, floor.y - floor.height / 2 + 2,
+      i % 3 === 0 ? 'forest-mushrooms' : 'forest-fern').setOrigin(0.5, 1).setScale(1).setDepth(-2);
+    props.push({ healthy: plant, decayed: scene.add.image(plant.x, plant.y, 'forest-thorns')
+      .setOrigin(0.5, 1).setScale(0.7).setDepth(-1).setAlpha(0), threshold: stableUnit(`floor:${i}`) * 0.65 });
+  }
   return {
+    setEnvironment(value) {
+      atmosphere.setEnvironment(value);
+      background.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
+      gardens.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
+    },
     syncPlatforms(platforms) {
       const positions = new Map(platforms.map((platform) => [platform.id, platform]));
       for (const group of platformMarks) {
@@ -83,7 +106,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
         }
       }
     },
-    update(corruption, deltaMs, reducedMotion, paused) {
+    update(corruption, deltaMs, reducedMotion, paused, strength = 1) {
       const c = Math.max(0, Math.min(1, corruption));
       if (import.meta.env.DEV) {
         scene.game.canvas.dataset.forestCorruption = c.toFixed(3);
@@ -91,15 +114,11 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       }
       if (!reducedMotion && !paused) clock += Math.min(deltaMs, 100);
       sky.setFillStyle(mixColor(C.sky.calm, C.sky.corrupted, c));
-      for (const layer of layers) {
-        // Paired layers always share their anchor, scale and parallax: no crossfade jump.
-        layer.image.tilePositionY = camera.scrollY * layer.factor / C.pixelScale;
-        layer.image.setAlpha(layer.dark ? c : 1 - c);
-      }
-      canopy.tilePositionY = camera.scrollY * C.parallax[0] / C.pixelScale;
-      canopy.setAlpha(c * 0.32);
-      leaves.tilePositionY = camera.scrollY * C.parallax[1] / C.pixelScale;
-      leaves.setAlpha(c * 0.1);
+      background.update(c);
+      gardens.update(c);
+      atmosphere.update(c, deltaMs, reducedMotion, paused, strength);
+      sky.setSize(camera.width, camera.height);
+      mist.setSize(camera.width, camera.height);
       mist.tilePositionX = reducedMotion ? 0 : clock / 160;
       mist.tilePositionY = camera.scrollY * 0.08 / C.pixelScale;
       mist.setTint(mixColor(0xa9d4c0, 0xbf8aa9, c)).setAlpha(0.04 + C.mistMaxAlpha * c);

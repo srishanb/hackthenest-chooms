@@ -1,9 +1,28 @@
 /** Start menu rules: shown only before the climb, steps aside for settings, Enter starts Play. */
 import { describe, expect, it } from 'vitest';
-import { startMenuVisible, startsOnKey, type StartKeyInput } from '../components/start-menu/start-menu-state';
+import { canContinue, menuSelection, startMenuVisible, startsOnKey, type StartKeyInput } from '../components/start-menu/start-menu-state';
+import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state';
 
 const key = (over: Partial<StartKeyInput> = {}): StartKeyInput =>
   ({ code: 'Enter', repeat: false, phase: 'menu', settingsOpen: false, focusOnControl: false, ...over });
+
+it('only offers Continue for existing game resume state or a session already played', () => {
+  expect(canContinue(INITIAL_GAME_SNAPSHOT, false)).toBe(false);
+  expect(canContinue(INITIAL_GAME_SNAPSHOT, true)).toBe(true);
+  expect(canContinue({ ...INITIAL_GAME_SNAPSHOT, promptKey: 'ember.placedHint' }, false)).toBe(true);
+  expect(canContinue({ ...INITIAL_GAME_SNAPSHOT, navigation: { player: { x: 0, y: 0 }, originY: 0, lanternRadiusPx: 200,
+    checkpoints: [{ id: 'saved', x: 0, y: 0 }] } }, false)).toBe(true);
+});
+
+it('wraps arrow focus and handles no focused button, Home, End and unavailable controls', () => {
+  expect(menuSelection(3, 4, 'ArrowDown')).toBe(0);
+  expect(menuSelection(0, 4, 'ArrowUp')).toBe(3);
+  expect(menuSelection(-1, 4, 'ArrowDown')).toBe(0);
+  expect(menuSelection(-1, 4, 'ArrowUp')).toBe(3);
+  expect(menuSelection(2, 4, 'Home')).toBe(0);
+  expect(menuSelection(2, 4, 'End')).toBe(3);
+  expect(menuSelection(0, 0, 'ArrowDown')).toBe(-1);
+});
 
 describe('startMenuVisible', () => {
   it('shows only in the menu phase', () => {
