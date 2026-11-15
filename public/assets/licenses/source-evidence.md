@@ -7,6 +7,7 @@ Checked 2026-11-14 by fetching each publisher item page. This is a factual extra
 | audio/footsteps/01-footstep.ogg through 06-footstep.ogg | GboxMikeFozzy | https://opengameart.org/content/footsteps-0 | https://opengameart.org/sites/default/files/01-footstep_0.ogg and 02-footstep.ogg through 06-footstep.ogg at the same attachment base |
 | audio/ember/fantasy-magic-button-1.mp3 | Almitory | https://opengameart.org/content/fantasy-magic-spell | https://opengameart.org/sites/default/files/fantasy_magic_button_1.mp3 |
 | audio/music/cathedral-in-the-forest.ogg | congusbongus | https://opengameart.org/content/cathedral-in-the-forest-ambient-loop | https://opengameart.org/sites/default/files/forest_2_0.ogg |
+| audio/music/insistent.ogg | yd | https://opengameart.org/content/insistent-background-loop (License(s): CC0, checked on the item page 2026-11-15) | https://opengameart.org/sites/default/files/Insistent.ogg |
 
 No audio processing was performed. First footstep, ember and music files were renamed; other footstep names were retained. These source pages were fetched successfully via HTTP even though the web-search page reader returned access errors for some OpenGameArt pages.
 

@@ -31,7 +31,7 @@ This sends selected text to ElevenLabs and consumes account credits. It download
 
 - Audio loads from bundled files, unlocks on a player gesture, then plays one random intro per new run after the guide closes.
 - Continuing from Main Menu does not repeat an intro. Global 8 s / same-line 120 s cooldowns use existing config.
-- Pausing, menus, calibration, jump precision and mute park speech and clear its caption; returning resumes the exact audio offset and re-emits the remaining caption duration.
+- Pausing, menus, calibration and mute park speech and clear its caption; returning resumes the exact audio offset and re-emits the remaining caption duration.
 - The narrator and master volume sliders use the existing audio bus. Music ducks during speech; SFX are unaffected.
 - Missing/unavailable clips produce captions instead of a game error. No runtime Gemini, ElevenLabs, browser speech synthesis, CDN or key is needed.
 - `/src/audio/__tests__/intro-browser.html` exercises actual local audio, captions and transitions. Root game path uses the same player.
@@ -78,3 +78,5 @@ cooldown. Duplicate pending moments are collapsed; stale falls/heights/stage rem
 expire after 15 seconds. Tutorial completion may wait through pause. Existing speech
 parks during pause, precision and mute, and resumes from the exact offset. Welcome
 plays after Play and any first-launch controls guide has closed.
+
+Jump precision and Ember recovery no longer interrupt narration (Amrit request). Actual pause still parks the exact audio offset; unpausing resumes it. Explicit mute, leaving the run, restarting, changing/previewing a voice and disposal retain their normal lifecycle behavior.

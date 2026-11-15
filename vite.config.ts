@@ -9,6 +9,7 @@
  */
 import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
+import { stagePublisher } from './tools/editor/server';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -16,6 +17,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: './',
+    plugins: [stagePublisher()],
     // Phaser is one large library (about 1.4 MB minified); it is loaded from disk, so the size warning is noise.
     build: { chunkSizeWarningLimit: 2000 },
     server: { port, strictPort: true },

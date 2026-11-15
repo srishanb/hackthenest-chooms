@@ -1,12 +1,15 @@
-/** Licensed local music handoff from public/assets/README.md (Neil's inventory).
- * Only one mixed ambient track exists. There is no tense stem: null is deliberately
- * silent, not a duplicated track or an invented asset. P8.1 must supply a second layer.
+/** Licensed local music, both CC0 (see CREDITS.md). `quiet` is the calm bed; `tense` is the layer the
+ * music crossfades to as the real signal rises (effects row musicTenseMix). A missing file stays silent.
  */
 export interface MusicAssets { quiet: string | null; tense: string | null }
 export const MUSIC_ASSETS: MusicAssets = {
   quiet: 'assets/audio/music/cathedral-in-the-forest.ogg',
-  tense: null,
+  tense: 'assets/audio/music/insistent.ogg',
 };
+
+/** Level-matches the two loops so the crossfade does not change loudness. Measured as whole-file RMS of the
+ * decoded files: the calm bed is -19.4 dB and the tense loop -24.2 dB, so the tense layer is raised 4.8 dB. */
+export const MUSIC_LEVEL_TRIM: Record<keyof MusicAssets, number> = { quiet: 1, tense: 1.74 };
 
 /** Existing licensed cues; all paths are already covered by CREDITS.md. */
 export const SFX_ASSETS: import('./sfx').SfxAssets = {

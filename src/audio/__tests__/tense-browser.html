@@ -1,0 +1,30 @@
+<!doctype html><html><head><title>Tense music scaling check</title></head><body>
+<h1>Tense music scaling check</h1>
+<p>Plays the real calm bed and tense loop through the real engine, steps the musicTenseMix value, and measures the loudness that actually leaves the engine. Click "Start" first (browsers need a click to play audio).</p>
+<button id="start">Start</button><button id="sweep">Sweep mix 0 to 0.8</button>
+<pre id="result"></pre>
+<script type="module">
+import { createAudio } from '../index.ts';
+import { AUDIO_CONFIG } from '../../config/audio.config.ts';
+import { createStore } from '../../shared/store.ts';
+import { createEventBus } from '../../shared/bus.ts';
+import { DEFAULT_SETTINGS } from '../../shared/contracts/settings.ts';
+import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state.ts';
+const stores={settings:createStore(structuredClone(DEFAULT_SETTINGS)),snapshot:createStore({...structuredClone(INITIAL_GAME_SNAPSHOT),phase:'playing'}),effects:createStore({musicTenseMix:0})};
+let analyser;
+const audio=createAudio({stores,bus:createEventBus(),config:AUDIO_CONFIG,narratorLines:[]},{
+  createContext:()=>{const ctx=new AudioContext(); analyser=ctx.createAnalyser(); analyser.fftSize=2048; const real=ctx.destination; analyser.connect(real); Object.defineProperty(ctx,'destination',{value:analyser}); return ctx;},
+  gestures:window,baseURL:new URL('/',location.href)});
+const out=document.querySelector('#result'); window.__rows=[];
+const level=()=>{const a=new Float32Array(analyser.fftSize); let sum=0,peak=0,n=0; return new Promise(res=>{let t=0; const id=setInterval(()=>{analyser.getFloatTimeDomainData(a); for(const v of a){sum+=v*v;n++; if(Math.abs(v)>peak)peak=Math.abs(v);} if(++t>=20){clearInterval(id); res({rms:Math.sqrt(sum/n),peak});}},50);});};
+document.querySelector('#start').onclick=()=>{out.textContent='started'; audio.ready.then(()=>out.textContent='loaded '+JSON.stringify(audio.getDiagnostics()));};
+document.querySelector('#sweep').onclick=async()=>{
+  for(const mix of [0,0.2,0.4,0.6,0.8]){
+    stores.effects.set({musicTenseMix:mix}); await new Promise(r=>setTimeout(r,3500));
+    const d=audio.getDiagnostics(); const l=await level();
+    window.__rows.push({mix,quiet:+d.gains.quiet.toFixed(3),tense:+d.gains.tense.toFixed(3),state:d.state,rms:+l.rms.toFixed(4),rmsDb:+(20*Math.log10(l.rms||1e-9)).toFixed(1),peak:+l.peak.toFixed(3)});
+    out.textContent=JSON.stringify(window.__rows,null,1);
+  }
+  window.__done=true;
+};
+</script></body></html>

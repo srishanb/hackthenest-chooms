@@ -8,7 +8,7 @@ import type { EventBus } from '../shared/contracts/events';
 import { getLocalStorage } from '../shared/safe-storage';
 import { INTRO_MUSIC_DUCK, NARRATOR_VOICES, DEFAULT_NARRATOR_VOICE, NARRATOR_VOICE_STORAGE_KEY, NARRATOR_VOICE_EVENT } from '../config/audio.config';
 import { EMBER_CONFIG } from '../config/ember.config';
-import { MUSIC_ASSETS, SFX_ASSETS, type MusicAssets } from './asset-list';
+import { MUSIC_ASSETS, MUSIC_LEVEL_TRIM, SFX_ASSETS, type MusicAssets } from './asset-list';
 import { createAudioEngine } from './engine';
 import { createAudioLoader } from './loader';
 import { computeMix, type MixGains } from './mix-rules';
@@ -114,7 +114,7 @@ export function createAudio(deps: AudioDeps, environment?: AudioEnvironment): Au
   const assets = env.assets ?? MUSIC_ASSETS;
   const musicReady = Promise.all([load(assets.quiet), load(assets.tense)]).then(([quiet, tense]) => {
     if (disposed) return;
-    apply(true); stopMusic = startMusicLayers(context, engine.nodes, { quiet, tense }); loaded = quiet !== null || tense !== null;
+    apply(true); stopMusic = startMusicLayers(context, engine.nodes, { quiet, tense }, MUSIC_LEVEL_TRIM); loaded = quiet !== null || tense !== null;
   });
   const ready = Promise.all([musicReady, sfx.ready, narrator.ready]).then(() => {});
   const dispose = (): void => {

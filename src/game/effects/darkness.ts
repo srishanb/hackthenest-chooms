@@ -15,7 +15,7 @@ const TEXTURE_SIZE = 512;
 const CLEAR_RADIUS = 12;
 /** Where full darkness is reached. Between the two the light fades out. */
 const DARK_RADIUS = 24;
-const DARK_ALPHA = 0.94;
+const DARK_ALPHA = 1;
 
 /** Create the image once per scene. `depth` must sit above the world and below "always readable" marks. */
 export function createDarkness(scene: Phaser.Scene, depth: number): Phaser.GameObjects.Image {

@@ -1,0 +1,5 @@
+# Faster corruption fuel
+
+Neil requested faster fuel depletion while retaining fuel-only visibility. Max actual corruption now drains a full tank in22.5s instead of45s. Preserve prior rates through normalWorldMax01 (0.35), then ramp additional drain to full corruption. Config and burn function only; no physics, UI, shared contract or dependency changes. Preview remains visual-only. Pre-code check: partly done, existing mechanic retained despite separate draft100 proposing removal. Hardware tasks do not block. Acceptance: full-corruption rate doubled, normal rates identical, checks pass. Manual headset/play timing unverified. Confidence high for mathematical rate, tuning subjective. No abandoned approaches. Existing burn integration tests cover frame independence.
+
+Validation: TypeScript,482 tests/74 files and build pass. Existing Vite native-loader and pieeg.js warnings remain.

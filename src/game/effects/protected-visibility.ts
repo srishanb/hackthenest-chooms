@@ -55,6 +55,7 @@ export function createProtectedVisibility(
         cache.set(platformId, reachable);
       }
       for (const piece of fadeSegments(outlineSegments(livePlatforms, platformId, reachable), lanternX, lanternY, radiusPx)) {
+        if (piece.current) continue;
         // Style is set before each stroke (Phaser styles are not retroactive).
         graphics.lineStyle(LINE_WIDTH_PX, piece.current ? CURRENT_COLOR : REACHABLE_COLOR, LINE_ALPHA * piece.alpha);
         graphics.lineBetween(piece.x1, piece.y1, piece.x2, piece.y2);

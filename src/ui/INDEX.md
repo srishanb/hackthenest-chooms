@@ -1,5 +1,7 @@
 # src/ui — public exports
 
+Stage editor publishing: `publishLayout(stages, fetcher?)` in `components/stage-editor/publish-layout.ts` sends an explicit authoring save to the loopback dev server and returns the GitHub review URL. It is never called by gameplay. `EditorDeps.save` is asynchronous and returns that URL.
+
 Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before adding a function.
 
 | Export | File | What it does |
@@ -38,7 +40,6 @@ Reference redesign: `navigationView` (`components/hud/navigation.ts`) chooses th
 `mountUiSizeTuner`, `parseUiPreviewSizes`, `UI_SIZE_STORAGE_KEY` (`components/source-badge/ui-size-tuner.ts`): independent local preview scales for tutorial/hints and stats, live 70–150% sliders, validated safe storage and Reset. Does not change game state or shared design defaults.
 Corruption preview: Settings mounts the existing source-badge/forest-preview helper; source badge now displays source status only. No duplicated preview controls.
 
-HUD Fuel metric reads optional GameSnapshot.lanternFuel01; actual candle resource, not composure percentage.
 
 `mountNarratorVoiceControl` (`components/settings-panel/narrator-voice-control.ts`) adds a saved stock-voice selector, Preview/Stop and preview caption in Settings. It publishes a validated local event defined in audio config; it never imports audio or alters game state.
 `mountStageEditor`, `EditorDeps` (`components/stage-editor/stage-editor.ts`) provide authoring controls through injected render/save/test callbacks; no gameplay imports.

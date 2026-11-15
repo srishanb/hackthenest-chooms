@@ -7,14 +7,14 @@ import type { createWaxRewards } from './rewards';
 export function createWaxView(scene: Scene, wax: ReturnType<typeof createWaxRewards>, bus: EventBus) {
   const marks = wax.drops.map((drop) => ({
     drop,
-    glow: scene.add.circle(drop.x, drop.y, WAX_CONFIG.dropHeightPx, WAX_CONFIG.waxColor, 0.15).setDepth(200).setVisible(false),
-    body: scene.add.ellipse(drop.x, drop.y, WAX_CONFIG.dropWidthPx, WAX_CONFIG.dropHeightPx, WAX_CONFIG.waxColor).setDepth(201).setVisible(false),
-    shine: scene.add.circle(drop.x - 2, drop.y - 3, 2, WAX_CONFIG.highlightColor).setDepth(202).setVisible(false),
+    glow: scene.add.circle(drop.x, drop.y, WAX_CONFIG.dropHeightPx, WAX_CONFIG.waxColor, 0.15).setDepth(90).setVisible(false),
+    body: scene.add.ellipse(drop.x, drop.y, WAX_CONFIG.dropWidthPx, WAX_CONFIG.dropHeightPx, WAX_CONFIG.waxColor).setDepth(91).setVisible(false),
+    shine: scene.add.circle(drop.x - 2, drop.y - 3, 2, WAX_CONFIG.highlightColor).setDepth(92).setVisible(false),
   }));
   let reducedMotion = false;
   let animationMs = 0;
   const off = bus.on('wax_collected', (event) => {
-    const pulse = scene.add.circle(event.x, event.y, WAX_CONFIG.dropHeightPx, WAX_CONFIG.waxColor, 0.5).setDepth(203);
+    const pulse = scene.add.circle(event.x, event.y, WAX_CONFIG.dropHeightPx, WAX_CONFIG.waxColor, 0.5).setDepth(93);
     scene.tweens.add({ targets: pulse, alpha: 0, scale: reducedMotion ? 1 : 2.5,
       duration: WAX_CONFIG.pickupPulseMs, onComplete: () => pulse.destroy() });
   });

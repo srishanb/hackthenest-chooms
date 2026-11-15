@@ -50,8 +50,10 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       const variation = Math.floor(stableUnit(`soil:${platform.id}:${column}`) * 2) * 2;
       const depth = 2 + Math.round(Math.sqrt(1 - normalized * normalized) * 24 / 2) * 2 + variation;
       const inset = column === 0 || column === columns - 1 ? 6 : 0;
-      terrain.push(scene.add.tileSprite(left + column * columnWidth + (column === 0 ? inset : 0),
-        top + 4, columnWidth - inset, depth, winter ? skin.middle : 'grass-soil')
+      const start = Math.floor(column * columnWidth) + (column === 0 ? inset : 0);
+      const end = Math.ceil((column + 1) * columnWidth) - (column === columns - 1 ? inset : 0);
+      terrain.push(scene.add.tileSprite(left + start,
+        top + 4, end - start + (column < columns - 1 ? 1 : 0), depth, winter ? skin.middle : 'grass-soil')
         .setOrigin(0).setTileScale(C.pixelScale).setDepth(-1));
     }
     const capWidth = Math.min(32, platform.width / 2);
@@ -59,7 +61,6 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       terrain.push(scene.add.tileSprite(x, top, capWidth, Math.min(6, platform.height), key)
         .setOrigin(0).setTileScale(C.pixelScale).setDepth(0));
     }
-    rims.push(scene.add.rectangle(platform.x, top + 1, platform.width, 2, C.rim.calm).setDepth(1));
     if (!winter) for (const tile of terrain.slice(terrainStart)) {
       const key = `${tile.texture.key}-red`;
       if (!scene.textures.exists(key)) continue;
@@ -71,12 +72,12 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
     if (props.length < C.maxProps) {
       // Stable one/two-plant compositions avoid identical bookends on every platform.
       const composition = stableUnit(`composition:${platform.id}`);
-      const slots = composition > 0.55 ? [-1, 1] : [composition < 0.25 ? -0.35 : 0.35];
+      const slots = composition > 0.55 ? [-0.9, -0.45, 0.25, 0.8] : [-0.8, -0.15, 0.65];
       for (const side of slots) {
         if (props.length >= C.maxProps) break;
         const seed = stableUnit(`${platform.id}:${side}`);
         const x = platform.x + side * (platform.width / 2 - Math.min(28, platform.width / 4));
-        const key = winter ? skin.plant : seed > 0.8 ? 'grass-tree' : seed > 0.65 ? skin.plant : seed > 0.45 ? 'forest-fern' : seed > 0.1 ? 'forest-mushrooms' : 'grass-stone';
+        const key = winter ? (seed > 0.75 ? 'winter-crystal' : seed > 0.5 ? 'winter-bush' : seed > 0.25 ? skin.plant : 'grass-stone') : seed > 0.8 ? 'grass-tree' : seed > 0.65 ? skin.plant : seed > 0.45 ? 'forest-fern' : seed > 0.1 ? 'forest-mushrooms' : 'grass-stone';
         const healthy = scene.add.image(x, top + 3, key)
           .setOrigin(0.5, 1).setScale(C.pixelScale).setDepth(-2);
         const targetHeight = 28 + stableUnit(`plant-size:${platform.id}:${side}`) * (slots.length === 1 ? 42 : 24);
@@ -88,8 +89,12 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
         props.push({ healthy, decayed, threshold: seed * 0.65 });
       }
     }
+    const vines = [-0.65, 0.45].map((offset) => scene.add.image(platform.x + platform.width * offset / 2,
+      top + 12, 'hanging-vine').setOrigin(0.5, 0).setDepth(-2)
+      .setScale(0.65 + stableUnit(`vine:${platform.id}:${offset}`) * 0.7)
+      .setTint(winter ? 0xb1cad6 : 0x8ca778));
     // Follow authored moving ledges using simulation positions, never signal values.
-    const images = [...terrain.slice(terrainStart), ...rims.slice(rimStart),
+    const images = [...vines, ...terrain.slice(terrainStart), ...rims.slice(rimStart),
       ...props.slice(propStart).flatMap((prop) => [prop.healthy, prop.decayed])];
     platformMarks.push({ id: platform.id, x: platform.x, y: platform.y,
       marks: images.map((image) => ({ image, x: image.x, y: image.y })) });
