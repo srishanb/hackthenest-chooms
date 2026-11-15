@@ -57,7 +57,7 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
   const listeners = new Set<(state: ComposureState) => void>();
 
   // The recorder buffers frames, states and bus events in memory; exportRecording() returns them as JSONL.
-  const recorder = createRecorder({ source: startKind, algo: params.algo !== null && params.algo in ALGORITHMS ? params.algo : config.defaultAlgo });
+  const recorder = createRecorder({ source: startKind, algo: params.algo !== null && Object.hasOwn(ALGORITHMS, params.algo) ? params.algo : config.defaultAlgo });
   bus.onAny((event, tMs) => recorder.recordEvent(event, tMs));
 
   let source: Source | null = null;
@@ -83,7 +83,13 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
     }
     recorder.recordState(state);
     published = activeKind === 'REPLAY' ? { ...state, t: now() } : state;
-    for (const listener of listeners) listener(published);
+    for (const listener of listeners) {
+      try {
+        listener(published);
+      } catch (error) {
+        console.error('[signal] reader subscriber threw', error);
+      }
+    }
   }
 
   function onFrame(frame: BandFrame): void {

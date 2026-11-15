@@ -67,7 +67,7 @@ export function createAudio(deps: AudioDeps, environment?: AudioEnvironment): Au
       volumes: deps.stores.settings.get().volumes, phase: snapshot.phase,
       inRefuge: snapshot.inRefuge, emberActive: snapshot.ember.active }, deps.config);
     soundtrack?.update(worldCorruption());
-    const duck = narrator.getActiveLine() === null ? 1 : INTRO_MUSIC_DUCK;
+    const duck = narrator.isSpeaking() ? INTRO_MUSIC_DUCK : 1;
     engine.apply({ ...mix, quiet: mix.quiet * duck, tense: mix.tense * duck }, force);
     dirty = false;
   };
@@ -117,7 +117,7 @@ export function createAudio(deps: AudioDeps, environment?: AudioEnvironment): Au
   const timer = setInterval(() => {
     narrator.tick();
     ambience?.update(worldCorruption());
-    const narrating = narrator.getActiveLine() !== null;
+    const narrating = narrator.isSpeaking();
     if (narrating !== wasNarrating) { wasNarrating = narrating; dirty = true; }
     if (dirty) apply();
   }, 100);

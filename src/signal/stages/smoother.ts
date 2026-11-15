@@ -10,7 +10,7 @@ import type { Smoother } from '../../shared/contracts/signal-internal';
 /** Move `previous` toward `target` over `dtMs` with time constant `tauMs` (63 % of the way after one tau). */
 export const smooth: Smoother = (previous, target, dtMs, tauMs) => {
   if (!Number.isFinite(target)) return previous;
-  if (tauMs <= 0) return target;
-  const blend = 1 - Math.exp(-Math.max(dtMs, 0) / tauMs);
+  if (!Number.isFinite(previous) || tauMs <= 0) return target;
+  const blend = 1 - Math.exp(-Math.max(Number.isFinite(dtMs) ? dtMs : 0, 0) / tauMs);
   return previous + (target - previous) * blend;
 };

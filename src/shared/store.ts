@@ -22,7 +22,13 @@ export function createStore<T>(initial: T): Store<T> {
     set(next) {
       if (Object.is(next, value)) return;
       value = next;
-      for (const listener of listeners) listener(value);
+      for (const listener of listeners) {
+        try {
+          listener(value);
+        } catch (error) {
+          console.error('[store] subscriber threw', error);
+        }
+      }
     },
     subscribe(listener) {
       listeners.add(listener);
