@@ -61,7 +61,6 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       terrain.push(scene.add.tileSprite(x, top, capWidth, Math.min(6, platform.height), key)
         .setOrigin(0).setTileScale(C.pixelScale).setDepth(0));
     }
-    rims.push(scene.add.rectangle(platform.x, top + 1, platform.width, 2, C.rim.calm).setDepth(1));
     if (!winter) for (const tile of terrain.slice(terrainStart)) {
       const key = `${tile.texture.key}-red`;
       if (!scene.textures.exists(key)) continue;

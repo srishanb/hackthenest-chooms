@@ -1,0 +1,7 @@
+# Remove platform lines
+
+Neil requested removing the outline on the occupied block and the moving-block line. Found protected current-platform cues, duplicate rim rectangles in both world renderers, and stationary guide rails under moving platforms. Remove extra rims/rails and skip current-platform outline pieces; preserve native tile edges and nearby reachable-platform cues. No collision/physics/contracts/dependencies changed. Pre-code check: partly done. Files: world-view, forest-world, protected-visibility. Human hardware tasks don't block.
+
+Acceptance: no occupied outline, no motion rail, moving terrain still follows simulation. Typecheck/tests/build required. Manual browser visual verification not performed. Confidence high for removed drawing paths; native art may still have a thin top edge by design. Initial scripted removal left callback fragments; fixed world-view before validation. No other abandoned approaches or dependencies. Existing test coverage retained; no redundant rendering test added.
+
+Validation: TypeScript,490 tests/75 files and build pass. Updated existing moving visibility regression to require no occupied outline both grounded/airborne. Existing Vite/pieeg warnings remain.
