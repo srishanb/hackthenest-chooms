@@ -22,6 +22,7 @@ affected phases. Removing a row never requires code outside one lane (see PLAN.m
 | MOV-4 | Movement | Consistent physics | EEG never changes gravity, friction, jump strength, speed or steering. Environmental effects follow fixed rules. | Core | P4.1, lane-boundary test |
 | PLT-1 | Platforming | Vertical climb | Ascend an authored sequence of increasingly difficult sections. | Core | P4.2, P8.2 |
 | PLT-2 | Platforming | Stationary platforms | The foundation of the climb. | Core | P4.2 |
+| COL-1 | Exploration | Collectible wax | Optional gold wax droplets on climb ledges give a capped, 10-second wider lantern glow and a pickup pulse. Additional pickups refresh, never stack, the bonus. A wax counter and completed-set badge provide a collection goal. Droplets count once per run and remain collected across reloads; timers freeze during pause/recovery and light stays fixed while airborne. No physics or EEG-dependent reward changes. | Core presentation | P4 extension |
 | PLT-3 | Platforming | Moving platforms | Predictable, visible cycles independent of EEG. | Expansion | P11 |
 | PLT-4 | Platforming | Disappearing platforms | Clear warning before disappearing on fixed cycles; introduced above catch platforms. | Expansion | P11 |
 | PLT-5 | Platforming | Wind section | Visible direction cues and predictable gusts in a dedicated section; independent of EEG. | Expansion | P11 |
@@ -64,4 +65,4 @@ affected phases. Removing a row never requires code outside one lane (see PLAN.m
 | DIA-2 | Diagnostics | Debug overlay | Feature value, quality, sample age, intensity, thresholds, ember progress. | Core | P1.6 |
 | END-1 | Completion | Reach the finish | Win by completing the physical climb, independent of physiological performance. | Core | P4.5 |
 
-Counts (48 rows): 37 Core, 3 Core presentation, 1 Core production, 1 Core polish, 1 BCI option, 4 Expansion, 1 Polish.
+Counts (49 rows): 37 Core, 4 Core presentation, 1 Core production, 1 Core polish, 1 BCI option, 4 Expansion, 1 Polish.
