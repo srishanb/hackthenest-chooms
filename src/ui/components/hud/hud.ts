@@ -54,10 +54,10 @@ export const hud: UiComponent = {
       text(ember, cooldownSeconds > 0 ? `${t('ember.cooldownLabel')} ${cooldownSeconds}s` : t(view.emberKey));
       const waxState = snapshot.wax;
       const boostSeconds = Math.ceil((waxState?.boostRemainingMs ?? 0) / 1000);
-      text(wax, waxState ? `${t('wax.label')} ${waxState.collected}/${waxState.total}` +
-        (waxState.total > 0 && waxState.collected === waxState.total ? ` · ${t('wax.complete')}` : '') +
+      text(wax, waxState ? `${t('wax.label')} ${waxState.collected}${waxState.total === null ? '' : `/${waxState.total}`}` +
+        (waxState.total !== null && waxState.total > 0 && waxState.collected === waxState.total ? ` · ${t('wax.complete')}` : '') +
         (boostSeconds > 0 ? ` · ${t('wax.boost')} ${boostSeconds}s` : '') : '');
-      wax.hidden = !flags.showStatus || !waxState?.total;
+      wax.hidden = !flags.showStatus || !waxState;
       text(composure, `${t('hud.composure')} ${view.intensityKey === null ? t('hud.unavailable') : t(view.intensityKey)}`);
       text(prompt, view.prompt ?? '');
       progress.value = view.progressPercent;
@@ -73,7 +73,7 @@ export const hud: UiComponent = {
       signal.reader.subscribe((next) => { signalState = next; render(); })];
     cleanups.push(bus.on('wax_collected', (event) => {
       clearTimeout(rewardTimer);
-      text(reward, `${t('wax.pickup')} · ${event.collected}/${event.total}`);
+      text(reward, `${t('wax.pickup')} · ${event.collected}${event.total === null ? '' : `/${event.total}`}`);
       reward.hidden = !stores.settings.get().hud.showStatus;
       rewardTimer = setTimeout(() => { reward.hidden = true; }, WAX_CONFIG.toastMs);
     }));

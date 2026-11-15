@@ -20,7 +20,7 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 | `remapKey` | `components/settings-panel/settings-editor.ts` | Swap existing bindings on a duplicate choice. |
 | `startMenu` | `components/start-menu/start-menu.ts` | Title, Play (emits `start`) and Settings (opens the settings panel) while the phase is `'menu'`. |
 | `startMenuVisible`, `startsOnKey` | `components/start-menu/start-menu-state.ts` | Pure show/hide and Enter-to-play rules. |
-| `hud` | `components/hud/hud.ts` | Ember status, optional wax collection goal/boost timer/pickup feedback, signal quality and qualitative signal intensity. |
+| `hud` | `components/hud/hud.ts` | Ember status, running wax count/boost timer/pickup feedback, stage progress, signal quality and qualitative signal intensity. |
 | `hudState`, `percent`, `intensityLabel` | `components/hud/hud-state.ts` | Presentation mapping and bounded percentage formatting. |
 | `calibration`, `createCueTone` | `components/calibration/` | Pause-entry modal, timed instructions, source connect, safe fallback and local sound cues. |
 | `createCalibrationFlow`, `stepFlow`, `messageKey`, `preferCalibrationFallback`, flow types | `components/calibration/calibration-flow.ts` | Pure calibration navigation, timed halfway instructions, ordered commands and reviewed failure wording. Screens are P6.1.2. |
