@@ -96,3 +96,8 @@ body {
 [hidden] {
   display: none !important;
 }
+.ui-slot[data-slot='full'], .ui-slot[data-slot='center'] { max-width: none; max-height: none; }
+@media (max-height: 580px) { .pause-menu { padding: var(--space-4); gap: var(--space-2); } .pause-menu h2 { margin-bottom: var(--space-1); } }
+/* Narrator text stays above the corner instruments, including narrow screens. */
+#ui[data-phase='playing'] .ui-slot[data-slot='bottom-center'],
+#ui[data-phase='ember'] .ui-slot[data-slot='bottom-center'] { bottom: calc(var(--hud-corner) + 130px); }

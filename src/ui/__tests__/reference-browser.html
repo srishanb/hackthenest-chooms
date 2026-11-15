@@ -1,0 +1,43 @@
+<!doctype html><html><head><base href="/"><title>Reference UI integration checks</title></head><body>
+<div id="app"><div id="game"></div><div id="ui"></div></div>
+<button id="test" style="position:fixed;left:40%;top:45%;z-index:100">Run pause invariants</button>
+<output id="result" style="position:fixed;left:20px;top:130px;z-index:100;background:#07121f;color:#fff;padding:12px;max-width:90vw;white-space:pre-wrap"></output>
+<script type="module">
+// Real Phaser scene and stores, memory saves. No production debug global or game imports in UI modules.
+import {createGame} from '/src/game/index.ts';
+import {neutralFrame} from '/src/game/effects/effects-engine.ts';
+import {SECTIONS} from '/src/content/sections/index.ts';
+import {EFFECTS_TABLE} from '/src/config/effects.config.ts';
+import {EMBER_CONFIG} from '/src/config/ember.config.ts';
+import {GAME_CONFIG} from '/src/config/game.config.ts';
+import {UI_CONFIG} from '/src/config/ui.config.ts';
+import {createStore} from '/src/shared/store.ts';
+import {createEventBus} from '/src/shared/bus.ts';
+import {INITIAL_GAME_SNAPSHOT} from '/src/shared/contracts/game-state.ts';
+import {DEFAULT_SETTINGS} from '/src/shared/contracts/settings.ts';
+import {mountUi} from '/src/ui/registry.ts';
+const bus=createEventBus();
+const stores={snapshot:createStore({...INITIAL_GAME_SNAPSHOT}),settings:createStore(structuredClone(DEFAULT_SETTINGS)),effects:createStore(neutralFrame(EFFECTS_TABLE))};
+const frame={intensity:.5,resting:0,restingActive:false,quality:1,valid:true,sampleAgeMs:0,held:false,mode:'fixed',calibrated:true,source:'SIMULATED',algo:'fixture',t:0};
+const reader={getState:()=>frame,subscribe:()=>()=>{}};
+const game=createGame({parent:document.querySelector('#game'),bus,stores,composure:reader,sections:SECTIONS,gameConfig:GAME_CONFIG,effectsTable:EFFECTS_TABLE,emberConfig:EMBER_CONFIG});
+const config=structuredClone(UI_CONFIG);config.components['main-menu'].enabled=false;config.components.calibration.enabled=false;config.components['debug-overlay'].enabled=false;
+mountUi(document.querySelector('#ui'),{bus,stores,signal:{reader,control:{}}},config);
+const result=document.querySelector('#result');
+const frames=async(count)=>{ for(let i=0;i<count;i++) await new Promise(requestAnimationFrame); };
+document.querySelector('#test').onclick=async()=>{
+ const scene=game.scene.getScenes(true).find(scene=>'worldTimeMs' in scene);
+ const checks=[];const check=(name,pass)=>{checks.push(`${pass?'PASS':'FAIL'} ${name}`);result.textContent=checks.join('\n');};
+ if(!scene){check('scene ready',false);return;}
+ bus.emit({type:'pause'});
+ const frozen=()=>JSON.stringify({body:scene.state,time:scene.worldTimeMs,effects:stores.effects.get(),wax:stores.snapshot.get().wax,camera:[scene.cameras.main.scrollX,scene.cameras.main.scrollY]});
+ const before=frozen();await frames(12);check('pause freezes exact player, world time, wax, effects and camera',frozen()===before);
+ bus.emit({type:'resume'});await frames(12);check(`resume advances world time (phase=${stores.snapshot.get().phase}, world=${scene.worldTimeMs}, active=${scene.sys.isActive()}, enginePaused=${game.isPaused})`,frozen()!==before&&stores.snapshot.get().phase==='playing');
+ bus.emit({type:'pause'});bus.emit({type:'main_menu_requested'});check('main menu transition',stores.snapshot.get().phase==='menu');
+ bus.emit({type:'start'});check('Play continues the run',stores.snapshot.get().phase==='playing');
+ const unmount = mountUi(document.createElement('div'),{bus,stores,signal:{reader,control:{}}},{components:Object.fromEntries(Object.entries(config.components).map(([id,value])=>[id,{...value,enabled:id==='pause-menu'}]))});
+ unmount();
+ window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyP',key:'p',bubbles:true,cancelable:true}));
+ check('unmounted pause listener does not duplicate P transition',stores.snapshot.get().phase==='paused');
+};
+</script></body></html>
