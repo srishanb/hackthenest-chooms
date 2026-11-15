@@ -73,5 +73,5 @@
   --launch-title: clamp(58px, 8.4vw, 112px);
   --launch-spacing: clamp(24px, 5vw, 72px);
 }
-/* Preview-only statistics size defaults; user-selected values stay local. */
+/* Slightly larger, lighter statistics card. */
 :root { --hud-stats-background: #101b2b99; --hud-stats-font: 15px; --hud-stats-font-small: 12px; }

@@ -1,0 +1,10 @@
+/* Authoring layout only; no gameplay HUD or movement styles. */
+.stage-editor { position:fixed;inset:0;z-index:50;display:grid;grid-template-columns:180px minmax(240px,1fr) 240px;grid-template-rows:auto minmax(0,1fr);background:var(--color-bg);color:var(--color-text);font:var(--text-md) var(--font-ui);overflow:auto }
+.stage-editor header{grid-column:1/-1;display:flex;gap:12px;padding:12px;align-items:center;flex-wrap:wrap}
+.stage-editor aside{display:flex;flex-direction:column;gap:12px;padding:12px;overflow:auto;background:var(--color-panel)}
+.stage-editor main{min-width:0;display:flex;align-items:center;overflow:hidden}
+.stage-editor button,.stage-editor input,.stage-editor select{font:inherit;color:var(--color-text);background:var(--color-inset);border:1px solid var(--color-panel-border);padding:8px;max-width:100%;box-sizing:border-box}
+.stage-editor label{display:flex;gap:8px;align-items:center;justify-content:space-between}.stage-editor input[type=number]{width:110px}
+@media(max-width:800px){.stage-editor{grid-template-columns:140px minmax(300px,1fr) 200px}}
+
+.stage-editor main canvas{display:block}

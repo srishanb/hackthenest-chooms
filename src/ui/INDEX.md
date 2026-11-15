@@ -39,3 +39,4 @@ Corruption preview: Settings mounts the existing source-badge/forest-preview hel
 HUD Fuel metric reads optional GameSnapshot.lanternFuel01; actual candle resource, not composure percentage.
 
 `mountNarratorVoiceControl` (`components/settings-panel/narrator-voice-control.ts`) adds a saved stock-voice selector, Preview/Stop and preview caption in Settings. It publishes a validated local event defined in audio config; it never imports audio or alters game state.
+`mountStageEditor`, `EditorDeps` (`components/stage-editor/stage-editor.ts`) provide authoring controls through injected render/save/test callbacks; no gameplay imports.
