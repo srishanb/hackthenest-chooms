@@ -4,7 +4,7 @@ import { GAME_CONFIG } from '../../config/game.config';
 import { SECTIONS } from '../sections';
 
 it('has five sequential ten-platform stages with one landing target each and no finish boxes', () => {
-  expect(SECTIONS.map((section) => section.stage?.kind)).toEqual(['tutorial', 'normal', 'snow', 'windy', 'snow-windy']);
+  expect(SECTIONS.map((section) => section.stage?.kind)).toEqual(['tutorial', 'normal', 'windy', 'snow', 'snow-windy']);
   const ids = SECTIONS.flatMap((section) => section.platforms.map((platform) => platform.id));
   expect(ids).toHaveLength(50); expect(new Set(ids).size).toBe(50);
   for (const section of SECTIONS) {

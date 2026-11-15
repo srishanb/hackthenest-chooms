@@ -4,10 +4,17 @@ import { EFFECTS_TABLE } from '../../config/effects.config';
 import { forestPreviewValue } from '../../config/forest.config';
 import { neutralFrame, stepEffects, type EffectInput } from '../effects/effects-engine';
 import { stepForestEffects } from '../forest/forest-effects';
-import { mixColor, reveal, stableUnit } from '../forest/presentation';
+import { fitPropScale, mixColor, reveal, stableUnit } from '../forest/presentation';
 
 const input: EffectInput = { intensity: 0.8, valid: true, mode: 'adaptive', airborne: false, effectStrength: 1, reducedMotion: false };
 describe('forest presentation', () => {
+  it('fits corrupted crystals to the displayed pine rather than its 110px source', () => {
+    const displayedPineHeight = 110 * (48 / 110);
+    expect(16 * fitPropScale(16, displayedPineHeight)).toBeCloseTo(48);
+    expect(16 * fitPropScale(16, 220)).toBe(48);
+    expect(fitPropScale(0, 48)).toBe(0);
+    expect(fitPropScale(16, NaN)).toBe(0);
+  });
   it('reveal thresholds and positions remain deterministic and fade continuously', () => {
     expect(stableUnit('ledge:1')).toBe(stableUnit('ledge:1'));
     expect(stableUnit('ledge:1')).not.toBe(stableUnit('ledge:2'));

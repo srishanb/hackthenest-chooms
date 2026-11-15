@@ -10,7 +10,7 @@ Owner: Ali. Search here before adding a function.
 | `createKeyboardInput` | `keyboard-input.ts` | A/D and arrow movement, Space/Up jump, live remaps and buffered jump taps. |
 | `BootScene`, `BOOT_SCENE_KEY`, `CLIMB_SCENE_KEY` | `scenes/boot-scene.ts` | First scene; P8 loads assets here. |
 | `ClimbScene` | `scenes/climb-scene.ts` | Draws the world, runs fixed-step `stepPlayer`, emits `jump` and `precision_window`, feeds the darkness layer. |
-| `stepPlayer`, `createPlayer`, `teleportPlayer` | `player/movement.ts` | Pure fixed-step physics: gravity, walk, charge jump, air steering, one-way platforms, side walls. Never reads the signal. |
+| `stepPlayer`, `createPlayer`, `teleportPlayer` | `player/movement.ts` | Pure fixed-step physics: gravity, walk, charge jump, ascent steering, descent-only horizontal acceleration and bounded edge recovery, one-way platforms, side walls. Never reads the signal. |
 | `charge01`, `launchVelocity`, `steeredVx` | `player/charge-jump.ts` | Charge and launch maths, air-steering cap. |
 | `findLanding`, `findSupport`, `overlapsX`, `clampToWalls` | `player/collide.ts` | Swept one-way landing and wall clamp. |
 | `sectionAt`, `lowestPlatformY` | `world/bounds.ts` | Which section a height belongs to (derived from platforms). |
@@ -56,3 +56,9 @@ Recovery keeps a marker placed after each return. Pickup is required before plac
 | `createRubyView` | `forest/ruby-view.ts` | Read-only player pose animation, consistent feet anchor. |
 | `stepForestEffects` | `forest/forest-effects.ts` | Existing engine plus optional visual-only forest field preview. |
 | `stableUnit`, `reveal`, `mixColor` | `forest/presentation.ts` | Deterministic seeds and continuous visual mapping. |
+
+Atmosphere: createAtmosphere (forest/atmosphere.ts) consumes existing corruption and renderer-only stage weather; createVerticalForest and vertical-layout helpers provide bounded continuous background composition. ForestWorld.setEnvironment is the level integration point; no signal/physics import.
+
+createBackdropGardens (forest/backdrop-gardens.ts): five pooled, seeded non-collidable parallax garden ledges; no physics or bright landing rims.
+
+fitPropScale (forest/presentation.ts) fits corrupted decorations to their partner's displayed height with48px cap, preventing oversized winter crystals.

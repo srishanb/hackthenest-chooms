@@ -6,17 +6,19 @@ import type { UiComponent } from '../../types';
 import { hasSeenTutorial, rememberTutorial } from './tutorial-storage';
 import '../../theme/menus.css';
 import './main-menu.css';
+import { createUiActions } from '../../ui-actions';
 
 const STEPS = [
   { title: 'tutorial.move.title', body: 'tutorial.move.body', keys: 'tutorial.move.keys', tip: 'tutorial.move.tip' },
   { title: 'tutorial.jump.title', body: 'tutorial.jump.body', keys: 'tutorial.jump.keys', tip: 'tutorial.jump.tip' },
   { title: 'tutorial.climb.title', body: 'tutorial.climb.body', keys: 'tutorial.climb.keys', tip: 'tutorial.climb.tip' },
+  { title: 'tutorial.journey.title', body: 'tutorial.journey.body', keys: 'tutorial.journey.keys', tip: 'tutorial.journey.tip' },
 ] as const;
 
 export const mainMenu: UiComponent = {
   id: 'main-menu',
   visibleIn: 'always',
-  mount(root, { stores, bus }) {
+  mount(root, { stores, bus, actions: uiActions = createUiActions() }) {
     const storage = getLocalStorage(window);
     const dialog = document.createElement('dialog');
     dialog.className = 'menu-panel tutorial-panel';
@@ -47,6 +49,7 @@ export const mainMenu: UiComponent = {
     const close = (): void => {
       rememberTutorial(storage);
       dialog.close();
+      uiActions.tutorialOpen.set(false);
       if (resumeAfterTutorial && stores.snapshot.get().phase === 'paused') bus.emit({ type: 'resume' });
       resumeAfterTutorial = false; pauseQueued = false;
       previousFocus?.blur();
@@ -64,7 +67,9 @@ export const mainMenu: UiComponent = {
       title.textContent = t(current.title); body.textContent = t(current.body);
       keys.textContent = t(current.keys); tip.textContent = t(current.tip);
       back.hidden = step === 0;
-      next.textContent = t(step === STEPS.length - 1 ? 'tutorial.play' : 'tutorial.next');
+      skip.hidden = stores.snapshot.get().phase === 'menu' && step === STEPS.length - 1;
+      skip.textContent = t(stores.snapshot.get().phase === 'menu' ? 'menu.backToStart' : 'tutorial.skip');
+      next.textContent = t(step === STEPS.length - 1 ? stores.snapshot.get().phase === 'menu' ? 'menu.backToStart' : 'tutorial.play' : 'tutorial.next');
       next.focus();
     }
     function open(): void {
@@ -88,10 +93,16 @@ export const mainMenu: UiComponent = {
       autoShown = true;
       if (!hasSeenTutorial(storage)) open();
     };
-    const offSnapshot = stores.snapshot.subscribe(() => { openOnFirstClimb(); pauseWhenReady(); });
+    const offSnapshot = stores.snapshot.subscribe(() => {
+      replay.hidden = stores.snapshot.get().phase === 'menu';
+      openOnFirstClimb(); pauseWhenReady();
+    });
+    const offOpen = uiActions.tutorialOpen.subscribe((requested) => { if (requested) open(); });
+    replay.hidden = stores.snapshot.get().phase === 'menu';
     openOnFirstClimb();
     return () => {
       offSnapshot();
+      offOpen();
       if (dialog.open) close();
       replay.remove(); dialog.remove();
     };

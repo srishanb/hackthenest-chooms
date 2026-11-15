@@ -23,6 +23,7 @@ import { startMenu } from './components/start-menu/start-menu';
 import { sourceBadge } from './components/source-badge/source-badge';
 import './theme/tokens.css';
 import './theme/layout.css';
+import './theme/glass.css';
 import type { UiComponent, UiDeps } from './types';
 import { createUiActions } from './ui-actions';
 
@@ -44,7 +45,7 @@ const SLOTS: readonly UiSlot[] = ['full', 'center', 'top-left', 'top-right', 'bo
 
 /** Mount every enabled component into its slot. Returns a function that removes them all. */
 export function mountUi(root: HTMLElement, deps: UiDeps, config: UiConfig): () => void {
-  const componentDeps = { ...deps, actions: deps.actions ?? createUiActions(config.components['settings-panel'].enabled, config.components.calibration.enabled) };
+  const componentDeps = { ...deps, actions: deps.actions ?? createUiActions(config.components['settings-panel'].enabled, config.components.calibration.enabled, config.components['main-menu'].enabled) };
   const slots = new Map<UiSlot, HTMLElement>();
   for (const slot of SLOTS) {
     const element = document.createElement('div');

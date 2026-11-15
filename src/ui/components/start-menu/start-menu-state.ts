@@ -6,6 +6,22 @@
  * Enter behaviour wins, for example the Settings button).
  */
 import type { GamePhase } from '../../../shared/contracts/game-state';
+import type { GameSnapshot } from '../../../shared/contracts/game-state';
+
+/** Game-validated anchor/navigation already exists; the menu never parses or creates saves. */
+export function canContinue(snapshot: GameSnapshot, playedThisSession: boolean): boolean {
+  return playedThisSession || !!snapshot.navigation?.checkpoints.length || snapshot.promptKey === 'ember.placedHint';
+}
+
+/** Arrow navigation wraps the enabled visible menu buttons. */
+export function menuSelection(index: number, count: number, code: string): number {
+  if (!count) return -1;
+  if (code === 'Home') return 0;
+  if (code === 'End') return count - 1;
+  const reverse = code === 'ArrowUp' || code === 'ArrowLeft';
+  const current = index < 0 ? reverse ? 0 : -1 : index;
+  return (current + (reverse ? -1 : 1) + count) % count;
+}
 
 export function startMenuVisible(phase: GamePhase, settingsOpen: boolean): boolean {
   return phase === 'menu' && !settingsOpen;
