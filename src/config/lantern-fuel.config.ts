@@ -2,7 +2,7 @@
 export const LANTERN_FUEL_CONFIG = {
   fullRadiusPx: 280,
   normalWorldMax01: 0.35,
-  calmBurnSeconds: 240, corruptedBurnSeconds: 45, waxRefill01: 0.35,
+  calmBurnSeconds: 240, corruptedBurnSeconds: 22.5, baselineCorruptedBurnSeconds: 45, waxRefill01: 0.35,
   emptyRadiusScale: 0.3, minimumRadiusPx: 60,
 } as const;
 /** Real corruption weakens wax smoothly; strongest corruption completely suppresses its benefit. */
