@@ -101,3 +101,10 @@ it('a low-fuel reminder waits for ongoing speech and cooldown, and a refill canc
   s.stores.snapshot.set({...s.stores.snapshot.get(),lanternFuel01:0.7});s.raw.currentTime=300;s.player.tick();
   expect(s.player.getActiveLine()).toBeNull();s.player.dispose();
 });
+it('a quick Play again skips the cooling welcome instead of blocking moments, and never welcomes mid-climb',async()=>{
+  const s=setup();await s.player.ready;s.start();expect(s.player.getActiveLine()).toBe('intro-chris-welcome');s.raw.currentTime=8;s.end();
+  s.raw.currentTime=40;s.bus.emit({type:'finish'});s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'finished'});expect(s.player.getActiveLine()).toBe('intro-chris-finish');s.end();
+  s.raw.currentTime=60;s.bus.emit({type:'run_restart'});s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'playing'});
+  s.raw.currentTime=75;s.bus.emit({type:'stage_completed',stageId:'tutorial',index:0});s.player.tick();expect(s.player.getActiveLine()).toBe('intro-chris-tutorial');s.end();
+  s.raw.currentTime=121;s.player.tick();expect(s.player.getActiveLine()).toBeNull();s.player.dispose();
+});
