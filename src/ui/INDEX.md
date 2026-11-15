@@ -34,3 +34,5 @@ Forest presentation: tokens.css themes existing UI surfaces. Source badge mounts
 Reference redesign: `navigationView` (`components/hud/navigation.ts`) chooses the nearest finite world checkpoint and derives screen-space needle angle plus distance. `HUD_WORLD_PIXELS_PER_METRE` in UI config explicitly defines 32 world px/m; `HUD_LANTERN_FULL_RADIUS_PX` defines the gauge range. The game publishes optional read-only navigation telemetry; UI never reaches into the scene. `icon` in icons.ts creates local SVG interface symbols. HUD stores only the player's physical height best (world pixels), not a signal score. Pause emits game-owned checkpoint/menu requests. No death/life economy or Lost state exists. The original player/platform/forest art remains unchanged; only the placed Ember's circle is replaced with a code-drawn shrine. Pixelify Sans and its OFL license are bundled under theme/fonts.
 
 Corruption preview: Settings mounts the existing source-badge/forest-preview helper; source badge now displays source status only. No duplicated preview controls.
+
+HUD Fuel metric reads optional GameSnapshot.lanternFuel01; actual candle resource, not composure percentage.
