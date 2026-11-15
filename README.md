@@ -61,7 +61,7 @@ files (other than `.env.example`).
 
 ### Verify your setup
 
-These work once Phase 0 has merged (see `docs/STATUS.md`):
+Run these in the repo folder (Git Bash on Windows):
 
 ```bash
 npm ci
@@ -76,7 +76,11 @@ npm run dev
 ```
 
 `npm run check` is the type check plus unit tests. `npm run dev` prints a `localhost` URL; open it in Chrome or Edge
-and confirm you see the game canvas and a `SIMULATED INPUT` badge.
+and confirm you see a box standing on a platform inside a pool of light, and a `SIMULATED INPUT` badge. Left and
+Right move the box; the backtick key (`` ` ``) toggles the signal debug overlay.
+
+`npm ci` prints a warning that esbuild's install script was not run. That is npm 11's default and is harmless here.
+If `npm ci` fails with a cache permission error, run it once as `npm_config_cache="$TMPDIR/npm-cache" npm ci`.
 
 ### Working in parallel
 

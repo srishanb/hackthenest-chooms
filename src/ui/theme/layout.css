@@ -1,0 +1,84 @@
+/*
+ * Page layout: the game canvas fills the window and the UI layer sits on top of it.
+ * The UI layer ignores the mouse except on components, so it never blocks the game.
+ * Slots are named areas a component can be placed in from src/config/ui.config.ts.
+ */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+#game,
+#ui {
+  position: absolute;
+  inset: 0;
+}
+
+#ui {
+  z-index: var(--layer-ui);
+  pointer-events: none;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.ui-slot {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ui-slot > * {
+  pointer-events: auto;
+}
+
+.ui-slot[data-slot='top-left'] {
+  top: var(--space-3);
+  left: var(--space-3);
+  align-items: flex-start;
+}
+
+.ui-slot[data-slot='top-right'] {
+  top: var(--space-3);
+  right: var(--space-3);
+  align-items: flex-end;
+}
+
+.ui-slot[data-slot='bottom-left'] {
+  bottom: var(--space-3);
+  left: var(--space-3);
+  align-items: flex-start;
+}
+
+.ui-slot[data-slot='bottom-center'] {
+  bottom: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+}
+
+.ui-slot[data-slot='center'] {
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.ui-slot[data-slot='full'] {
+  inset: 0;
+  pointer-events: none;
+}
+
+[hidden] {
+  display: none !important;
+}

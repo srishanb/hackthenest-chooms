@@ -1,0 +1,36 @@
+/**
+ * Source badge: always says where the signal comes from (live board, simulator, replay).
+ *
+ * Why always visible: a judge must never have to wonder whether the signal is real.
+ * It stays on screen even when the debug overlay is hidden (feature DIA-1).
+ */
+import type { InputSourceKind } from '../../../shared/contracts/composure';
+import { t, type StringKey } from '../../strings';
+import type { UiComponent } from '../../types';
+import './source-badge.css';
+
+const LABEL: Record<InputSourceKind, StringKey> = {
+  LIVE_EEG: 'source.LIVE_EEG',
+  SIMULATED: 'source.SIMULATED',
+  REPLAY: 'source.REPLAY',
+};
+
+export const sourceBadge: UiComponent = {
+  id: 'source-badge',
+  visibleIn: 'always',
+  mount(root, { signal }) {
+    const badge = document.createElement('div');
+    badge.className = 'source-badge';
+    badge.setAttribute('role', 'status');
+    root.append(badge);
+
+    const render = (source: InputSourceKind): void => {
+      badge.dataset.source = source;
+      badge.textContent = t(LABEL[source]);
+    };
+    render(signal.reader.getState().source);
+    return signal.reader.subscribe((state) => {
+      if (badge.dataset.source !== state.source) render(state.source);
+    });
+  },
+};

@@ -1,0 +1,24 @@
+.debug-overlay {
+  z-index: var(--layer-debug);
+  min-width: 230px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-panel-border);
+  border-radius: var(--radius);
+  background: var(--color-panel);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.debug-overlay__title {
+  color: var(--color-accent);
+}
+
+.debug-overlay__hint {
+  color: var(--color-text-dim);
+}
+
+.debug-overlay__rows {
+  margin: var(--space-1) 0 0;
+  white-space: pre;
+}
