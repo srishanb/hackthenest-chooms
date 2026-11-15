@@ -8,3 +8,6 @@ export const AUDIO_CONFIG: AudioConfig = {
   musicCrossfadeMs: 2000,
   narrator: { cooldownMs: 8000, repeatCooldownMs: 120_000 },
 };
+
+/** Local narrator presentation only; never affects gameplay or signal values. */
+export const INTRO_MUSIC_DUCK = 0.35;

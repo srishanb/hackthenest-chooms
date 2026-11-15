@@ -1,4 +1,4 @@
-import { LANTERN_FUEL_CONFIG } from '../../config/lantern-fuel.config';
+import { LANTERN_FUEL_CONFIG, corruptionVisibilityRadius } from '../../config/lantern-fuel.config';
 /**
  * The climb scene: draws the world, runs the fixed-step player physics and feeds the effects.
  *
@@ -247,8 +247,11 @@ export class ClimbScene extends Phaser.Scene {
     });
   }
 
-  private visibleRadius(base: number, airborne: boolean): number {
-    return this.fuel.lightRadius(this.wax.lightRadius(base, airborne, this.fuel.waxBenefit), airborne);
+  private visibleRadius(base: number, airborne: boolean, visualCorruption = this.deps.stores.effects.get().forestCorruption): number {
+    const radius = this.fuel.lightRadius(this.wax.lightRadius(base, airborne, this.fuel.waxBenefit), airborne);
+    const signal = this.deps.composure.getState();
+    const actual = signal.valid && signal.mode !== 'fixed' ? signal.intensity : 0.2;
+    return corruptionVisibilityRadius(radius, Math.max(actual, visualCorruption), this.wax.lightPulse01());
   }
 
   private returnToEmber(anchor: EmberAnchor | null): void {
@@ -353,7 +356,7 @@ export class ClimbScene extends Phaser.Scene {
 
     // Never let the sheet shrink so far that its edge shows on screen.
     const baseRadius = Math.max(frame.lanternRadius, minCoveringRadius(gameConfig.view.width, gameConfig.view.height));
-    const radius = this.visibleRadius(baseRadius, !this.state.grounded);
+    const radius = this.visibleRadius(baseRadius, !this.state.grounded, frame.forestCorruption);
     updateDarkness(this.darkness, this.state.x, this.state.y, radius);
     this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius, this.platforms);
     this.lanternMark.setPosition(this.state.x, this.state.y - gameConfig.player.height / 2 - 6);

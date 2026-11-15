@@ -1,0 +1,27 @@
+<!doctype html><html><head><base href="/"><title>Local narrator check</title></head><body>
+<h1>Local intro narrator check</h1>
+<button id="start">Play intro</button><button id="pause">Pause</button><button id="resume">Resume</button><button id="precision">Toggle precision silence</button><button id="mute">Toggle narrator mute</button><button id="restart">New run</button>
+<pre id="report"></pre><p id="caption" aria-live="polite"></p>
+<script type="module">
+import {createAudio} from '/src/audio/index.ts';
+import {AUDIO_CONFIG} from '/src/config/audio.config.ts';
+import {NARRATOR_LINES} from '/src/content/narrator/lines.ts';
+import {createStore} from '/src/shared/store.ts';
+import {createEventBus} from '/src/shared/bus.ts';
+import {DEFAULT_SETTINGS} from '/src/shared/contracts/settings.ts';
+import {INITIAL_GAME_SNAPSHOT} from '/src/shared/contracts/game-state.ts';
+const stores={snapshot:createStore({...INITIAL_GAME_SNAPSHOT,phase:'menu'}),settings:createStore(structuredClone(DEFAULT_SETTINGS)),effects:createStore({musicTenseMix:0.2})};
+const bus=createEventBus();const events=[];let context;
+const audio=createAudio({stores,bus,config:AUDIO_CONFIG,narratorLines:NARRATOR_LINES},{createContext:()=>context=new AudioContext(),gestures:window,baseURL:new URL('/',location.href)});
+const out=document.querySelector('#report'),caption=document.querySelector('#caption');let precise=false;
+const report=()=>out.textContent=JSON.stringify({phase:stores.snapshot.get().phase,clips:NARRATOR_LINES.length,audio:audio.getDiagnostics(),latest:events.at(-1),captionStarts:events.filter(e=>e.text).length},null,2);
+bus.on('narrator_line',event=>{events.push(event);caption.textContent=event.text;report();});
+audio.ready.then(report);
+document.querySelector('#start').onclick=()=>{stores.snapshot.set({...stores.snapshot.get(),phase:'playing'});bus.emit({type:'start'});setTimeout(report,200);};
+document.querySelector('#pause').onclick=()=>{stores.snapshot.set({...stores.snapshot.get(),phase:'paused'});report();};
+document.querySelector('#resume').onclick=()=>{stores.snapshot.set({...stores.snapshot.get(),phase:'playing'});report();};
+document.querySelector('#precision').onclick=()=>{precise=!precise;bus.emit({type:'precision_window',active:precise});report();};
+document.querySelector('#mute').onclick=()=>{const current=stores.settings.get();stores.settings.set({...current,volumes:{...current.volumes,narrator:current.volumes.narrator?0:1}});report();};
+document.querySelector('#restart').onclick=()=>{stores.snapshot.set({...stores.snapshot.get(),phase:'playing'});bus.emit({type:'run_restart'});setTimeout(report,200);};
+report();
+</script></body></html>

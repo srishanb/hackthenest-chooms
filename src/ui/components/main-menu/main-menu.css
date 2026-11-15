@@ -26,3 +26,4 @@
 #ui[data-phase='playing'] .tutorial-replay,
 #ui[data-phase='ember'] .tutorial-replay { top: 112px; left: var(--hud-corner); right: auto; bottom: auto; font-size: var(--text-xs); }
 #ui[data-phase='paused'] .tutorial-replay { display: none; }
+.tutorial-panel { transform: scale(var(--ui-tutorial-scale, 1)); transform-origin: center; max-width: calc((100vw - 40px) / var(--ui-tutorial-scale, 1)); max-height: calc((100vh - 40px) / var(--ui-tutorial-scale, 1)); }
