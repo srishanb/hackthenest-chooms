@@ -18,8 +18,8 @@
 
 | Check | Command or steps | Actual result |
 |---|---|---|
-| Type check and tests | `npm run check` | 72 files, 483 tests pass |
-| Build | `npm run build` | see PR |
+| Type check and tests | `npm run check` | 75 files, 489 tests pass (after merging main) |
+| Build | `npm run build` | Succeeds |
 | Loudness of both loops | Decoded in the browser, whole-file RMS | calm bed -19.4 dB, tense loop -24.2 dB, so +4.8 dB trim (1.74); tense peak 0.52 stays under 1 after trim |
 | Real engine in the browser | `src/audio/__tests__/tense-browser.html`: real `createAudio`, both files, an analyser on the output, mix 0 to 0.8 | bus gains quiet 0.336 to 0.104 and tense 0 to 0.32; both loops loaded; context running; output loudness within about 6 dB across steps, peaks 0.08 to 0.14 |
 
@@ -30,7 +30,7 @@
 - The two loops differ in length (137.0 s and 128.7 s) and are not tempo-synchronised, so they drift apart; fine for an equal-power crossfade of ambient beds.
 - The tense file has near-silent stretches (windowed RMS 0.001 at the start). The mix is capped at 0.8 so a little calm bed stays underneath and the music never drops out.
 - A trim in `mix-rules` would break its tested equal-power invariant, so the trim is a gain node in `music-layers.ts`.
-- Lantern fuel was entangled with the corruption light dimming; I kept the dimming (it is corruption, not fuel) and removed the rest.
+- While I worked, main changed fuel (#93 empty-fuel ember, #102 "visibility tied directly to fuel"): sight was then fuel alone. With fuel gone I returned sight to the signal-driven `lanternRadius` effect row (LAN-2: higher intensity shrinks the light, calmer restores it, held in flight by the effects engine). That is my choice, not something Srishan specified; say if the light should be something else. #102's corruption sight cap and wax pulse were already gone on main and stay gone. Merge conflicts with #93/#102 were resolved by taking main's files and re-applying the removal.
 - `web fetch` of OpenGameArt returns 403; I read the item page in the browser pane to confirm the licence.
 
 ## 4. Deviations
@@ -39,7 +39,7 @@
 
 ## 5. Changes
 
-- Game: `forest/lantern-fuel.ts` renamed `lantern-light.ts` (`createLanternLight`), `config/lantern-fuel.config.ts` renamed `lantern-light.config.ts`, `climb-scene.ts`, `snapshot-writer.ts`, test renamed and rewritten.
+- Game: `forest/lantern-fuel.ts` replaced by `lantern-light.ts` (`createLanternLight`: tracks real corruption for the wax benefit only), `config/lantern-fuel.config.ts` replaced by `lantern-light.config.ts`, `climb-scene.ts`, `snapshot-writer.ts`, test replaced.
 - Contract: `GameSnapshot.lanternFuel01` removed (`shared/contracts/game-state.ts`, optional field, one reader removed from the HUD).
 - UI: Fuel stat removed from the HUD; strings `hud.fuel` and `stage.relightRequired` removed.
 - Audio: `asset-list.ts` (tense path, `MUSIC_LEVEL_TRIM`), `music-layers.ts`, `index.ts`; `effects.config.ts` row; `public/assets/audio/music/insistent.ogg` (1.77 MB), inventory, CREDITS, README, licence evidence.

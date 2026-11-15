@@ -1,5 +1,7 @@
 # src/ui — public exports
 
+Stage editor publishing: `publishLayout(stages, fetcher?)` in `components/stage-editor/publish-layout.ts` sends an explicit authoring save to the loopback dev server and returns the GitHub review URL. It is never called by gameplay. `EditorDeps.save` is asynchronous and returns that URL.
+
 Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before adding a function.
 
 | Export | File | What it does |

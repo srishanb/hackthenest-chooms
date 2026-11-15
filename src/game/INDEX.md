@@ -4,6 +4,7 @@ Owner: Ali. Search here before adding a function.
 
 | Export | File | What it does |
 |---|---|---|
+| `layoutStorageKey(stages)` | `editor/layouts.ts` | Scopes browser previews to the bundled team layout so merged updates are visible. |
 | `createGame(deps)` | `index.ts` | Creates the Phaser game. Everything it needs arrives in `GameDeps`. |
 | `createWaxRewards`, `makeWaxDrops`, `WaxDrop`, `WAX_STORAGE_KEY` | `wax/rewards.ts` | Uncapped replenishing wax, one active drop, random respawn delay, bounded save state, temporary light bonus and pause/airborne stability. |
 | `createWaxView` | `wax/view.ts` | Code-drawn wax droplets, reduced-motion-aware hover and pickup pulses. |
@@ -60,7 +61,7 @@ Recovery keeps a marker placed after each return. Pickup is required before plac
 | `createVerticalForest` | `forest/vertical-forest.ts` | Continuous background composition by height (layout helpers in `forest/vertical-layout.ts`). |
 | `createBackdropGardens` | `forest/backdrop-gardens.ts` | Pooled, seeded, non-collidable parallax garden ledges. |
 | `createCorruptionScreen`, `createCorruptionFilter` | `forest/corruption-screen.ts`, `forest/corruption-filter.ts` | Bounded visual-only corruption motion and Phaser filter. |
-| `createLanternLight` | `forest/lantern-light.ts` | How real corruption dims the candle light (held from takeoff to landing) and weakens wax. No fuel resource. |
+| `createLanternLight` | `forest/lantern-light.ts` | Tracks real corruption so wax weakens as it rises. No fuel resource. |
 
 Atmosphere: createAtmosphere (forest/atmosphere.ts) consumes existing corruption and renderer-only stage weather; createVerticalForest and vertical-layout helpers provide bounded continuous background composition. ForestWorld.setEnvironment is the level integration point; no signal/physics import.
 

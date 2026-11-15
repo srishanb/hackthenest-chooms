@@ -15,6 +15,9 @@ It is composure practice and an experimental prototype. It is **not** a medical 
 anything. The signal is a measure of calm versus tension, and muscle activity (a clenched jaw, for example) is part
 of it. We say that openly.
 
+- **Play online:** https://srishanb.github.io/hackthenest-chooms/ (live once GitHub Pages is enabled). Best in Chrome or
+  Edge, which the real board needs for Web Bluetooth. The simulator and presets should work in any modern browser
+  (untested in Safari and Firefox).
 - **What worked / what didn't:** _to be written before submission (Sun 12:00 PM)._
 - **Stack:** Vite 8.3.8, TypeScript 7.0.2 (strict), Phaser 4.2.1, Vitest 5.1.0, `pieeg.js` (vendored). No backend.
 - **Credits:** see [CREDITS.md](CREDITS.md). The charge-jump climb is in the style of *Jump King*; the narrator's tone

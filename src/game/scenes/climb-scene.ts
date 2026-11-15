@@ -1,4 +1,4 @@
-import { LANTERN_LIGHT_CONFIG, corruptionVisibilityRadius } from '../../config/lantern-light.config';
+import { LANTERN_LIGHT_CONFIG } from '../../config/lantern-light.config';
 /**
  * The climb scene: draws the world, runs the fixed-step player physics and feeds the effects.
  *
@@ -246,13 +246,6 @@ export class ClimbScene extends Phaser.Scene {
     });
   }
 
-  private visibleRadius(base: number, airborne: boolean, visualCorruption = this.deps.stores.effects.get().forestCorruption): number {
-    const radius = this.light.lightRadius(this.wax.lightRadius(base, airborne, this.light.waxBenefit), airborne);
-    const signal = this.deps.composure.getState();
-    const actual = signal.valid && signal.mode !== 'fixed' ? signal.intensity : 0.2;
-    return corruptionVisibilityRadius(radius, Math.max(actual, visualCorruption), this.wax.lightPulse01());
-  }
-
   private returnToEmber(anchor: EmberAnchor | null): void {
     if (!anchor) return;
     this.state = teleportPlayer(anchor.x, anchor.y);
@@ -326,8 +319,8 @@ export class ClimbScene extends Phaser.Scene {
       navigation: {
         player: { x: Math.round(this.state.x), y: Math.round(this.state.y) },
         originY: sections[0]?.spawn.y ?? this.state.y,
-        lanternRadiusPx: Math.round(this.visibleRadius(Math.max(stores.effects.get().lanternRadius,
-          minCoveringRadius(gameConfig.view.width, gameConfig.view.height)), !this.state.grounded)),
+        lanternRadiusPx: Math.round(Math.max(stores.effects.get().lanternRadius,
+          minCoveringRadius(gameConfig.view.width, gameConfig.view.height))),
         checkpoints: anchor ? [{ id: anchor.platformId, x: anchor.x, y: anchor.y }] : [],
       },
     });
@@ -349,12 +342,11 @@ export class ClimbScene extends Phaser.Scene {
     );
     stores.effects.set(frame);
     this.forest.update(frame.forestCorruption, deltaMs, settings.reducedMotion, !this.phase.isRunning(), settings.effectStrength);
-    this.darkness.setAlpha(FOREST_CONFIG.darknessAlpha.calm + frame.forestCorruption *
-      (FOREST_CONFIG.darknessAlpha.corrupted - FOREST_CONFIG.darknessAlpha.calm));
+    this.darkness.setAlpha(1);
 
     // Never let the sheet shrink so far that its edge shows on screen.
     const baseRadius = Math.max(frame.lanternRadius, minCoveringRadius(gameConfig.view.width, gameConfig.view.height));
-    const radius = this.visibleRadius(baseRadius, !this.state.grounded, frame.forestCorruption);
+    const radius = baseRadius; // the signal-driven lanternRadius effect, held in flight by the effects engine
     updateDarkness(this.darkness, this.state.x, this.state.y, radius);
     this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius, this.platforms);
     this.lanternMark.setPosition(this.state.x, this.state.y - gameConfig.player.height / 2 - 6);
