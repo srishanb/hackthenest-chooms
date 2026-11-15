@@ -1,6 +1,6 @@
 <!doctype html><html><head><title>Candle gallery</title>
 <style>body{margin:0;background:#11161f;color:#cfd6e4;font:12px monospace}canvas{image-rendering:pixelated;display:block}</style></head><body>
-<p style="padding:6px 10px">Rows: six seeds. Columns: idle, run, charge, rise, fall, land, then flame at light 0, 0.5, 1. Animated at the real rates.</p>
+<p style="padding:6px 10px">Rows: six seeds. Columns: idle, run, charge, rise, fall, land; flame at light 0, 0.5, 1; then aim right, aim left (charging), fly right, fly left (with sparks).</p>
 <canvas id="c"></canvas>
 <script type="module">
 // Dev-only visual check of the procedural candle; draws the pure rasters with a plain 2D canvas.
@@ -8,8 +8,10 @@ import { createCandleGenome } from './../candle/candle-genome.ts';
 import { bodyShape, INITIAL_POSE, poseFrame } from './../candle/candle-pose.ts';
 import { rasterCandle } from './../candle/candle-raster.ts';
 import { rasterFlame } from './../candle/flame.ts';
+import { flameLean, flightSparks, wickLean } from './../candle/direction-cues.ts';
 const SEEDS=[1,2,3,40,500,6006],POSES=['idle','run','charge','rise','fall','land'],SIZES=[0,0.5,1];
-const P=3,CELL=34,CW=22,cols=POSES.length+SIZES.length;
+const AIMS=[{aim:1,fly:0},{aim:-1,fly:0},{aim:0,fly:1},{aim:0,fly:-1}];
+const P=3,CELL=34,CW=18,cols=POSES.length+SIZES.length+AIMS.length;
 const canvas=document.querySelector('#c');canvas.width=cols*CW*P;canvas.height=SEEDS.length*CELL*P;
 const ctx=canvas.getContext('2d');
 const hex=(n)=>'#'+n.toString(16).padStart(6,'0');
@@ -24,7 +26,17 @@ function frame(now){
       const body=rasterCandle(g,bodyShape(tracker,(now%900)/900),1,false);
       const ox=col*CW+CW/2;
       draw(body.pixels,ox,oy);
-      draw(rasterFlame(g,{size01:size,timeMs:now,reducedMotion:false,vx:pose==='run'?200:0}),ox+body.wickTip.x,oy+body.wickTip.y);
+      draw(rasterFlame(g,{size01:size,timeMs:now,reducedMotion:false,lean:pose==='run'?-2:0}),ox+body.wickTip.x,oy+body.wickTip.y);
+    });
+    AIMS.forEach(({aim,fly},i)=>{
+      const charge01=aim?(now%900)/900:0;
+      const cue={charging:!!aim,charge01,aim,grounded:!fly,vx:fly*360,vy:fly?-420:0};
+      const pose=aim?'charge':'rise';
+      const tracker={...INITIAL_POSE,pose,elapsedMs:now,facingLeft:aim?aim<0:fly<0};
+      const body=rasterCandle(g,{...bodyShape(tracker,charge01),lean:wickLean(cue)},1,tracker.facingLeft);
+      const ox=(POSES.length+SIZES.length+i)*CW+CW/2,frame=Math.floor(now/1000*12);
+      draw([...flightSparks(g,cue,frame,false),...rasterFlame(g,{size01:0.6,timeMs:now,reducedMotion:false,lean:flameLean(cue)})],ox+body.wickTip.x,oy+body.wickTip.y);
+      draw(body.pixels,ox,oy);
     });
   });
   requestAnimationFrame(frame);

@@ -82,6 +82,8 @@ export class ClimbScene extends Phaser.Scene {
   private candle!: ReturnType<typeof createCandleView>;
   /** True while the camera slides back to the start after Play again; the player waits. */
   private sliding = false;
+  /** Direction held in the latest physics step, for the candle's aim cue (visual only). */
+  private aim: -1 | 0 | 1 = 0;
   private forestPreview: number | null = forestPreviewValue(window.location.search, import.meta.env.DEV);
   private visibility!: ProtectedVisibility;
 
@@ -257,7 +259,9 @@ export class ClimbScene extends Phaser.Scene {
       this.platforms = platformsAt(this.authoredPlatforms, this.worldTimeMs, stepMs);
       // Wax growth (+2% per piece) scales walking and jumping; it comes from the wax count only, never the signal.
       const movement = grownMovement(gameConfig, waxGrowth(stores.snapshot.get().wax?.collected ?? 0, WAX_CONFIG.growthPerWax, WAX_CONFIG.maxPerRun));
-      const out = stepPlayer(this.state, this.controls.read(), this.platforms, gameConfig.view.width, movement, stepMs,
+      const input = this.controls.read();
+      this.aim = ((input.right ? 1 : 0) - (input.left ? 1 : 0)) as -1 | 0 | 1;
+      const out = stepPlayer(this.state, input, this.platforms, gameConfig.view.width, movement, stepMs,
         { windAccelerationX: windAt(sections, this.state, this.worldTimeMs) });
       this.state = out.state;
       this.wax.update(this.state, stepMs);
@@ -334,6 +338,7 @@ export class ClimbScene extends Phaser.Scene {
       maxRadiusPx: lantern?.max ?? 280,
       growth: waxGrowth(stores.snapshot.get().wax?.collected ?? 0, WAX_CONFIG.growthPerWax, WAX_CONFIG.maxPerRun),
       charge01: this.state.chargeMs / gameConfig.jump.maxChargeMs,
+      aim: this.phase.isRunning() ? this.aim : 0,
       reducedMotion: settings.reducedMotion,
     });
   }
