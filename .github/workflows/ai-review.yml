@@ -27,7 +27,11 @@ jobs:
   # Deterministic gate: the AI reviewer only runs, and can only merge, after `check` passes.
   review:
     needs: check
-    if: github.event.pull_request.draft == false
+    # The reviewer adds `needs-human` itself; that label event comes from claude[bot], which
+    # claude-code-action refuses ("Workflow initiated by non-human actor"), so skip it.
+    if: >-
+      github.event.pull_request.draft == false &&
+      !((github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name == 'needs-human')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
