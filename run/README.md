@@ -48,16 +48,20 @@ Run `node run.mjs` for the live list. Each one is marked:
 - **PARTIAL**: some of it is built; the file says what is missing.
 - **PLANNED**: not built yet; the file is the checklist for when it is, and names the plan.
 
+The status labels are written by hand inside each run file and can lag behind the code. Some files still say PLANNED
+for work that has since merged (for example `game-ember` and `narrator`); trust the tests and
+[docs/STATUS.md](../docs/STATUS.md) over the label.
+
 | Group | Files |
 |---|---|
 | Signal | `signal-simulator`, `signal-calibration`, `signal-fixed-mode`, `signal-replay`, `signal-recording`, `signal-checkpoint`, `signal-eval`, `signal-live-board` |
-| Game | `game-movement`, `game-falling`, `game-save-refuge`, `game-finish`, `game-lantern`, `game-levels`, `game-ember` |
-| Interface | `ui-hud`, `ui-pause-settings`, `ui-calibration-screens` |
+| Game | `game-movement`, `game-falling`, `game-save-refuge`, `game-finish`, `game-lantern`, `game-levels`, `game-ember`, `game-candle` |
+| Interface | `ui-hud`, `ui-pause-settings`, `ui-calibration-screens`, `ui-captions`, `ui-start-menu` |
 | Audio | `audio-mix`, `narrator` |
 | Repo and demo | `process-guards`, `demo-offline` |
 
-Keys in the game: Left and Right walk, hold Space to charge a jump and release to leap, Escape pauses, the backtick
-key (`` ` ``) opens the signal debug overlay. Simulator keys: 1 alpha boost, 2 jaw clench, 3 eye blink, 4 noisy pin.
+Keys in the game: Left and Right (or A and D) walk, hold Space or Up to charge a jump and release to leap, E places or
+picks up the ember, R recovers after a fall, Escape pauses, the backtick key (`` ` ``) opens the signal debug overlay. Simulator keys: 1 alpha boost, 2 jaw clench, 3 eye blink, 4 noisy pin.
 
 ## Add a run file for your feature
 

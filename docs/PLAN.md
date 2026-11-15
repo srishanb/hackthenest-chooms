@@ -570,8 +570,8 @@ re-seating the pins at Pz, a different head, then the forehead (blink and clench
 
 | Sub | Tasks | Acceptance tests |
 |---|---|---|
-| P7.1 Lines | `tools/narrator/draft-lines.ts` asks Gemini for candidates per trigger; a human edits and approves them into `src/content/narrator/lines.ts` | Every shipped line was read by a human. No line comments on the player's emotions, worth or health. |
-| P7.2 Clip bank | `tools/narrator/build-clips.ts` generates one audio file per approved line with ElevenLabs into `public/assets/audio/narrator/` and writes a manifest; keys from `.env.local` | With Wi-Fi off, every line plays. Re-running the script skips existing clips. |
+| P7.1 Lines | `tools/narrator/draft-lines.ts` (as built: `tools/narrator/build.mjs draft`) asks Gemini for candidates per trigger; a human edits and approves them into `src/content/narrator/lines.ts` | Every shipped line was read by a human. No line comments on the player's emotions, worth or health. |
+| P7.2 Clip bank | `tools/narrator/build-clips.ts` (as built: `tools/narrator/build.mjs build`) generates one audio file per approved line with ElevenLabs into `public/assets/audio/narrator/` and writes a manifest; keys from `.env.local` | With Wi-Fi off, every line plays. Re-running the script skips existing clips. |
 | P7.3 Director | Bus events → line choice; repetition cooldowns; silent during `precision_window`; mute and narrator volume from settings; emits `narrator_line` | Three falls in ten seconds produce at most one line. No line starts while a jump is charging. |
 
 Human dependencies: H-09 (keys), H-10 (voice and personality approved). **If keys are missing:** the director and
