@@ -49,7 +49,7 @@ export const settingsPanel: UiComponent = {
     }
     checkbox('settings.captions', (s) => s.captions.enabled, (s, enabled) => ({ ...s, captions: { ...s.captions, enabled } }));
     checkbox('settings.reducedMotion', (s) => s.reducedMotion, (s, reducedMotion) => ({ ...s, reducedMotion }));
-    for (const key of ['showSignal', 'showEmber', 'showStatus'] as const) {
+    for (const key of ['showSignal', 'showEmber', 'showStatus', 'showStageDetails'] as const) {
       checkbox(`settings.${key}`, (s) => s.hud[key], (s, value) => ({ ...s, hud: { ...s.hud, [key]: value } }));
     }
     let listening: keyof KeyBindings | null = null;

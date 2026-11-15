@@ -117,4 +117,14 @@ describe('settings safety and persistence', () => {
     expect(DEFAULT_SETTINGS.keys.jump).toBe('Space');
     expect(second.volumes.master).toBe(DEFAULT_SETTINGS.volumes.master);
   });
+
+  it('hides stage details by default and persists the toggle', () => {
+    const storage = fakeStorage();
+    const store = createSettingsStore(storage);
+    expect(store.get().hud.showStageDetails).toBe(false);
+    store.set({ ...store.get(), hud: { ...store.get().hud, showStageDetails: true } });
+    expect(loadSettings(storage).hud.showStageDetails).toBe(true);
+    const older = JSON.stringify({ hud: { showSignal: true, showEmber: true, showStatus: true } });
+    expect(loadSettings(fakeStorage(older)).hud.showStageDetails).toBe(false);
+  });
 });

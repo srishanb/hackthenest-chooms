@@ -257,6 +257,7 @@ export const STRINGS = {
   "settings.showSignal": "Show signal intensity",
   "settings.showEmber": "Show recovery ember",
   "settings.showStatus": "Show signal status",
+  "settings.showStageDetails": "Show stage details",
   "settings.keys": "Key bindings",
   "settings.pressKey": "Press a new key. Escape cancels; Tab and Enter stay available for navigation.",
   "settings.key.left": "Move left",

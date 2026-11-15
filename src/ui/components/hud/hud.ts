@@ -111,7 +111,7 @@ export const hud: UiComponent = {
       progress.hidden = !flags.showEmber || !snapshot.ember.active;
       composure.hidden = !flags.showSignal;
       prompt.hidden = !view.prompt;
-      panel.hidden = !flags.showStatus && !flags.showEmber && !flags.showSignal && !view.prompt;
+      panel.hidden = !flags.showStageDetails || (!flags.showStatus && !flags.showEmber && !flags.showSignal && !view.prompt);
     };
     render();
     const cleanups = [stores.snapshot.subscribe(render), stores.settings.subscribe(render),
