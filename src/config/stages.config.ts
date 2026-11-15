@@ -6,4 +6,6 @@ export const STAGES_CONFIG = {
   snowFallPxPerSecond: 36,
   snowWindPxPerSecond: 55,
   snowOpacity: 0.45,
+  windArrowRowSpacingPx: 240,
+  windArrowColumns: 7,
 };

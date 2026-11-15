@@ -76,7 +76,7 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
     const maxWind = config.surfaces?.maxWindSpeed ?? 0;
     windVx = Math.max(-maxWind, Math.min(maxWind,
       (windVx + (environment.windAccelerationX ?? 0) * dt) * Math.exp(-(config.surfaces?.windDecay ?? 0) * dt)));
-    vx = steeredVx(launchVx, dir, config) + windVx;
+    vx = steeredVx(launchVx, dir, config, vy > 0) + windVx;
   }
 
   const prevBottom = y + height / 2;

@@ -22,12 +22,15 @@ export function drawWorld(scene: Scene, world: LoadedWorld) {
   });
   const arrows = world.sections.flatMap((section) => (section.wind ?? []).flatMap((wind) => {
     scene.add.rectangle(wind.x, wind.y, wind.width, wind.height, 0x8cdef2, 0.045).setDepth(-1);
-    return Array.from({ length: 7 }, (_, index) => {
-      const x = wind.x - wind.width / 2 + (index + 1) / 8 * wind.width;
+    const rows = Math.ceil(wind.height / STAGES_CONFIG.windArrowRowSpacingPx);
+    const columns = STAGES_CONFIG.windArrowColumns;
+    return Array.from({ length: rows * columns }, (_, index) => {
+      const x = wind.x - wind.width / 2 + (index % columns + 1) / (columns + 1) * wind.width;
+      const y = wind.y - wind.height / 2 + (Math.floor(index / columns) + 0.5) / rows * wind.height;
       const sign = Math.sign(wind.accelerationX) || 1;
-      const head = scene.add.triangle(x, wind.y, -7, -5, 7, 0, -7, 5, 0xb7e8f4, 0.6).setScale(sign, 1).setDepth(200);
-      const shaft = scene.add.rectangle(x - 8 * sign, wind.y, 16, 2, 0xb7e8f4, 0.6).setDepth(200);
-      return { x, y: wind.y, sign, head, shaft };
+      const head = scene.add.triangle(x, y, -7, -5, 7, 0, -7, 5, 0xb7e8f4, 0.6).setScale(sign, 1).setDepth(200);
+      const shaft = scene.add.rectangle(x - 8 * sign, y, 16, 2, 0xb7e8f4, 0.6).setDepth(200);
+      return { x, y, sign, head, shaft };
     });
   }));
   return {

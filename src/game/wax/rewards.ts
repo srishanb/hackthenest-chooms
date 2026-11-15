@@ -12,14 +12,14 @@ import { getPlatformType } from '../world/platform-types/registry';
 export const WAX_STORAGE_KEY = 'lighten.wax.v2';
 export interface WaxDrop { id: string; x: number; y: number }
 
-/** Co-located section-boundary ledges share one collectible. The starting floor gets none. */
+/** Ordinary ledges hold wax; ember eligibility on ice does not change the collectible locations. */
 export function makeWaxDrops(platforms: readonly PlatformData[], gameConfig: GameConfig): WaxDrop[] {
   const lowestY = Math.max(...platforms.map((platform) => platform.y));
   const seen = new Set<string>();
   return platforms.flatMap((platform) => {
     const type = getPlatformType(platform.type);
     const key = `${platform.x}:${platform.y}:${platform.width}:${platform.height}`;
-    if (!type?.anchorSafe || seen.has(key) || platform.width < gameConfig.player.width ||
+    if (!type?.anchorSafe || platform.type === 'slippery' || seen.has(key) || platform.width < gameConfig.player.width ||
       (platform.y === lowestY && platform.width >= gameConfig.view.width)) return [];
     seen.add(key);
     return [{ id: `wax:${platform.id}`, x: platform.x,
