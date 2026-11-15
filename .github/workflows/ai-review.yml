@@ -18,7 +18,15 @@ permissions:
   id-token: write
 
 jobs:
+  # Type check, tests and build. Runs on drafts too, so authors see failures early.
+  check:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+
+  # Deterministic gate: the AI reviewer only runs, and can only merge, after `check` passes.
   review:
+    needs: check
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 15
