@@ -139,4 +139,4 @@ Additional Pixel Platformer Tileset Vol.4 by reodesuxz game decorations: native 
 
 ### Selected baseline narrator bank
 - Script: six excerpts from Bennett Foddy's Getting Over It narration, supplied as a transcript and selected by Amrit. Amrit stated permission for reuse in this session. Source reference: https://www.youtube.com/watch?v=IO6ouSMm7Uc. These excerpts are not represented as original Gemini writing or as public-domain material.
-- Speech: generated using Amrit's supplied ElevenLabs voice ID `zwn3aE3GYziMwjvo74dv`, Eleven v4, through his paid account. The ID does not verify a speaker's identity; this repo did not create a voice clone. Six local generated clips and generation settings are recorded in `public/assets/audio/narrator/manifest-baseline.json`.
+- Speech: generated using Amrit's supplied ElevenLabs voice ID `zwn3aE3GYziMwjvo74dv`, Eleven v4, through his paid account. The ID does not verify a speaker's identity; this repo did not create a voice clone. Six excerpt clips plus an original low-fuel reminder requested by Amrit, with generation settings, are recorded in `public/assets/audio/narrator/manifest-baseline.json`.

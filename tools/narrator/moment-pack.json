@@ -28,5 +28,10 @@
     "id": "intro-finish",
     "moment": "finish",
     "text": "In a moment I'll shut up, but let me say: I'm glad you came. I dedicate this game to you, the one who came this far."
+  },
+  {
+    "id": "intro-low-fuel",
+    "moment": "low-fuel",
+    "text": "Your candle is running low. Keep an eye out for wax, and keep going\u2014one ledge at a time."
   }
 ]

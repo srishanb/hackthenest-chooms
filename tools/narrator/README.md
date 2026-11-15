@@ -65,7 +65,7 @@ for reuse. They are not original Gemini text. The current selected voice ID is
 `zwn3aE3GYziMwjvo74dv`, supplied by Amrit; we do not infer the speaker's identity
 from an opaque voice ID. No voice clone was created by this tool.
 
-`tools/narrator/moment-pack.json` is the reviewed script. Generate the six local clips:
+`tools/narrator/moment-pack.json` is the reviewed script. Generate the seven local clips (six excerpts plus the original fuel reminder):
 
 ```
 node --env-file=.env.local tools/narrator/build.mjs moments baseline
@@ -89,3 +89,5 @@ may wait through pause. Jump precision and Ember recovery never interrupt speech
 Actual pause or mute parks the exact audio offset; resume continues it. Session
 restart, voice switching and explicit preview controls keep normal lifecycle behavior.
 The game only uses downloaded local files; keys and runtime API calls are absent.
+
+Low-fuel follow-up: the seventh line is an original reminder requested by Amrit, not a transcript excerpt. It triggers once below 25% actual candle fuel, never at empty or from the wax pickup counter. Refilling above 50% rearms it. A queued warning waits for ongoing speech/cooldown and is cancelled if fuel recovers or reaches empty.

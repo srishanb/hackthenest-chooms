@@ -8,7 +8,7 @@ import type { EffectsFrame } from '../../shared/contracts/effects';
 import type { NarratorLine, NarratorMoment } from '../../shared/contracts/content';
 import { createIntroPlayer } from '../narrator/intro-player';
 import { watchNarratorMoments } from '../narrator/moments';
-const moments: NarratorMoment[] = ['welcome','tutorial','height','fall','stage','finish'];
+const moments: NarratorMoment[] = ['welcome','tutorial','height','fall','stage','finish','low-fuel'];
 function setup() {
   const sources: Array<{onended: (()=>void)|null; start: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn>}> = [];
   const raw = {currentTime:0,state:'running',createGain:()=>({gain:{setValueAtTime:vi.fn()},connect:vi.fn(),disconnect:vi.fn()}),createBufferSource:()=>{
@@ -75,4 +75,29 @@ it('requires a finite fall strictly greater than 25 HUD metres, independently of
   bus.emit({type:'fall',heightPx:801,big:false});expect(request).toHaveBeenCalledExactlyOnceWith('fall');
   snapshot.set({...snapshot.get(),phase:'paused'});bus.emit({type:'fall',heightPx:1000,big:true});
   expect(request).toHaveBeenCalledTimes(1);off();
+});
+
+it('low fuel warns once per depletion, rearms after refill, ignores empty/invalid and paused data',()=>{
+  const bus=createEventBus(),snapshot=createStore<GameSnapshot>(structuredClone(INITIAL_GAME_SNAPSHOT)),request=vi.fn();
+  const off=watchNarratorMoments(bus,snapshot,request);
+  const fuel=(lanternFuel01:number)=>snapshot.set({...snapshot.get(),lanternFuel01});
+  for (const value of [NaN,Infinity,-1,1.1,0,0.25]) fuel(value);expect(request).not.toHaveBeenCalled();
+  fuel(0.24);fuel(0.2);fuel(0.1);expect(request).toHaveBeenCalledExactlyOnceWith('low-fuel');
+  fuel(0.5);fuel(0.2);expect(request).toHaveBeenCalledTimes(1);
+  fuel(0.6);snapshot.set({...snapshot.get(),phase:'paused'});fuel(0.2);expect(request).toHaveBeenCalledTimes(1);
+  snapshot.set({...snapshot.get(),phase:'playing'});expect(request).toHaveBeenCalledTimes(2);
+  bus.emit({type:'run_restart'});fuel(0.2);expect(request).toHaveBeenCalledTimes(3);off();
+});
+it('a low-fuel reminder waits for ongoing speech and cooldown, and a refill cancels a pending warning',async()=>{
+  const s=setup();await s.player.ready;s.start();
+  s.raw.currentTime=1;s.stores.snapshot.set({...s.stores.snapshot.get(),lanternFuel01:0.2});
+  expect(s.sources[0]!.stop).not.toHaveBeenCalled();s.end();s.raw.currentTime=31;s.player.tick();
+  expect(s.player.getActiveLine()).toBe('intro-chris-low-fuel');s.end();
+  s.raw.currentTime=160;s.stores.snapshot.set({...s.stores.snapshot.get(),lanternFuel01:0.8});
+  s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'paused',lanternFuel01:0.2});
+  s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'playing',lanternFuel01:0.2});
+  expect(s.player.getActiveLine()).toBe('intro-chris-low-fuel');s.end();
+  s.raw.currentTime=161;s.stores.snapshot.set({...s.stores.snapshot.get(),lanternFuel01:0.8});s.stores.snapshot.set({...s.stores.snapshot.get(),lanternFuel01:0.2});
+  s.stores.snapshot.set({...s.stores.snapshot.get(),lanternFuel01:0.7});s.raw.currentTime=300;s.player.tick();
+  expect(s.player.getActiveLine()).toBeNull();s.player.dispose();
 });

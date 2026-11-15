@@ -38,6 +38,12 @@ export const NARRATOR_LINES: readonly NarratorLine[] = [
     "clip": "assets/audio/narrator/intro-baseline-finish-64e027b219be.mp3"
   },
   {
+    "id": "intro-baseline-low-fuel",
+    "text": "Your candle is running low. Keep an eye out for wax, and keep going—one ledge at a time.",
+    "moment": "low-fuel",
+    "clip": "assets/audio/narrator/intro-baseline-low-fuel-4cf1f0045dea.mp3"
+  },
+  {
     "id": "intro-chris-01",
     "text": "Take your time. The mountain isn't going anywhere. Neither am I, apparently.",
     "clip": "assets/audio/narrator/intro-chris-01-ac2eb950242a.mp3"

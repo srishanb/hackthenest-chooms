@@ -62,7 +62,11 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
     }
     if (speech) { if (!speech.node) startSpeech(speech); return; }
     const now = context.currentTime * 1000;
-    while (queue.length && now - queue[0]!.at > NARRATOR_MOMENTS.eventExpiryMs && !['tutorial','finish'].includes(queue[0]!.moment)) queue.shift();
+    const fuel = stores.snapshot.get().lanternFuel01;
+    if (!(fuel !== undefined && Number.isFinite(fuel) && fuel > 0 && fuel < NARRATOR_MOMENTS.lowFuel01)) {
+      for (let i = queue.length - 1; i >= 0; i--) if (queue[i]!.moment === 'low-fuel') queue.splice(i, 1);
+    }
+    while (queue.length && now - queue[0]!.at > NARRATOR_MOMENTS.eventExpiryMs && !['tutorial','finish','low-fuel'].includes(queue[0]!.moment)) queue.shift();
     const opening = pending && !served;
     const moment = opening ? 'welcome' : queue[0]?.moment;
     if (!moment || now - lastStart < (hasMoments ? NARRATOR_MOMENTS.cooldownMs : config.cooldownMs)) return;

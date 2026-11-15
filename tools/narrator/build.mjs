@@ -21,13 +21,13 @@ async function request(url, options) {
   return response;
 }
 function validatePack(value, moments = false) {
-  if (!Array.isArray(value) || value.length !== 6) throw Error('The pack must contain six approved lines.');
+  if (!Array.isArray(value) || value.length !== (moments ? 7 : 6)) throw Error('The pack must contain six intros or seven approved game moments.');
   const seen = new Set();
   return value.map((line) => {
     if (!line || !/^intro-[a-z0-9-]+$/.test(line.id) || seen.has(line.id) || typeof line.text !== 'string' ||
         line.text.trim().length < 20 || line.text.length > 240 || /[\r\n<>]/.test(line.text)) throw Error('Invalid intro pack. Review ids and text.');
     if (/\b(stress|diagnos\w*|therap\w*|emotion\w*)\b/i.test(line.text)) throw Error('Review narrator framing before generation.');
-    if (moments && !['welcome','tutorial','height','fall','stage','finish'].includes(line.moment)) throw Error('Invalid narrator moment.');
+    if (moments && !['welcome','tutorial','height','fall','stage','finish','low-fuel'].includes(line.moment)) throw Error('Invalid narrator moment.');
     seen.add(line.id); return { id: line.id, text: line.text.trim(), ...(moments ? {moment:line.moment} : {}) };
   });
 }

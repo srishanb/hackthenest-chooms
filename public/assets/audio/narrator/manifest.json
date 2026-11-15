@@ -44,6 +44,12 @@
           "text": "In a moment I'll shut up, but let me say: I'm glad you came. I dedicate this game to you, the one who came this far.",
           "moment": "finish",
           "clip": "assets/audio/narrator/intro-baseline-finish-64e027b219be.mp3"
+        },
+        {
+          "id": "intro-baseline-low-fuel",
+          "text": "Your candle is running low. Keep an eye out for wax, and keep going—one ledge at a time.",
+          "moment": "low-fuel",
+          "clip": "assets/audio/narrator/intro-baseline-low-fuel-4cf1f0045dea.mp3"
         }
       ]
     },
@@ -166,6 +172,12 @@
       "text": "In a moment I'll shut up, but let me say: I'm glad you came. I dedicate this game to you, the one who came this far.",
       "moment": "finish",
       "clip": "assets/audio/narrator/intro-baseline-finish-64e027b219be.mp3"
+    },
+    {
+      "id": "intro-baseline-low-fuel",
+      "text": "Your candle is running low. Keep an eye out for wax, and keep going—one ledge at a time.",
+      "moment": "low-fuel",
+      "clip": "assets/audio/narrator/intro-baseline-low-fuel-4cf1f0045dea.mp3"
     },
     {
       "id": "intro-chris-01",
