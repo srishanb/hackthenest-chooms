@@ -26,3 +26,15 @@ Owner: Srishan. Search here before adding a function.
 Tests: `__tests__/sources.test.ts` (fake SDK), `__tests__/real-sdk.test.ts` (the real vendored simulator in Node, about 6 s), `__tests__/stages-p14.test.ts` (scorer, smoother, gates, registry, url params), `__tests__/pipeline.test.ts`, `__tests__/signal-index.test.ts` (createSignal end to end with fake timers), plus the P1.2/P1.3 stage tests.
 
 Not built yet: `PiEEGSource` for the real board (P3.1), recorder (P1.5), overlay sim legend and Calibrate buttons (P1.6).
+
+## Presets (replay presets in Settings)
+
+| Export | File | What it does |
+|---|---|---|
+| `SignalHandle.presets` (`PresetControl`) | `index.ts`, contract in `shared/contracts/signal-api.ts` | Runtime input switch (simulator, live board, any preset), loop flag, save current signal, import/export `.jsonl`, delete saved. Presets replay through the same pipeline as live frames and carry their own calibration (`baselines` in the header). |
+| `createPresetLibrary` | `presets/preset-library.ts` | Built-in presets (manifest + files under `public/recordings/presets/`) plus saved ones. |
+| `createPresetStore`, `createMemoryPresetStore` | `presets/preset-store.ts` | Saved presets in IndexedDB, memory fallback when storage is blocked. |
+| `shrinkFrame` | `presets/frame-shrink.ts` | Rounds a frame and trims its spectrum to 40 Hz for storage. |
+| `Pipeline.getBaselines`, `setBaselines` | `pipeline.ts` | Used to apply a preset's calibration and restore the player's own. |
+
+Regenerate the built-in presets with `npm run presets` (tools/presets/, PiEEG simulator on a virtual clock, seeded, byte-identical every run).

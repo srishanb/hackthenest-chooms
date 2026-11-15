@@ -41,6 +41,9 @@ export interface Pipeline {
   /** `ingest` then `step`. */
   process(frame: BandFrame, nowMs: number): ComposureState;
   setMode(mode: SignalMode): void;
+  getBaselines(): Baselines;
+  /** Replace the calibration, for example with a preset's. Scores still come from the scorer. */
+  setBaselines(next: Baselines): void;
   getState(): ComposureState;
   getDiagnostics(): SignalDiagnostics;
   calibrationDurationMs(step: CalibrationStep): number;
@@ -151,6 +154,10 @@ export function createPipeline(deps: PipelineDeps): Pipeline {
     },
     setMode(next) {
       mode = next;
+    },
+    getBaselines: () => baselines,
+    setBaselines(next) {
+      baselines = { active: next.active, resting: next.resting };
     },
     getState: () => state,
     getDiagnostics(): SignalDiagnostics {

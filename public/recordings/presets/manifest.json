@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "presets": [
+    {
+      "id": "calm-climb",
+      "label": "Calm climb",
+      "description": "Steady, relaxed signal for the whole climb. The light stays wide and the ember settles.",
+      "durationMs": 45000,
+      "file": "calm-climb.jsonl"
+    },
+    {
+      "id": "rising-tension",
+      "label": "Rising tension",
+      "description": "Starts relaxed, then muscle tension builds in longer and longer bursts until it holds.",
+      "durationMs": 45000,
+      "file": "rising-tension.jsonl"
+    },
+    {
+      "id": "jaw-clench-bursts",
+      "label": "Jaw clench bursts",
+      "description": "Relaxed signal broken by short, sharp jaw clenches every few seconds.",
+      "durationMs": 45000,
+      "file": "jaw-clench-bursts.jsonl"
+    },
+    {
+      "id": "mixed-climb",
+      "label": "Mixed climb",
+      "description": "Calm, then a tense stretch, then recovery: the full arc the game is built around.",
+      "durationMs": 60000,
+      "file": "mixed-climb.jsonl"
+    },
+    {
+      "id": "noisy-pin",
+      "label": "Noisy pin",
+      "description": "Relaxed signal, then one pin picks up interference for a while. Shows how the reading holds up against a poorly seated pin.",
+      "durationMs": 45000,
+      "file": "noisy-pin.jsonl"
+    }
+  ]
+}

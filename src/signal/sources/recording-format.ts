@@ -9,7 +9,7 @@
  * never a person's name.
  */
 import type { InputSourceKind } from '../../shared/contracts/composure';
-import type { BandFrame } from '../../shared/contracts/signal-internal';
+import type { BandFrame, Baselines } from '../../shared/contracts/signal-internal';
 
 export interface RecordingHeader {
   type: 'header';
@@ -20,6 +20,8 @@ export interface RecordingHeader {
   source: InputSourceKind;
   /** Registry id of the algorithm that was running, if any. */
   algo: string | null;
+  /** Calibration in force when the recording was made. A preset replays with it so the pipeline is valid without a calibration. */
+  baselines?: Baselines;
 }
 
 export interface Recording {

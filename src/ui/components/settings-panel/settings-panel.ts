@@ -8,11 +8,12 @@ import { t, type StringKey } from '../../strings';
 import type { UiComponent } from '../../types';
 import { createUiActions } from '../../ui-actions';
 import { mountNarratorVoiceControl } from './narrator-voice-control';
+import { mountSignalSettings } from '../signal-settings/signal-settings';
 import { remapKey } from './settings-editor';
 import '../../theme/menus.css';
 export const settingsPanel: UiComponent = {
   id: 'settings-panel', visibleIn: ['paused', 'menu'],
-  mount(root, { stores, bus, actions = createUiActions() }) {
+  mount(root, { stores, bus, signal, actions = createUiActions() }) {
     const panel = document.createElement('section'); panel.className = 'menu-panel';
     panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true');
     panel.setAttribute('aria-label', t('menu.settings'));
@@ -37,6 +38,7 @@ export const settingsPanel: UiComponent = {
     range('settings.captionSize', CAPTION_SCALE_RANGE.min, CAPTION_SCALE_RANGE.max, 0.05,
       (s) => s.captions.scale, (s, scale) => ({ ...s, captions: { ...s.captions, scale } }));
     const removeForestPreview = mountForestPreview(panel);
+    const removeSignalSettings = mountSignalSettings(panel, signal);
     range('settings.effects', 0, 1, 0.05, (s) => s.effectStrength, (s, effectStrength) => ({ ...s, effectStrength }));
     function checkbox(labelKey: StringKey, read: (s: Settings) => boolean, write: (s: Settings, value: boolean) => Settings): void {
       const label = document.createElement('label'); label.className = 'menu-row';
@@ -92,6 +94,6 @@ export const settingsPanel: UiComponent = {
       if (open) queueMicrotask(() => { if (panel.isConnected && !panel.hidden) panel.querySelector<HTMLElement>('input')?.focus(); });
     });
     render();
-    return () => { removeForestPreview(); removeNarratorVoices(); window.removeEventListener('keydown', onKey, true); offSettings(); offSnapshot(); offActions(); panel.remove(); };
+    return () => { removeForestPreview(); removeSignalSettings(); removeNarratorVoices(); window.removeEventListener('keydown', onKey, true); offSettings(); offSnapshot(); offActions(); panel.remove(); };
   },
 };
