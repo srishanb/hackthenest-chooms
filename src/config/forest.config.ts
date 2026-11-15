@@ -4,7 +4,7 @@ export const FOREST_CONFIG = {
   characterScale: 1,
   characterFrame: { width: 64, height: 48, feetY: 46 },
   parallax: [0.12, 0.28] as const,
-  maxProps: 100,
+  maxProps: 280,
   spores: 24,
   sporeDriftPx: 12,
   sporePeriodMs: 9000,
