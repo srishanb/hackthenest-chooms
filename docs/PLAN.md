@@ -426,7 +426,7 @@ that prefix. They are read only by `tools/` scripts through `process.env`.
 | Bash | Built in | **Git Bash or WSL, not PowerShell**, for `scripts/wt.sh` | Needed |
 | Bluetooth LE | Built in. Allow Chrome under System Settings → Privacy & Security → Bluetooth | Built in on both Lenovos | Needed for the board |
 | A coding agent | Claude Code, Codex or Antigravity | same | Needed |
-| Python 3.11+ | — | — | Optional: only for PiEEG's own Python scripts or the Unicorn stretch |
+| Python 3.11+ | — | — | Optional: only for PiEEG's own Python scripts |
 | 7-Zip | — | — | Not needed (only for g.tec's dataset archives, which we do not use) |
 
 ### Verify your setup (run in the repo; Git Bash on Windows)
@@ -629,7 +629,7 @@ never shipped even if promoted, because they conflict with the binding framing a
 | Webcam facial model (artifact gate) | Defer | Supplemental only; permission, performance and integration cost. |
 | Live Gemini → ElevenLabs generation during play | Defer | Latency, unreviewed text, network dependency. |
 | Data prize (Tiger Data or MongoDB Atlas) and a backend | Defer (**Decision**, 14 Nov) | Needs a server, an account and network; the Core list is already long. |
-| g.tec Unicorn bridge | Defer | Windows-only APIs and a licence key; the spec names only the Octopus 16. |
+| g.tec Unicorn bridge | Removed (**Decision** D-14, 14 Nov) | The headset is no longer borrowable. Hardware is the Octopus 16 plus test data. |
 | Narrator judging emotions or growing cruel with intensity | Cut, **stays off** | Turns an uncertain inference into personal criticism. |
 | Stress percentage, emotional rankings or a calmness leaderboard | Cut, **stays off** | Implies accuracy and comparability the system does not have. |
 | Therapeutic or mindfulness-training claims | Cut from product claims, **stays off** | Would need evidence beyond a hackathon demo. |

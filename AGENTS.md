@@ -10,8 +10,9 @@ Mind and Machine (BCI) track. A PiEEG Octopus 16 EEG board drives the lantern, f
 mechanic. It never changes the controls or physics.
 
 - Stack: Vite 8.3.8, TypeScript 7.0.2 (strict), Phaser 4.2.1, Vitest 5.1.0, npm. Exact pins. No backend.
+- Hardware: the PiEEG Octopus 16 plus test data (the simulator and recordings). No other headset.
 - Read before you start: [docs/PLAN.md](docs/PLAN.md) (architecture, phases), [docs/STATUS.md](docs/STATUS.md),
-  [docs/FEATURES.md](docs/FEATURES.md), [docs/HUMAN_TASKS.md](docs/HUMAN_TASKS.md), [docs/DECISIONS.md](docs/DECISIONS.md).
+  [docs/FEATURES.md](docs/FEATURES.md), [docs/HUMAN_TASKS.md](docs/HUMAN_TASKS.md), [docs/DECISIONS.md](docs/DECISIONS.md), [docs/QUEUE.md](docs/QUEUE.md).
 - Hard deadlines (Eastern): Devpost draft Sun 12:00 AM; feature freeze Sun 9:00 AM; final submission Sun 12:00 PM.
 
 ## Binding rules (never break these)
@@ -59,12 +60,31 @@ One file per task. Never edit another agent's report. A PR with no new report is
 Claude Code (`.claude/settings.json`), Codex (`.codex/hooks.json`) and Antigravity (`.agents/hooks.json`) run
 `scripts/hooks/report-check.mjs`, which reminds you once.
 
+## Task queue and claims
+
+[docs/QUEUE.md](docs/QUEUE.md) is an ordered list of tasks for the continuous builder (agent name `sonnet`).
+
+- **A queue task is already approved.** The queue reaches `main` only through a PR a human merges, and that merge is
+  the approval. For a queue task, skip steps 1 to 3 of the approval gate and put a short plan (files, acceptance
+  tests) in the draft PR body. Every other rule still applies: lanes, `npm run check`, the after-job report, and
+  shared files never auto-merge. Work that is not in the queue still needs a plan file and a human-written
+  approval line.
+- **Claim before you build, every agent, every task.** As soon as you start a task: create the worktree, make an
+  empty commit `chore(claim): <agent> starts <task>`, push the branch, and open a **draft** PR titled
+  `[claim] <task>: <title>`. Before starting anything, run `git fetch origin --prune`, then check
+  `git ls-remote --heads origin` and `gh pr list --state all` for the task's id. If a branch or PR for it exists,
+  it is taken: pick something else. If two claims collide, the PR created first wins.
+- **Always push with the branch name:** `git push -u origin <agent>/<task>`. Never a bare `git push`: worktree
+  branches track `origin/main`, so it would push to `main`.
+- **Do not wait on a merge.** If your PR needs a human, say so in it and take the next task.
+- Only the integrator edits `docs/QUEUE.md`.
+
 ## Parallel work: one agent, one worktree
 
 Several agents work at the same time. Never share a working directory.
 
 - Create a worktree per task: `scripts/wt.sh new <agent> <task>` → `../wt-<agent>-<task>` on branch `<agent>/<task>`.
-  - `<agent>` is one of `claude`, `codex`, `ag` (Antigravity), or a teammate's name.
+  - `<agent>` is one of `claude`, `codex`, `ag` (Antigravity), `sonnet` (the continuous builder), or a teammate's name.
 - Work, commit, and push **only** inside your own worktree. Do not edit files in other `wt-*` folders or in `codebase/` (main).
 - Before starting a new task: `scripts/wt.sh sync` (rebases onto `origin/main`).
 - Finish with a PR into `main`. Keep branches small and short-lived (merge within a few hours).
@@ -96,7 +116,7 @@ Highest collision risk. Only the integrator (whoever is on `main`) changes these
 - Dependency manifests and lockfiles (`package.json`, `package-lock.json`)
 - `src/shared/` (contracts, event list, bus, store) and `src/main.ts`
 - Root config (`tsconfig.json`, `vite.config.ts`, `index.html`), CI, hook configs, `scripts/`, and this file
-- `docs/PLAN.md`, `docs/STATUS.md`, `docs/DECISIONS.md`, `docs/FEATURES.md`
+- `docs/PLAN.md`, `docs/STATUS.md`, `docs/DECISIONS.md`, `docs/FEATURES.md`, `docs/QUEUE.md`
 
 Need a new dependency or contract change? Ask in the PR description or stop and report it — do not add it yourself.
 Tunable **values** in `src/config/` belong to the lane that owns the file; their **types** are contracts.

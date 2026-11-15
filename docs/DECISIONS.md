@@ -19,6 +19,10 @@ One line per decision. Only the integrator edits this file. A **Decision** was c
 | D-10 | 14 Nov 2026 | Srishan | Approvals: each lane owner approves plans in their own lane; Srishan approves P0 and anything touching shared files. |
 | D-11 | 14 Nov 2026 | Srishan | The Stop hook blocks once when a branch has work but no after-job report, then allows the agent to stop. |
 | D-12 | 14 Nov 2026 | Srishan | `docs/plans/P0.md` approved in chat at about 7:55 PM. At his instruction the agent recorded the approval line and merged the architecture PR (#3). One-off; the approval-gate rule is unchanged. |
+| D-13 | 14 Nov 2026 | Team | `docs/FEATURES.md` set to FINAL at 10:31 PM (commit f4415d9 on main, GitHub user avinculado). The feature gate is lifted: P4 onward may be built once each plan is approved. |
+| D-14 | 14 Nov 2026 | Srishan | The g.tec Unicorn headset is removed from the project: it is no longer borrowable. Hardware is the Octopus 16 plus test data (simulator and recordings). |
+| D-15 | 14 Nov 2026 | Srishan | Current priority: reach a state where we can build and test on a real Octopus 16. |
+| D-16 | 14 Nov 2026 | Srishan | One continuous Sonnet 5.5 builder session works through `docs/QUEUE.md` task by task. Queue tasks are approved by the human merge of the queue PR. Every agent claims a task with an empty commit, a pushed branch and a draft PR before building. |
 
 ## Recommendations in force (overrule by adding a Decision row)
 
@@ -31,14 +35,12 @@ One line per decision. Only the integrator edits this file. A **Decision** was c
 | R-05 | 14 Nov 2026 | Lanes and owners as in `AGENTS.md`; types in `src/shared/` (integrator), tunable values in `src/config/` (lane owners) | Tuning never waits on the integrator. |
 | R-06 | 14 Nov 2026 | Simulator keys are not Space, A or C; they come from `signal.config.ts` | The starter binds Space to a blink, which is our jump key. |
 | R-07 | 14 Nov 2026 | Walkthrough 2 at 9:30 AM, not 10:00 AM | 10:00 AM collides with the demo-video workshop. |
-| R-08 | 14 Nov 2026 | The g.tec Unicorn bridge is deferred | Windows-only APIs, a licence key, and the spec names only the Octopus 16. |
 | R-09 | 14 Nov 2026 | Levels are typed data files checked by a reachability script; no Tiled | No extra file format or loader tonight. |
 
 ## Open
 
 | ID | Question | Owner | Needed by |
 |---|---|---|---|
-| O-01 | The finalised feature list (H-01) | Team | Sat 10:15 PM |
 | O-02 | The final project name (H-11) | Team | Sun 9:00 AM |
 | O-03 | Whether a simulated or replayed signal counts if hardware fails (H-06b) | Ali | Sat 11:00 PM |
 | O-04 | Whether to trim Core at the feature gate: key remapping, separate volumes, persistence between sessions, Gemini drafting | Team | With O-01 |
