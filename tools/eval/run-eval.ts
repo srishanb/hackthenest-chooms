@@ -13,6 +13,7 @@ import { resolveAlgorithm } from '../../src/signal/algorithms/registry';
 import { createPipeline } from '../../src/signal/pipeline';
 import { parseRecording } from '../../src/signal/sources/recording-format';
 import { createReplaySource } from '../../src/signal/sources/replay-source';
+import { extractLabels, restingSeparation } from './segments';
 import { computeEvalMetrics, extractCalibrationOutcomes, formatEvalTable, type EvalMetrics } from './metrics';
 
 export interface EvalCliArgs {
@@ -72,7 +73,9 @@ export async function evaluateRecordingText(algoId: string, jsonlText: string, s
     }).catch(rejectDone);
   });
 
-  return computeEvalMetrics(entry.algorithm.id, states, calibrationOutcomes);
+  const metrics = computeEvalMetrics(entry.algorithm.id, states, calibrationOutcomes);
+  const separation = restingSeparation(recording.frames, extractLabels(jsonlText), entry.algorithm, SIGNAL_CONFIG);
+  return separation ? { ...metrics, restingSeparation: separation } : metrics;
 }
 
 async function main(): Promise<void> {

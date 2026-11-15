@@ -90,3 +90,36 @@ describe('eval cli', () => {
     expect(passthroughMetrics.intensityMean).not.toBe(intensityMetrics.intensityMean);
   });
 });
+
+describe('resting separation per labelled segment', () => {
+  const frames = [
+    ...makeSequence({ durationMs: 10_000, startMs: 0, frame: () => ({ spectrum: null, bands: { theta: 1, alpha: 1, beta: 1 } }) }),
+    ...makeSequence({ durationMs: 10_000, startMs: 10_000, frame: () => ({ spectrum: null, bands: { theta: 1, alpha: 6, beta: 1 } }) }),
+  ];
+  const marks = [
+    { t: 0, label: 'eyes_open' },
+    { t: 10_000, label: 'eyes_closed' },
+    { t: 20_000, label: 'end' },
+  ];
+
+  it('reports a closed/open ratio above 1.3 for a clear alpha rise', async () => {
+    const { restingSeparation } = await import('./segments');
+    const { SIGNAL_CONFIG } = await import('../../src/config/signal.config');
+    const { resolveAlgorithm } = await import('../../src/signal/algorithms/registry');
+    const result = restingSeparation(frames, marks, resolveAlgorithm('intensity-v1', 'intensity-v1').algorithm, SIGNAL_CONFIG);
+    expect(result?.closedOverOpen).toBeGreaterThan(1.3);
+    expect(result?.stats.map((s) => s.label).sort()).toEqual(['eyes_closed', 'eyes_open']);
+  });
+
+  it('is null without labels, and run-eval prints the section for a labelled file', async () => {
+    const { restingSeparation, extractLabels } = await import('./segments');
+    const { SIGNAL_CONFIG } = await import('../../src/config/signal.config');
+    const { resolveAlgorithm } = await import('../../src/signal/algorithms/registry');
+    expect(restingSeparation(frames, [], resolveAlgorithm('intensity-v1', 'intensity-v1').algorithm, SIGNAL_CONFIG)).toBeNull();
+    const text = `${serializeRecording({ header: createHeader('SIMULATED', 'intensity-v1'), frames })}${marks.map((m) => JSON.stringify({ type: 'label', ...m })).join('\n')}\n`;
+    expect(extractLabels(text)).toEqual(marks);
+    const metrics = await evaluateRecordingText('intensity-v1', text);
+    expect(metrics.restingSeparation?.closedOverOpen).toBeGreaterThan(1.3);
+    expect(formatEvalTable(metrics)).toContain('closed/open');
+  });
+});
