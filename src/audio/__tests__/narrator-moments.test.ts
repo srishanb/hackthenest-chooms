@@ -108,3 +108,15 @@ it('a quick Play again skips the cooling welcome instead of blocking moments, an
   s.raw.currentTime=75;s.bus.emit({type:'stage_completed',stageId:'tutorial',index:0});s.player.tick();expect(s.player.getActiveLine()).toBe('intro-chris-tutorial');s.end();
   s.raw.currentTime=121;s.player.tick();expect(s.player.getActiveLine()).toBeNull();s.player.dispose();
 });
+it('a voice preview during pause keeps the parked game line, whether stopped or finished naturally',async()=>{
+  const s=setup();await s.player.ready;s.start();s.end();
+  s.raw.currentTime=31;s.bus.emit({type:'stage_completed',stageId:'tutorial',index:0});s.player.tick();expect(s.player.getActiveLine()).toBe('intro-chris-tutorial');
+  s.raw.currentTime=33;s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'paused'});
+  s.player.setVoice('intro-chris-');s.player.preview();expect(s.player.getActiveLine()).toBe('intro-chris-welcome');
+  s.raw.currentTime=34;s.player.stopPreview();
+  s.raw.currentTime=40;s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'playing'});
+  expect(s.player.getActiveLine()).toBe('intro-chris-tutorial');expect(s.sources.at(-1)!.start).toHaveBeenCalledWith(40,2);
+  s.raw.currentTime=41;s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'paused'});s.player.preview();s.end();
+  s.raw.currentTime=50;s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'playing'});
+  expect(s.player.getActiveLine()).toBe('intro-chris-tutorial');expect(s.sources.at(-1)!.start).toHaveBeenCalledWith(50,3);s.player.dispose();
+});

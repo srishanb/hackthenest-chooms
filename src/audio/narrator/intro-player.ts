@@ -16,7 +16,7 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
   const levels = new Map<string, number>();
   let previewing = false, previewLine: NarratorLine | null = null;
   let disposed = false, loaded = false, served = false;
-  let pending = stores.snapshot.get().phase === 'playing', speech: Speech | null = null, lastStart = -Infinity;
+  let pending = stores.snapshot.get().phase === 'playing', speech: Speech | null = null, parked: Speech | null = null, lastStart = -Infinity;
   const queue: Array<{moment: NarratorMoment; at: number}> = [];
   const hasMoments = lines.some(line => line.moment !== undefined);
   const matchesVoice = (line: NarratorLine): boolean => voicePrefix === null || line.id.startsWith(voicePrefix);
@@ -35,7 +35,7 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
     try { node.stop(); } catch { /* Already ended. */ }
     node.disconnect(); value.gain?.disconnect(); value.gain = null; clearCaption(value.line.id);
   };
-  const cancel = (): void => { if (speech) detach(speech); speech = null; previewLine = null; previewing = false; };
+  const cancel = (): void => { if (speech) detach(speech); speech = null; parked = null; previewLine = null; previewing = false; };
   const blocked = (): boolean => (!previewing && !['playing', 'ember', 'finished'].includes(stores.snapshot.get().phase)) ||
     stores.settings.get().volumes.master <= 0 || stores.settings.get().volumes.narrator <= 0;
   const startSpeech = (value: Speech): void => {
@@ -45,7 +45,7 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
     const gain = context.createGain(); gain.gain.setValueAtTime(levels.get(value.line.id) ?? 1, context.currentTime);
     source.connect(gain); gain.connect(output); value.gain = gain;
     value.node = source; value.startedAt = context.currentTime;
-    source.onended = () => { if (value.node !== source) return; value.node = null; source.disconnect(); gain.disconnect(); value.gain = null; if (speech === value) { speech = null; previewing = false; clearCaption(value.line.id); } };
+    source.onended = () => { if (value.node !== source) return; value.node = null; source.disconnect(); gain.disconnect(); value.gain = null; if (speech === value) { speech = parked; parked = null; previewing = false; clearCaption(value.line.id); } };
     source.start(context.currentTime, value.offset);
     bus.emit({type:'narrator_line',lineId:value.line.id,text:value.line.text,durationMs:remaining*1000});
   };
@@ -57,7 +57,7 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
       const line = previewLine; previewLine = null;
       const buffer = buffers.get(line.id);
       if (buffer) { speech = {line,buffer,offset:0,startedAt:context.currentTime,node:null,gain:null}; startSpeech(speech); }
-      else { previewing = false; bus.emit({type:'narrator_line',lineId:line.id,text:line.text,durationMs:4000}); }
+      else { previewing = false; speech = parked; parked = null; bus.emit({type:'narrator_line',lineId:line.id,text:line.text,durationMs:4000}); }
       return;
     }
     if (speech) { if (!speech.node) startSpeech(speech); return; }
@@ -92,13 +92,15 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
   const ready = Promise.all(lines.map(async (line) => { const buffer = await load(line.clip); if (!disposed) { buffers.set(line.id, buffer); if (buffer) levels.set(line.id,narrationGain(buffer)); } }))
     .then(() => { loaded = true; tick(); });
   return {ready,tick,
-    setVoice(prefix: string): void { cancel(); queue.length = 0; voicePrefix = prefix; },
+    setVoice(prefix: string): void { if (prefix === voicePrefix) return; cancel(); queue.length = 0; voicePrefix = prefix; },
     preview(): void {
       const line = lines.find(candidate => matchesVoice(candidate) && candidate.moment === 'welcome') ?? lines.find(matchesVoice);
       if (!line || disposed) return;
-      cancel(); previewing = true; previewLine = line; tick();
+      // A game line parked by pause comes back after the preview; a live one is replaced as before.
+      const keep = !previewing && speech && !speech.node ? speech : parked;
+      cancel(); parked = keep; previewing = true; previewLine = line; tick();
     },
-    stopPreview(): void { if (previewing) cancel(); },
+    stopPreview(): void { if (previewing) { const keep = parked; cancel(); speech = keep; } },
     getActiveLine: (): string | null => speech?.line.id ?? null,
     isSpeaking: (): boolean => Boolean(speech?.node),
     getLoadedClipCount: (): number => [...buffers.values()].filter((buffer) => buffer !== null).length,
