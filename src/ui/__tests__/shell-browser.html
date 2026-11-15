@@ -18,6 +18,7 @@ let signalListeners = new Set();
 const deps = {bus:createEventBus(), stores:{snapshot,settings,effects:createStore({})}, signal:{reader:{getState:()=>frame,subscribe(fn){signalListeners.add(fn);return ()=>signalListeners.delete(fn);}}, control:{}}};
 const config = structuredClone(UI_CONFIG);
 config.components['debug-overlay'].enabled=false;
+config.components.hud.enabled=false; // Isolate the source subscription in this shell fixture.
 const unmount = mountUi(root, deps, config);
 check('six named slots created', root.querySelectorAll('.ui-slot').length===6);
 const menu=root.querySelector('[data-component="main-menu"]');
