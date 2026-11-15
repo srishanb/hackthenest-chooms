@@ -25,7 +25,10 @@ export const sourceBadge: UiComponent = {
     badge.className = 'source-badge';
     badge.setAttribute('role', 'status');
     root.append(badge);
-    const removePreview = mountForestPreview(root);
+    const preview = document.createElement('details'); preview.className = 'source-preview';
+    const summary = document.createElement('summary'); summary.textContent = t('forest.preview.title');
+    preview.append(summary); root.append(preview);
+    const removePreview = mountForestPreview(preview);
 
     const render = (source: InputSourceKind): void => {
       badge.dataset.source = source;
@@ -43,7 +46,7 @@ export const sourceBadge: UiComponent = {
       unsubscribe();
       offReturn(); offRestart();
       badge.remove();
-      removePreview();
+      removePreview(); preview.remove();
     };
   },
 };

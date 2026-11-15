@@ -154,3 +154,23 @@ describe('one reusable manually placed ember', () => {
     expect(ember.getAnchor()).toBeNull();
   });
 });
+
+describe('pause checkpoint actions', () => {
+  it('returns only to a real safe anchor and preserves wax and cooldown', () => {
+    const { ember, snapshot, setTime } = setup();
+    snapshot.set({...snapshot.get(), phase:'paused'});
+    expect(ember.restartAtAnchor()).toBeNull();
+    snapshot.set({...snapshot.get(), phase:'playing',wax:{collected:2,total:5,boostRemainingMs:1000}});
+    ember.placeOrPickup(upper); ember.request(lower); ember.assist();
+    snapshot.set({...snapshot.get(),phase:'paused'}); ember.advance(signal(0),0);
+    setTime(20000); ember.advance(signal(20000),20000);
+    expect(ember.restartAtAnchor()).toEqual({platformId:'upper',x:480,y:172});
+    expect(snapshot.get().phase).toBe('playing');
+    expect(snapshot.get().ember.cooldownRemainingMs).toBe(5000);
+    expect(snapshot.get().wax?.collected).toBe(2);
+    expect(ember.getAnchor()?.platformId).toBe('upper');
+  });
+  it('does not allow checkpoint restart during live gameplay', () => {
+    const {ember}=setup(); ember.placeOrPickup(upper); expect(ember.restartAtAnchor()).toBeNull();
+  });
+});

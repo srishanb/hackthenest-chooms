@@ -18,7 +18,10 @@ import { createDarkness, minCoveringRadius, updateDarkness } from '../effects/da
 import { neutralFrame } from '../effects/effects-engine';
 import { stepForestEffects } from '../forest/forest-effects';
 import type { ForestWorld } from '../forest/forest-world';
-import { createRubyView } from '../forest/ruby-view';
+import { WAX_CONFIG } from '../../config/wax.config';
+import { pickCandleSeed } from '../candle/candle-genome';
+import { createCandleView } from '../candle/candle-view';
+import { grownMovement, waxGrowth } from '../candle/growth';
 import { createProtectedVisibility, type ProtectedVisibility } from '../effects/protected-visibility';
 import { createKeyboardInput } from '../keyboard-input';
 import { createWaxRewards } from '../wax/rewards';
@@ -69,14 +72,18 @@ export class ClimbScene extends Phaser.Scene {
   private phase!: PhaseController;
   private refuges!: ReturnType<typeof createRefugeController>;
   private ember!: ReturnType<typeof createRecoveryEmber>;
-  private emberMark!: Phaser.GameObjects.Arc;
+  private emberMark!: Phaser.GameObjects.Container;
   private wax!: ReturnType<typeof createWaxRewards>;
   private waxView!: ReturnType<typeof createWaxView>;
   private player!: Phaser.GameObjects.Rectangle;
   private darkness!: Phaser.GameObjects.Image;
   private lanternMark!: Phaser.GameObjects.Arc;
   private forest!: ForestWorld;
-  private ruby!: ReturnType<typeof createRubyView>;
+  private candle!: ReturnType<typeof createCandleView>;
+  /** True while the camera slides back to the start after Play again; the player waits. */
+  private sliding = false;
+  /** Direction held in the latest physics step, for the candle's aim cue (visual only). */
+  private aim: -1 | 0 | 1 = 0;
   private forestPreview: number | null = forestPreviewValue(window.location.search, import.meta.env.DEV);
   private visibility!: ProtectedVisibility;
 
@@ -115,7 +122,7 @@ export class ClimbScene extends Phaser.Scene {
     });
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
     this.player.setVisible(false); // Preserve the camera's original follow target and exact body alignment.
-    this.ruby = createRubyView(this, gameConfig.player.height);
+    this.candle = createCandleView(this, gameConfig.player.height, pickCandleSeed(window.location.search, import.meta.env.DEV));
     {
       const preview = (event: Event): void => {
         const value: unknown = (event as CustomEvent<unknown>).detail;
@@ -131,15 +138,23 @@ export class ClimbScene extends Phaser.Scene {
     this.darkness = createDarkness(this, DEPTH.darkness);
     // Above the darkness (LAN-3): the ledge underfoot and reachable ledges stay readable.
     this.visibility = createProtectedVisibility(this, DEPTH.alwaysReadable, world.platforms, world, gameConfig);
-    this.lanternMark = this.add.circle(0, 0, 4, 0xfff3c4).setDepth(DEPTH.alwaysReadable);
-    this.emberMark = this.add.circle(0, 0, 7, 0xf29938).setDepth(DEPTH.alwaysReadable).setVisible(false);
+    this.lanternMark = this.add.circle(0, 0, 4, 0xfff3c4).setDepth(DEPTH.alwaysReadable).setVisible(false);
+    // Code-drawn shrine; original character, forest and platform art stay untouched.
+    const shrine = this.add.graphics();
+    shrine.fillStyle(0xffb83f, 0.12).fillCircle(0, -14, 26);
+    shrine.fillStyle(0x6c8291).fillRect(-12, -20, 24, 22);
+    shrine.fillStyle(0x142231).fillRect(-7, -18, 14, 19);
+    shrine.fillStyle(0xaac4d2).fillRect(-15, 0, 30, 5).fillRect(-10, -24, 20, 5);
+    shrine.fillStyle(0xff9b26).fillTriangle(-6, -3, 0, -20, 7, -3);
+    shrine.fillStyle(0xffe68c).fillTriangle(-3, -3, 1, -13, 4, -3);
+    this.emberMark = this.add.container(0, 0, [shrine]).setDepth(DEPTH.alwaysReadable).setVisible(false);
 
     // Native events reach the buffer immediately; do not let Space/arrows scroll the page.
     this.controls = createKeyboardInput(() => stores.settings.get().keys);
     const keyDown = (event: KeyboardEvent): void => {
       if (event.defaultPrevented || event.isComposing) return;
       // Before Play nothing reaches the player: no recovery request, no ember placement.
-      if (stores.snapshot.get().phase === 'menu') return;
+      if (stores.snapshot.get().phase === 'menu' || this.sliding) return;
       if (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, button, [contenteditable="true"]')) return;
       if (!event.repeat && event.code === stores.settings.get().keys.recover) {
         if (stores.snapshot.get().phase === 'ember') this.ember.cancel();
@@ -177,16 +192,46 @@ export class ClimbScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.phase.dispose());
     const offAssist = this.deps.bus.on('ember_assist_requested', () => this.returnToEmber(this.ember.assist()));
     const offCancel = this.deps.bus.on('ember_cancel_request', () => this.ember.cancel());
+    const offCheckpoint = this.deps.bus.on('checkpoint_restart_requested', () => this.returnToEmber(this.ember.restartAtAnchor()));
     const offRestart = this.deps.bus.on('run_restart', () => {
       this.wax.reset();
       this.stages.reset();
       const spawn = this.ember.restart();
       this.worldTimeMs = 0;
       this.state = teleportPlayer(spawn.x, spawn.y); clearInput(); this.accumulatorMs = 0;
+      this.candle.reseed(pickCandleSeed('', false));
+      this.slideCameraTo(spawn.x, spawn.y);
     });
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { offAssist(); offCancel(); offRestart(); });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { offAssist(); offCancel(); offRestart(); offCheckpoint(); });
 
+    let cameraFrozen = false;
+    const offCamera = stores.snapshot.subscribe((snapshot) => {
+      const frozen = snapshot.phase === 'paused' || snapshot.phase === 'menu';
+      if (frozen === cameraFrozen) return;
+      cameraFrozen = frozen;
+      if (frozen) this.cameras.main.stopFollow();
+      else this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, offCamera);
     stores.effects.set(neutralFrame(effectsTable));
+  }
+
+  /** Play again: the camera slides down to the start (a cut under reduced motion), then follows again. */
+  private slideCameraTo(x: number, y: number): void {
+    const camera = this.cameras.main;
+    this.player.setPosition(x, y);
+    camera.stopFollow();
+    const distance = Math.hypot(camera.midPoint.x - x, camera.midPoint.y - y);
+    const duration = this.deps.stores.settings.get().reducedMotion ? 0 : Math.min(2200, Math.max(600, distance / 1.1));
+    this.sliding = true;
+    const done = (): void => {
+      this.sliding = false;
+      camera.startFollow(this.player, true, 0.12, 0.12);
+    };
+    if (duration === 0) { camera.centerOn(x, y); done(); return; }
+    camera.pan(x, y, duration, 'Sine.easeInOut', true, (_camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
+      if (progress >= 1) done();
+    });
   }
 
   private returnToEmber(anchor: EmberAnchor | null): void {
@@ -203,16 +248,20 @@ export class ClimbScene extends Phaser.Scene {
     const stepMs = 1000 / gameConfig.stepHz;
     if (!this.phase.isRunning()) {
       this.controls.clear();
-      this.state = { ...this.state, charging: false, chargeMs: 0, jumpLatch: true };
+      if (stores.snapshot.get().phase !== 'paused' && stores.snapshot.get().phase !== 'menu') this.state = { ...this.state, charging: false, chargeMs: 0, jumpLatch: true };
     }
 
     // Only the 'playing' phase steps; pause, ember and finished freeze the body.
-    this.accumulatorMs = this.phase.isRunning() ? Math.min(this.accumulatorMs + deltaMs, stepMs * MAX_STEPS_PER_FRAME) : 0;
+    this.accumulatorMs = this.phase.isRunning() && !this.sliding ? Math.min(this.accumulatorMs + deltaMs, stepMs * MAX_STEPS_PER_FRAME) : 0;
     while (this.accumulatorMs >= stepMs && this.phase.isRunning()) {
       this.accumulatorMs -= stepMs;
       this.worldTimeMs += stepMs;
       this.platforms = platformsAt(this.authoredPlatforms, this.worldTimeMs, stepMs);
-      const out = stepPlayer(this.state, this.controls.read(), this.platforms, gameConfig.view.width, gameConfig, stepMs,
+      // Wax growth (+2% per piece) scales walking and jumping; it comes from the wax count only, never the signal.
+      const movement = grownMovement(gameConfig, waxGrowth(stores.snapshot.get().wax?.collected ?? 0, WAX_CONFIG.growthPerWax, WAX_CONFIG.growthCapWax));
+      const input = this.controls.read();
+      this.aim = ((input.right ? 1 : 0) - (input.left ? 1 : 0)) as -1 | 0 | 1;
+      const out = stepPlayer(this.state, input, this.platforms, gameConfig.view.width, movement, stepMs,
         { windAccelerationX: windAt(sections, this.state, this.worldTimeMs) });
       this.state = out.state;
       this.wax.update(this.state, stepMs);
@@ -247,10 +296,17 @@ export class ClimbScene extends Phaser.Scene {
     writeSnapshot(stores.snapshot, {
       sectionId,
       altitude01: altitude01(sections, this.state.y),
+      navigation: {
+        player: { x: Math.round(this.state.x), y: Math.round(this.state.y) },
+        originY: sections[0]?.spawn.y ?? this.state.y,
+        lanternRadiusPx: Math.round(this.wax.lightRadius(Math.max(stores.effects.get().lanternRadius,
+          minCoveringRadius(gameConfig.view.width, gameConfig.view.height)), !this.state.grounded)),
+        checkpoints: anchor ? [{ id: anchor.platformId, x: anchor.x, y: anchor.y }] : [],
+      },
     });
 
     const signal = composure.getState();
-    const frame = stepForestEffects(
+    const frame = stores.snapshot.get().phase === 'paused' || stores.snapshot.get().phase === 'menu' ? stores.effects.get() : stepForestEffects(
       stores.effects.get(),
       effectsTable,
       {
@@ -266,7 +322,6 @@ export class ClimbScene extends Phaser.Scene {
     );
     stores.effects.set(frame);
     this.forest.update(frame.forestCorruption, deltaMs, settings.reducedMotion, !this.phase.isRunning(), settings.effectStrength);
-    this.ruby.update(this.state, deltaMs, !this.phase.isRunning());
     this.darkness.setAlpha(FOREST_CONFIG.darknessAlpha.calm + frame.forestCorruption *
       (FOREST_CONFIG.darknessAlpha.corrupted - FOREST_CONFIG.darknessAlpha.calm));
 
@@ -276,5 +331,15 @@ export class ClimbScene extends Phaser.Scene {
     updateDarkness(this.darkness, this.state.x, this.state.y, radius);
     this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius, this.platforms);
     this.lanternMark.setPosition(this.state.x, this.state.y - gameConfig.player.height / 2 - 6);
+    const lantern = effectsTable.find((rule) => rule.id === 'lanternRadius');
+    this.candle.update(this.state, deltaMs, !this.phase.isRunning(), {
+      radiusPx: radius,
+      minRadiusPx: lantern?.min ?? 90,
+      maxRadiusPx: lantern?.max ?? 280,
+      growth: waxGrowth(stores.snapshot.get().wax?.collected ?? 0, WAX_CONFIG.growthPerWax, WAX_CONFIG.growthCapWax),
+      charge01: this.state.chargeMs / gameConfig.jump.maxChargeMs,
+      aim: this.phase.isRunning() ? this.aim : 0,
+      reducedMotion: settings.reducedMotion,
+    });
   }
 }

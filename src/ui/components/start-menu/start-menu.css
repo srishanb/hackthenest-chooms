@@ -4,3 +4,11 @@
 .start-menu p { color: var(--color-text-dim); }
 .start-menu .start-menu__actions { display: grid; gap: var(--space-2); width: 100%; }
 .start-menu .start-menu__play { border-color: var(--color-accent); color: var(--color-accent); font-size: var(--text-md); }
+.start-menu { padding-block: clamp(24px, 5vh, 54px); gap: var(--space-4); }
+.start-menu h1 { color: var(--color-text); font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: clamp(28px, 5vw, 46px); text-shadow: 0 3px 0 var(--color-bg); }
+.start-menu .start-menu__eyebrow { font-size: var(--text-xs); letter-spacing: .08em; color: var(--color-accent); }
+.start-menu__emblem { display: grid; place-items: center; width: 72px; height: 72px; border: 2px solid var(--color-accent); border-radius: 50%; background: var(--color-inset); box-shadow: var(--gold-glow); color: var(--hud-needle); }
+.start-menu__emblem .ui-icon { width: 46px; height: 54px; filter: drop-shadow(0 0 8px var(--hud-needle)); }
+.start-menu .start-menu__play { box-shadow: var(--gold-glow); }
+.start-menu .start-menu__hint { font-size: var(--text-xs); }
+@media (max-height: 580px) { .start-menu { gap: var(--space-2); padding: var(--space-4); } .start-menu__emblem { width: 44px; height: 44px; } .start-menu__emblem .ui-icon { width: 28px; height: 34px; } }

@@ -1,4 +1,4 @@
-/** Optional, once-per-run wax rewards: collect a droplet for a short, non-stacking light boost. */
+/** Replenishing wax rewards: one active drop, an uncapped run counter and a short light bonus. */
 import { WAX_CONFIG } from '../../config/wax.config';
 import type { GameConfig } from '../../shared/contracts/config';
 import type { PlatformData } from '../../shared/contracts/content';
@@ -9,10 +9,11 @@ import { createMemorySaveStorage } from '../save';
 import type { SaveStorage } from '../save';
 import { getPlatformType } from '../world/platform-types/registry';
 
-export const WAX_STORAGE_KEY = 'lighten.wax.v2';
+export const WAX_STORAGE_KEY = 'lighten.wax.v3';
+const LEGACY_KEY = 'lighten.wax.v2';
 export interface WaxDrop { id: string; x: number; y: number }
 
-/** Ordinary ledges hold wax; ember eligibility on ice does not change the collectible locations. */
+/** Ordinary stationary ledges hold wax. This bounded list is reused rather than growing each pickup. */
 export function makeWaxDrops(platforms: readonly PlatformData[], gameConfig: GameConfig): WaxDrop[] {
   const lowestY = Math.max(...platforms.map((platform) => platform.y));
   const seen = new Set<string>();
@@ -33,67 +34,76 @@ export function createWaxRewards({ platforms, gameConfig, bus, snapshot, storage
 }) {
   const drops = makeWaxDrops(platforms, gameConfig);
   const known = new Set(drops.map((drop) => drop.id));
-  let collected = new Set<string>();
-  let selected: string[] = [];
-  function choose(): void {
-    const pool = [...drops];
-    const count = Math.min(pool.length, 1 + Math.floor(random() * config.maxPerRun));
-    const chosen: WaxDrop[] = [];
-    while (chosen.length < count) chosen.push(pool.splice(Math.floor(random() * pool.length), 1)[0]!);
-    selected = chosen.sort((a, b) => b.y - a.y).map((drop) => drop.id);
-  }
-  function save(): void {
-    try { storage.setItem(WAX_STORAGE_KEY, JSON.stringify({ selected, collected: [...collected] })); } catch { /* Continue in memory. */ }
-  }
-  try {
-    const saved: unknown = JSON.parse(storage.getItem(WAX_STORAGE_KEY) ?? 'null');
-    if (saved && typeof saved === 'object' && 'selected' in saved && 'collected' in saved &&
-      Array.isArray(saved.selected) && saved.selected.length > 0 && saved.selected.length <= config.maxPerRun &&
-      new Set(saved.selected).size === saved.selected.length && saved.selected.every((id) => typeof id === 'string' && known.has(id)) && Array.isArray(saved.collected)) {
-      selected = saved.selected as string[];
-      collected = new Set(saved.collected.filter((id): id is string => typeof id === 'string' && selected.includes(id)));
-    }
-  } catch { /* Storage is optional; keep rewards playable in memory. */ }
-  if (!selected.length) choose();
-  save();
-  const activeId = (): string | undefined => selected.find((id) => !collected.has(id));
+  let collected = 0;
+  let activeId: string | null = null;
+  let waitMs = 0;
   let boostMs = 0;
   let heldRadius: number | null = null;
-  function publish(): void {
-    const wax = { collected: collected.size, total: selected.length, boostRemainingMs: Math.ceil(boostMs / 1000) * 1000 };
-    const previous = snapshot.get().wax;
-    if (previous?.collected !== wax.collected || previous?.total !== wax.total || previous?.boostRemainingMs !== wax.boostRemainingMs) {
-      snapshot.set({ ...snapshot.get(), wax });
+  const unit = (): number => Math.max(0, Math.min(0.999999, random()));
+  const delay = (): number => config.respawnMinMs + unit() * (config.respawnMaxMs - config.respawnMinMs);
+  try {
+    const current = storage.getItem(WAX_STORAGE_KEY);
+    const saved: unknown = JSON.parse(current ?? storage.getItem(LEGACY_KEY) ?? 'null');
+    if (saved && typeof saved === 'object' && 'collected' in saved) {
+      if (current !== null && typeof saved.collected === 'number' && Number.isSafeInteger(saved.collected) && saved.collected >= 0 &&
+        'activeId' in saved && (saved.activeId === null || typeof saved.activeId === 'string' && known.has(saved.activeId)) &&
+        'waitMs' in saved && typeof saved.waitMs === 'number' && Number.isFinite(saved.waitMs) && saved.waitMs >= 0 && saved.waitMs <= config.respawnMaxMs) {
+        collected = saved.collected; activeId = saved.activeId; waitMs = saved.waitMs;
+      } else if (current === null && Array.isArray(saved.collected) && 'selected' in saved && Array.isArray(saved.selected)) {
+        const oldCollected = new Set(saved.collected.filter((id): id is string => typeof id === 'string' && known.has(id)));
+        collected = oldCollected.size;
+        activeId = saved.selected.find((id): id is string => typeof id === 'string' && known.has(id) && !oldCollected.has(id)) ?? null;
+        waitMs = activeId ? 0 : config.respawnMinMs;
+      }
     }
+  } catch { /* Optional storage: keep playing in memory. Never restore an old temporary boost. */ }
+  function save(): void {
+    try {
+      storage.setItem(WAX_STORAGE_KEY, JSON.stringify({ collected, activeId, waitMs }));
+      storage.removeItem(LEGACY_KEY);
+    } catch { /* Continue in memory. */ }
   }
-  function clearSaved(): void {
-    try { storage.removeItem(WAX_STORAGE_KEY); } catch { /* Continue in memory. */ }
+  function publish(): void {
+    const wax = { collected, total: null, boostRemainingMs: Math.ceil(boostMs / 1000) * 1000 };
+    const previous = snapshot.get().wax;
+    if (previous?.collected !== wax.collected || previous?.total !== wax.total || previous?.boostRemainingMs !== wax.boostRemainingMs) snapshot.set({ ...snapshot.get(), wax });
   }
-  publish();
+  const overlaps = (player: { x: number; y: number }, drop: WaxDrop): boolean =>
+    Math.abs(player.x - drop.x) <= gameConfig.player.width / 2 + config.pickupRadiusPx &&
+    Math.abs(player.y - drop.y) <= gameConfig.player.height / 2 + config.pickupRadiusPx;
+  save(); publish();
   return {
     drops,
-    isCollected: (id: string): boolean => collected.has(id),
-    isActive: (id: string): boolean => id === activeId(),
+    isActive: (id: string): boolean => id === activeId,
     update(player: { x: number; y: number }, dtMs: number): void {
       if (snapshot.get().phase !== 'playing') return;
-      if (Number.isFinite(dtMs) && dtMs > 0) boostMs = Math.max(0, boostMs - dtMs);
-      const active = activeId();
-      for (const drop of drops) {
-        if (drop.id !== active || Math.abs(player.x - drop.x) > gameConfig.player.width / 2 + config.pickupRadiusPx ||
-          Math.abs(player.y - drop.y) > gameConfig.player.height / 2 + config.pickupRadiusPx) continue;
-        collected.add(drop.id); boostMs = config.boostMs;
+      const dt = Number.isFinite(dtMs) ? Math.max(0, dtMs) : 0;
+      boostMs = Math.max(0, boostMs - dt);
+      const active = drops.find((drop) => drop.id === activeId);
+      if (active && overlaps(player, active)) {
+        collected++; activeId = null; waitMs = delay(); boostMs = config.boostMs;
         save();
-        bus.emit({ type: 'wax_collected', id: drop.id, x: drop.x, y: drop.y, collected: collected.size, total: selected.length });
+        bus.emit({ type: 'wax_collected', id: `${active.id}:${collected}`, x: active.x, y: active.y, collected, total: null });
+      } else if (active && Math.abs(active.y - player.y) > config.retireRangePx) {
+        // A missed drop far behind must not strand the only spawn in an earlier stage.
+        activeId = null; waitMs = delay(); save();
+      } else if (!active) {
+        waitMs = Math.max(0, waitMs - dt);
+        if (waitMs === 0) {
+          const nearby = drops.filter((drop) => Math.abs(drop.y - player.y) <= config.spawnRangePx && !overlaps(player, drop));
+          activeId = nearby[Math.floor(unit() * nearby.length)]?.id ?? null;
+          if (activeId) save();
+        }
       }
       publish();
     },
-    /** A boost expiring or being collected in flight cannot change the light until landing. */
+    /** Collecting/expiring wax in flight cannot change the held lantern radius. */
     lightRadius(base: number, airborne: boolean): number {
       const desired = boostMs > 0 ? Math.max(base, Math.min(config.maxLightRadiusPx, base * config.lightMultiplier)) : base;
       if (!airborne || heldRadius === null) heldRadius = desired;
       return heldRadius;
     },
-    reset(): void { collected.clear(); boostMs = 0; heldRadius = null; choose(); save(); publish(); },
-    finish(): void { clearSaved(); },
+    reset(): void { collected = 0; activeId = null; waitMs = 0; boostMs = 0; heldRadius = null; save(); publish(); },
+    finish(): void { for (const key of [WAX_STORAGE_KEY, LEGACY_KEY]) try { storage.removeItem(key); } catch { /* Continue in memory. */ } },
   };
 }

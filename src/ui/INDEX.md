@@ -20,7 +20,7 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 | `remapKey` | `components/settings-panel/settings-editor.ts` | Swap existing bindings on a duplicate choice. |
 | `startMenu` | `components/start-menu/start-menu.ts` | Title, Play (emits `start`) and Settings (opens the settings panel) while the phase is `'menu'`. |
 | `startMenuVisible`, `startsOnKey` | `components/start-menu/start-menu-state.ts` | Pure show/hide and Enter-to-play rules. |
-| `hud` | `components/hud/hud.ts` | Ember status, optional wax collection goal/boost timer/pickup feedback, signal quality and qualitative signal intensity. |
+| `hud` | `components/hud/hud.ts` | Ember status, running wax count/boost timer/pickup feedback, stage progress, signal quality and qualitative signal intensity. |
 | `hudState`, `percent`, `intensityLabel` | `components/hud/hud-state.ts` | Presentation mapping and bounded percentage formatting. |
 | `calibration`, `createCueTone` | `components/calibration/` | Pause-entry modal, timed instructions, source connect, safe fallback and local sound cues. |
 | `createCalibrationFlow`, `stepFlow`, `messageKey`, `preferCalibrationFallback`, flow types | `components/calibration/calibration-flow.ts` | Pure calibration navigation, timed halfway instructions, ordered commands and reviewed failure wording. Screens are P6.1.2. |
@@ -28,3 +28,5 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 Styling: only `var(--…)` from `theme/tokens.css`. Layout slots are in `theme/layout.css`.
 
 Forest presentation: tokens.css themes existing UI surfaces. Source badge mounts an opt-in development-only forest preview (source-badge/forest-preview.ts); it sends a visual event defined in config, never mutates signal/recovery stores. Strings remain in strings.ts; it is absent in production.
+
+Reference redesign: `navigationView` (`components/hud/navigation.ts`) chooses the nearest finite world checkpoint and derives screen-space needle angle plus distance. `HUD_WORLD_PIXELS_PER_METRE` in UI config explicitly defines 32 world px/m; `HUD_LANTERN_FULL_RADIUS_PX` defines the gauge range. The game publishes optional read-only navigation telemetry; UI never reaches into the scene. `icon` in icons.ts creates local SVG interface symbols. HUD stores only the player's physical height best (world pixels), not a signal score. Pause emits game-owned checkpoint/menu requests. No death/life economy or Lost state exists. The original player/platform/forest art remains unchanged; only the placed Ember's circle is replaced with a code-drawn shrine. Pixelify Sans and its OFL license are bundled under theme/fonts.

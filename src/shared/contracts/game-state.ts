@@ -22,13 +22,22 @@ export interface EmberSnapshot {
   canAssist: boolean;
 }
 
+/** Read-only world coordinates. Presentation chooses the distance unit. */
+export interface NavigationSnapshot {
+  player: { x: number; y: number };
+  originY: number;
+  lanternRadiusPx: number;
+  checkpoints: readonly { id: string; x: number; y: number }[];
+}
+
 export interface GameSnapshot {
+  navigation?: NavigationSnapshot;
   /** Ordered stage progress is monotonic until an explicit new run. */
   stage?: { id: string; index: number; total: number; completed: number };
   /** Current tutorial lesson string key; presentation resolves it in the UI lane. */
   lessonKey?: string;
-  /** Optional exploration goal and temporary wax light bonus; unrelated to the signal. */
-  wax?: { collected: number; total: number; boostRemainingMs: number };
+  /** Wax count/bonus; total null means replenishing supply without a collection target. */
+  wax?: { collected: number; total: number | null; boostRemainingMs: number };
   phase: GamePhase;
   sectionId: string | null;
   /** True while the player stands inside a refuge (audio quiets, the refuge is lit). */

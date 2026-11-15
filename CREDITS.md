@@ -22,13 +22,20 @@ Build tools (Vite, TypeScript, Vitest, tsx) are listed in `package.json`.
 
 | File or pack | Author | Licence | Source |
 |---|---|---|---|
-| _none yet_ | | | |
+| Gothicvania Cold Corridors (`Cold Corridors Files.zip`): tileset, background layers, torch | Luis Zuno (ansimuz) | CC0; verified in bundled [public license](docs/licenses/cold-corridors/art-CC0.pdf) | [Asset page](https://ansimuz.itch.io/gothicvania-cold-corridors) |
 
 ## Music and sound effects
 
+The five SFX entries below record the original selections; the P8.1 table records the imported subset and final filenames. CC0 was checked on each original item page. Entries without an imported-file row remain candidates. Cure Magic and fire crackling are excluded.
+
 | File | Author | Licence | Source |
 |---|---|---|---|
-| _none yet_ | | | |
+| `Footsteps_Stone.wav` — stone walking | Galbenshire | CC0 | [Freesound item](https://freesound.org/people/Galbenshire/sounds/464520/) |
+| Footsteps (`01-footstep.ogg` through `06-footstep.ogg`) — corridor walking | GboxMikeFozzy | CC0 | [OpenGameArt item](https://opengameart.org/content/footsteps-0) |
+| GUI Sound Effects (`GUI_Sound_Effects_by_Lokif.7z`) — menu selection and confirmation; individual files TBD | Lokif (LokiF) | CC0 | [OpenGameArt item](https://opengameart.org/content/gui-sound-effects) |
+| Interface Sounds (`kenney_interfaceSounds.zip`) — additional menu clicks; individual files TBD | Kenney | CC0 | [OpenGameArt item](https://opengameart.org/content/interface-sounds) |
+| `fantasy_magic_button_1.mp3` — recovery ember activation candidate | Almitory | CC0 | [OpenGameArt item](https://opengameart.org/content/fantasy-magic-spell) |
+| `top-down-fantasy-1.ogg` (downloaded candidate; not integrated) | Distributed by ansimuz; composer not verified | **Unverified: do not integrate or redistribute until explicit music terms are confirmed.** The art ZIP license does not explicitly cover this separate download. | [Download page](https://ansimuz.itch.io/gothicvania-cold-corridors) |
 
 ## Narrator voice
 
@@ -36,9 +43,16 @@ Build tools (Vite, TypeScript, Vitest, tsx) are listed in `package.json`.
 |---|---|---|
 | _not chosen yet (H-10)_ | ElevenLabs | Stock or designed voice only |
 
+## Downloaded reference project
+
+| File | Author | Licence | Source |
+|---|---|---|---|
+| `GodotProject.zip` (reference only; not integrated) | Luis Zuno (ansimuz) | Custom bundled [license](docs/licenses/cold-corridors/godot-project-license.pdf): personal/commercial project use and modification allowed; standalone asset redistribution/resale prohibited. Do not treat this archive as CC0. | [Asset page](https://ansimuz.itch.io/gothicvania-cold-corridors) |
+
+License evidence checked against the downloaded archives on 2026-11-14. The reference project and unverified standalone music were not integrated; the imported art/audio subset is recorded below.
 ## P8.1 prepared local files (Neil Pawar)
 
-These files are prepared for integration, not yet wired into gameplay or audio. Each is CC0-1.0. No AI-generated assets, Godot reference files or unverified standalone music are included. Original bytes are preserved; only filenames/paths were changed where noted. Exact metadata and SHA-256 values: `public/assets/inventory.json`.
+These files were prepared in P8.1. The listed music and selected SFX are now used by the local audio engine; the Cold Corridors art remains available while current scenery uses the forest assets below. Each P8.1 file is CC0-1.0. No AI-generated assets, Godot reference files or unverified standalone music are included. Original bytes are preserved; only filenames/paths were changed where noted. Exact metadata and SHA-256 values: `public/assets/inventory.json`.
 
 | Repository file(s) | Author | License evidence | Original source |
 |---|---|---|---|
@@ -85,3 +99,5 @@ Author: Lukya Forge (lukyaforge). Runtime tinting/opacity and animation are appl
 - reodesuxz, Pixel Platformer Tileset Vol.4 Ice & Snow, local Pixel_Platformer_Tileset_Vol4_v1.0. Exact notice in assets/winter/LICENSE.txt. Imported PNG/native/platforms/snowdirt_plat_left.png, snowdirt_plat_mid.png, snowdirt_plat_right.png and PNG/native/ice/fir_sapling.png, ice_crystal.png only. Native pixels, nearest 2x display, runtime tint/opacity; no geometry/hazards imported. Project use/modification permitted, standalone/pack redistribution forbidden. No AI training.
 
 Both new packs permit personal/commercial game use. Only game-used resources are included, not the complete source packs. Glitch pack excluded.
+## UI typography
+- Pixelify Sans by Stefie Justprince, SIL Open Font License 1.1. Source: https://github.com/google/fonts/tree/main/ofl/pixelifysans. Bundled locally in `src/ui/theme/fonts/`, including OFL.txt. No runtime font requests.

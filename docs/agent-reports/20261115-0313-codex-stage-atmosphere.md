@@ -62,3 +62,4 @@ Outside Neil lane: minimal renderer/integration edits for explicit request. Cont
 ## 7. Can a teammate explain this?
 
 The forest now keeps continuous trunks behind individually placed canopy clusters, so the whole tree picture no longer restarts as you climb. Wind, snow and winter skins come from the current stage, and their colors reuse the same corruption value as the forest. The player's movement and recovery are unchanged.
+Local sync requested by Neil: merged origin/main 8939f0c (candle/aim/falling flame, reference UI, endless wax, license reconciliation). Resolved ClimbScene by preserving candle implementation and retaining weather effectStrength; retained both credit sections. 385 tests in59 files and production build pass. Refreshed localhost3017 start menu. No pushes. Full synced gameplay run remains unverified.

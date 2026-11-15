@@ -33,6 +33,15 @@ export function createRecoveryEmber({ sections, gameConfig, config, bus, snapsho
   let progress: SavedProgress = loaded && (!loaded.anchor || safe(loaded.anchor)) ? loaded : { v: 2, anchor: null };
   let elapsed = 0;
   let lastTick: number | null = null;
+  let suspendedAt: number | null = null;
+  const syncClock = (): void => {
+    const frozen = snapshot.get().phase === 'paused' || snapshot.get().phase === 'menu';
+    if (frozen && suspendedAt === null) suspendedAt = now();
+    if (!frozen && suspendedAt !== null) {
+      if (progress.readyAtMs) { progress = { ...progress, readyAtMs: progress.readyAtMs + Math.max(0, now() - suspendedAt) }; writeSave(storage, progress); }
+      suspendedAt = null;
+    }
+  };
   const cooldownRemaining = (): number => Math.ceil(Math.max(0, (progress.readyAtMs ?? 0) - now()) / 1000) * 1000;
   const startingSection = sections.find((section) => section.platforms.some((p) => p.id === progress.anchor?.platformId)) ?? first;
   snapshot.set({ ...snapshot.get(), sectionId: startingSection.id, inRefuge: false,
@@ -87,6 +96,7 @@ export function createRecoveryEmber({ sections, gameConfig, config, bus, snapsho
       return true;
     },
     advance(signal: ComposureState, nowMs: number): EmberAnchor | null {
+      syncClock();
       if (snapshot.get().phase !== 'ember') { lastTick = null; return null; }
       const dt = lastTick === null ? 0 : Math.max(0, Math.min(100, nowMs - lastTick)); lastTick = nowMs;
       // Check publishing time too: a frozen sample cannot keep advancing recovery.
@@ -109,6 +119,14 @@ export function createRecoveryEmber({ sections, gameConfig, config, bus, snapsho
       if (snapshot.get().promptKey !== promptKey || snapshot.get().ember.cooldownRemainingMs !== cooldownRemaining()) {
         snapshot.set({ ...snapshot.get(), promptKey, ember: { ...snapshot.get().ember, cooldownRemainingMs: cooldownRemaining() } });
       }
+    },
+    restartAtAnchor(): EmberAnchor | null {
+      if (snapshot.get().phase !== 'paused' || !progress.anchor || !safe(progress.anchor)) return null;
+      elapsed = 0; lastTick = null;
+      snapshot.set({ ...snapshot.get(), phase: 'playing', promptKey: 'ember.pickupHint' });
+      syncClock();
+      publish(false);
+      return { ...progress.anchor };
     },
     clear(): void { clearSave(storage); },
     restart(): { x: number; y: number } {

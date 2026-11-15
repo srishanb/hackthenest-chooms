@@ -1,6 +1,13 @@
-/** Optional wax rewards. Game-owned constants; collecting never changes movement physics. */
+/** Optional wax rewards. Supply is uncapped; light and existing candle-growth bonuses are capped. */
 export const WAX_CONFIG = {
-  maxPerRun: 3,
+  /** Collection has no run limit. Preserve the existing +6% maximum candle growth. */
+  growthCapWax: 3,
+  respawnMinMs: 8000,
+  respawnMaxMs: 14000,
+  spawnRangePx: 540,
+  retireRangePx: 810,
+  /** Each of the first growthCapWax pickups adds +2% candle growth, as before. */
+  growthPerWax: 0.02,
   boostMs: 10000,
   lightMultiplier: 1.5,
   maxLightRadiusPx: 420,

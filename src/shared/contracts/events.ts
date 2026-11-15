@@ -8,7 +8,7 @@
  */
 
 export type GameEvent =
-  | { type: 'wax_collected'; id: string; x: number; y: number; collected: number; total: number }
+  | { type: 'wax_collected'; id: string; x: number; y: number; collected: number; total: number | null }
   | { type: 'jump'; charge01: number }
   | { type: 'land'; platformId: string; fallHeightPx: number }
   | { type: 'fall'; heightPx: number; big: boolean }
@@ -22,6 +22,8 @@ export type GameEvent =
   | { type: 'ember_assist_requested' }
   | { type: 'ember_cancel_request' }
   | { type: 'run_restart' }
+  | { type: 'checkpoint_restart_requested' }
+  | { type: 'main_menu_requested' }
   /** The start menu's Play: the game leaves phase 'menu' and starts stepping. */
   | { type: 'start' }
   | { type: 'ember_returned'; via: 'eeg' | 'assist' }
