@@ -6,6 +6,8 @@ export function createCorruptionScreen(scene: Scene) {
   const filter = createCorruptionFilter(scene);
   const abstract = scene.add.image(0, 0, 'corruption-abstract').setOrigin(0).setScrollFactor(0).setDepth(-4).setAlpha(0);
   const lightning = scene.add.graphics().setScrollFactor(0).setDepth(-3);
+  const fog = scene.add.graphics().setScrollFactor(0).setDepth(-2);
+  const decoys = scene.add.graphics().setScrollFactor(0).setDepth(-2.5);
   let clock = 0, nextShake = C.shakeIntervalMs, ownsShake = false;
   return {
     update(c: number, dt: number, reduced: boolean, paused: boolean, strength: number) {
@@ -15,6 +17,19 @@ export function createCorruptionScreen(scene: Scene) {
       abstract.setDisplaySize(scene.cameras.main.width, scene.cameras.main.height)
         .setTint(0xaa7192).setAlpha(amount * 0.12);
       // A distant, gently faded bolt; never a full-screen flash or rapid strobe.
+      fog.clear(); decoys.clear();
+      const width = scene.cameras.main.width, height = scene.cameras.main.height;
+      // Behind real platforms: nearby landing edges remain unobscured.
+      const veil = amount * C.fogAlpha * (0.65 + 0.35 * Math.sin(clock / C.fogPeriodMs * Math.PI * 2));
+      fog.fillStyle(0x32293e, veil);
+      fog.fillEllipse(width * 0.15, height * 0.35, width * 0.9, height * 0.65);
+      fog.fillEllipse(width * 0.85, height * 0.7, width * 0.95, height * 0.7);
+      decoys.fillStyle(0x875c7b, amount * C.decoyAlpha);
+      for (let i = 0; i < 4; i++) {
+        const x = width * (i % 2 ? 0.62 : 0.12), y = height * (0.18 + i * 0.2);
+        decoys.fillRoundedRect(x, y, 90 + i * 17, 12, 6);
+        decoys.fillTriangle(x + 12, y + 10, x + 70, y + 10, x + 36, y + 32);
+      }
       lightning.clear();
       const phase = clock % C.lightningPeriodMs;
       if (amount > 0 && phase < C.lightningPulseMs) {

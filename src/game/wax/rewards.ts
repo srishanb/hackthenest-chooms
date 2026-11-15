@@ -35,6 +35,7 @@ export function createWaxRewards({ platforms, gameConfig, bus, snapshot, storage
   const drops = makeWaxDrops(platforms, gameConfig);
   const known = new Set(drops.map((drop) => drop.id));
   let collected = 0;
+  let suppressed = false;
   let activeId: string | null = null;
   let waitMs = 0;
   let boostMs = 0;
@@ -77,13 +78,15 @@ export function createWaxRewards({ platforms, gameConfig, bus, snapshot, storage
   save(); publish();
   return {
     drops,
+    isSuppressed: (): boolean => suppressed,
     isActive: (id: string): boolean => id === activeId,
     update(player: { x: number; y: number }, dtMs: number, benefit01 = 1): void {
       if (snapshot.get().phase !== 'playing') return;
       const dt = Number.isFinite(dtMs) ? Math.max(0, dtMs) : 0;
       boostMs = Math.max(0, boostMs - dt);
       const benefit = Number.isFinite(benefit01) ? Math.max(0, Math.min(1, benefit01)) : 1;
-      if (benefit === 0) boostMs = 0;
+      suppressed = benefit === 0;
+      if (suppressed) boostMs = 0;
       if (validateRestoredDrop) {
         const restored = drops.find((drop) => drop.id === activeId);
         if (restored && !atOrAboveFeet(player, restored)) { activeId = null; save(); }
@@ -91,6 +94,7 @@ export function createWaxRewards({ platforms, gameConfig, bus, snapshot, storage
       }
       const active = drops.find((drop) => drop.id === activeId);
       if (active && overlaps(player, active)) {
+        if (suppressed) { publish(); return; }
         collected++; activeId = null; waitMs = delay(); boostMs = config.boostMs * benefit;
         save();
         bus.emit({ type: 'wax_collected', id: `${active.id}:${collected}`, x: active.x, y: active.y, collected, total: null });
