@@ -112,7 +112,8 @@ hackathon/
 ### How a task flows
 
 1. The agent writes `docs/plans/<phase-id>.md` and opens a draft PR.
-2. A human reads it and changes its status line to `Status: APPROVED by <name>`. Agents never write that line.
+2. The plan's owner reads it and approves it: they change its status line to `Status: APPROVED by <name>`, or tell
+   their own agent to record that approval. No other agent may approve it.
 3. The agent builds, runs `npm run check`, and writes an after-job report in `docs/agent-reports/`.
 4. The PR is marked ready. The reviewer agent (an Opus 5.5 session) reviews it, runs the checks, and squash-merges it or comments with what to fix. No human review is needed.
 

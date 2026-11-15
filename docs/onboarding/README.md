@@ -9,7 +9,7 @@ Rules every agent follows are in [AGENTS.md](../../AGENTS.md); the schedule and 
 
 1. Your agent writes `docs/plans/<phase-id>.md` (model: [P0.md](../plans/P0.md)) and opens a **draft PR**. It then stops.
 2. You read the plan. If it is right, **you** change its status line to `Status: APPROVED by <your name>`.
-   Agents never write that line, and nothing else counts as approval.
+   Or tell your own agent "approve plan P<n>" and it records the line with a note. No other agent may approve it.
 3. The agent builds, runs `npm run check`, and writes an after-job report in `docs/agent-reports/`.
 4. The PR is marked ready. The reviewer agent (an Opus 5.5 session) reviews it, runs the checks, and squash-merges it or comments with what to fix. No human review is needed.
 

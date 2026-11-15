@@ -7,13 +7,13 @@ its owner approves it. Written Sat 14 Nov 2026, 11:15 PM Eastern. Feature freeze
 
 1. Read your plan. Look hardest at **Goal**, **Contract changes requested**, **Cut line** and the acceptance tests.
 2. If it is right, change line 3 to `Status: APPROVED by <your name>`. On GitHub: open the file on `main`, click the
-   pencil, edit line 3, commit. Or do it in a branch and open a pull request. **A person writes this line. Agents
-   never do.**
+   pencil, edit line 3, commit. Or tell **your own agent** "approve plan P<n>": it writes the line with a note that
+   you told it to. Nobody else's agent may approve your plan (AGENTS.md, approval gate, Decision D-20).
 3. If it is wrong, edit the plan first (or tell your agent what to change), then approve it.
 4. Tell your agent: "the plan is approved, claim the first task". Each sub-phase (P4.1, P4.2, …) is one claimable task.
 
 Pull requests need no human review: the reviewer agent merges them (AGENTS.md, "Review and merge"). Only this
-approval line is yours.
+approval is yours.
 
 ## The plans
 
