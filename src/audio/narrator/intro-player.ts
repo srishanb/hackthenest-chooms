@@ -13,7 +13,7 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
   const buffers = new Map<string, AudioBuffer | null>(), used = new Map<string, number>();
   const levels = new Map<string, number>();
   let previewing = false, previewLine: NarratorLine | null = null;
-  let disposed = false, loaded = false, precision = false, served = false;
+  let disposed = false, loaded = false, served = false;
   let pending = stores.snapshot.get().phase === 'playing', speech: Speech | null = null, lastStart = -Infinity;
   const clearCaption = (lineId: string): void => bus.emit({type:'narrator_line',lineId,text:'',durationMs:0});
   const detach = (value: Speech): void => {
@@ -24,7 +24,7 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
     node.disconnect(); value.gain?.disconnect(); value.gain = null; clearCaption(value.line.id);
   };
   const cancel = (): void => { if (speech) detach(speech); speech = null; previewLine = null; previewing = false; };
-  const blocked = (): boolean => (!previewing && (stores.snapshot.get().phase !== 'playing' || precision)) ||
+  const blocked = (): boolean => (!previewing && !['playing', 'ember'].includes(stores.snapshot.get().phase)) ||
     stores.settings.get().volumes.master <= 0 || stores.settings.get().volumes.narrator <= 0;
   const startSpeech = (value: Speech): void => {
     const remaining = value.buffer.duration - value.offset;
@@ -67,7 +67,6 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
   const cleanups = [bus.on('start', () => { if (!served) pending = true; tick(); }),
     bus.on('run_restart', () => { cancel(); served = false; pending = true; tick(); }),
     bus.on('finish', () => { pending = false; cancel(); }),
-    bus.on('precision_window', (event) => { precision = event.active; tick(); }),
     stores.snapshot.subscribe(tick), stores.settings.subscribe(tick)];
   const ready = Promise.all(lines.map(async (line) => { const buffer = await load(line.clip); if (!disposed) { buffers.set(line.id, buffer); if (buffer) levels.set(line.id,narrationGain(buffer)); } }))
     .then(() => { loaded = true; tick(); });
