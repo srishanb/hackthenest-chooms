@@ -11,9 +11,9 @@ Rules every agent follows are in [AGENTS.md](../../AGENTS.md); the schedule and 
 2. You read the plan. If it is right, **you** change its status line to `Status: APPROVED by <your name>`.
    Agents never write that line, and nothing else counts as approval.
 3. The agent builds, runs `npm run check`, and writes an after-job report in `docs/agent-reports/`.
-4. The PR is marked ready. AI review merges it if clean, or adds the `needs-human` label.
+4. The PR is marked ready. The reviewer agent (an Opus 5.5 session) reviews it, runs the checks, and squash-merges it or comments with what to fix. No human review is needed.
 
-You approve plans for your own lane. Srishan approves anything that touches a shared file.
+You approve plans for your own lane. Pull requests need no human review: the reviewer agent merges them.
 
 ## Commands (Git Bash on Windows)
 

@@ -47,7 +47,7 @@ channels; borrowed hardware goes back; only public, synthetic or our own data.
 
 | Done | ID | Task | Owner | Deadline | If it is not done |
 |---|---|---|---|---|---|
-| [ ] | H-15 | Approve each phase plan in your lane; merge `needs-human` PRs promptly | Lane owners; Srishan for shared files | Ongoing | Agents sit idle; branches go stale and conflict. |
+| [ ] | H-15 | Approve each phase plan in your lane. Pull requests are merged by the reviewer agent (D-18); merge by hand only if it is down | Lane owners; Srishan for shared files | Ongoing | Agents sit idle; branches go stale and conflict. |
 | [ ] | H-22a | Walkthrough 1: each owner explains their files to the others; simplify or remove what nobody can explain | All | Sun 12:15 AM | A judge may ask any of us about any file. |
 | [ ] | H-22b | Walkthrough 2 | All | Sun 9:30 AM | Same. |
 | [ ] | H-12 | Playtest the full loop on all four heads and on one stranger | All | Sun 6:00 – 9:00 AM | Thresholds tuned on one head fail on the next; calibration copy is untested. |
