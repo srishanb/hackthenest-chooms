@@ -1,25 +1,31 @@
 /* A short, keyboard-accessible guide over the climb; all styling uses shared tokens. */
 .tutorial-panel {
-  background: var(--color-panel);
-  width: min(var(--panel-max-width), calc(100% - var(--space-4) * 2));
+  background: linear-gradient(145deg, #152435f5, #0a101bf7 74%);
+  width: min(500px, calc(100% - var(--space-4) * 2));
   max-height: calc(100% - var(--space-4) * 2);
   font-family: var(--font-ui); font-size: var(--text-md);
-  line-height: 1.5; overflow: auto;
+  line-height: 1.55; overflow: auto;
+  border: 1px solid var(--color-panel-border);
+  border-top: 2px solid var(--color-accent);
+  box-shadow: var(--panel-shadow);
 }
 .tutorial-panel:not([open]) { display: none; }
 .tutorial-panel::backdrop { background: var(--color-bg); opacity: 0.8; }
-.tutorial-panel h2 { font-size: var(--text-lg); }
+.tutorial-panel h2 { font-size: clamp(26px, 4vw, 38px); }
+.tutorial-panel > p:nth-of-type(1) { color: var(--color-accent); letter-spacing: .12em; text-transform: uppercase; font-size: var(--text-xs); }
 .tutorial-progress, .tutorial-tip { color: var(--color-text-dim); font-size: var(--text-sm); }
 .tutorial-keys {
-  padding: var(--space-3); border: 1px solid var(--color-panel-border);
-  border-radius: var(--radius); color: var(--color-accent); font-family: var(--font-mono);
+  padding: var(--space-3); border: 1px solid #c28a474d;
+  border-left: 2px solid var(--color-accent);
+  border-radius: var(--radius); color: #f3cc7e; font-family: var(--font-mono);
+  background: linear-gradient(90deg, #b7823017, transparent 75%);
 }
 .tutorial-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: flex-end; }
-.tutorial-panel .tutorial-primary { border-color: var(--color-accent); color: var(--color-accent); }
+.tutorial-panel .tutorial-primary { border-color: var(--color-accent); color: var(--color-accent); background: linear-gradient(105deg, #795629, #30261c 70%); }
 .tutorial-replay {
   position: fixed; right: var(--space-3); bottom: var(--space-3);
   padding: var(--space-2) var(--space-3); border: 1px solid var(--color-panel-border);
-  border-radius: var(--radius); color: var(--color-text); background: var(--color-panel);
+  border-radius: var(--radius); color: var(--color-text); background: linear-gradient(110deg, #152130, #0c121d 68%);
   font-family: var(--font-ui); font-size: var(--text-sm); cursor: pointer;
 }
 /* The reference compass owns the bottom-right corner during play. */
