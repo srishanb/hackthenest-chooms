@@ -2,7 +2,7 @@
 import { SIGNAL_CONFIG } from '../../../config/signal.config';
 import { t, STRINGS, type StringKey } from '../../strings';
 import type { UiComponent } from '../../types';
-import { hudEssentials, hudState, persistsBest, waxToastKey } from './hud-state';
+import { hudEssentials, hudState, percent, persistsBest, waxToastKey } from './hud-state';
 import { stepNeedle } from './needle';
 import './hud.css';
 import { HUD_WORLD_PIXELS_PER_METRE } from '../../../config/ui.config';
@@ -90,7 +90,7 @@ export const hud: UiComponent = {
     };
     const render = (): void => {
       const snapshot = stores.snapshot.get();
-      text(fuelMetric, `${Math.round((snapshot.lanternFuel01 ?? 1) * 100)}%`);
+      text(fuelMetric, `${percent(snapshot.lanternFuel01 ?? 1)}%`);
       const navigation = snapshot.navigation;
       const nav = navigationView(navigation, HUD_WORLD_PIXELS_PER_METRE);
       const heightPx = (nav?.heightMetres ?? 0) * HUD_WORLD_PIXELS_PER_METRE;
