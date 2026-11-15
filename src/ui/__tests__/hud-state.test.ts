@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { ComposureState } from '../../shared/contracts/composure';
 import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state';
 import { hudState, percent, intensityLabel } from '../components/hud/hud-state';
+import { STRINGS, t, type StringKey } from '../strings';
 const signal: ComposureState = { intensity: 0.2, resting: 0, restingActive: false,
   quality: 0.6, valid: true, sampleAgeMs: 10, held: false, mode: 'adaptive',
   calibrated: true, source: 'SIMULATED', algo: 'fixture', t: 0 };
@@ -46,5 +47,20 @@ describe('HUD state', () => {
   it('bounds display values and never prints NaN', () => {
     expect([NaN, Infinity, -1, 0, 0.456, 1, 2].map(percent)).toEqual([0, 0, 0, 0, 46, 100, 100]);
     expect(hudState(snapshot, { ...signal, intensity: NaN }, 500).intensityKey).toBeNull();
+  });
+  it('never puts a digit or % in the composure/intensity text (binding rule 7)', () => {
+    // hud.ts renders `${t('hud.composure')} ${t(intensityKey) or t('hud.unavailable')}`; build the same line here.
+    const lines = new Set<string>();
+    for (const intensity of [-1, 0, 0.1, 0.25, 1 / 3, 0.5, 2 / 3, 0.8, 1, 2, NaN, Infinity]) {
+      for (const state of [signal, { ...signal, valid: false }, { ...signal, sampleAgeMs: 9999 }]) {
+        const key = hudState(snapshot, { ...state, intensity }, 500).intensityKey;
+        lines.add(`${t('hud.composure')} ${key === null ? t('hud.unavailable') : t(key)}`);
+      }
+    }
+    expect(lines.size).toBeGreaterThan(1);
+    for (const line of lines) expect(line).not.toMatch(/[0-9%]/);
+    const keys = Object.keys(STRINGS).filter((key) => /^hud\.(composure|unavailable|intensity)/.test(key)) as StringKey[];
+    expect(keys.length).toBeGreaterThanOrEqual(5);
+    for (const key of keys) expect(t(key)).not.toMatch(/[0-9%]/);
   });
 });
