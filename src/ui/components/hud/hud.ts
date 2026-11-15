@@ -2,14 +2,13 @@
 import { SIGNAL_CONFIG } from '../../../config/signal.config';
 import { t, STRINGS, type StringKey } from '../../strings';
 import type { UiComponent } from '../../types';
-import { hudEssentials, hudState, persistsBest } from './hud-state';
+import { hudEssentials, hudState, persistsBest, waxToastKey } from './hud-state';
 import { stepNeedle } from './needle';
 import './hud.css';
 import { HUD_WORLD_PIXELS_PER_METRE } from '../../../config/ui.config';
 import { icon } from '../../icons';
 import { navigationView } from './navigation';
 import { WAX_CONFIG } from '../../../config/wax.config';
-import { waxBenefit01 } from '../../../config/lantern-fuel.config';
 
 /** How quickly the compass needle turns toward its target (time constant, ms). */
 const NEEDLE_TAU_MS = 350;
@@ -147,7 +146,7 @@ export const hud: UiComponent = {
     cleanups.push(bus.on('wax_collected', (event) => {
       clearTimeout(rewardTimer);
       const actual = signalState.valid && signalState.mode !== 'fixed' ? signalState.intensity : 0.2;
-      text(reward, `${t(waxBenefit01(actual) === 0 ? 'wax.suppressed' : 'wax.pickup')} · ${event.collected}${event.total === null ? '' : `/${event.total}`}`);
+      text(reward, `${t(waxToastKey(actual))} · ${event.collected}${event.total === null ? '' : `/${event.total}`}`);
       reward.hidden = !stores.settings.get().hud.showStatus || !stores.settings.get().hud.showStageDetails;
       rewardTimer = setTimeout(() => { reward.hidden = true; }, WAX_CONFIG.toastMs);
     }));

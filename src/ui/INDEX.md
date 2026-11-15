@@ -28,7 +28,7 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 | `createCredits` | `components/start-menu/credits.ts` | Menu-only credit card drawn from actual project/asset attribution. |
 | `startMenuVisible`, `startsOnKey` | `components/start-menu/start-menu-state.ts` | Pure show/hide and Enter-to-play rules. |
 | `hud` | `components/hud/hud.ts` | Ember status, running wax count/boost timer/pickup feedback, stage progress, signal quality and qualitative signal intensity. |
-| `hudState`, `hudEssentials`, `persistsBest`, `percent`, `intensityLabel` | `components/hud/hud-state.ts` | Presentation mapping and bounded percentage formatting; `hudEssentials` keeps recovery progress, ember cooldown and finish-blocking lessons visible with stage details off; `persistsBest` skips saving the best height on `?editorTest` runs. |
+| `hudState`, `hudEssentials`, `persistsBest`, `waxToastKey`, `percent`, `intensityLabel` | `components/hud/hud-state.ts` | Presentation mapping and bounded percentage formatting; `hudEssentials` keeps recovery progress, ember cooldown and finish-blocking lessons visible with stage details off; `persistsBest` skips saving the best height on `?editorTest` runs; `waxToastKey` picks the suppressed wax toast with the fuel refill's own threshold. |
 | `calibration`, `createCueTone` | `components/calibration/` | Pause-entry modal, timed instructions, source connect, safe fallback and local sound cues. |
 | `createCalibrationFlow`, `stepFlow`, `messageKey`, `preferCalibrationFallback`, flow types | `components/calibration/calibration-flow.ts` | Pure calibration navigation, timed halfway instructions, ordered commands and reviewed failure wording. Screens are P6.1.2. |
 

@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ComposureState } from '../../shared/contracts/composure';
 import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state';
-import { hudEssentials, hudState, percent, persistsBest, intensityLabel, recoveryHintKey } from '../components/hud/hud-state';
+import { hudEssentials, hudState, percent, persistsBest, waxToastKey, intensityLabel, recoveryHintKey } from '../components/hud/hud-state';
 import { STRINGS, t, type StringKey } from '../strings';
 const signal: ComposureState = { intensity: 0.2, resting: 0, restingActive: false,
   quality: 0.6, valid: true, sampleAgeMs: 10, held: false, mode: 'adaptive',
@@ -87,5 +87,12 @@ describe('HUD state', () => {
     expect(persistsBest('?captionDemo')).toBe(true);
     expect(persistsBest('?editorTest=3')).toBe(false);
     expect(persistsBest('?a=1&editorTest')).toBe(false);
+  });
+  it('says the lantern was boosted only when the wax refill actually applied', () => {
+    expect(waxToastKey(0.2)).toBe('wax.pickup');
+    expect(waxToastKey(0.35)).toBe('wax.pickup');
+    expect(waxToastKey(0.36)).toBe('wax.suppressed');
+    expect(waxToastKey(0.8)).toBe('wax.suppressed');
+    expect(waxToastKey(NaN)).toBe('wax.pickup');
   });
 });

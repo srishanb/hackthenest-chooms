@@ -2,6 +2,8 @@
 import type { ComposureState } from '../../../shared/contracts/composure';
 import type { GameSnapshot } from '../../../shared/contracts/game-state';
 import { STRINGS, type StringKey } from '../../strings';
+import { unit } from '../../../config/atmosphere.config';
+import { LANTERN_FUEL_CONFIG } from '../../../config/lantern-fuel.config';
 
 export function percent(value: number): number {
   return Number.isFinite(value) ? Math.round(Math.max(0, Math.min(1, value)) * 100) : 0;
@@ -36,6 +38,11 @@ export function hudEssentials(snapshot: Pick<GameSnapshot, 'phase' | 'ember' | '
 /** Stage-editor test runs (`?editorTest`) start from later spawns, so their heights are not real bests. */
 export function persistsBest(search: string): boolean {
   return !new URLSearchParams(search).has('editorTest');
+}
+
+/** Matches the lantern fuel refill: wax adds nothing above the normal-world corruption limit. */
+export function waxToastKey(corruption: number): StringKey {
+  return unit(corruption, 0.2) > LANTERN_FUEL_CONFIG.normalWorldMax01 ? 'wax.suppressed' : 'wax.pickup';
 }
 
 export function hudState(snapshot: GameSnapshot, signal: ComposureState, staleAfterMs: number) {
