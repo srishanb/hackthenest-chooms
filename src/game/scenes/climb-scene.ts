@@ -258,7 +258,7 @@ export class ClimbScene extends Phaser.Scene {
       this.worldTimeMs += stepMs;
       this.platforms = platformsAt(this.authoredPlatforms, this.worldTimeMs, stepMs);
       // Wax growth (+2% per piece) scales walking and jumping; it comes from the wax count only, never the signal.
-      const movement = grownMovement(gameConfig, waxGrowth(stores.snapshot.get().wax?.collected ?? 0, WAX_CONFIG.growthPerWax, WAX_CONFIG.maxPerRun));
+      const movement = grownMovement(gameConfig, waxGrowth(stores.snapshot.get().wax?.collected ?? 0, WAX_CONFIG.growthPerWax, WAX_CONFIG.growthCapWax));
       const input = this.controls.read();
       this.aim = ((input.right ? 1 : 0) - (input.left ? 1 : 0)) as -1 | 0 | 1;
       const out = stepPlayer(this.state, input, this.platforms, gameConfig.view.width, movement, stepMs,
@@ -336,7 +336,7 @@ export class ClimbScene extends Phaser.Scene {
       radiusPx: radius,
       minRadiusPx: lantern?.min ?? 90,
       maxRadiusPx: lantern?.max ?? 280,
-      growth: waxGrowth(stores.snapshot.get().wax?.collected ?? 0, WAX_CONFIG.growthPerWax, WAX_CONFIG.maxPerRun),
+      growth: waxGrowth(stores.snapshot.get().wax?.collected ?? 0, WAX_CONFIG.growthPerWax, WAX_CONFIG.growthCapWax),
       charge01: this.state.chargeMs / gameConfig.jump.maxChargeMs,
       aim: this.phase.isRunning() ? this.aim : 0,
       reducedMotion: settings.reducedMotion,

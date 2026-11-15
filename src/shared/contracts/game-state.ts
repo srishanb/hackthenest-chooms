@@ -36,8 +36,8 @@ export interface GameSnapshot {
   stage?: { id: string; index: number; total: number; completed: number };
   /** Current tutorial lesson string key; presentation resolves it in the UI lane. */
   lessonKey?: string;
-  /** Optional exploration goal and temporary wax light bonus; unrelated to the signal. */
-  wax?: { collected: number; total: number; boostRemainingMs: number };
+  /** Wax count/bonus; total null means replenishing supply without a collection target. */
+  wax?: { collected: number; total: number | null; boostRemainingMs: number };
   phase: GamePhase;
   sectionId: string | null;
   /** True while the player stands inside a refuge (audio quiets, the refuge is lit). */
