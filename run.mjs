@@ -85,10 +85,10 @@ async function serveAndWait(script, query, flags) {
   return 0;
 }
 
-/** Run the build pipeline (tools/build/build.mjs) with the given flags. @param {Set<string>} flags @returns {Promise<number>} */
+/** Run the build pipeline (tools/pipeline/build.mjs) with the given flags. @param {Set<string>} flags @returns {Promise<number>} */
 function runBuild(flags) {
   return new Promise((done) => {
-    const args = [join(ROOT, 'tools', 'build', 'build.mjs'), ...[...flags].map((flag) => `--${flag}`)];
+    const args = [join(ROOT, 'tools', 'pipeline', 'build.mjs'), ...[...flags].map((flag) => `--${flag}`)];
     const child = spawn(process.execPath, args, { cwd: ROOT, stdio: 'inherit' });
     child.on('error', () => done(1));
     child.on('exit', (code) => done(code ?? 1));
