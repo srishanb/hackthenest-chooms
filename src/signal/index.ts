@@ -85,16 +85,22 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
   }
 
   async function startSource(next: Source): Promise<void> {
-    source?.stop();
+    // Keep the running source until the new one has started: a cancelled Bluetooth picker must not leave no input.
+    const previous = source;
+    const previousKind = activeKind;
     source = next;
     activeKind = next.kind;
     if (next.kind === 'REPLAY') replayAnchor = { frameT: 0, wall: now() };
     try {
       await next.start(onFrame);
     } catch (error) {
-      if (source === next) source = null;
+      if (source === next) {
+        source = previous;
+        activeKind = previousKind;
+      }
       throw error;
     }
+    if (previous !== null && previous !== next) previous.stop();
   }
 
   function startLive(): Promise<void> {
