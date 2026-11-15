@@ -3,7 +3,7 @@
 - Agent: codex for Ali
 - Branch / PR: ali/endless-wax, https://github.com/srishanb/hackthenest-chooms/pull/69
 - Plan: direct request to reference latest Git and remove the per-run wax count limit; short plan in draft PR.
-- Timing: 15 Nov 2026, approximately 03:02–03:10 Eastern.
+- Timing: 15 Nov 2026, approximately 03:02–03:11 Eastern.
 
 ## 1. What I believe is complete
 
@@ -16,17 +16,19 @@
 
 ## 2. How I verified it
 
-`npm run check`: 56 files / 360 tests pass. `npm run check:levels`: all five stages reachable. `npm run build`: passes with existing classic vendor-script warning. `git diff --check`: passes.
+`npm run check`: 57 files / 370 tests pass after merging main through 950555c. `npm run check:levels`: all five stages reachable. `npm run build`: passes with existing classic vendor-script warning. `git diff --check`: passes.
 
 Wax tests collect 100 pieces using two ledges, keep unique event IDs, and verify one active drop and bounded save size. They cover randomized 8–14 second delays, spawn exclusion beneath the player, distant-drop retirement, old save migration, reload, pause/recovery/victory, restart and light stability. A view test verifies all drawing parts start hidden and only one drop can become visible. Candle growth at 100 pickups remains 1.06, preserving main's existing cap.
 
-Browser: localhost:5188 Play → preserved guide → HUD “Wax 0” with a single visible drop, new candle and forest.
+Browser: localhost:5188 Play → preserved guide → a running wax counter with a single visible drop, new candle and forest. Rechecked after merging the reference HUD: top-right Wax metric shows 0 without a finite denominator; the redesigned lantern, compass and menus remain.
 
 **Not verified:** Full manual repeated-pickup route, hardware or other browsers. Stored respawn delay is written on spawn/pickup; reloading partway through a wait may extend it, never refresh the light bonus or bypass the wait. Collection has no gameplay cap; ordinary JavaScript numeric precision still applies.
 
 ## 3. Problems, workarounds and dead ends
 
 Latest main added candle growth tied to the former maxPerRun field. Separated growthCapWax from collectible supply so unlimited collection cannot create runaway size/movement. Reused candidate locations and one active ID instead of accumulating objects or pickup history. Missed drops far behind are retired so the only spawn cannot strand later stages.
+
+The reference HUD merged during implementation. Kept its metric layout and boost-only context line; the count metric already handles a null total, and pickup feedback omits the finite denominator.
 
 ## 4. Deviations from the plan
 
