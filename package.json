@@ -20,16 +20,53 @@
     "check:levels": "tsx tools/levels/check-levels.ts",
     "eval": "tsx tools/eval/run-eval.ts",
     "presets:build": "tsx tools/presets/make-presets.ts",
-    "prepare": "node scripts/hooks/install-git-hooks.mjs"
+    "prepare": "node scripts/hooks/install-git-hooks.mjs",
+    "app": "vite build && electron .",
+    "dist:win": "vite build && electron-builder --win nsis --x64 --publish never"
   },
   "dependencies": {
     "phaser": "4.2.1"
   },
   "devDependencies": {
     "@types/node": "26.6.6",
+    "electron": "45.3.2",
+    "electron-builder": "26.18.0",
     "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vite": "8.3.8",
     "vitest": "5.1.0"
+  },
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "org.hackthenest.lightenup",
+    "productName": "Lighten Up",
+    "copyright": "Lighten Up team, Hack The Nest 2026",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "artifactName": "Lighten-Up-Setup-${version}-x64.${ext}"
+    }
   }
 }
