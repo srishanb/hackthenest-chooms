@@ -30,6 +30,13 @@ detect emotion or stress; muscle activity is part of the signal.
 Multiple coding agents (Claude Code, Codex, Antigravity) work on this repo in parallel, each in its own
 git worktree.
 
+## Never delete git history
+
+The most important rule here: no force pushes, no rebasing pushed commits, no deleting branches or tags. Read the
+full rule in [AGENTS.md](AGENTS.md). `npm ci` installs a `pre-push` hook (in `.githooks/`) that refuses force pushes
+and deletions. If a push is rejected, do not force it: `git fetch origin`, then `git merge origin/<branch>`, then
+push again. To undo a pushed change, add a `git revert` commit.
+
 ## Setup
 
 ### Requirements
@@ -88,7 +95,7 @@ If `npm ci` fails with a cache permission error, run it once as `npm_config_cach
 ```bash
 scripts/wt.sh new <agent-or-name> <task>   # creates ../wt-<agent>-<task> on branch <agent>/<task>
 scripts/wt.sh ls                           # list worktrees
-scripts/wt.sh sync                         # rebase current branch onto origin/main
+scripts/wt.sh sync                         # merge origin/main into the current branch
 scripts/wt.sh rm <agent-or-name> <task>    # remove a worktree (branch kept)
 ```
 
@@ -108,7 +115,7 @@ hackathon/
 1. The agent writes `docs/plans/<phase-id>.md` and opens a draft PR.
 2. A human reads it and changes its status line to `Status: APPROVED by <name>`. Agents never write that line.
 3. The agent builds, runs `npm run check`, and writes an after-job report in `docs/agent-reports/`.
-4. The PR is marked ready. AI review merges it if it is clean, or labels it `needs-human`.
+4. The PR is marked ready. The reviewer agent (an Opus 5.5 session) reviews it, runs the checks, and squash-merges it or comments with what to fix. No human review is needed.
 
 ### Hooks (once per tool)
 
