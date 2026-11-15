@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ComposureState } from '../../shared/contracts/composure';
 import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state';
-import { hudState, percent, intensityLabel, recoveryHintKey } from '../components/hud/hud-state';
+import { hudEssentials, hudState, percent, intensityLabel, recoveryHintKey } from '../components/hud/hud-state';
 import { STRINGS, t, type StringKey } from '../strings';
 const signal: ComposureState = { intensity: 0.2, resting: 0, restingActive: false,
   quality: 0.6, valid: true, sampleAgeMs: 10, held: false, mode: 'adaptive',
@@ -71,5 +71,15 @@ describe('HUD state', () => {
     const keys = Object.keys(STRINGS).filter((key) => /^hud\.(composure|unavailable|intensity)/.test(key)) as StringKey[];
     expect(keys.length).toBeGreaterThanOrEqual(5);
     for (const key of keys) expect(t(key)).not.toMatch(/[0-9%]/);
+  });
+  it('keeps recovery, cooldown and finish-blocking lessons visible with stage details off', () => {
+    expect(hudEssentials(snapshot)).toEqual({ any: false, progress: false, ember: false, lesson: false });
+    expect(hudEssentials({ ...snapshot, phase: 'ember' })).toMatchObject({ any: true, progress: true, ember: true });
+    expect(hudEssentials({ ...snapshot, ember: { ...snapshot.ember, cooldownRemainingMs: 2500 } })).toMatchObject({ any: true, ember: true, progress: false });
+    expect(hudEssentials({ ...snapshot, ember: { ...snapshot.ember, cooldownRemainingMs: NaN } }).any).toBe(false);
+    for (const lessonKey of ['stage.relightRequired', 'stage.finishBlocked']) {
+      expect(hudEssentials({ ...snapshot, lessonKey })).toMatchObject({ any: true, lesson: true });
+    }
+    expect(hudEssentials({ ...snapshot, lessonKey: 'lesson.jump' }).any).toBe(false);
   });
 });

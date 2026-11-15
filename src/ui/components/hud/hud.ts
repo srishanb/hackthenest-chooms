@@ -2,7 +2,7 @@
 import { SIGNAL_CONFIG } from '../../../config/signal.config';
 import { t, STRINGS, type StringKey } from '../../strings';
 import type { UiComponent } from '../../types';
-import { hudState } from './hud-state';
+import { hudEssentials, hudState } from './hud-state';
 import { stepNeedle } from './needle';
 import './hud.css';
 import { HUD_WORLD_PIXELS_PER_METRE } from '../../../config/ui.config';
@@ -130,7 +130,15 @@ export const hud: UiComponent = {
       progress.hidden = !flags.showEmber || !snapshot.ember.active;
       composure.hidden = !flags.showSignal;
       prompt.hidden = !view.prompt;
-      panel.hidden = !flags.showStageDetails || (!flags.showStatus && !flags.showEmber && !flags.showSignal && !view.prompt);
+      if (!flags.showStageDetails) {
+        const essential = hudEssentials(snapshot);
+        stage.hidden = status.hidden = quality.hidden = wax.hidden = composure.hidden = prompt.hidden = true;
+        lesson.hidden = lesson.hidden || !essential.lesson;
+        ember.hidden = ember.hidden || !essential.ember;
+        progress.hidden = progress.hidden || !essential.progress;
+      }
+      panel.hidden = flags.showStageDetails ? !flags.showStatus && !flags.showEmber && !flags.showSignal && !view.prompt
+        : lesson.hidden && ember.hidden && progress.hidden;
     };
     render();
     const cleanups = [stores.snapshot.subscribe(render), stores.settings.subscribe(render),
@@ -139,7 +147,7 @@ export const hud: UiComponent = {
       clearTimeout(rewardTimer);
       const actual = signalState.valid && signalState.mode !== 'fixed' ? signalState.intensity : 0.2;
       text(reward, `${t(waxBenefit01(actual) === 0 ? 'wax.suppressed' : 'wax.pickup')} · ${event.collected}${event.total === null ? '' : `/${event.total}`}`);
-      reward.hidden = !stores.settings.get().hud.showStatus;
+      reward.hidden = !stores.settings.get().hud.showStatus || !stores.settings.get().hud.showStageDetails;
       rewardTimer = setTimeout(() => { reward.hidden = true; }, WAX_CONFIG.toastMs);
     }));
     cleanups.push(bus.on('land', saveBest));

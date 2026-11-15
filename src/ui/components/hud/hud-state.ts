@@ -22,6 +22,17 @@ export function recoveryHintKey(hasCheckpoint: boolean): StringKey | null {
   return hasCheckpoint ? 'hud.recoverCheckpoint' : null;
 }
 
+/** Lessons that explain why the final ledge does not finish the stage. */
+const ESSENTIAL_LESSON_KEYS: readonly string[] = ['stage.relightRequired', 'stage.finishBlocked'];
+
+/** Context rows shown even with stage details off (PR #108 default), because nothing else shows them. */
+export function hudEssentials(snapshot: Pick<GameSnapshot, 'phase' | 'ember' | 'lessonKey'>) {
+  const progress = snapshot.phase === 'ember';
+  const ember = progress || (snapshot.ember.cooldownRemainingMs ?? 0) > 0;
+  const lesson = !!snapshot.lessonKey && ESSENTIAL_LESSON_KEYS.includes(snapshot.lessonKey);
+  return { any: progress || ember || lesson, progress, ember, lesson };
+}
+
 export function hudState(snapshot: GameSnapshot, signal: ComposureState, staleAfterMs: number) {
   const fresh = Number.isFinite(signal.sampleAgeMs) && signal.sampleAgeMs <= staleAfterMs;
   const statusKey: StringKey = !fresh ? 'hud.signalWaiting'
