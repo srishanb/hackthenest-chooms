@@ -60,7 +60,7 @@ describe('forest presentation', () => {
     let frame = neutralFrame(EFFECTS_TABLE);
     for (let i = 0; i < 100; i++) {
       const next = stepForestEffects(frame, EFFECTS_TABLE, { ...input, intensity: i % 2 }, 16, null);
-      expect(Math.abs(next.forestCorruption - frame.forestCorruption)).toBeLessThan(0.008);
+      expect(Math.abs(next.forestCorruption - frame.forestCorruption)).toBeLessThan(0.02);
       frame = next;
     }
   });

@@ -1,0 +1,7 @@
+# Sensitive live corruption
+
+Neil requested small incidental activity spikes trigger corruption without deliberate strong tension. Add calibrated v2 gain1.8,600ms attack and1600ms release before existing world-effect smoothing. Zero baseline preserved, bounded0–1; only valid adaptive v2 input is boosted. Other algorithms/fixed/invalid inputs keep original mapping/smoothing; calibration and contact/stale gates unchanged. No stress diagnosis, no physics change. Files: new config/test and pipeline. Pre-code check: partly done. Human tasks: real-head sensitivity tuning remains; battery-only worn operation. Acceptance: smaller calibrated changes amplified, zero/bounds kept, tests/build. Manual physiological/eyebrow specificity unverified; effect still includes muscle activity. Confidence high in mapping, medium subjective sensitivity. Live page reload may require reconnect/calibration. No shared contracts/dependencies or abandoned approaches.
+
+Also reduced existing forestCorruption smoothing2200ms to900ms so brief valid spikes are not masked by a second slow smoothing stage. Underlying calibrated response is still bounded, movement unchanged. Initial full run exposed preset sensitivity and old forest smoothing assumptions. Restricted gain/attack to LIVE_EEG only, preserving synthetic preset calibration mapping; updated visual continuity bound to2% per frame for faster smoothing. Final rerun recorded below.
+
+Final validation:557 tests/85 files, TypeScript and build pass.

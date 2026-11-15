@@ -1,3 +1,4 @@
+import { ACTIVE_RESPONSE_CONFIG, responsiveActivity } from '../config/active-response.config';
 /**
  * The pipeline: wires the stages into one object that turns band frames into `ComposureState`.
  *
@@ -123,7 +124,10 @@ export function createPipeline(deps: PipelineDeps): Pipeline {
     const dtMs = Number.isFinite(deltaMs) ? Math.max(0, deltaMs) : nominalMs;
     if (Number.isFinite(nowMs)) lastStepMs = nowMs;
 
-    intensity = smooth(intensity, targets.intensity, dtMs, config.smoothing.intensityTauMs);
+    const responsive = valid && mode === 'adaptive' && algorithm.id === 'intensity-v2' && lastFrame?.source === 'LIVE_EEG';
+    const targetIntensity = responsive ? responsiveActivity(targets.intensity) : targets.intensity;
+    const responseMs = responsive ? (targetIntensity > intensity ? ACTIVE_RESPONSE_CONFIG.attackMs : ACTIVE_RESPONSE_CONFIG.releaseMs) : config.smoothing.intensityTauMs;
+    intensity = smooth(intensity, targetIntensity, dtMs, responseMs);
     const restingValid = valid && (!entry.needsCalibration || baselines.resting !== null);
     resting = restingValid ? smooth(resting, targets.resting, dtMs, config.smoothing.restingTauMs) : 0;
     restingActive = nextRestingActive(restingActive, resting, restingValid, config.restingThreshold);
