@@ -31,7 +31,7 @@ flowchart LR
   PIPE --> CS["ComposureState<br/>(read via ComposureReader)"]
   CS --> FX["Effects engine<br/>src/game/effects/effects-engine.ts<br/>+ EFFECTS_TABLE"]
   FX --> STORE["stores.effects<br/>(EffectsFrame)"]
-  STORE --> SCENE["Game scene visuals<br/>(lantern, forest corruption)"]
+  STORE --> SCENE["Game scene<br/>(steps the engine each frame; draws lantern, forest corruption)"]
   STORE --> AUDIO["Audio<br/>(music tense mix)"]
   SCENE -- "events on the bus" --> BUS(("Event bus"))
   BUS --> UI["UI components"]
@@ -142,8 +142,9 @@ recorder (`src/signal/recorder.ts`, which can export a session as JSONL).
 
 Every signal-driven effect is one row in `EFFECTS_TABLE` in `src/config/effects.config.ts`. Each row has
 an `enabled` flag, a `min` and `max` (the cap), a `neutral` value, a smoothing time `tauMs`, and a
-written `never` rule. The effects engine (`src/game/effects/effects-engine.ts`) applies the table and
-writes an `EffectsFrame` to `stores.effects`.
+written `never` rule. The effects engine (`src/game/effects/effects-engine.ts`) applies the table. The game scene
+(`src/game/scenes/climb-scene.ts`) steps it every frame, using the state from `ComposureReader`, and
+writes the `EffectsFrame` to `stores.effects`. Audio and the debug overlay read that store.
 
 | Row | Enabled | Min | Max | Neutral | tauMs | Never rule (short) |
 |---|---|---|---|---|---|---|
