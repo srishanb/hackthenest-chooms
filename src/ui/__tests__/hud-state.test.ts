@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ComposureState } from '../../shared/contracts/composure';
 import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state';
-import { hudEssentials, hudState, percent, intensityLabel, recoveryHintKey } from '../components/hud/hud-state';
+import { hudEssentials, hudState, percent, persistsBest, intensityLabel, recoveryHintKey } from '../components/hud/hud-state';
 import { STRINGS, t, type StringKey } from '../strings';
 const signal: ComposureState = { intensity: 0.2, resting: 0, restingActive: false,
   quality: 0.6, valid: true, sampleAgeMs: 10, held: false, mode: 'adaptive',
@@ -81,5 +81,11 @@ describe('HUD state', () => {
       expect(hudEssentials({ ...snapshot, lessonKey })).toMatchObject({ any: true, lesson: true });
     }
     expect(hudEssentials({ ...snapshot, lessonKey: 'lesson.jump' }).any).toBe(false);
+  });
+  it('never saves the best height from a stage-editor test run', () => {
+    expect(persistsBest('')).toBe(true);
+    expect(persistsBest('?captionDemo')).toBe(true);
+    expect(persistsBest('?editorTest=3')).toBe(false);
+    expect(persistsBest('?a=1&editorTest')).toBe(false);
   });
 });

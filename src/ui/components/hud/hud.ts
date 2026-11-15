@@ -2,7 +2,7 @@
 import { SIGNAL_CONFIG } from '../../../config/signal.config';
 import { t, STRINGS, type StringKey } from '../../strings';
 import type { UiComponent } from '../../types';
-import { hudEssentials, hudState } from './hud-state';
+import { hudEssentials, hudState, persistsBest } from './hud-state';
 import { stepNeedle } from './needle';
 import './hud.css';
 import { HUD_WORLD_PIXELS_PER_METRE } from '../../../config/ui.config';
@@ -78,8 +78,9 @@ export const hud: UiComponent = {
     panel.className = 'hud__context';
     const layout = document.createElement('div'); layout.className = 'hud'; layout.append(metrics, pause, checkpoint, panel); root.append(layout);
     let savedBestPx = bestPx;
+    const persist = persistsBest(location.search);
     const saveBest = (): void => {
-      if (bestPx <= savedBestPx) return;
+      if (!persist || bestPx <= savedBestPx) return;
       try { localStorage.setItem('lighten.height-best-px.v1', String(bestPx)); savedBestPx = bestPx; } catch { /* Session-only best. */ }
     };
     const onPageHide = (): void => saveBest();

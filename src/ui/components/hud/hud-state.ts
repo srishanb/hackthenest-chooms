@@ -33,6 +33,11 @@ export function hudEssentials(snapshot: Pick<GameSnapshot, 'phase' | 'ember' | '
   return { any: progress || ember || lesson, progress, ember, lesson };
 }
 
+/** Stage-editor test runs (`?editorTest`) start from later spawns, so their heights are not real bests. */
+export function persistsBest(search: string): boolean {
+  return !new URLSearchParams(search).has('editorTest');
+}
+
 export function hudState(snapshot: GameSnapshot, signal: ComposureState, staleAfterMs: number) {
   const fresh = Number.isFinite(signal.sampleAgeMs) && signal.sampleAgeMs <= staleAfterMs;
   const statusKey: StringKey = !fresh ? 'hud.signalWaiting'
