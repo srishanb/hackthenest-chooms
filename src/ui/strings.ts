@@ -6,7 +6,8 @@
  * state refer to text by key, never by literal string.
  */
 export const STRINGS = {
-  'forest.preview.title': 'DEV · Forest visuals only',
+  'forest.preview.title': 'Forest preview · visuals only',
+  'forest.preview.toggle': 'Preview forest visuals',
   'forest.preview.restore': 'Restore normal input',
   'forest.preview.normal': 'Following normal input',
   'forest.preview.target': 'Visual target:',

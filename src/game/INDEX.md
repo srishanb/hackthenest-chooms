@@ -45,5 +45,5 @@ Recovery keeps a marker placed after each return. Pickup is required before plac
 | `preloadForest`, forest texture mappings | `forest/textures.ts` | Boot-only local image and Ruby sheet loading. |
 | `createForestWorld` | `forest/forest-world.ts` | Decorative scenery, platform skins and bounded particles; no collision writes. |
 | `createRubyView` | `forest/ruby-view.ts` | Read-only player pose animation, consistent feet anchor. |
-| `stepForestEffects` | `forest/forest-effects.ts` | Existing engine plus optional dev-only forest field preview. |
+| `stepForestEffects` | `forest/forest-effects.ts` | Existing engine plus optional visual-only forest field preview. |
 | `stableUnit`, `reveal`, `mixColor` | `forest/presentation.ts` | Deterministic seeds and continuous visual mapping. |

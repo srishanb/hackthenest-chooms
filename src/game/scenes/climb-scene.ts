@@ -116,7 +116,7 @@ export class ClimbScene extends Phaser.Scene {
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
     this.player.setVisible(false); // Preserve the camera's original follow target and exact body alignment.
     this.ruby = createRubyView(this, gameConfig.player.height);
-    if (import.meta.env.DEV) {
+    {
       const preview = (event: Event): void => {
         const value: unknown = (event as CustomEvent<unknown>).detail;
         this.forestPreview = typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : null;
