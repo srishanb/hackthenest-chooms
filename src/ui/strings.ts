@@ -69,6 +69,18 @@ export const STRINGS = {
   "calib.fail.unknown": "This step could not finish. Retry or choose the fallback.",
   "calib.connect": "Connect Octopus 16",
   "calib.connectFailed": "Use Chrome or Edge, close the cloud.pieeg.com tab, and check board power before reconnecting.",
+  "hud.title": "Climb status",
+  "hud.signalWaiting": "Waiting for fresh signal",
+  "hud.calibrationNeeded": "Calibration needed",
+  "hud.signalCheck": "Check signal quality",
+  "hud.signalReady": "Signal ready",
+  "hud.quality": "Signal quality:",
+  "hud.composure": "Composure (experimental):",
+  "hud.unavailable": "unavailable",
+  "hud.emberReady": "Recovery ember available",
+  "hud.emberEmpty": "No recovery ember",
+  "hud.emberRecovering": "Recovery in progress",
+  "hud.recoveryProgress": "Recovery progress",
 } as const;
 
 export type StringKey = keyof typeof STRINGS;
