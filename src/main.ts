@@ -5,6 +5,11 @@
  * needs. Lanes never import each other, so reading this file top to bottom shows how the
  * whole game is wired: signal -> game -> UI and audio.
  */
+import { readLayouts, writeLayouts, STAGE_LAYOUT_KEY, STAGE_DRAFT_KEY } from './game/editor/layouts';
+import { createStageCanvas } from './game/editor/canvas';
+import { mountStageEditor } from './ui/components/stage-editor/stage-editor';
+import { menuButton } from './ui/menu-dom';
+import { t } from './ui/strings';
 import { createAudio } from './audio/index';
 import { AUDIO_CONFIG } from './config/audio.config';
 import { EMBER_CONFIG } from './config/ember.config';
@@ -34,11 +39,18 @@ function requireElement(id: string): HTMLElement {
 // Reading localStorage can throw when the browser blocks storage; fall back to memory then.
 const browserStorage = getLocalStorage(window);
 
+const query = new URLSearchParams(location.search);
+const draftStorage = getLocalStorage({ get localStorage() { return window.sessionStorage; } });
+const testing = query.has('editorTest');
+const persistedStages = readLayouts(browserStorage, STAGE_LAYOUT_KEY, SECTIONS);
+const runtimeStages = testing ? readLayouts(draftStorage, STAGE_DRAFT_KEY, persistedStages) : persistedStages;
+const testIndex = Math.max(0, Math.min(runtimeStages.length - 1, Number(query.get('editorTest')) || 0));
+function gameBoot(): void {
 const bus = createEventBus();
 
 const stores: Stores = {
   // With the start menu on, the game waits in 'menu' until Play; with it off, the climb starts at once.
-  snapshot: createStore({ ...INITIAL_GAME_SNAPSHOT, phase: UI_CONFIG.components['start-menu'].enabled ? 'menu' : 'playing' }),
+  snapshot: createStore({ ...INITIAL_GAME_SNAPSHOT, phase: testing ? 'playing' : UI_CONFIG.components['start-menu'].enabled ? 'menu' : 'playing' }),
   effects: createStore(neutralFrame(EFFECTS_TABLE)),
   settings: createSettingsStore(browserStorage ?? createMemoryStorage()),
 };
@@ -52,13 +64,34 @@ createGame({
   bus,
   stores,
   composure: signal.reader,
-  sections: SECTIONS,
+  sections: runtimeStages,
   gameConfig: GAME_CONFIG,
   effectsTable: EFFECTS_TABLE,
   emberConfig: EMBER_CONFIG,
-  storage: browserStorage,
+  storage: testing ? createMemoryStorage() : browserStorage,
+  startAt: testing ? { ...runtimeStages[testIndex]!.spawn, platformId: runtimeStages[testIndex]!.platforms[0]!.id } : undefined,
 });
 
 mountUi(requireElement('ui'), { bus, stores, signal }, UI_CONFIG);
 
 createAudio({ bus, stores, config: AUDIO_CONFIG, narratorLines: NARRATOR_LINES });
+}
+const route = (editor: boolean): void => { const url = new URL(location.href); url.searchParams.delete('editorTest'); url.searchParams.delete('editorDraft'); if (editor && testing) url.searchParams.set('editorDraft', '1'); if (editor) url.searchParams.set('editor','1'); else url.searchParams.delete('editor'); location.assign(url.href); };
+if (query.has('editor')) {
+  mountStageEditor(requireElement('app'), {
+    stages: query.has('editorDraft') ? readLayouts(draftStorage, STAGE_DRAFT_KEY, persistedStages) : persistedStages, originals: SECTIONS,
+    render: createStageCanvas,
+    save(stages) {
+      writeLayouts(browserStorage, STAGE_LAYOUT_KEY, stages, SECTIONS);
+      try { draftStorage?.removeItem(STAGE_DRAFT_KEY); } catch { /* The persistent save already succeeded. */ }
+    },
+    test(stages, index) { writeLayouts(draftStorage, STAGE_DRAFT_KEY, stages, SECTIONS); const url = new URL(location.href); url.searchParams.delete('editor'); url.searchParams.delete('editorDraft'); url.searchParams.set('editorTest',String(index)); location.assign(url.href); },
+    back: () => route(false),
+  });
+} else {
+  gameBoot();
+  if (testing) {
+    const back = menuButton(t('editor.return'), () => route(true));
+    back.style.cssText = 'position:fixed;top:12px;left:40%;z-index:100;padding:12px'; document.body.append(back);
+  }
+}

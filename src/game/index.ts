@@ -16,6 +16,7 @@ import { BootScene } from './scenes/boot-scene';
 import { ClimbScene } from './scenes/climb-scene';
 
 export interface GameDeps {
+  startAt?: { x: number; y: number; platformId: string };
   /** The element the canvas is added to. */
   parent: HTMLElement;
   bus: EventBus;
@@ -47,6 +48,7 @@ export function createGame(deps: GameDeps): Phaser.Game {
     scene: [
       new BootScene(),
       new ClimbScene({
+        startAt: deps.startAt,
         bus: deps.bus,
         stores: deps.stores,
         composure: deps.composure,
