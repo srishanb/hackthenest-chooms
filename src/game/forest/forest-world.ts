@@ -37,7 +37,8 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       .setOrigin(0).setTileScale(C.pixelScale).setDepth(0));
     const capWidth = Math.min(32, platform.width / 2);
     for (const [x, key] of [[left, 'forest-left'], [left + platform.width - capWidth, 'forest-right']] as const) {
-      terrain.push(scene.add.image(x, top, key).setOrigin(0).setDisplaySize(capWidth, platform.height).setDepth(0));
+      terrain.push(scene.add.tileSprite(x, top, capWidth, platform.height, key)
+        .setOrigin(0).setTileScale(C.pixelScale).setDepth(0));
     }
     rims.push(scene.add.rectangle(platform.x, top + 1, platform.width, 2, C.rim.calm).setDepth(1));
     if (props.length < C.maxProps) {
@@ -64,6 +65,10 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
   return {
     update(corruption, deltaMs, reducedMotion, paused) {
       const c = Math.max(0, Math.min(1, corruption));
+      if (import.meta.env.DEV) {
+        scene.game.canvas.dataset.forestCorruption = c.toFixed(3);
+        scene.game.canvas.dataset.forestFps = scene.game.loop.actualFps.toFixed(1);
+      }
       if (!reducedMotion && !paused) clock += Math.min(deltaMs, 100);
       sky.setFillStyle(mixColor(C.sky.calm, C.sky.corrupted, c));
       for (const layer of layers) {

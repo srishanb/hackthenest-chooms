@@ -23,3 +23,5 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 | `createCalibrationFlow`, `stepFlow`, `messageKey`, `preferCalibrationFallback`, flow types | `components/calibration/calibration-flow.ts` | Pure calibration navigation, timed halfway instructions, ordered commands and reviewed failure wording. Screens are P6.1.2. |
 
 Styling: only `var(--…)` from `theme/tokens.css`. Layout slots are in `theme/layout.css`.
+
+Forest presentation: tokens.css themes existing UI surfaces. Source badge mounts an opt-in development-only forest preview (source-badge/forest-preview.ts); it sends a visual event defined in config, never mutates signal/recovery stores. Strings remain in strings.ts; it is absent in production.
