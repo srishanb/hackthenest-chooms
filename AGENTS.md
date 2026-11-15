@@ -82,7 +82,7 @@ and in your report. **Lanes import only `src/shared/` and `src/config/`, never e
 |------|-------------|-------|
 | Integrator | Root config, `src/main.ts`, `src/shared/`, `public/vendor/`, `docs/` registers, `scripts/`, `.github/`, `.claude/`, `.codex/`, `.agents/` | Srishan |
 | Signal | `src/signal/`, `src/config/signal.config.ts`, `src/ui/components/debug-overlay/`, `tools/eval/`, `recordings/` | Srishan |
-| Game | `src/game/`, `src/config/game.config.ts`, `src/config/ember.config.ts`, `tools/levels/` | Ali |
+| Game | `src/game/`, `src/config/game.config.ts`, `src/config/ember.config.ts`, `tools/levels/` | Atila (Ali) |
 | UI | `src/ui/` (except `debug-overlay/`), `src/config/ui.config.ts` | Amrit |
 | Audio and narrator | `src/audio/`, `src/config/audio.config.ts`, `tools/narrator/` | Amrit |
 | Content and tuning | `src/content/`, `src/config/effects.config.ts`, `public/assets/`, `CREDITS.md` | Neil |

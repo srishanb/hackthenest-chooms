@@ -40,7 +40,7 @@
 
 ## 6. Follow-ups and questions for humans
 
-- [ ] AGENTS.md lists the Game lane owner as "Ali"; the credits say "Atila Vinucaldo". Srishan: is Ali a nickname, or should the lane table change?
+- [x] Resolved: Srishan confirmed Ali is Atila Vinucaldo; the AGENTS.md lane table now reads "Atila (Ali)".
 - [ ] H-11 (domain and Devpost title check) is still open.
 
 ## 7. Can a teammate explain this?
