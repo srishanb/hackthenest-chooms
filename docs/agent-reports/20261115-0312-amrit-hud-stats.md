@@ -9,7 +9,7 @@
 Top-right height/wax/highscore card only: desktop font 13→15px, narrow font 11→12px, slightly wider minimum card, panel alpha about 92→60%. Confidence: high.
 
 ## 2. How I verified it
-Browser opened actual game at port 3004, Play and tutorial skip worked, larger compact card visually inspected. npm run check: 350 tests pass, typecheck passes. git diff --check passes.
+Browser opened actual game at port 3004, Play and tutorial skip worked, larger compact card visually inspected. npm run check: 370 tests pass across 56 files, typecheck passes. git diff --check passes.
 Not verified: every viewport/browser, hardware, full playthrough; no new tests needed for CSS-only change.
 
 ## 3. Problems, workarounds and dead ends
