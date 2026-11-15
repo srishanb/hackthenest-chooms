@@ -11,6 +11,7 @@ import { menuButton } from '../../menu-dom';
 import { t } from '../../strings';
 import type { UiComponent } from '../../types';
 import { finishScreenVisible, restartsOnKey } from './finish-screen-state';
+import { menuSelection } from '../start-menu/start-menu-state';
 import '../../theme/menus.css';
 import './finish-screen.css';
 
@@ -39,6 +40,12 @@ export const finishScreen: UiComponent = {
       wasVisible = visible;
     };
     const onKey = (event: KeyboardEvent): void => {
+      if (!panel.hidden && ['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.code)) {
+        event.preventDefault();
+        const available = [playAgain].filter((button) => !button.hidden && !button.disabled);
+        available[menuSelection(available.indexOf(document.activeElement as HTMLButtonElement), available.length, event.code)]?.focus();
+        return;
+      }
       const focus = document.activeElement;
       const focusOnControl = focus instanceof HTMLElement && focus !== document.body &&
         focus.closest('button, input, select, textarea, [contenteditable="true"]') !== null;
