@@ -60,6 +60,8 @@ export interface GameConfig {
   airSteer01: number;
   /** Optional steering cap while strictly descending; ascent/apex retain airSteer01. */
   fallSteer01?: number;
+  /** Descent-only horizontal control: px/s² toward a px/s target; neutral input retains momentum. */
+  falling?: { accelerationX: number; speedX: number; ledgeReachPx: number };
 }
 
 export interface EmberConfig {
