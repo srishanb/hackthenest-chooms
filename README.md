@@ -188,7 +188,8 @@ enforces it. Each lane has an `INDEX.md` listing its public exports.
 
 ## Licence
 
-No licence file has been added yet. Third-party licences are listed in [CREDITS.md](CREDITS.md).
+The project's own code and documentation are released under the [MIT License](LICENSE). Third-party assets keep
+their own licences, listed in [CREDITS.md](CREDITS.md).
 
 ## Contributing
 
