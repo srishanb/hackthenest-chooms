@@ -22,3 +22,4 @@ build/
 
 # agent-local preview config (the port differs per worktree)
 .claude/launch.json
+release/

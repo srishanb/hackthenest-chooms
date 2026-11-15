@@ -11,6 +11,8 @@ Every third-party asset and library in this repo, with its licence. Owner: Neil 
 
 ## Libraries
 
+- Electron 45.3.2 (MIT) and electron-builder 26.18.0 (MIT): the Windows desktop wrapper and installer. Packaging only; no game code.
+
 | Library | Version | Licence | Source |
 |---|---|---|---|
 | Phaser | 4.2.1 | MIT | https://www.npmjs.com/package/phaser |
