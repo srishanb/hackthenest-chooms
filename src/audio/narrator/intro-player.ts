@@ -104,6 +104,7 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
     },
     stopPreview(): void { if (previewing) cancel(); },
     getActiveLine: (): string | null => speech?.line.id ?? null,
+    isSpeaking: (): boolean => Boolean(speech?.node),
     getLoadedClipCount: (): number => [...buffers.values()].filter((buffer) => buffer !== null).length,
     dispose(): void { if (disposed) return; disposed = true; pending = false; cancel(); for (const cleanup of cleanups) cleanup(); buffers.clear(); levels.clear(); },
   };
