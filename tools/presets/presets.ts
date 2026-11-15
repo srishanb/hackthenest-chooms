@@ -1,77 +1,119 @@
 /**
- * Built-in replay presets, built deterministically from the simulator's own spectrum model.
+ * Built-in replay presets, recorded from the real PiEEG simulator.
  *
  * Why: the demo must work with no board and no network, and the same way every time. Each preset is a
- * timeline of "tension level" 0..1 turned into band powers shaped like the PiEEG simulator's output (the
- * same `makeSequence` builder as recordings/sim-fixture.jsonl): calm raises alpha, tension raises 13-30 Hz
- * power and broadband noise (jaw clench is muscle activity, which is part of this signal), and poor contact
- * lowers the contact fraction and adds a mains spike. Presets are plain recordings plus a `baselines` line,
- * so they replay through the real pipeline. Nothing here is random.
+ * scripted run of the actual vendored SDK simulator (public/vendor/pieeg.js: its FFT, filters and band
+ * powers) on a virtual clock with a seeded random source, so the frames are the SDK's own and a rebuild is
+ * byte-identical. The script uses only the simulator's own events: alpha boost (a relaxed, eyes-closed
+ * stand-in), jaw clench (muscle activity, which is part of the signal) and noisy pin. One field is scripted:
+ * the poor-contact preset sets the contact fraction, because the simulator cannot report poor contact itself.
+ * Presets are plain recordings plus a `baselines` line, so they replay through the real pipeline.
  */
 import { SIGNAL_CONFIG } from '../../src/config/signal.config';
+import type { Baselines } from '../../src/shared/contracts/signal-internal';
 import { intensityV2 } from '../../src/signal/algorithms/intensity-v2';
 import { compactFrames, durationMs, serializePreset } from '../../src/signal/presets/preset-file';
-import { makeFrame, makeSequence, type FrameOptions } from '../../src/signal/__tests__/fixtures/make-fixture';
-import type { Baselines } from '../../src/shared/contracts/signal-internal';
+import { calibrateBaseline } from '../../src/signal/stages/calibration';
+import { startVirtualSimulator, type VirtualSimulator } from './sdk-sim';
 
-const DURATION_MS = 60_000;
-const HZ = 12;
-const SPECTRUM = { dfHz: 1, maxHz: 64 } as const;
+const DURATION_S = 60;
+/** Frames before the SDK's FFT window and filters have settled are dropped. */
+const WARMUP_MS = 3000;
 const CREATED = new Date('2026-11-15T00:00:00.000Z');
+const SEED = 20261114;
 
 interface PresetSpec {
   id: string;
   label: string;
   description: string;
-  /** Tension level 0..1 at a time (seconds into the preset). */
-  level: (seconds: number) => number;
+  /** Called once per second of the preset (0 to 59), before that second runs. */
+  script: (sim: VirtualSimulator, second: number) => void;
+  /** Overrides the contact fraction the SDK reported (see poor-contact). Everything else stays the SDK's own. */
   contactGood01?: number;
-  mains50HzSpike?: number;
 }
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
-const lerp = (a: number, b: number, k: number): number => a + (b - a) * clamp01(k);
+/** Jaw clench for `fraction` of the next second (0 is none, 1 is continuous). */
+const clench = (sim: VirtualSimulator, fraction: number): void => {
+  if (fraction > 0.02) sim.trigger('clench', Math.round(1100 * clamp01(fraction)));
+};
 
 export const PRESET_SPECS: readonly PresetSpec[] = [
-  { id: 'calm-climb', label: 'Calm climb', description: 'A steady, low-activity signal for a full minute: high alpha, little 13-30 Hz power.', level: () => 0.05 },
-  { id: 'rising-tension', label: 'Rising tension', description: 'The signal tightens slowly from low to high activity over a minute. Muscle activity is part of this signal.', level: (s) => s / 60 },
-  { id: 'jaw-clench-bursts', label: 'Jaw clench bursts', description: 'Four-second bursts of jaw clenching with rests between. Muscle activity is a large part of this signal.', level: (s) => (s % 10 < 4 ? 1 : 0.1) },
+  {
+    id: 'calm-climb',
+    label: 'Calm climb',
+    description: 'A steady, low-activity signal for a full minute: the simulator with its alpha boost on and no muscle activity.',
+    script: (sim, s) => { if (s === 0) sim.trigger('alpha', true); },
+  },
+  {
+    id: 'rising-tension',
+    label: 'Rising tension',
+    description: 'The signal tightens slowly from low to high activity over a minute, with jaw clenching growing from none to continuous. Muscle activity is part of this signal.',
+    script: (sim, s) => clench(sim, s / (DURATION_S - 1)),
+  },
+  {
+    id: 'jaw-clench-bursts',
+    label: 'Jaw clench bursts',
+    description: 'Four-second bursts of jaw clenching with rests between. Muscle activity is a large part of this signal.',
+    script: (sim, s) => { if (s % 10 === 0) sim.trigger('clench', 4000); },
+  },
   {
     id: 'mixed-climb',
     label: 'Mixed climb',
     description: 'Low activity for twenty seconds, then rising tension, then settling again: the whole range in one run.',
-    level: (s) => (s < 20 ? 0.05 : s < 40 ? lerp(0.05, 1, (s - 20) / 20) : lerp(1, 0.1, (s - 40) / 20)),
+    script: (sim, s) => {
+      if (s === 0) sim.trigger('alpha', true);
+      if (s === 20) sim.trigger('alpha', false);
+      if (s >= 20 && s < 40) clench(sim, (s - 20) / 19);
+      if (s >= 40 && s < 50) clench(sim, 1 - (s - 40) / 10);
+      if (s === 50) sim.trigger('alpha', true);
+    },
   },
   {
     id: 'poor-contact',
     label: 'Poor contact',
-    description: 'A noisy electrode: signal quality drops, so the effects ease back to neutral instead of reacting.',
-    level: () => 0.3,
-    contactGood01: 0.3,
-    mains50HzSpike: 5,
+    description: 'Poor electrode contact: signal quality is low for the whole run, so the effects ease back to neutral instead of reacting.',
+    script: (sim, s) => { if (s === 0) sim.trigger('noisy_pin', 3); },
+    // The SDK simulator can only spoil one of sixteen pins, and its 1-40 Hz band-pass removes the mains noise, so it
+    // always reports good contact. The frames are the SDK's own; only the contact fraction is set, to 5 of 16 pins.
+    contactGood01: 5 / 16,
   },
 ];
 
-/** A small repeating wobble so the replay looks alive, but is the same every time. */
-const wobble = (index: number): number => 1 + 0.04 * Math.sin(index * 0.7) + 0.03 * Math.sin(index * 1.9);
-
-function frameFor(level: number, index: number, spec?: PresetSpec): FrameOptions {
-  const w = wobble(index);
-  const bands = { alpha: (1 + 3.5 * (1 - level)) * w, beta: (1 + 2.5 * level) * w };
-  const options: FrameOptions = { bands, spectrumOptions: { ...SPECTRUM, bands, broadbandNoise: 0.8 * level } };
-  if (spec?.contactGood01 !== undefined) options.contactGood01 = spec.contactGood01;
-  if (spec?.mains50HzSpike !== undefined) options.spectrumOptions = { ...options.spectrumOptions, mains50HzSpike: spec.mains50HzSpike };
-  return options;
+async function recordPreset(spec: PresetSpec) {
+  const sim = await startVirtualSimulator(SEED);
+  sim.advance(WARMUP_MS);
+  const startAt = sim.now();
+  for (let second = 0; second < DURATION_S; second += 1) {
+    spec.script(sim, second);
+    sim.advance(1000);
+  }
+  sim.stop();
+  const frames = compactFrames(sim.frames.filter((frame) => frame.t >= startAt), DURATION_S * 1000);
+  return spec.contactGood01 === undefined ? frames : frames.map((frame) => ({ ...frame, contactGood01: spec.contactGood01 ?? null }));
 }
 
-/** Baselines on the scale of these presets: the calm frame is 0, the fully tense frame is 1. */
-export function presetBaselines(): Baselines {
-  const config = SIGNAL_CONFIG;
-  const calm = intensityV2.extract(makeFrame(frameFor(0, 0)), config);
-  const tense = intensityV2.extract(makeFrame(frameFor(1, 0)), config);
-  const rest = intensityV2.extract(makeFrame({ bands: { alpha: 4.5 }, spectrumOptions: SPECTRUM }), config);
-  const open = intensityV2.extract(makeFrame({ spectrumOptions: SPECTRUM }), config);
-  return { active: { low: calm.active, high: tense.active }, resting: { low: open.resting, high: rest.resting } };
+/** Baselines measured from the same simulator, the way the calibration screens measure them: relaxed (low) against clench (high), and eyes-open against alpha boost for resting. */
+export async function presetBaselines(): Promise<Baselines> {
+  const sim = await startVirtualSimulator(SEED + 1);
+  const window = (): typeof sim.frames => { const from = sim.frames.length; sim.advance(6000); return sim.frames.slice(from); };
+  sim.advance(WARMUP_MS);
+  const relaxed = window();
+  sim.trigger('alpha', true);
+  sim.advance(4000);
+  const boosted = window();
+  sim.trigger('alpha', false);
+  sim.advance(4000);
+  sim.trigger('clench', 8000);
+  sim.advance(1500);
+  const clenched = window();
+  sim.stop();
+  const active = (frames: typeof relaxed): number[] => frames.map((frame) => intensityV2.extract(frame, SIGNAL_CONFIG).active);
+  const resting = (frames: typeof relaxed): number[] => frames.map((frame) => intensityV2.extract(frame, SIGNAL_CONFIG).resting);
+  const activeOutcome = calibrateBaseline(active(relaxed), active(clenched), 'active');
+  const restingOutcome = calibrateBaseline(resting(relaxed), resting(boosted), 'resting');
+  if (!activeOutcome.baseline || !restingOutcome.baseline) throw new Error(`preset baselines failed: ${activeOutcome.reasonKey ?? ''} ${restingOutcome.reasonKey ?? ''}`);
+  return { active: activeOutcome.baseline, resting: restingOutcome.baseline };
 }
 
 export interface BuiltPresets {
@@ -79,13 +121,12 @@ export interface BuiltPresets {
   files: Record<string, string>;
 }
 
-export function buildPresets(): BuiltPresets {
-  const baselines = presetBaselines();
+export async function buildPresets(specs: readonly PresetSpec[] = PRESET_SPECS): Promise<BuiltPresets> {
+  const baselines = await presetBaselines();
   const manifest: BuiltPresets['manifest'] = { presets: [] };
   const files: Record<string, string> = {};
-  for (const spec of PRESET_SPECS) {
-    const raw = makeSequence({ durationMs: DURATION_MS, hz: HZ, frame: (index, tMs) => frameFor(spec.level(tMs / 1000), index, spec) });
-    const frames = compactFrames(raw, DURATION_MS);
+  for (const spec of specs) {
+    const frames = await recordPreset(spec);
     files[`${spec.id}.jsonl`] = serializePreset(frames, baselines, intensityV2.id, CREATED);
     manifest.presets.push({ id: spec.id, label: spec.label, description: spec.description, durationMs: Math.round(durationMs(frames)) });
   }
