@@ -41,3 +41,12 @@ describe('start from the menu', () => {
     expect(store.get().phase).toBe('menu');
   });
 });
+
+it('main menu preserves an interrupted Ember phase, and dispose removes its listener', () => {
+  const {bus,store,controller}=setup('ember');
+  bus.emit({type:'main_menu_requested'}); expect(store.get().phase).toBe('ember');
+  bus.emit({type:'pause'}); bus.emit({type:'main_menu_requested'}); expect(store.get().phase).toBe('menu');
+  bus.emit({type:'start'}); expect(store.get().phase).toBe('ember');
+  bus.emit({type:'pause'}); controller.dispose(); bus.emit({type:'main_menu_requested'});
+  expect(store.get().phase).toBe('paused');
+});
