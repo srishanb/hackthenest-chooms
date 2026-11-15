@@ -1,18 +1,20 @@
 /**
- * Protected visibility (LAN-3): thin outlines drawn ABOVE the darkness, so the ledge you stand on
- * and the ledges you can jump to stay readable however small the lantern gets.
+ * Protected visibility (LAN-3): thin outlines drawn ABOVE the darkness on the ledge you stand on
+ * and the top edges of ledges you can jump to, faded out at the edge of the lantern light.
  *
- * Why outlines and not fills: the darkness must still matter. Only the current platform and the
- * top edges of reachable higher ledges show; everything else stays dark. Nothing here reads the
- * signal, so the readable set depends on the level and the physics alone.
+ * Why outlines, and why faded: inside the light they keep the next landing readable while the
+ * darkness softens edges; past the light they disappear, so they never point the way through the
+ * dark (outline-fade.ts). Nothing here reads the signal; the light radius it fades with is the
+ * same capped, smoothed value the darkness uses.
  *
- * Cost: one reach search per platform the first time you stand on it (cached), and one redraw
- * per landing. While airborne the last drawing stays, like the lantern radius.
+ * Cost: one reach search per platform the first time you stand on it (cached). Each frame only
+ * the short pieces inside the light are redrawn.
  */
 import type * as Phaser from 'phaser';
 import type { GameConfig } from '../../shared/contracts/config';
 import type { PlatformBox } from '../player/types';
-import { outlineSegments, reachableLedges, type WorldBounds } from '../world/reachable-ledges';
+import { outlineSegments, reachableLedges, type Segment, type WorldBounds } from '../world/reachable-ledges';
+import { fadeSegments } from './outline-fade';
 
 const LINE_WIDTH_PX = 2;
 const CURRENT_COLOR = 0xfff3c4;
@@ -20,8 +22,11 @@ const REACHABLE_COLOR = 0xc9d4ea;
 const LINE_ALPHA = 0.85;
 
 export interface ProtectedVisibility {
-  /** Call every frame with the platform under the feet (null in the air). Redraws only on a change. */
-  update(platformId: string | null): void;
+  /**
+   * Call every frame. `platformId` is the platform under the feet (null in the air: the last
+   * outlines stay). The lantern position and radius set where the outlines fade out.
+   */
+  update(platformId: string | null, lanternX: number, lanternY: number, radiusPx: number): void;
 }
 
 export function createProtectedVisibility(
@@ -33,24 +38,28 @@ export function createProtectedVisibility(
 ): ProtectedVisibility {
   const graphics = scene.add.graphics().setDepth(depth);
   const cache = new Map<string, string[]>();
-  let drawnFor: string | null = null;
+  let segments: Segment[] = [];
+  let segmentsFor: string | null = null;
 
   return {
-    update(platformId) {
-      if (platformId === null || platformId === drawnFor) return;
-      const source = platforms.find((p) => p.id === platformId);
-      if (!source) return;
-      drawnFor = platformId;
-      let reachable = cache.get(platformId);
-      if (!reachable) {
-        reachable = reachableLedges(source, platforms, world, config);
-        cache.set(platformId, reachable);
+    update(platformId, lanternX, lanternY, radiusPx) {
+      if (platformId !== null && platformId !== segmentsFor) {
+        const source = platforms.find((p) => p.id === platformId);
+        if (source) {
+          let reachable = cache.get(platformId);
+          if (!reachable) {
+            reachable = reachableLedges(source, platforms, world, config);
+            cache.set(platformId, reachable);
+          }
+          segments = outlineSegments(platforms, platformId, reachable);
+          segmentsFor = platformId;
+        }
       }
       graphics.clear();
-      for (const s of outlineSegments(platforms, platformId, reachable)) {
+      for (const piece of fadeSegments(segments, lanternX, lanternY, radiusPx)) {
         // Style is set before each stroke (Phaser styles are not retroactive).
-        graphics.lineStyle(LINE_WIDTH_PX, s.current ? CURRENT_COLOR : REACHABLE_COLOR, LINE_ALPHA);
-        graphics.lineBetween(s.x1, s.y1, s.x2, s.y2);
+        graphics.lineStyle(LINE_WIDTH_PX, piece.current ? CURRENT_COLOR : REACHABLE_COLOR, LINE_ALPHA * piece.alpha);
+        graphics.lineBetween(piece.x1, piece.y1, piece.x2, piece.y2);
       }
     },
   };
