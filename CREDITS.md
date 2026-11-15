@@ -101,6 +101,8 @@ Author: Lukya Forge (lukyaforge). Runtime tinting/opacity and animation are appl
 Both new packs permit personal/commercial game use. Only game-used resources are included, not the complete source packs. Glitch pack excluded.
 ## UI typography
 - Pixelify Sans by Stefie Justprince, SIL Open Font License 1.1. Source: https://github.com/google/fonts/tree/main/ofl/pixelifysans. Bundled locally in `src/ui/theme/fonts/`, including OFL.txt. No runtime font requests.
+- IM Fell English SC (title font), Copyright (c) 2010 Igino Marini, SIL Open Font License 1.1. Source: https://github.com/google/fonts/tree/main/ofl/imfellenglishsc. Bundled in `src/ui/theme/fonts/imfellenglishsc/` with its OFL.txt.
+- Alegreya Sans SC Bold (menu and HUD font), Copyright 2013 The Alegreya Sans Project Authors, SIL Open Font License 1.1. Source: https://github.com/google/fonts/tree/main/ofl/alegreyasanssc. Bundled in `src/ui/theme/fonts/alegreyasanssc/` with its OFL.txt.
 
 ## Grassland polish
 Diego "Shackhal" del Solar, Multi Platformer Tileset Free. Local ReadMe declares CC0; preserved verbatim at public/assets/grassland/ReadMe.txt. Source https://shackhal.itch.io/ . Used GrassLand/Terrain/Grassland_Terrain_47Tiles.png: left/middle/right crops (0,0,16,16), (16,0,16,16), (32,0,16,16); soil (16,16,16,16). Used GrassLand/Props/GrassLand_Bush.png -> bush.png, GrassLand_Stone_1.png -> stone.png, GrassLand/Background/GrassLand_Cloud_1.png -> cloud.png. Runtime nearest scaling/tint and opacity; no full pack copied. This Free version has only Grassland; winter assets remain separately credited above.

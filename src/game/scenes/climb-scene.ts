@@ -58,6 +58,7 @@ export interface ClimbSceneDeps {
   effectsTable: readonly EffectRule[];
   emberConfig: EmberConfig;
   storage?: SaveStorage;
+  candleSeed?: number;
 }
 
 const DEPTH = { player: 10, darkness: 100, alwaysReadable: 200 } as const;
@@ -130,7 +131,7 @@ export class ClimbScene extends Phaser.Scene {
     });
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
     this.player.setVisible(false); // Preserve the camera's original follow target and exact body alignment.
-    this.candle = createCandleView(this, gameConfig.player.height, pickCandleSeed(window.location.search, import.meta.env.DEV));
+    this.candle = createCandleView(this, gameConfig.player.height, this.deps.candleSeed ?? pickCandleSeed(window.location.search, import.meta.env.DEV));
     // Bottom-left close-up of the same candle: replaces the lantern strength bar.
     this.portrait = createPortraitView(this, gameConfig.view.height);
     {

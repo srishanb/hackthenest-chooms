@@ -28,6 +28,8 @@ export interface GameDeps {
   emberConfig: EmberConfig;
   /** Where the save lives. Optional: P4.4 falls back to memory. */
   storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+  /** Seed of the first run's candle, so the menu emblem shows the same candle. Optional: random by default. */
+  candleSeed?: number;
 }
 
 export function createGame(deps: GameDeps): Phaser.Game {
@@ -57,6 +59,7 @@ export function createGame(deps: GameDeps): Phaser.Game {
         effectsTable: deps.effectsTable,
         emberConfig: deps.emberConfig,
         storage: deps.storage,
+        candleSeed: deps.candleSeed,
       }),
     ],
   });
