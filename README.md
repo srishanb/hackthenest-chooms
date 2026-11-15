@@ -243,3 +243,14 @@ name: `git push -u origin <agent>/<task>`.
 
 A Stop hook reminds an agent once if its branch has work but no after-job report. Trust it once per tool (Claude Code
 workspace trust dialog; `/hooks` in Codex; Settings, Customizations, Hooks in Antigravity).
+
+## Windows desktop app (baseline release)
+
+An unsigned Windows installer, `Lighten-Up-Setup-0.1.0-x64.exe`, is attached to the GitHub release
+`baseline-2026-11-15`. It runs the same game as the web build, offline, inside Electron.
+
+- Build it: `npm run dist:win` (Vite build, then electron-builder; NSIS x64 into `release/`). This cross-builds on macOS.
+- Run it from source: `npm run app`.
+- The board connects over Web Bluetooth as in Chrome: press **Connect Octopus 16** in the game. If one board is
+  nearby it is picked; if several are, a chooser lists them; Cancel or no board ends the request.
+- Windows SmartScreen will warn because the installer is unsigned: choose **More info**, then **Run anyway**.
