@@ -17,6 +17,7 @@ export const UI_CONFIG: UiConfig = {
     captions: { enabled: true, slot: 'bottom-center' },
     calibration: { enabled: true, slot: 'full' },
     'ember-prompt': { enabled: true, slot: 'center' },
+    'finish-screen': { enabled: true, slot: 'center' },
     'debug-overlay': { enabled: true, slot: 'bottom-left' },
   },
 };

@@ -81,6 +81,7 @@ export type UiComponentId =
   | 'captions'
   | 'calibration'
   | 'ember-prompt'
+  | 'finish-screen'
   | 'debug-overlay';
 
 /** Named areas of the UI grid over the canvas. */
