@@ -18,6 +18,8 @@ import { neutralFrame, stepEffects } from '../effects/effects-engine';
 import { createPlayer, stepPlayer } from '../player/movement';
 import type { PlatformBox, PlayerState } from '../player/types';
 import { landingEvents } from '../world/fall-tracker';
+import type { SaveStorage } from '../save';
+import { createRefugeController } from '../world/refuge';
 import { CLIMB_SCENE_KEY } from './boot-scene';
 
 export interface ClimbSceneDeps {
@@ -28,6 +30,7 @@ export interface ClimbSceneDeps {
   gameConfig: GameConfig;
   effectsTable: readonly EffectRule[];
   emberConfig: EmberConfig;
+  storage?: SaveStorage;
 }
 
 const DEPTH = { world: 0, zone: 1, player: 10, darkness: 100, alwaysReadable: 200 } as const;
@@ -42,6 +45,7 @@ export class ClimbScene extends Phaser.Scene {
   private state!: PlayerState;
   private accumulatorMs = 0;
   private precisionActive = false;
+  private refuges!: ReturnType<typeof createRefugeController>;
   private player!: Phaser.GameObjects.Rectangle;
   private darkness!: Phaser.GameObjects.Image;
   private lanternMark!: Phaser.GameObjects.Arc;
@@ -70,7 +74,15 @@ export class ClimbScene extends Phaser.Scene {
       }
     }
 
-    this.state = createPlayer(first.spawn.x, first.spawn.y);
+    this.refuges = createRefugeController({
+      sections, snapshot: stores.snapshot, bus: this.deps.bus, storage: this.deps.storage,
+    });
+    this.state = createPlayer(this.refuges.spawn.x, this.refuges.spawn.y);
+    const offFinish = this.deps.bus.on('finish', () => this.refuges.clear());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      offFinish();
+      this.refuges.destroy();
+    });
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
 
     const top = Math.min(...this.platforms.map((p) => p.y - p.height / 2)) - TOP_MARGIN_PX;
@@ -105,6 +117,7 @@ export class ClimbScene extends Phaser.Scene {
       this.accumulatorMs -= stepMs;
       const out = stepPlayer(this.state, input, this.platforms, gameConfig.view.width, gameConfig, stepMs);
       this.state = out.state;
+      this.refuges.update(this.state);
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).
       if (out.events.landed) for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
