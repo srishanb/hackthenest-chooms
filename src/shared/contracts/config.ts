@@ -36,6 +36,8 @@ export interface SignalConfig {
 }
 
 export interface GameConfig {
+  /** Fixed environment rules: acceleration in px/s², drag/decay in 1/s, wind cap in px/s. Never signal-driven. */
+  surfaces?: { iceAcceleration: number; iceDrag: number; maxWindSpeed: number; windDecay: number };
   /** Logical canvas size in pixels; the canvas scales to fit the window. */
   view: { width: number; height: number };
   /** Downward acceleration in px/s^2. EEG never changes this. */

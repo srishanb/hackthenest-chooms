@@ -5,6 +5,8 @@ Owner: Ali. Search here before adding a function.
 | Export | File | What it does |
 |---|---|---|
 | `createGame(deps)` | `index.ts` | Creates the Phaser game. Everything it needs arrives in `GameDeps`. |
+| `createWaxRewards`, `makeWaxDrops`, `WaxDrop`, `WAX_STORAGE_KEY` | `wax/rewards.ts` | Optional wax goal, once-per-run collection, temporary light bonus and pause/airborne stability. |
+| `createWaxView` | `wax/view.ts` | Code-drawn wax droplets, reduced-motion-aware hover and pickup pulses. |
 | `createKeyboardInput` | `keyboard-input.ts` | A/D and arrow movement, Space/Up jump, live remaps and buffered jump taps. |
 | `BootScene`, `BOOT_SCENE_KEY`, `CLIMB_SCENE_KEY` | `scenes/boot-scene.ts` | First scene; P8 loads assets here. |
 | `ClimbScene` | `scenes/climb-scene.ts` | Draws the world, runs fixed-step `stepPlayer`, emits `jump` and `precision_window`, feeds the darkness layer. |
@@ -28,6 +30,7 @@ Owner: Ali. Search here before adding a function.
 | `getPlatformType`, `PlatformType` | `world/platform-types/registry.ts` | Platform capabilities, including whether a surface is a safe stationary anchor. |
 | `STATIC_PLATFORM` | `world/platform-types/static.ts` | Stationary-platform capabilities. |
 | `drawWorld` | `world/world-view.ts` | Render validated collision geometry and authored zones. |
+| `platformsAt`, `windAt` | `world/environment.ts` | Deterministic moving-platform positions/deltas and local gusts, shared with the level checker. |
 
 `tools/levels/check-levels.ts` runs `checkReachability` from `tools/levels/reach.ts` using the same `stepPlayer` as gameplay.
 Recovery keeps a marker placed after each return. Pickup is required before placing it elsewhere.

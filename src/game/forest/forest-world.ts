@@ -2,10 +2,12 @@
 import type { GameObjects, Scene } from 'phaser';
 import { FOREST_CONFIG as C } from '../../config/forest.config';
 import type { LoadedWorld } from '../world/section-loader';
+import type { PlatformBox } from '../player/types';
 import { mixColor, reveal, stableUnit } from './presentation';
 
 export interface ForestWorld {
   update(corruption: number, deltaMs: number, reducedMotion: boolean, paused: boolean): void;
+  syncPlatforms(platforms: readonly PlatformBox[]): void;
 }
 
 export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld {
@@ -31,7 +33,11 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
   const terrain: Array<GameObjects.TileSprite | GameObjects.Image> = [];
   const rims: GameObjects.Rectangle[] = [];
   const props: Array<{ healthy: GameObjects.Image; decayed: GameObjects.Image; threshold: number }> = [];
+  const platformMarks: Array<{ id: string; x: number; y: number; marks: Array<{
+    image: GameObjects.Image | GameObjects.TileSprite | GameObjects.Rectangle; x: number; y: number;
+  }> }> = [];
   for (const platform of world.platforms) {
+    const terrainStart = terrain.length, rimStart = rims.length, propStart = props.length;
     const left = platform.x - platform.width / 2, top = platform.y - platform.height / 2;
     terrain.push(scene.add.tileSprite(left, top, platform.width, platform.height, 'forest-middle')
       .setOrigin(0).setTileScale(C.pixelScale).setDepth(0));
@@ -55,6 +61,11 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
         props.push({ healthy, decayed, threshold: seed * 0.65 });
       }
     }
+    // Follow authored moving ledges using simulation positions, never signal values.
+    const images = [...terrain.slice(terrainStart), ...rims.slice(rimStart),
+      ...props.slice(propStart).flatMap((prop) => [prop.healthy, prop.decayed])];
+    platformMarks.push({ id: platform.id, x: platform.x, y: platform.y,
+      marks: images.map((image) => ({ image, x: image.x, y: image.y })) });
   }
   const spores = Array.from({ length: C.spores }, (_, i) => ({
     x: stableUnit(`spore-x:${i}`) * width, y: stableUnit(`spore-y:${i}`) * height,
@@ -63,6 +74,15 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
   }));
   let clock = 0;
   return {
+    syncPlatforms(platforms) {
+      const positions = new Map(platforms.map((platform) => [platform.id, platform]));
+      for (const group of platformMarks) {
+        const position = positions.get(group.id);
+        if (position) for (const mark of group.marks) {
+          mark.image.setPosition(mark.x + position.x - group.x, mark.y + position.y - group.y);
+        }
+      }
+    },
     update(corruption, deltaMs, reducedMotion, paused) {
       const c = Math.max(0, Math.min(1, corruption));
       if (import.meta.env.DEV) {
