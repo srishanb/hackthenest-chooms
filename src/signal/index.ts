@@ -83,7 +83,13 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
     }
     recorder.recordState(state);
     published = activeKind === 'REPLAY' ? { ...state, t: now() } : state;
-    for (const listener of listeners) listener(published);
+    for (const listener of listeners) {
+      try {
+        listener(published);
+      } catch (error) {
+        console.error('[signal] reader subscriber threw', error);
+      }
+    }
   }
 
   function onFrame(frame: BandFrame): void {

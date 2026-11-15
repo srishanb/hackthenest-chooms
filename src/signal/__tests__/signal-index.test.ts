@@ -38,6 +38,20 @@ describe('createSignal', () => {
     expect(parseRecording(signal.exportRecording()).header.algo).toBe(SIGNAL_CONFIG.defaultAlgo);
   });
 
+  it('a throwing reader subscriber does not stop later subscribers', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const signal = createSignal(createEventBus(), SIGNAL_CONFIG, { search: '?source=replay&replay=run.jsonl', fetchText: async () => recordingText() });
+    const second = vi.fn();
+    signal.reader.subscribe(() => {
+      throw new Error('boom');
+    });
+    signal.reader.subscribe(second);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(second).toHaveBeenCalled();
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
+
   it('emits signal_lost when a replay ends and the data goes stale', async () => {
     const bus = createEventBus();
     const events: GameEvent['type'][] = [];

@@ -60,7 +60,13 @@ export function createPresetController(deps: PresetControllerDeps): SignalPreset
   let generation = 0;
   let savedBaselines: Baselines | null = null;
 
-  const notify = (): void => listeners.forEach((listener) => listener());
+  const notify = (): void => listeners.forEach((listener) => {
+    try {
+      listener();
+    } catch (error) {
+      console.error('[signal] preset subscriber threw', error);
+    }
+  });
 
   async function builtIn(): Promise<ManifestEntry[]> {
     if (manifest) return manifest;
