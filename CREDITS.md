@@ -77,3 +77,11 @@ Selected resources from Ancient Forest 1.7 and Dark Forest 1.0, used inside Ligh
 | `public/assets/forest/ruby-land.png` | Ancient Forest 1.7/Ruby V4 - Demo/Jump/Sheet/end_jump-Sheet.png | Unmodified PNG |
 
 Author: Lukya Forge (lukyaforge). Runtime tinting/opacity and animation are applied by the game, not the source files. Full dimensions/frame mappings and SHA-256 inventory: docs/visual-design.md and public/assets/forest/inventory.json. These files are game resources, not a standalone pack distribution.
+
+## Stage atmosphere additions (local implementation)
+
+- Lukya Forge, Ancient Forest 1.7, original license in assets/forest/License.txt: trunk-loop.png and canopy-cluster.png derived solely from existing trees-2.png. Trunk crop x176..239,y148..223 reflected vertically (152px total); feathered side alpha. Canopy crop x0..415,y0..143, feathered edges. Used as continuous bark and finite canopy, no AI art.
+- Willosuna, Pixel Weather & Ambient VFX Lite, local pack pixel-weather-vfx-lite-rate-r2. Exact notice preserved in assets/weather/LICENSE.txt. Imported only snow_medium_128px_snow_sheet.png, leaves_autumn_128px_autumn_sheet.png, fog_thin_128px_fog_sheet.png from their manifest paths, renamed snow_medium.png, leaves_autumn.png, fog_thin.png. All 128x128 frames, 32 frames; snow/leaves 80ms, fog120ms. Manifest states horizontal/vertical seamless. Runtime tint/opacity/drift changes; no source artwork claimed. Pack README source: https://willosuna.itch.io/pixel-weather-vfx-lite .
+- reodesuxz, Pixel Platformer Tileset Vol.4 Ice & Snow, local Pixel_Platformer_Tileset_Vol4_v1.0. Exact notice in assets/winter/LICENSE.txt. Imported PNG/native/platforms/snowdirt_plat_left.png, snowdirt_plat_mid.png, snowdirt_plat_right.png and PNG/native/ice/fir_sapling.png, ice_crystal.png only. Native pixels, nearest 2x display, runtime tint/opacity; no geometry/hazards imported. Project use/modification permitted, standalone/pack redistribution forbidden. No AI training.
+
+Both new packs permit personal/commercial game use. Only game-used resources are included, not the complete source packs. Glitch pack excluded.

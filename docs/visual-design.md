@@ -71,3 +71,11 @@ Protected-visibility PR #51 merged during implementation; merged it normally and
 No live PiEEG/headset session, other GPU/browser, full timed climb, audio listening pass, or target demo laptop was tested. The current title/start flow remains the existing one; no new title/death screen was invented. Selected Dark Forest plants use compatible height fitting rather than exact paired animation sheets. Ruby uses one coherent Ancient set. Existing later-level layouts and physics remain the team's responsibility; the level reachability script checks the currently active tutorial set.
 
 Production preview verified locally with ?forestDemo=1: no diagnostic panel, no DEV canvas attributes, no browser errors; the query is ignored. Both temporary 3015 servers were stopped after QA. No deployment performed.
+
+## Automatic stage atmosphere update
+
+Current local implementation supersedes the original whole-plate parallax/prop-count descriptions: see docs/plans/stage-atmosphere.md. Wind/snow select themselves through existing stageWeatherAt; no extra weather sliders. Sequence: tutorial → forest → windy → snowy → combined. Source textures, frame sizes, derivations and licenses are in CREDITS and assets/atmosphere-inventory.json. Existing corruption preview affects both weather and forest; Restore normal input remains authoritative.
+
+Local QA: npm run dev on PORT3017. DEV-only ?forestHeight=4000 offsets scenery/weather sampling so snow can be inspected without skipping gameplay; 2600 previews wind, 5200 combined, 20000 high background. It does not teleport or change the camera; HUD still reports actual Tutorial. This is excluded from production. No force/collision/difficulty modulation by the renderer. Overlay count is three, trunks fourteen, canopy slots ten, plants capped at72 pairs. Production controls remain the prior public corruption checkbox/slider.
+
+Validation: 342 tests/55 files and build pass; all five reordered stages reachable. Observed loop FPS 114.3 combined/corrupted, 119.8 wind (available machine only). See docs/agent-reports/20261115-0313-codex-stage-atmosphere.md for limits and screenshots in docs/screenshots/atmosphere. Canopy uses an irregular elliptical alpha silhouette (original pixels), trunks reflect source rows with matching RGBA endpoints. No full manual stage traversal or hardware verification claimed.

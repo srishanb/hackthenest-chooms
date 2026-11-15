@@ -8,11 +8,9 @@ import { createForestWorld } from '../forest/forest-world';
 
 export function drawWorld(scene: Scene, world: LoadedWorld) {
   const forest = createForestWorld(scene, world);
-  const flakes = Array.from({ length: STAGES_CONFIG.snowflakeCount }, (_, index) =>
-    scene.add.circle(index * 137 % world.width, index * 83 % 540, 1 + index % 2, 0xe9f6ff, 0)
-      .setScrollFactor(0).setDepth(201));
-  let lastTimeMs = 0;
-  let snowDriftPx = 0;
+  // Local presentation QA only: move scenery/weather sampling, never camera or physics.
+  const heightQuery = import.meta.env.DEV ? Number(new URLSearchParams(window.location.search).get('forestHeight') ?? 0) : 0;
+  const visualOffset = Number.isFinite(heightQuery) ? heightQuery : 0;
   const marks = world.platforms.map((platform) => {
     if (platform.motion) {
       scene.add.rectangle(platform.x, platform.y + platform.height, platform.width + platform.motion.distance * 2, 2, 0x80c99d, 0.2).setDepth(0);
@@ -37,18 +35,9 @@ export function drawWorld(scene: Scene, world: LoadedWorld) {
     forest,
     update(platforms: readonly PlatformBox[], timeMs: number, reducedMotion: boolean, playerY = 500): void {
       forest.syncPlatforms(platforms);
-      const weather = stageWeatherAt(world.sections, playerY);
-      if (timeMs < lastTimeMs) snowDriftPx = 0;
-      const dtSeconds = Math.max(0, timeMs - lastTimeMs) / 1000;
-      lastTimeMs = timeMs;
-      if (!reducedMotion) snowDriftPx += dtSeconds * STAGES_CONFIG.snowWindPxPerSecond * weather.wind01;
-      // Screen-space flakes avoid a world-sized emitter. Gameplay time freezes on pause/recovery.
-      const seconds = reducedMotion ? 0 : timeMs / 1000;
-      for (const [index, flake] of flakes.entries()) {
-        const x = (index * 137 + (reducedMotion ? 0 : snowDriftPx)) % world.width;
-        const y = (index * 83 + seconds * STAGES_CONFIG.snowFallPxPerSecond) % 540;
-        flake.setPosition(x, y).setAlpha(weather.snow01 * STAGES_CONFIG.snowOpacity);
-      }
+      const weather = stageWeatherAt(world.sections, playerY - visualOffset);
+      forest.setEnvironment({ snowEnabled: weather.snow01 > 0, snow01: weather.snow01,
+        windEnabled: weather.wind01 > 0, wind01: weather.wind01, direction: 1 });
       for (const mark of marks) {
         const platform = platforms.find((candidate) => candidate.id === mark.id);
         if (platform) { mark.rim.setPosition(platform.x, platform.y - mark.height / 2); }
