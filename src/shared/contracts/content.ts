@@ -8,6 +8,9 @@
  */
 
 export interface PlatformData {
+  /** Ice strength 0..1; omit for the platform type's normal traction. */
+  ice01?: number;
+  lesson?: 'basics' | 'moving' | 'slippery' | 'wind' | 'finish';
   id: string;
   /** Centre position and size in world pixels. y grows downward. */
   x: number;
@@ -29,16 +32,18 @@ export interface AreaData {
 }
 
 export interface SectionData {
+  /** A playable stage ends only on this platform's landing event. */
+  stage?: { kind: StageKind; finalPlatformId: string; snow01: number; wind01: number };
   lesson?: 'basics' | 'moving' | 'slippery' | 'wind' | 'finish';
   /** Authored wind zones; independent of the signal and applied only while airborne. */
-  wind?: Array<AreaData & { accelerationX: number; periodMs: number }>;
+  wind?: Array<AreaData & { accelerationX: number; periodMs: number; fadePx?: number }>;
   id: string;
   /** Where the player appears in this section. */
   spawn: { x: number; y: number };
   platforms: PlatformData[];
   /** Optional rest area; entering never saves or refills an ember. */
   refuge: (AreaData & { id: string }) | null;
-  /** The winning zone. Set on the last section only. */
+  /** Legacy draft zone; live stages must use stage.finalPlatformId and leave this null. */
   finish: AreaData | null;
 }
 
@@ -49,3 +54,5 @@ export interface NarratorLine {
   /** Path of the pre-generated clip under public/, or null while no clip exists. */
   clip: string | null;
 }
+
+export type StageKind = 'tutorial' | 'normal' | 'snow' | 'windy' | 'snow-windy';

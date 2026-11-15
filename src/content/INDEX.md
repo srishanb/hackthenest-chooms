@@ -4,7 +4,9 @@ Owner: Neil. Content is data; `src/main.ts` hands it to the game and the narrato
 
 | Export | File | What it is |
 |---|---|---|
-| `SECTIONS` | `sections/index.ts` | Tutorial climb: first jumps, moving shuttle, ice shelf, wind and finish; no automatic checkpoints. |
+| `SECTIONS` | `sections/index.ts` | Continuous five-stage climb: Tutorial, Normal, Snow, Windy, Snowy and Windy. Fifty unique platforms, landing completion and no automatic checkpoints. |
+| `TUTORIAL_STAGE` | `sections/tutorial.ts` | Original ten tutorial ledges, moving shuttle, ice/wind previews and concise lesson markers. |
+| `STAGE_LAYOUTS`, `buildStage` | `sections/stage-layouts.ts` | Independent per-stage geometry, traction and wind data for the four later stages. |
 | `SECTION_DRAFTS` | `sections/drafts.ts` | Two geometry-checked P8.2 drafts, not connected to the runtime until P4.2. |
 | `SECTION_ONE_DRAFT` | `sections/section-1.ts` | Lower climb: wide ledges and a full-width bottom catch. |
 | `SECTION_TWO_DRAFT` | `sections/section-2.ts` | Upper climb: larger gaps, narrower ledges, matching entry. |

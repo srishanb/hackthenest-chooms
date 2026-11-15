@@ -6,7 +6,7 @@ export interface PlatformType { stationary: boolean; anchorSafe: boolean }
 const TYPES: Readonly<Record<string, PlatformType>> = {
   static: STATIC_PLATFORM,
   moving: { stationary: false, anchorSafe: false },
-  slippery: { stationary: true, anchorSafe: false },
+  slippery: { stationary: true, anchorSafe: true },
 };
 
 export function getPlatformType(id: string): PlatformType | undefined {
