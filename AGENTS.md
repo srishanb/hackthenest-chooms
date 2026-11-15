@@ -5,7 +5,7 @@ Shared instructions for every coding agent on this repo (Claude Code, Codex, Ant
 
 ## Project
 
-**lighten** (working title): a 2D charge-jump climbing game for Hack The Nest 2026 (Nov 14–15, 24-hour build),
+**Lighten Up**: a 2D charge-jump climbing game for Hack The Nest 2026 (Nov 14–15, 24-hour build),
 Mind and Machine (BCI) track. A PiEEG Octopus 16 EEG board drives the lantern, fog and music, and gates a recovery
 mechanic. It never changes the controls or physics.
 

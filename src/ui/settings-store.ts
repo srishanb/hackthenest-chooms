@@ -9,7 +9,7 @@
 import { DEFAULT_SETTINGS, type Settings } from '../shared/contracts/settings';
 import { createStore, type Store } from '../shared/store';
 
-export const SETTINGS_STORAGE_KEY = 'lighten.settings.v1';
+export const SETTINGS_STORAGE_KEY = 'lighten-up.settings.v1';
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
 

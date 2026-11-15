@@ -13,7 +13,7 @@ import type { BandFrame } from '../../shared/contracts/signal-internal';
 
 export interface RecordingHeader {
   type: 'header';
-  format: 'lighten-recording';
+  format: 'lighten-up-recording';
   version: 1;
   /** ISO date-time the recording was made. */
   createdAt: string;
@@ -28,7 +28,7 @@ export interface Recording {
 }
 
 export function createHeader(source: InputSourceKind, algo: string | null, createdAt: Date = new Date()): RecordingHeader {
-  return { type: 'header', format: 'lighten-recording', version: 1, createdAt: createdAt.toISOString(), source, algo };
+  return { type: 'header', format: 'lighten-up-recording', version: 1, createdAt: createdAt.toISOString(), source, algo };
 }
 
 export function serializeRecording(recording: Recording): string {
@@ -59,7 +59,7 @@ export function parseRecording(text: string): Recording {
     if (!isObject(parsed)) throw new Error(`recording line ${index + 1} is not an object`);
 
     if (parsed['type'] === 'header') {
-      if (parsed['format'] !== 'lighten-recording' || parsed['version'] !== 1) throw new Error('unsupported recording format or version');
+      if (parsed['format'] !== 'lighten-up-recording' || parsed['version'] !== 1) throw new Error('unsupported recording format or version');
       header = parsed as unknown as RecordingHeader;
     } else if (parsed['type'] === 'frame') {
       if (!isFrame(parsed)) throw new Error(`recording line ${index + 1} is not a valid frame`);

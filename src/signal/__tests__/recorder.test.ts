@@ -37,7 +37,7 @@ describe('recorder', () => {
     const parsed = parseRecording(jsonl);
     expect(parsed.header).toEqual({
       type: 'header',
-      format: 'lighten-recording',
+      format: 'lighten-up-recording',
       version: 1,
       createdAt: '2026-11-14T22:00:00.000Z',
       source: 'SIMULATED',

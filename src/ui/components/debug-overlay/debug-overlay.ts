@@ -23,7 +23,7 @@ function triggerJsonlDownload(jsonl: string): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `lighten-recording-${stamp}.jsonl`;
+  link.download = `lighten-up-recording-${stamp}.jsonl`;
   link.click();
   URL.revokeObjectURL(url);
 }
@@ -91,7 +91,7 @@ export const debugOverlay: UiComponent = {
       const current = signal.reader.getState();
       const header = {
         type: 'header',
-        format: 'lighten-recording',
+        format: 'lighten-up-recording',
         version: 1,
         createdAt: startedAt,
         source: current.source,

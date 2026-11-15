@@ -1,8 +1,8 @@
 {
-  "name": "lighten",
+  "name": "lighten-up",
   "version": "0.1.0",
   "private": true,
-  "description": "Hack The Nest 2026 BCI climbing game (working title: lighten)",
+  "description": "Hack The Nest 2026 BCI climbing game (Lighten Up)",
   "type": "module",
   "engines": {
     "node": ">=22.12.0"

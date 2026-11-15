@@ -1,4 +1,4 @@
-# Master plan: lighten (working title)
+# Master plan: Lighten Up
 
 Written Sat 14 Nov 2026, 7:50 PM Eastern, with 16 h 10 min left before the final Devpost deadline.
 Owner: integrator (Srishan). Agents: read [AGENTS.md](../AGENTS.md) first, then the section for your phase.
@@ -11,7 +11,7 @@ Versions and API names come from sources opened on 14 Nov 2026 and are linked in
 
 ## 1. Summary and pitch
 
-**lighten** is a 2D charge-jump climbing game played in Chrome or Edge with three keys. You carry a lantern up an
+**Lighten Up** is a 2D charge-jump climbing game played in Chrome or Edge with three keys. You carry a lantern up an
 authored tower. You cannot die; a missed jump only costs height. A PiEEG Octopus 16 EEG board on your head feeds a
 per-player calibrated signal that changes the world around you, never your controls: when the active-play
 *intensity* feature rises, the lantern's reach shrinks, fog thickens and the music tightens; when it eases, they
@@ -723,7 +723,7 @@ beyond a master, persistence between sessions, and Gemini-assisted drafting.
 | `@google/genai` and `@elevenlabs/elevenlabs-js` API usage | P7 plan, from official docs |
 | Node 26 being the LTS line everyone installs (read from nodejs.org's index, not release notes) | H-08 |
 | Best Beginner criteria; whether simulated or replayed signal counts if hardware fails; whether device choice matters | H-06 |
-| Availability of the name "lighten" (temporary) as a domain or Devpost title | H-11 |
+| Availability of the name "Lighten Up" as a domain or Devpost title | H-11 |
 | `winget install GitHub.cli` package id on the two Windows laptops | H-08 |
 
 ### Sources opened for this plan

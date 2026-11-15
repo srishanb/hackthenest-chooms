@@ -1,4 +1,4 @@
-# lighten (working title)
+# Lighten Up
 
 Hack The Nest 2026 (Nov 14–15, Eastern Michigan University), Mind and Machine (BCI) track.
 
@@ -9,6 +9,7 @@ gates a "recovery ember" that returns you to the ledge you fell from. The signal
 It is composure practice and an experimental prototype. It is **not** a medical device, and it does not claim to
 detect emotion or stress; muscle activity is part of the signal.
 
+- **Team:** Srishan Bommidi, Atila Vinucaldo, Neil Pawar, Amrit Krishna. See [CREDITS.md](CREDITS.md).
 - **What worked / what didn't:** _to be written before submission (Sun 12:00 PM)._
 - **Stack:** Vite 8.3.8, TypeScript 7.0.2 (strict), Phaser 4.2.1, Vitest 5.1.0, `pieeg.js` (vendored). No backend.
 - **Credits:** the charge-jump climb is in the style of *Jump King*; the narrator's tone is in the spirit of

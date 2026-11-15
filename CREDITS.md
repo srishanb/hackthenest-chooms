@@ -3,6 +3,15 @@
 Every third-party asset and library in this repo, with its licence. Owner: Neil (assets), integrator (libraries).
 **No AI-generated textures or models.** Add a row before you commit an asset.
 
+## Team
+
+**Lighten Up** was made at Hack The Nest 2026 by:
+
+- Srishan Bommidi
+- Atila Vinucaldo
+- Neil Pawar
+- Amrit Krishna
+
 ## Inspiration
 
 - The charge-jump climb is in the style of *Jump King* (Nexile). No code, levels or assets are reused.
