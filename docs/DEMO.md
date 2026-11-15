@@ -43,11 +43,11 @@ says: for the demo, run `node run.mjs preview`, then turn the Wi-Fi off and relo
 
 | Time | On screen | What to say |
 |---|---|---|
-| 0:00 | Start menu, **Lighten Up**. | "Lighten Up is a climbing game. You carry a small candle up a long climb. A PiEEG Octopus 16 board shapes the light, fog and music. It never touches the controls." |
+| 0:00 | Start menu, **Lighten Up**. | "Lighten Up is a climbing game. You carry a small candle up a long climb. A PiEEG Octopus 16 board shapes the light, the forest and the music. It never touches the controls." |
 | 0:20 | Press **Play** / **Start climbing**. Show the tutorial ledges. | "Hold Space or the up arrow to charge, aim with A and D or the arrows, release to jump. Full power takes 0.6 seconds." |
 | 0:45 | Climb a few ledges. Pick up wax. | "Wax keeps the candle burning. Gold wax briefly boosts the light." |
 | 1:00 | Stand on a safe ledge, press **E**. | "E places your Ember, the only checkpoint. You choose where it goes." |
-| 1:15 | Change the signal (board, simulator key, or a preset; see below). Point at the lantern, fog and HUD. | "This is the composure signal: calm versus tension. As tension rises, the fog thickens and the light dims. Muscle activity, like a jaw clench, is part of the signal. We say that openly." |
+| 1:15 | Change the signal (board, simulator key, or a preset; see below). Point at the lantern, the forest and the HUD. | "This is the composure signal: calm versus tension. As tension rises, the light dims, the forest takes on a corrupted look and the music gets heavier. Muscle activity, like a jaw clench, is part of the signal. We say that openly." |
 | 1:45 | Fall on purpose. Land below the Ember, press **R**. | "After a fall, R starts a return to the Ember. With resting calibration, about four seconds of valid resting signal brings you back. Without it, there is a labelled ordinary-input rescue." |
 | 2:15 | Press **`** (backtick) to show the debug overlay. | "This is the raw pipeline: source, sample age, quality and contact. The same pipeline runs for the live board, the simulator and recordings." |
 | 2:40 | Press **`** again to hide it. Keep climbing. | "The signal only changes atmosphere. Gravity, jump strength, speed and steering are the same for everyone. Thank you." |
@@ -105,7 +105,7 @@ If even that fails, the game plays fine with no signal: **Use steady light** in 
 
 - It is a **composure** signal: calm versus tension. It is not a measure of feelings, health or ability.
 - **Muscle activity is part of it.** A jaw clench raises it. We show that on purpose with the presets and key 2.
-- It changes only the lantern, fog and music, and gates the Ember return when resting calibration has passed.
+- It changes only the lantern, the forest's corrupted look and the music, and gates the Ember return when resting calibration has passed.
 - It **never changes controls or physics.** The player code does not import the signal contract.
 - Nothing is uploaded. The game needs no network to play.
 - Do not describe it as measuring feelings, and make no health claim, when answering questions.
