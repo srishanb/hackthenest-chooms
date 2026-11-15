@@ -51,7 +51,7 @@ describe('preset generation', () => {
     expect(PRESET_SPECS.length).toBe(5);
   });
   it('lists every preset in the manifest with a file, a label, a description and a duration', () => {
-    expect(built.manifest.presets.map((p) => p.id)).toEqual(['calm-climb', 'rising-tension', 'jaw-clench-bursts', 'mixed-climb', 'poor-contact']);
+    expect(built.manifest.presets.map((p) => p.id)).toEqual(['calm-climb', 'rising-tension', 'jaw-clench-bursts', 'mixed-climb', 'noisy-pin']);
     for (const preset of built.manifest.presets) {
       expect(built.files[`${preset.id}.jsonl`], preset.id).toBeDefined();
       expect(preset.label.length).toBeGreaterThan(0);
@@ -92,10 +92,10 @@ describe('each built-in preset through the real pipeline', () => {
     expect(peak).toBeGreaterThan(calm + 0.5);
     expect(end).toBeLessThan(peak - 0.3);
   });
-  it('poor contact goes invalid and the intensity eases to neutral', () => {
-    const rows = between(runThroughPipeline('poor-contact'), 10, 60);
-    expect(rows.every((r) => !r.valid)).toBe(true);
-    expect(Math.abs(mean(rows.map((r) => r.intensity)) - SIGNAL_CONFIG.neutralIntensity)).toBeLessThan(0.1);
+  it('noisy pin: the simulator reports good contact, so the reading stays valid, and it settles once the pin is reseated', () => {
+    const rows = runThroughPipeline('noisy-pin');
+    expect(between(rows, 5, 60).every((r) => r.valid)).toBe(true);
+    expect(mean(between(rows, 52, 60).map((r) => r.intensity))).toBeLessThan(0.2);
   });
 });
 
@@ -289,10 +289,10 @@ describe('createSignal with presets', () => {
     expect(peak).toBeGreaterThan(0.5);
   });
 
-  it('poor contact reaches the reader as invalid', async () => {
-    const signal = createSignal(createEventBus(), SIGNAL_CONFIG, { search: '?preset=poor-contact', fetchText });
-    await vi.advanceTimersByTimeAsync(8000);
-    expect(signal.reader.getState().valid).toBe(false);
+  it('noisy pin reaches the reader as a valid reading', async () => {
+    const signal = createSignal(createEventBus(), SIGNAL_CONFIG, { search: '?preset=noisy-pin', fetchText });
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(signal.reader.getState().valid).toBe(true);
   });
 
   it('plays the preset again from the start when it ends (loop)', async () => {
