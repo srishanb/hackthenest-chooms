@@ -13,6 +13,8 @@ import type { PresetStore } from './preset-store';
 /** Relative to the page (Vite base './'), so the build works from any folder and offline. */
 export const BUILT_IN_DIR = `${import.meta.env.BASE_URL}recordings/presets/`;
 const MAX_LABEL_LENGTH = 40;
+/** Saved presets are about 0.6 MB each; four keeps browser storage small. Delete one to add another. */
+export const MAX_SAVED_PRESETS = 4;
 
 export interface PresetLibrary {
   list(): Promise<PresetInfo[]>;
@@ -78,6 +80,7 @@ export function createPresetLibrary(deps: { fetchText: (url: string) => Promise<
     async add(name, jsonl) {
       const recording = parseRecording(jsonl);
       if (recording.frames.length === 0) throw new Error('recording has no frames');
+      if ((await saved()).length >= MAX_SAVED_PRESETS) throw new Error('preset.limit');
       const label = cleanLabel(name) || 'Saved preset';
       const createdAt = now();
       const id = `saved-${createdAt.getTime().toString(36)}-${Math.floor(Math.random() * 1296).toString(36)}`;

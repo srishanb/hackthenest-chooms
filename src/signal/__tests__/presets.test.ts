@@ -114,6 +114,9 @@ describe('signal presets', () => {
     const copy = await signal.presets.importText('copy', text);
     expect(parseRecording(await signal.presets.exportText(copy.id)).frames).toEqual(recording.frames);
     await expect(signal.presets.importText('bad', 'not a recording')).rejects.toThrow();
+    await signal.presets.importText('third', text);
+    await signal.presets.importText('fourth', text);
+    await expect(signal.presets.importText('fifth', text)).rejects.toThrow('preset.limit');
 
     await signal.presets.select({ kind: 'REPLAY', presetId: saved.id });
     await vi.advanceTimersByTimeAsync(1000);

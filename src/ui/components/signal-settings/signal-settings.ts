@@ -68,7 +68,7 @@ export function mountSignalSettings(root: HTMLElement, signal: SignalHandle): ()
   const save = button('signal.save', () => {
     presets.saveCurrent(name.value || t('signal.saveNamePlaceholder')).then(
       (info) => { name.value = ''; say('signal.status.saved'); void presets.select({ kind: 'REPLAY', presetId: info.id }).catch(() => say('signal.status.switchFailed')); },
-      (error: unknown) => say(error instanceof Error && error.message === 'preset.tooShort' ? 'signal.status.tooShort' : 'signal.status.saveFailed'),
+      (error: unknown) => say(error instanceof Error && error.message === 'preset.tooShort' ? 'signal.status.tooShort' : error instanceof Error && error.message === 'preset.limit' ? 'signal.status.limit' : 'signal.status.saveFailed'),
     );
   });
 
@@ -90,7 +90,7 @@ export function mountSignalSettings(root: HTMLElement, signal: SignalHandle): ()
     if (!file) return;
     file.text().then((text) => presets.importText(file.name.replace(/\.jsonl?$/i, ''), text)).then(
       () => say('signal.status.imported'),
-      () => say('signal.status.importFailed'),
+      (error: unknown) => say(error instanceof Error && error.message === 'preset.limit' ? 'signal.status.limit' : 'signal.status.importFailed'),
     );
   });
   const importButton = button('signal.import', () => importInput.click());

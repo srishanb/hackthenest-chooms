@@ -262,6 +262,7 @@ export const STRINGS = {
   "signal.delete": "Delete saved preset",
   "signal.status.saved": "Preset saved.",
   "signal.status.tooShort": "Need at least 5 seconds of live or simulated signal first.",
+  "signal.status.limit": "You can keep 4 saved presets. Delete one first.",
   "signal.status.saveFailed": "Could not save the preset.",
   "signal.status.importFailed": "That file is not a valid recording.",
   "signal.status.imported": "Preset imported.",
