@@ -23,6 +23,11 @@ export function menuSelection(index: number, count: number, code: string): numbe
   return (current + (reverse ? -1 : 1) + count) % count;
 }
 
+/** A start emitted before the game subscribed is dropped; the menu must not stay locked then. */
+export function startStalled(phase: GamePhase): boolean {
+  return phase === 'menu';
+}
+
 export function startMenuVisible(phase: GamePhase, settingsOpen: boolean): boolean {
   return phase === 'menu' && !settingsOpen;
 }
