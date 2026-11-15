@@ -31,7 +31,7 @@ simulator, on recordings or against a fake SDK. `recordings/` holds only `sim-fi
 | P5.4 | Adaptive audio | Amrit | Built | #26, #59, #61 | Mix rules, gesture-unlocked music engine, event sound effects. One ambient loop; there is no separate tense music stem |
 | P6 | Recovery ember | Ali | Built | #37, #45 | One reusable player-placed ember, R recovery, five-second cooldown, four-second valid-signal gate. The gate has not been exercised with a real signal |
 | P6.1 | Calibration flow and screens | Amrit | Built, **unverified** | #30, #52 | Resting and active calibration screens, fallback choice. Not run with a real signal |
-| P7 | Narrator | Amrit, Neil | Partly built | #64, #82, #83 | Captions, six original intro clips generated offline, stock-voice choice with preview. The full event-driven narrator director (P7.3) is not built; clips play as run intros only |
+| P7 | Narrator | Amrit, Neil | Partly built | #64, #82, #83 | Captions, twelve original intro clips (six lines in each of two stock voices) generated offline, human listening review not recorded, stock-voice choice with preview. The full event-driven narrator director (P7.3) is not built; clips play as run intros only |
 | P8 | Content and presentation | Neil | Built | #18, #27, #53, #56, #62, #76, #78 | Licensed art and audio, forest world, stage content, weather, corruption, Lighten Up rename. Asset licences in [../CREDITS.md](../CREDITS.md) |
 | P9 | Submission | Srishan, Amrit | In progress | n/a | README refreshed. Devpost, video, public repo, history ruleset and the "what worked" note are open: see [HUMAN_TASKS.md](HUMAN_TASKS.md) |
 | P10 | BCI option: eyes-closed ember | n/a | Not started | n/a | Only after every Core item. No code on `main` |

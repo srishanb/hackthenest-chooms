@@ -57,6 +57,8 @@ None (no plan). I added a short "As built" section to `docs/FEATURES.md` instead
 - [ ] Srishan: there is no LICENSE file. The README says none has been added. Decide before the repo goes public.
 - [ ] Srishan: `run/game-ember.mjs`, `run/narrator.mjs` and `run/audio-mix.mjs` still say planned or "no sound yet"; `run/game-save-refuge.mjs` is titled "automatic saving", against CHK-1.
 - [ ] Neil, Srishan: `docs/FEATURES.md` LAN-1 uses the word "stress" in prose, and ATM-4 ("camera stays stable") and ATM-2 ("penalties never accumulate") conflict with the corruption screen shake and the lantern fuel. The As built notes describe the conflict; the finalised rows were left alone.
+- [ ] Amrit: the narrator bank (12 clips) has had no human listening review recorded (P7.1 acceptance test). Documented as unverified.
+- [ ] Srishan, Ali: fuel drain and the corruption radius cap are signal-driven effects defined outside `effects.config.ts`, against the "effects are data" rule; the Fuel meter (percentage of fuel) is driven by composure and sits close to rule 7's "no percentage of composure".
 - [ ] Srishan: the comment in `src/signal/url-params.ts` still says "live arrives in P3".
 - [ ] Anyone: fill in "What worked / what didn't" in the README (H-24).
 

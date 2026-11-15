@@ -65,10 +65,13 @@ src/ui/       HUD wording, status
 - **Composure** is a 0 to 1 `intensity` value personalised to each person by a short resting and active calibration.
   Higher means more tension. The HUD shows it as words (lower, midrange, higher), never as a score or a percentage.
 - **Lantern, fog, shadows, music:** the music mix is bounded and plays one local ambient loop; a separate tense layer is not
-  included yet. Each effect is a row in `src/config/effects.config.ts` with a cap, a smoothing
+  included yet. Most effects are rows in `src/config/effects.config.ts`, each with a cap, a smoothing
   time constant and a written never-rule. Effects move smoothly and ease back when you relax.
+- **Candle fuel:** the one effect that does not fully reverse. Fuel drains with playing time, up to about five times
+  faster under high tension, and wax refills it. Low fuel shrinks the light, never your movement. Its numbers are in
+  `src/config/lantern-fuel.config.ts`; the HUD shows it as a percentage of fuel left, not a composure value.
 - **Recovery ember:** in calibrated play, recovery needs about four seconds of valid, relaxed signal, with a visible
-  progress bar. Brief fluctuations pause progress and never reset it. Invalid or stale data never advances it. With
+  progress meter. Brief fluctuations pause progress and never reset it. Invalid or stale data never advances it. With
   fixed-light play or no calibration, recovery works directly and is labelled as ordinary-input assistance.
 - **Physics are protected:** `src/game/player/` must not import the composure contract, and a lane-boundary test fails
   the build if it does.
