@@ -16,4 +16,6 @@ export const SECTION_TWO_DRAFT: SectionData = {
     { id: 'upper-07', x: 300, y: -1150, width: 180, height: 20, type: 'static' },
     { id: 'upper-summit', x: 620, y: -1260, width: 220, height: 24, type: 'static' },
   ],
+  refuge: null,
+  finish: null,
 };

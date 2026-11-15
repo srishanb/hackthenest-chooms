@@ -15,4 +15,6 @@ export const SECTION_ONE_DRAFT: SectionData = {
     { id: 'lower-07', x: 350, y: -270, width: 220, height: 20, type: 'static' },
     { id: 'lower-rest', x: 570, y: -380, width: 280, height: 24, type: 'static' },
   ],
+  refuge: null,
+  finish: null,
 };

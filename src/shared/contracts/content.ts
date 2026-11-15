@@ -18,11 +18,23 @@ export interface PlatformData {
   type: string;
 }
 
+/** A rectangular zone (refuge, finish). Centre position and size in world pixels, like `PlatformData`. */
+export interface AreaData {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface SectionData {
   id: string;
   /** Where the player appears in this section. */
   spawn: { x: number; y: number };
   platforms: PlatformData[];
+  /** The safe zone of this section where progress is saved, or null if it has none. */
+  refuge: (AreaData & { id: string }) | null;
+  /** The winning zone. Set on the last section only. */
+  finish: AreaData | null;
 }
 
 export interface NarratorLine {

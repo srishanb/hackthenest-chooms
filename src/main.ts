@@ -7,6 +7,7 @@
  */
 import { createAudio } from './audio/index';
 import { AUDIO_CONFIG } from './config/audio.config';
+import { EMBER_CONFIG } from './config/ember.config';
 import { EFFECTS_TABLE } from './config/effects.config';
 import { GAME_CONFIG } from './config/game.config';
 import { SIGNAL_CONFIG } from './config/signal.config';
@@ -49,6 +50,8 @@ createGame({
   sections: SECTIONS,
   gameConfig: GAME_CONFIG,
   effectsTable: EFFECTS_TABLE,
+  emberConfig: EMBER_CONFIG,
+  storage: window.localStorage,
 });
 
 mountUi(requireElement('ui'), { bus, stores, signal }, UI_CONFIG);
