@@ -65,7 +65,7 @@ export interface BodyShape {
   dWidth: number;
   /** Added to the body height (negative is squashed). */
   dHeight: number;
-  /** Top of the body shifts this many px toward the facing side. */
+  /** The wick tilts this many px toward the facing side (the body stays straight). */
   lean: number;
   /** Whole body lifts off its feet line (idle breathing, run bob). */
   lift: number;

@@ -41,21 +41,20 @@ export function rasterCandle(genome: CandleGenome, shape: BodyShape, growth: num
 
   for (let row = 0; row < h; row++) {
     const y = -(row + 1 + shape.lift);
-    const shift = h > 1 ? Math.round((shape.lean * row) / (h - 1)) : 0;
     const fromTop = h - 1 - row;
     for (let col = 0; col < w; col++) {
       const drip = dripAt.get(col);
       const color = fromTop === 0 ? genome.wax.light
         : drip !== undefined && fromTop <= drip ? genome.wax.light
         : col === 0 ? genome.wax.light : col === w - 1 ? genome.wax.shade : genome.wax.base;
-      pixels.push({ x: x0 + col + shift, y, color });
+      pixels.push({ x: x0 + col, y, color });
     }
-    pixels.push({ x: x0 - 1 + shift, y, color: OUTLINE_COLOR }, { x: x0 + w + shift, y, color: OUTLINE_COLOR });
+    pixels.push({ x: x0 - 1, y, color: OUTLINE_COLOR }, { x: x0 + w, y, color: OUTLINE_COLOR });
   }
-  const topShift = shape.lean;
   const topY = -(h + 1 + shape.lift);
-  for (let col = -1; col <= w; col++) pixels.push({ x: x0 + col + topShift, y: topY, color: OUTLINE_COLOR });
-  const wickX = topShift;
+  for (let col = -1; col <= w; col++) pixels.push({ x: x0 + col, y: topY, color: OUTLINE_COLOR });
+  // Leaning bends only the wick: a body step reads as a broken candle at this size.
+  const wickX = shape.lean;
   for (let i = 1; i <= genome.wickHeight; i++) pixels.push({ x: wickX, y: topY - i, color: WICK_COLOR });
   const wickTip = { x: wickX, y: topY - genome.wickHeight };
 
