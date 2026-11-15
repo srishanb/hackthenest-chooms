@@ -31,6 +31,8 @@ export function createRecoveryEmber({ sections, gameConfig, config, bus, snapsho
   }
   const loaded = loadSave(storage);
   let progress: SavedProgress = loaded && (!loaded.anchor || safe(loaded.anchor)) ? loaded : { v: 2, anchor: null };
+  // A corrupt save or clock skew must not disable recovery for longer than one cooldown.
+  if (progress.readyAtMs !== undefined) progress = { ...progress, readyAtMs: Math.min(progress.readyAtMs, now() + (config.cooldownMs ?? 5000)) };
   let elapsed = 0;
   let lastTick: number | null = null;
   let suspendedAt: number | null = null;
