@@ -2,13 +2,22 @@
 import { describe, expect, it } from 'vitest';
 import type { ComposureState } from '../../shared/contracts/composure';
 import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state';
-import { hudState, percent, intensityLabel } from '../components/hud/hud-state';
+import { hudState, percent, intensityLabel, recoveryHintKey } from '../components/hud/hud-state';
 import { STRINGS, t, type StringKey } from '../strings';
 const signal: ComposureState = { intensity: 0.2, resting: 0, restingActive: false,
   quality: 0.6, valid: true, sampleAgeMs: 10, held: false, mode: 'adaptive',
   calibrated: true, source: 'SIMULATED', algo: 'fixture', t: 0 };
 const snapshot = INITIAL_GAME_SNAPSHOT;
 describe('HUD state', () => {
+  it('shows the R recovery hint in the ember panel once an ember is placed, independent of the stage card toggle', () => {
+    expect(recoveryHintKey(true)).toBe('hud.recoverCheckpoint');
+    expect(t('hud.recoverCheckpoint')).toMatch(/^R/);
+    expect(recoveryHintKey(false)).toBeNull();
+    for (const promptKey of ['ember.placedHint', 'ember.returnHint']) {
+      expect(hudState({ ...snapshot, promptKey }, signal, 500).prompt).toBeNull();
+    }
+    expect(hudState({ ...snapshot, promptKey: 'ember.placeHint' }, signal, 500).prompt).toBe(STRINGS['ember.placeHint']);
+  });
   it('describes feature bands without a composure percentage', () => {
     expect([0, 1/3, 2/3, 1].map(intensityLabel)).toEqual(['hud.intensityLower', 'hud.intensityMidrange', 'hud.intensityHigher', 'hud.intensityHigher']);
   });

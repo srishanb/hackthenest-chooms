@@ -1,3 +1,4 @@
+import { createLandingPuff } from '../forest/landing-puff';
 import { FUEL_VISIBILITY_CONFIG as FUEL_VIEW, sceneryCorruption } from '../../config/fuel-visibility.config';
 import { createCandleLighting } from '../forest/candle-lighting';
 import { fuelVisibilityRadius } from '../forest/fuel-visibility';
@@ -85,6 +86,7 @@ export class ClimbScene extends Phaser.Scene {
   private wax!: ReturnType<typeof createWaxRewards>;
   private waxView!: ReturnType<typeof createWaxView>;
   private player!: Phaser.GameObjects.Rectangle;
+  private landingPuff!: ReturnType<typeof createLandingPuff>;
   private candleLighting!: ReturnType<typeof createCandleLighting>;
   private darkness!: Phaser.GameObjects.Image;
   private lanternMark!: Phaser.GameObjects.Arc;
@@ -164,6 +166,7 @@ export class ClimbScene extends Phaser.Scene {
 
     this.darkness = createDarkness(this, DEPTH.darkness);
     this.candleLighting = createCandleLighting(this);
+    this.landingPuff = createLandingPuff(this);
     // Above the darkness (LAN-3): the ledge underfoot and reachable ledges stay readable.
     this.visibility = createProtectedVisibility(this, DEPTH.alwaysReadable, world.platforms, world, gameConfig);
     this.lanternMark = this.add.circle(0, 0, 4, 0xfff3c4).setDepth(DEPTH.alwaysReadable).setVisible(false);
@@ -284,6 +287,7 @@ export class ClimbScene extends Phaser.Scene {
   override update(_time: number, deltaMs: number): void {
     const { stores, composure, gameConfig, effectsTable, bus, emberConfig, sections } = this.deps;
     const settings = stores.settings.get();
+    this.landingPuff.update(deltaMs, this.phase.isRunning(), settings.reducedMotion);
     this.returnToEmber(this.ember.advance(composure.getState(), performance.now()));
     const stepMs = 1000 / gameConfig.stepHz;
     if (!this.phase.isRunning()) {
@@ -311,6 +315,9 @@ export class ClimbScene extends Phaser.Scene {
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).
       if (out.events.landed) {
+        const landedId = out.events.landed.platformId;
+        const snowy = sections.some(section => (section.stage?.snow01 ?? 0) > 0 && section.platforms.some(p => p.id === landedId));
+        this.landingPuff.burst(this.state.x, this.state.y + gameConfig.player.height / 2, snowy, settings.reducedMotion);
         for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
         if (this.stages.land(out.events.landed.platformId, this.fuel.isLit &&
           Math.max(actualSignal.valid && actualSignal.mode !== 'fixed' ? actualSignal.intensity : 0.2,
@@ -389,6 +396,7 @@ export class ClimbScene extends Phaser.Scene {
       reducedMotion: settings.reducedMotion,
       visible: stores.snapshot.get().phase !== 'menu' && settings.hud.showStatus,
       paused: !this.phase.isRunning(),
+      shape: this.candle.shape(),
     });
     this.candle.update(this.state, deltaMs, !this.phase.isRunning(), {
       ember: !this.fuel.isLit && this.wax.lightPulse01() === 0,

@@ -11,7 +11,7 @@ import type * as Phaser from 'phaser';
 import { FOREST_CONFIG } from '../../config/forest.config';
 import type { PlayerState } from '../player/types';
 import { createCandleGenome, type CandleGenome } from './candle-genome';
-import { bodyShape, INITIAL_POSE, poseFrame, stepPose, type PoseTracker } from './candle-pose';
+import { bodyShape, INITIAL_POSE, poseFrame, stepPose, type BodyShape, type PoseTracker } from './candle-pose';
 import { rasterCandle } from './candle-raster';
 import { type Aim, flameLean, flightSparks, wickLean } from './direction-cues';
 import { fallIntensity, FLAME_FPS, flameSizeFromRadius, flickerRate, rasterFlame } from './flame';
@@ -43,6 +43,7 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
   let genome: CandleGenome = createCandleGenome(seed);
   let tracker: PoseTracker = INITIAL_POSE;
   let clockMs = 0;
+  let lastShape: BodyShape = bodyShape(INITIAL_POSE, 0);
   let drawnKey = '';
 
   return {
@@ -55,6 +56,8 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
     seed: (): number => genome.seed,
     /** The current candle's genome, so the portrait draws the same candle. */
     genome: (): CandleGenome => genome,
+    /** The body shape drawn this frame, so the bottom-left portrait can copy the hero's squash and stretch. */
+    shape: (): BodyShape => lastShape,
     update(state: PlayerState, deltaMs: number, paused: boolean, look: CandleLook): void {
       tracker = stepPose(tracker, { ...state, aim: look.aim }, deltaMs, paused);
       // Falling feeds the flame air: its flicker clock runs up to 2.5x faster (flame.ts).
@@ -67,6 +70,7 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       const cue = { charging: state.charging, charge01: look.charge01, aim: look.aim, grounded: state.grounded, vx: state.vx, vy: state.vy };
       // Direction cues never bend the body: only the wick tilts, the flame leans and sparks trail.
       const shape = { ...bodyShape(tracker, look.charge01), lean: wickLean(cue) };
+      lastShape = shape;
       const lean = flameLean(cue);
       const sparks = flightSparks(genome, cue, flameFrame, look.reducedMotion);
       const key = `${look.ember}|${look.corruptedEmber}|${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}`;

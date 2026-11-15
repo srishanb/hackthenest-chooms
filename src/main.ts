@@ -24,6 +24,7 @@ import { PUBLISHED_LAYOUTS } from './content/sections/published-layouts';
 import { neutralFrame } from './game/effects/effects-engine';
 import { pickCandleSeed } from './game/candle/candle-genome';
 import { mountCandleEmblem } from './game/candle/emblem';
+import { mountWaxBall } from './game/candle/wax-ball';
 import { createGame } from './game/index';
 import { createEventBus } from './shared/bus';
 import type { Stores } from './shared/contracts/app';
@@ -52,6 +53,9 @@ const persistedStages = readLayouts(browserStorage, layoutKey, SECTIONS);
 const runtimeStages = testing ? readLayouts(draftStorage, STAGE_DRAFT_KEY, persistedStages) : persistedStages;
 const testIndex = Math.max(0, Math.min(runtimeStages.length - 1, Number(query.get('editorTest')) || 0));
 function gameBoot(): void {
+const frame = document.documentElement.style;
+frame.setProperty('--game-width', String(GAME_CONFIG.view.width));
+frame.setProperty('--game-height', String(GAME_CONFIG.view.height));
 const bus = createEventBus();
 
 const stores: Stores = {
@@ -88,6 +92,8 @@ mountUi(requireElement('ui'), {
   worldCanvas: game.canvas,
   bus, stores, signal,
   drawEmblem: (canvas) => mountCandleEmblem(canvas, candleSeed, () => stores.settings.get().reducedMotion),
+  drawWaxBall: (canvas) => mountWaxBall(canvas, candleSeed,
+    () => (stores.snapshot.get().navigation?.checkpoints.length ?? 0) > 0, () => stores.settings.get().reducedMotion),
 }, UI_CONFIG);
 
 createAudio({ bus, stores, config: AUDIO_CONFIG, narratorLines: NARRATOR_LINES });

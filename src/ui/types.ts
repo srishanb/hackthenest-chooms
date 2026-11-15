@@ -23,6 +23,8 @@ export interface UiDeps {
   signal: SignalHandle;
   /** Draws the animated candle emblem into a canvas (given by main.ts from the game lane). Returns a stop function. */
   drawEmblem?: (canvas: HTMLCanvasElement) => () => void;
+  /** Draws the flaming wax ball in the compass centre (from the game lane, via main.ts). Returns a stop function. */
+  drawWaxBall?: (canvas: HTMLCanvasElement) => () => void;
 }
 
 export interface UiComponent {

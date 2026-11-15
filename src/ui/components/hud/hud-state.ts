@@ -14,13 +14,21 @@ export function intensityLabel(value: number): StringKey {
   return 'hud.intensityHigher';
 }
 
+/** Prompts that repeat the R recovery hint; the ember panel shows it permanently, so the stage card skips them. */
+const RECOVERY_PROMPT_KEYS: readonly string[] = ['ember.placedHint', 'ember.returnHint'];
+
+/** The R hint lives in the always-visible ember panel and shows whenever an ember is placed to recover to. */
+export function recoveryHintKey(hasCheckpoint: boolean): StringKey | null {
+  return hasCheckpoint ? 'hud.recoverCheckpoint' : null;
+}
+
 export function hudState(snapshot: GameSnapshot, signal: ComposureState, staleAfterMs: number) {
   const fresh = Number.isFinite(signal.sampleAgeMs) && signal.sampleAgeMs <= staleAfterMs;
   const statusKey: StringKey = !fresh ? 'hud.signalWaiting'
     : !signal.calibrated ? 'hud.calibrationNeeded'
     : !signal.valid ? 'hud.signalCheck' : 'hud.signalReady';
   const promptKey = snapshot.promptKey;
-  const prompt = promptKey && Object.hasOwn(STRINGS, promptKey) ? STRINGS[promptKey as StringKey] : null;
+  const prompt = promptKey && !RECOVERY_PROMPT_KEYS.includes(promptKey) && Object.hasOwn(STRINGS, promptKey) ? STRINGS[promptKey as StringKey] : null;
   return {
     statusKey,
     qualityPercent: percent(signal.quality),
