@@ -30,6 +30,28 @@ describe('createSignal', () => {
     expect(state.valid).toBe(true); // recorded timestamps are old, but the replay clock keeps them fresh
   });
 
+  it('boots with the default algorithm when ?algo= names an Object.prototype member', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const signal = createSignal(createEventBus(), SIGNAL_CONFIG, { search: '?source=replay&replay=run.jsonl&algo=constructor', fetchText: async () => recordingText() });
+    await vi.advanceTimersByTimeAsync(200);
+    expect(signal.reader.getState().algo).toBe(SIGNAL_CONFIG.defaultAlgo);
+    expect(parseRecording(signal.exportRecording()).header.algo).toBe(SIGNAL_CONFIG.defaultAlgo);
+  });
+
+  it('a throwing reader subscriber does not stop later subscribers', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const signal = createSignal(createEventBus(), SIGNAL_CONFIG, { search: '?source=replay&replay=run.jsonl', fetchText: async () => recordingText() });
+    const second = vi.fn();
+    signal.reader.subscribe(() => {
+      throw new Error('boom');
+    });
+    signal.reader.subscribe(second);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(second).toHaveBeenCalled();
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
+
   it('emits signal_lost when a replay ends and the data goes stale', async () => {
     const bus = createEventBus();
     const events: GameEvent['type'][] = [];

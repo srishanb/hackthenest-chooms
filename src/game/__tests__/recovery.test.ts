@@ -174,3 +174,12 @@ describe('pause checkpoint actions', () => {
     const {ember}=setup(); ember.placeOrPickup(upper); expect(ember.restartAtAnchor()).toBeNull();
   });
 });
+
+describe('loaded cooldown', () => {
+  it('never exceeds the configured cooldown, even for a far-future save', () => {
+    const storage = createMemorySaveStorage();
+    writeSave(storage, { v: 2, anchor: null, readyAtMs: 1e12 });
+    const { snapshot } = setup(storage);
+    expect(snapshot.get().ember.cooldownRemainingMs).toBeLessThanOrEqual(EMBER_CONFIG.cooldownMs ?? 5000);
+  });
+});

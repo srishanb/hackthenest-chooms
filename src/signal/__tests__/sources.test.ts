@@ -133,6 +133,21 @@ describe('SimSource', () => {
     expect(sdk.log).toContain('disconnect');
   });
 
+  it('cleans up after a failed connect, so a retry builds a fresh adapter', async () => {
+    const target = new EventTarget();
+    const disconnect = vi.fn();
+    const triggerSimEvent = vi.fn();
+    const connect = vi.fn().mockRejectedValueOnce(new Error('no simulator')).mockResolvedValue(undefined);
+    const createAdapter = vi.fn(() => ({ connect, disconnect, triggerSimEvent })) as unknown as typeof createPiEEGAdapter;
+    const source = createSimSource({ config: SIGNAL_CONFIG, keyTarget: target, createAdapter });
+    await expect(source.start(() => {})).rejects.toThrow('no simulator');
+    expect(disconnect).toHaveBeenCalledOnce();
+    target.dispatchEvent(Object.assign(new Event('keydown'), { code: SIGNAL_CONFIG.simKeys.alpha, repeat: false }));
+    expect(triggerSimEvent).not.toHaveBeenCalled();
+    await source.start(() => {});
+    expect(createAdapter).toHaveBeenCalledTimes(2);
+  });
+
   it('never binds the game keys', () => {
     const codes = simKeyLegend(SIGNAL_CONFIG).map((entry) => entry.code);
     expect(codes).not.toContain('Space');
@@ -160,6 +175,14 @@ describe('recording format', () => {
     const header = JSON.stringify(createHeader('SIMULATED', null));
     expect(() => parseRecording(`${header}\n{"type":"frame","t":1}`)).toThrow(/line 2 is not a valid frame/);
     expect(() => parseRecording('{"type":"header","format":"other","version":1}')).toThrow(/unsupported/);
+  });
+
+  it('reads a frame with no spectrum key as spectrum null, and rejects a bad spectrum or an infinite time', () => {
+    const header = JSON.stringify(createHeader('SIMULATED', null));
+    const bands = '"bands":{"delta":1,"theta":1,"alpha":1,"beta":1,"gamma":1}';
+    expect(parseRecording(`${header}\n{"type":"frame","t":1,${bands}}`).frames[0]?.spectrum).toBeNull();
+    expect(() => parseRecording(`${header}\n{"type":"frame","t":1,${bands},"spectrum":{}}`)).toThrow(/line 2 is not a valid frame/);
+    expect(() => parseRecording(`${header}\n{"type":"frame","t":1e999,${bands},"spectrum":null}`)).toThrow(/line 2 is not a valid frame/);
   });
 });
 

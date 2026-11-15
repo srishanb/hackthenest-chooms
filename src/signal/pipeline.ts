@@ -118,8 +118,10 @@ export function createPipeline(deps: PipelineDeps): Pipeline {
 
     scoresNow = lastFrame ? algorithm.score(features, baselines, config) : { intensity: config.neutralIntensity, resting: 0 };
     const targets = targetsFor(scoresNow, valid, mode, config);
-    const dtMs = lastStepMs === null ? 1000 / config.updateHz : Math.max(0, nowMs - lastStepMs);
-    lastStepMs = nowMs;
+    const nominalMs = 1000 / config.updateHz;
+    const deltaMs = lastStepMs === null ? nominalMs : nowMs - lastStepMs;
+    const dtMs = Number.isFinite(deltaMs) ? Math.max(0, deltaMs) : nominalMs;
+    if (Number.isFinite(nowMs)) lastStepMs = nowMs;
 
     intensity = smooth(intensity, targets.intensity, dtMs, config.smoothing.intensityTauMs);
     resting = smooth(resting, targets.resting, dtMs, config.smoothing.restingTauMs);

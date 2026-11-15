@@ -21,6 +21,11 @@ describe('smoother', () => {
     expect(smooth(0.4, 1, -50, 1000)).toBe(0.4);
     expect(smooth(0.4, Number.NaN, 100, 1000)).toBe(0.4);
   });
+  it('recovers from a non-finite previous value and ignores a non-finite step', () => {
+    expect(smooth(Number.NaN, 0.5, 100, 1000)).toBe(0.5);
+    expect(smooth(0.4, 1, Number.NaN, 1000)).toBe(0.4);
+    expect(smooth(0.4, 1, Number.POSITIVE_INFINITY, 1000)).toBe(0.4);
+  });
 });
 
 describe('scorer', () => {
@@ -89,6 +94,10 @@ describe('algorithm registry', () => {
     expect(warn).toHaveBeenCalledOnce();
     expect(resolveAlgorithm(null, 'intensity-v1', warn).algorithm.id).toBe('intensity-v1');
     expect(warn).toHaveBeenCalledOnce();
+  });
+  it('treats Object.prototype names as unknown ids', () => {
+    expect(resolveAlgorithm('constructor', 'intensity-v2', () => {}).algorithm).toBeDefined();
+    expect(resolveAlgorithm('toString', 'intensity-v2', () => {}).algorithm.id).toBe('intensity-v2');
   });
   it('the configured default algorithm exists', () => {
     expect(ALGORITHMS[SIGNAL_CONFIG.defaultAlgo]).toBeDefined();
