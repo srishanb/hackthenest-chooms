@@ -10,7 +10,7 @@ export function drawWorld(scene: Scene, world: LoadedWorld) {
       scene.add.rectangle(platform.x, platform.y + platform.height, platform.width + platform.motion.distance * 2, 2, 0x80c99d, 0.2).setDepth(0);
     }
     const body = scene.add.rectangle(platform.x, platform.y, platform.width, platform.height, colors[platform.type] ?? colors.static).setDepth(0);
-    const rim = scene.add.rectangle(platform.x, platform.y - platform.height / 2, platform.width, 3, platform.type === 'slippery' ? 0xd6faff : 0xc8decf, 0.7).setDepth(1);
+    const rim = scene.add.rectangle(platform.x, platform.y - platform.height / 2, platform.width, 3, platform.type === 'slippery' ? 0xd6faff : 0xc8decf, 0.7).setDepth(platform.type === 'static' ? 1 : 200);
     return { id: platform.id, height: platform.height, body, rim };
   });
   const arrows = world.sections.flatMap((section) => (section.wind ?? []).flatMap((wind) => {
@@ -18,8 +18,8 @@ export function drawWorld(scene: Scene, world: LoadedWorld) {
     return Array.from({ length: 7 }, (_, index) => {
       const x = wind.x - wind.width / 2 + (index + 1) / 8 * wind.width;
       const sign = Math.sign(wind.accelerationX) || 1;
-      const head = scene.add.triangle(x, wind.y, -7, -5, 7, 0, -7, 5, 0xb7e8f4, 0.6).setScale(sign, 1).setDepth(2);
-      const shaft = scene.add.rectangle(x - 8 * sign, wind.y, 16, 2, 0xb7e8f4, 0.6).setDepth(2);
+      const head = scene.add.triangle(x, wind.y, -7, -5, 7, 0, -7, 5, 0xb7e8f4, 0.6).setScale(sign, 1).setDepth(200);
+      const shaft = scene.add.rectangle(x - 8 * sign, wind.y, 16, 2, 0xb7e8f4, 0.6).setDepth(200);
       return { x, y: wind.y, sign, head, shaft };
     });
   }));
