@@ -59,7 +59,7 @@ describe('audio engine', () => {
     vi.useFakeTimers(); const fake = fakeContext(), gestures = new EventTarget();
     fake.raw.resume.mockRejectedValueOnce(new Error('not allowed'));
     const audio = createAudio(deps(), { createContext: () => fake.context, gestures,
-      baseURL: new URL('http://localhost/game/'), assets: { quiet: null, tense: null } });
+      baseURL: new URL('http://localhost/game/'), sfxAssets: {}, assets: { quiet: null, tense: null } });
     await audio.ready; expect(fake.raw.resume).not.toHaveBeenCalled();
     gestures.dispatchEvent(new Event('keydown')); await Promise.resolve(); await Promise.resolve();
     gestures.dispatchEvent(new Event('pointerdown')); await Promise.resolve(); await Promise.resolve();
@@ -72,7 +72,7 @@ describe('audio engine', () => {
     let resolve!: (response: Response) => void;
     const fetcher = vi.fn(() => new Promise<Response>((done) => { resolve = done; }));
     const audio = createAudio(data, { createContext: () => fake.context, gestures: new EventTarget(),
-      baseURL: new URL('http://localhost/'), fetcher, assets: { quiet: 'assets/audio/test.ogg', tense: null } });
+      baseURL: new URL('http://localhost/'), fetcher, sfxAssets: {}, assets: { quiet: 'assets/audio/test.ogg', tense: null } });
     data.stores.settings.set({ ...data.stores.settings.get(), volumes: { ...data.stores.settings.get().volumes, master: 0 } });
     expect(audio.getDiagnostics().gains).toEqual({ quiet: 0, tense: 0, sfx: 0, narrator: 0 });
     audio.dispose(); resolve(new Response(new Uint8Array([1]))); await audio.ready;
@@ -82,7 +82,7 @@ describe('audio engine', () => {
   it('follows effects at ten Hz and phase/volume changes without polling forever after dispose', async () => {
     vi.useFakeTimers(); const fake = fakeContext(), data = deps();
     const audio = createAudio(data, { createContext: () => fake.context, gestures: new EventTarget(),
-      baseURL: new URL('http://localhost/'), assets: { quiet: null, tense: null } });
+      baseURL: new URL('http://localhost/'), sfxAssets: {}, assets: { quiet: null, tense: null } });
     await audio.ready; const playing = audio.getDiagnostics().gains.quiet;
     data.stores.snapshot.set({ ...data.stores.snapshot.get(), inRefuge: true });
     vi.advanceTimersByTime(100); expect(audio.getDiagnostics().gains.quiet).toBeCloseTo(playing * 0.5);
