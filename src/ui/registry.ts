@@ -74,6 +74,7 @@ export function mountUi(root: HTMLElement, deps: UiDeps, config: UiConfig): () =
   }
 
   const applyPhase = (phase: GamePhase): void => {
+    root.dataset.phase = phase;
     for (const { wrapper, visibleIn } of phaseAware) wrapper.hidden = !visibleIn.includes(phase);
   };
   applyPhase(deps.stores.snapshot.get().phase);

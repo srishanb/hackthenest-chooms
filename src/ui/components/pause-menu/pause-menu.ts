@@ -1,5 +1,6 @@
 /** Keyboard pause/resume publishes bus events; gameplay remains the game's responsibility. */
 import { menuButton, trapMenuFocus } from '../../menu-dom';
+import { icon } from '../../icons';
 import { t } from '../../strings';
 import type { UiComponent } from '../../types';
 import { createUiActions } from '../../ui-actions';
@@ -8,7 +9,7 @@ export const pauseMenu: UiComponent = {
   id: 'pause-menu', visibleIn: ['paused'],
   mount(root, { stores, bus, actions = createUiActions() }) {
     const panel = document.createElement('section');
-    panel.className = 'menu-panel'; panel.setAttribute('role', 'dialog');
+    panel.className = 'menu-panel pause-menu'; panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-modal', 'true'); panel.setAttribute('aria-label', t('menu.paused'));
     const title = document.createElement('h2'); title.textContent = t('menu.paused');
     let previous: HTMLElement | null = null;
@@ -17,10 +18,17 @@ export const pauseMenu: UiComponent = {
     settings.hidden = !actions.settingsAvailable;
     const recalibrate = menuButton(t('calib.recalibrate'), () => actions.openCalibration('pause'));
     recalibrate.hidden = !actions.calibrationAvailable;
-    panel.append(title, resume, settings, recalibrate); root.append(panel);
+    const restart = menuButton(t('menu.checkpointRestart'), () => bus.emit({ type: 'checkpoint_restart_requested' }));
+    const mainMenu = menuButton(t('menu.mainMenu'), () => bus.emit({ type: 'main_menu_requested' }));
+    resume.classList.add('menu-primary'); recalibrate.classList.add('menu-tertiary');
+    resume.prepend(icon('play')); restart.prepend(icon('flag')); settings.prepend(icon('settings')); mainMenu.prepend(icon('home'));
+    const hint = document.createElement('small'); hint.textContent = t('menu.noCheckpoint');
+    panel.append(title, resume, restart, settings, mainMenu, hint, recalibrate); root.append(panel);
     let lastPhase = stores.snapshot.get().phase;
     const render = (): void => {
       const phase = stores.snapshot.get().phase;
+      restart.disabled = !stores.snapshot.get().navigation?.checkpoints.length;
+      hint.hidden = !restart.disabled;
       panel.hidden = phase !== 'paused' || actions.settingsOpen.get() || actions.calibrationFrom.get() !== null;
       if (phase === 'paused' && lastPhase !== 'paused') {
         previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -35,7 +43,7 @@ export const pauseMenu: UiComponent = {
     const onKey = (event: KeyboardEvent): void => {
       if (actions.settingsOpen.get() || actions.calibrationFrom.get() !== null) return;
       if (stores.snapshot.get().phase === 'paused') trapMenuFocus(panel, event);
-      if (event.repeat || event.code !== stores.settings.get().keys.pause || event.key === 'Tab') return;
+      if (event.repeat || ![stores.settings.get().keys.pause, 'Escape', 'KeyP'].includes(event.code) || event.key === 'Tab') return;
       const phase = stores.snapshot.get().phase;
       if (phase !== 'paused' && phase !== 'playing' && phase !== 'ember') return;
       event.preventDefault();

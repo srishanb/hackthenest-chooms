@@ -7,6 +7,7 @@
  * Turning this component off in ui.config.ts makes main.ts boot straight into 'playing'.
  */
 import { menuButton } from '../../menu-dom';
+import { icon } from '../../icons';
 import { t } from '../../strings';
 import type { UiComponent } from '../../types';
 import { createUiActions } from '../../ui-actions';
@@ -29,7 +30,11 @@ export const startMenu: UiComponent = {
     settings.hidden = !actions.settingsAvailable;
     const buttons = document.createElement('div'); buttons.className = 'start-menu__actions';
     buttons.append(play, settings);
-    panel.append(title, subtitle, buttons);
+    const emblem = document.createElement('div'); emblem.className = 'start-menu__emblem'; emblem.append(icon('flame'));
+    const eyebrow = document.createElement('p'); eyebrow.className = 'start-menu__eyebrow'; eyebrow.textContent = t('start.eyebrow');
+    const hint = document.createElement('p'); hint.className = 'start-menu__hint'; hint.textContent = t('start.controlsHint');
+    play.prepend(icon('play')); settings.prepend(icon('settings'));
+    panel.append(emblem, eyebrow, title, subtitle, buttons, hint);
     root.append(panel);
 
     let wasVisible = false;

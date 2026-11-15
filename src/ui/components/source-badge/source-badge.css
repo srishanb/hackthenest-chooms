@@ -31,3 +31,10 @@
 #ui:has([data-component='pause-menu']:not([hidden])) .forest-preview,
 #ui:has([data-component='start-menu']:not([hidden])) .forest-preview,
 #ui:has(dialog[open]) .forest-preview { display: none; }
+/* Keep the honest source label clear of the new right-hand metrics. */
+.ui-slot[data-slot='top-right']:has([data-component='source-badge']) { right: auto; left: 50%; transform: translateX(-50%); align-items: center; }
+@media (max-width: 600px) { .ui-slot[data-slot='top-right']:has([data-component='source-badge']) { top: 112px; left: auto; right: var(--hud-corner); transform: none; } }
+.source-preview { font-size: var(--text-xs); color: var(--color-text-dim); }
+.source-preview summary { cursor: pointer; padding: var(--space-1) var(--space-2); background: var(--color-panel); border-radius: var(--radius); }
+.source-preview:not([open]) { opacity: .75; }
+#ui[data-phase='paused'] .source-preview, #ui[data-phase='menu'] .source-preview { display: none; }
