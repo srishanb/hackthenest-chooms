@@ -8,6 +8,7 @@ import { HUD_WORLD_PIXELS_PER_METRE } from '../../../config/ui.config';
 import { icon } from '../../icons';
 import { navigationView } from './navigation';
 import { WAX_CONFIG } from '../../../config/wax.config';
+import { waxBenefit01 } from '../../../config/lantern-fuel.config';
 
 export const hud: UiComponent = {
   id: 'hud',
@@ -119,7 +120,8 @@ export const hud: UiComponent = {
       signal.reader.subscribe((next) => { signalState = next; render(); })];
     cleanups.push(bus.on('wax_collected', (event) => {
       clearTimeout(rewardTimer);
-      text(reward, `${t('wax.pickup')} · ${event.collected}${event.total === null ? '' : `/${event.total}`}`);
+      const actual = signalState.valid && signalState.mode !== 'fixed' ? signalState.intensity : 0.2;
+      text(reward, `${t(waxBenefit01(actual) === 0 ? 'wax.suppressed' : 'wax.pickup')} · ${event.collected}${event.total === null ? '' : `/${event.total}`}`);
       reward.hidden = !stores.settings.get().hud.showStatus;
       rewardTimer = setTimeout(() => { reward.hidden = true; }, WAX_CONFIG.toastMs);
     }));

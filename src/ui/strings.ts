@@ -6,6 +6,7 @@
  * state refer to text by key, never by literal string.
  */
 export const STRINGS = {
+  'wax.suppressed': 'Wax collected · corruption blocks its light',
   'hud.fuel': 'Fuel',
   'hud.lantern': 'Lantern strength',
   'hud.height': 'Height',

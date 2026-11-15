@@ -7,9 +7,6 @@ import { createForestWorld } from '../forest/forest-world';
 
 export function drawWorld(scene: Scene, world: LoadedWorld) {
   const forest = createForestWorld(scene, world);
-  // Local presentation QA only: move scenery/weather sampling, never camera or physics.
-  const heightQuery = import.meta.env.DEV ? Number(new URLSearchParams(window.location.search).get('forestHeight') ?? 0) : 0;
-  const visualOffset = Number.isFinite(heightQuery) ? heightQuery : 0;
   const marks = world.platforms.map((platform) => {
     if (platform.motion) {
       scene.add.rectangle(platform.x, platform.y + platform.height, platform.width + platform.motion.distance * 2, 2, 0x80c99d, 0.2).setDepth(0);
@@ -21,7 +18,7 @@ export function drawWorld(scene: Scene, world: LoadedWorld) {
     forest,
     update(platforms: readonly PlatformBox[], timeMs: number, reducedMotion: boolean, playerY = 500): void {
       forest.syncPlatforms(platforms);
-      const weather = stageWeatherAt(world.sections, playerY - visualOffset);
+      const weather = stageWeatherAt(world.sections, playerY);
       forest.setEnvironment({ snowEnabled: weather.snow01 > 0, snow01: weather.snow01,
         windEnabled: weather.wind01 > 0, wind01: weather.wind01, direction: 1 });
       for (const mark of marks) {

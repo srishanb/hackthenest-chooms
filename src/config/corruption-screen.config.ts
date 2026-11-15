@@ -1,8 +1,9 @@
 /** Presentation-only caps for the existing corruption frame. Never changes camera follow or physics. */
 export const CORRUPTION_SCREEN_CONFIG = {
-  onset: 0.55, shakeMaxPx: 4, shakeMs: 150, shakeIntervalMs: 1500,
-  shiftMaxPx: 3, channelMaxPx: 1.5, noiseMax: 0.05,
-  never: 'No flashes, gameplay changes or hidden landing edges; zero motion with reduced motion, pause or strength zero.',
+  onset: 0.55, shakeMaxPx: 8, shakeMs: 220, shakeIntervalMs: 1200,
+  shiftMaxPx: 5, channelMaxPx: 2, noiseMax: 0.07,
+  lightningPeriodMs: 8000, lightningPulseMs: 700, lightningAlpha: 0.16,
+  never: 'No full-screen flashes, gameplay changes or hidden landing edges; zero motion with reduced motion, pause or strength zero.',
 } as const;
 export function screenCorruption(c: number, strength: number, reduced: boolean, paused: boolean): number {
   if (reduced || paused || !Number.isFinite(c) || !Number.isFinite(strength)) return 0;

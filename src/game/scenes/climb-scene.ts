@@ -245,7 +245,7 @@ export class ClimbScene extends Phaser.Scene {
   }
 
   private visibleRadius(base: number, airborne: boolean): number {
-    return this.fuel.lightRadius(this.wax.lightRadius(base, airborne), airborne);
+    return this.fuel.lightRadius(this.wax.lightRadius(base, airborne, this.fuel.waxBenefit), airborne);
   }
 
   private returnToEmber(anchor: EmberAnchor | null): void {
@@ -278,9 +278,9 @@ export class ClimbScene extends Phaser.Scene {
       const out = stepPlayer(this.state, input, this.platforms, gameConfig.view.width, movement, stepMs,
         { windAccelerationX: windAt(sections, this.state, this.worldTimeMs) });
       this.state = out.state;
-      this.wax.update(this.state, stepMs);
       const actualSignal = composure.getState();
       this.fuel.update(actualSignal.valid && actualSignal.mode !== 'fixed' ? actualSignal.intensity : 0.2, stepMs);
+      this.wax.update(this.state, stepMs, this.fuel.waxBenefit);
       this.refuges.update(this.state);
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).

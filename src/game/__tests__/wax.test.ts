@@ -29,6 +29,13 @@ function setup(storage: SaveStorage = createMemorySaveStorage(), random = () => 
 }
 
 describe('replenishing wax', () => {
+  it('counts a fully suppressed pickup without granting any temporary light bonus', () => {
+    const { wax, active, snapshot } = setup();
+    wax.update(active(), 0, 0);
+    expect(snapshot.get().wax?.collected).toBe(1);
+    expect(snapshot.get().wax?.boostRemainingMs).toBe(0);
+    expect(wax.lightRadius(110, false, 0)).toBe(110);
+  });
   it('collects well beyond both the old cap and the number of ledges, always with at most one active', () => {
     const { wax, snapshot, events, active, storage } = setup();
     for (let count = 1; count <= 100; count++) {
