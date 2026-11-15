@@ -42,3 +42,13 @@
   #ui[data-phase='paused'] .ui-slot[data-slot='top-right'],
   #ui[data-phase='menu'] .ui-slot[data-slot='top-right'] { top: var(--space-1); left: 50%; right: auto; transform: translateX(-50%); z-index: 2; }
 }
+
+.ui-size-tuner { margin-top: var(--space-1); font-size: var(--text-sm); }
+.ui-size-tuner summary { cursor: pointer; color: var(--color-accent); padding: var(--space-1) var(--space-2); background: var(--color-panel); border: 1px solid var(--color-panel-border); border-radius: var(--radius); }
+.ui-size-tuner__panel { display: grid; gap: var(--space-3); margin-top: var(--space-1); width: min(280px, 78vw); padding: var(--space-3); background: var(--color-panel); border: 1px solid var(--color-panel-border); border-radius: var(--radius); box-shadow: var(--panel-shadow); }
+.ui-size-tuner label { display: grid; grid-template-columns: 1fr auto; gap: var(--space-2); }
+.ui-size-tuner input { grid-column: 1 / -1; width: 100%; margin: 0; accent-color: var(--color-accent); }
+.ui-size-tuner output { color: var(--color-accent); }
+.ui-size-tuner small { color: var(--color-text-dim); line-height: 1.4; }
+.ui-size-tuner button { font: inherit; color: var(--color-text); background: var(--color-inset); border: 1px solid var(--color-panel-border); border-radius: var(--radius); padding: var(--space-2); cursor: pointer; }
+.ui-slot[data-slot='top-right']:has(.ui-size-tuner[open]) { z-index: 3; }

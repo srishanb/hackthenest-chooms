@@ -6,6 +6,12 @@
  * state refer to text by key, never by literal string.
  */
 export const STRINGS = {
+  'uiSize.title': 'UI size',
+  'uiSize.tutorial': 'Tutorial / hints size',
+  'uiSize.stats': 'Height / wax / highscore size',
+  'uiSize.hint': 'Live preview · saved on this browser. Choose sizes, then tell me to set them.',
+  'uiSize.reset': 'Reset sizes',
+
   'hud.lantern': 'Lantern strength',
   'hud.height': 'Height',
   'hud.best': 'Highscore',

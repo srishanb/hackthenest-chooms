@@ -26,3 +26,6 @@ export const UI_CONFIG: UiConfig = {
 export const HUD_WORLD_PIXELS_PER_METRE = 32;
 /** Radius represented by the complete lantern gauge, including wax light bonuses. */
 export const HUD_LANTERN_FULL_RADIUS_PX = 520;
+
+/** Local sizing preview only; shared design defaults stay unchanged until Amrit chooses. */
+export const UI_SIZE_PREVIEW = { minPercent: 70, maxPercent: 150, defaultPercent: 100, stepPercent: 5 } as const;

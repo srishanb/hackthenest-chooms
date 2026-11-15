@@ -8,6 +8,7 @@ import type { InputSourceKind } from '../../../shared/contracts/composure';
 import { t, type StringKey } from '../../strings';
 import type { UiComponent } from '../../types';
 import './source-badge.css';
+import { mountUiSizeTuner } from './ui-size-tuner';
 import { mountForestPreview } from './forest-preview';
 
 const LABEL: Record<InputSourceKind, StringKey> = {
@@ -29,6 +30,7 @@ export const sourceBadge: UiComponent = {
     const summary = document.createElement('summary'); summary.textContent = t('forest.preview.title');
     preview.append(summary); root.append(preview);
     const removePreview = mountForestPreview(preview);
+    const removeSizeTuner = mountUiSizeTuner(root);
 
     const render = (source: InputSourceKind): void => {
       badge.dataset.source = source;
@@ -46,7 +48,7 @@ export const sourceBadge: UiComponent = {
       unsubscribe();
       offReturn(); offRestart();
       badge.remove();
-      removePreview(); preview.remove();
+      removePreview(); preview.remove(); removeSizeTuner();
     };
   },
 };
