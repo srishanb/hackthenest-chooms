@@ -47,3 +47,10 @@
 ## 7. Can a teammate explain this?
 
 The menu now uses two free fonts that look like old printed books, the title has a little more space between the letters, and the logo is a tiny animated version of your own candle that gathers itself and flares up. The game code draws the candle; main.ts passes that drawing function to the menu so the two lanes stay separate.
+
+## Addendum: candle no longer clips; bigger ring (Srishan: "make sure the candle is not clipping in the circle and make the orange border and the circle itself bigger")
+
+- Cause: at the peak of the flare the flame rose past the top of the 30 x 30 drawing box; and inside the grid the canvas kept its own 184 px height, so it hung out of the ring.
+- Fix: the box is 28 x 46 art px; a new test checks that no emblem pixel leaves it for 20 candles across the whole loop. The canvas is sized from the ring (`--emblem-size`): 80% of its height, so its corners stay inside the circle. Measured in the browser: farthest canvas corner 57 px from the centre, ring radius 64 px.
+- Ring: `clamp(116px, 14vw, 172px)` (was up to 110px), 3px orange border (#e3994b, was 1px gold) with matching glow; 96px on narrow screens.
+- `npm run check` 443 tests pass; build passes; no console errors.

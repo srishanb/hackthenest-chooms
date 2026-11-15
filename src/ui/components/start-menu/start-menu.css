@@ -99,4 +99,12 @@
 /* Title spacing, the soft orange line, and the animated candle inside the emblem ring. */
 .launch-copy h1 { letter-spacing: .06em; }
 .launch-subtitle { color: #e0975a; opacity: .82; }
-.launch-emblem__candle { width: 92%; height: 92%; image-rendering: pixelated; }
+
+/* Bigger emblem ring with a thicker orange border. The candle's drawing box (28 x 46 art px) is
+   80% of the ring height, so its corners stay inside the circle (diagonal 94% of it). */
+.launch-emblem { --emblem-size: clamp(116px, 14vw, 172px); width: var(--emblem-size); height: var(--emblem-size); border: 3px solid #e3994b;
+  box-shadow: 0 0 0 10px #e3994b1f, 0 0 40px #e3994b55, inset 0 0 26px #e3994b2e; }
+.launch-emblem::before { inset: -18px; } .launch-emblem::after { inset: -30px; }
+/* Explicit sizes: a percentage height falls back to the canvas's own 184 px inside this grid. */
+.launch-emblem__candle { height: calc(var(--emblem-size) * .8); width: calc(var(--emblem-size) * .8 * 28 / 46); image-rendering: pixelated; }
+@media (max-width: 720px) { .launch-emblem { --emblem-size: 96px; } }
