@@ -27,7 +27,7 @@ it('weakens wax continuously and completely blocks benefits at strongest real co
 });
 it('holds light reach in flight despite burn, wax pickup or another base-radius value', () => {
   const fuel = createLanternFuel(); const takeoff = fuel.lightRadius(260, false);
-  fuel.update(1, 60000); expect(fuel.lightRadius(110, true)).toBe(takeoff);
+  fuel.update(1, 60000); expect(fuel.lightRadius(110, true)).toBe(60);
   expect(fuel.lightRadius(110, false)).toBeLessThan(takeoff);
   const held = fuel.lightRadius(110, true); fuel.refill(); expect(fuel.lightRadius(260, true)).toBe(held);
 });
@@ -46,4 +46,16 @@ it('brief wax pulse widens corrupted sight then returns to its exact cap', () =>
   expect(corruptionVisibilityRadius(520, 1, 1)).toBe(160);
   expect(corruptionVisibilityRadius(520, 1, 0.5)).toBe(120);
   expect(corruptionVisibilityRadius(520, 1, 0)).toBe(80);
+});
+
+it('empty fuel stays an ember after returning to normal until wax relights it', () => {
+  const fuel = createLanternFuel();
+  fuel.lightRadius(500, false); fuel.update(1, 1000000);
+  expect(fuel.isLit).toBe(false);
+  expect(fuel.lightRadius(500, true)).toBe(60);
+  fuel.refill(); expect(fuel.isLit).toBe(false);
+  fuel.update(0.2, 0); expect(fuel.isLit).toBe(false);
+  expect(fuel.lightRadius(500, false)).toBe(60);
+  fuel.refill(); expect(fuel.isLit).toBe(true);
+  expect(fuel.lightRadius(500, false)).toBeGreaterThan(60);
 });

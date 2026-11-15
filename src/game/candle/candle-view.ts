@@ -18,6 +18,8 @@ import { fallIntensity, FLAME_FPS, flameSizeFromRadius, flickerRate, rasterFlame
 
 /** The light, the wax growth and the settings the candle draws from this frame. */
 export interface CandleLook {
+  ember?: boolean;
+  corruptedEmber?: boolean;
   radiusPx: number;
   /** The lantern rule's caps, so the flame spans its full range. */
   minRadiusPx: number;
@@ -67,7 +69,7 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       const shape = { ...bodyShape(tracker, look.charge01), lean: wickLean(cue) };
       const lean = flameLean(cue);
       const sparks = flightSparks(genome, cue, flameFrame, look.reducedMotion);
-      const key = `${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}`;
+      const key = `${look.ember}|${look.corruptedEmber}|${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}`;
       if (key === drawnKey) return;
       drawnKey = key;
 
@@ -79,7 +81,8 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
         graphics.fillStyle(p.color, 1);
         graphics.fillRect(p.x * px, p.y * px, px, px);
       }
-      for (const p of [...sparks, ...flame]) {
+      const light = look.ember ? [{ x: 0, y: -1, color: look.corruptedEmber ? 0xb74038 : 0xd58138 }] : [...sparks, ...flame];
+      for (const p of light) {
         graphics.fillStyle(p.color, 1);
         graphics.fillRect((body.wickTip.x + p.x) * px, (body.wickTip.y + p.y) * px, px, px);
       }
