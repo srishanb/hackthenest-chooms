@@ -24,3 +24,18 @@ describe('menu settings', () => {
     expect(b.settingsOpen.get()).toBe(false); expect(b.settingsAvailable).toBe(false);
   });
 });
+
+describe('calibration navigation capability', () => {
+  it('records and clears a local opener without shared game state', () => {
+    const actions = createUiActions();
+    actions.openCalibration('pause');
+    expect(actions.calibrationFrom.get()).toBe('pause');
+    actions.calibrationFrom.set(null);
+    expect(actions.calibrationFrom.get()).toBeNull();
+  });
+  it('cannot open a disabled calibration component', () => {
+    const actions = createUiActions(true, false);
+    actions.openCalibration('signal');
+    expect(actions.calibrationFrom.get()).toBeNull();
+  });
+});

@@ -1,0 +1,45 @@
+<!doctype html><html><head><title>Calibration screen checks</title></head><body>
+<div id="ui"></div><pre id="results" style="position:fixed;inset:auto 0 0;z-index:100;color:white;background:black"></pre>
+<script type="module">
+import { calibration } from '../components/calibration/calibration.ts';
+import { pauseMenu } from '../components/pause-menu/pause-menu.ts';
+import { createUiActions } from '../ui-actions.ts';
+import { createStore } from '../../shared/store.ts';
+import { createEventBus } from '../../shared/bus.ts';
+import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state.ts';
+import { DEFAULT_SETTINGS } from '../../shared/contracts/settings.ts';
+import '../theme/tokens.css';import '../theme/layout.css';
+const root=document.querySelector('#ui'),out=document.querySelector('#results');
+const check=(name,ok)=>{out.textContent+=`${ok?'PASS':'FAIL'} ${name}\n`;if(!ok)throw Error(name);};
+const tick=()=>new Promise(resolve=>setTimeout(resolve,0));
+const stores={snapshot:createStore({...structuredClone(INITIAL_GAME_SNAPSHOT),phase:'paused'}),settings:createStore(structuredClone(DEFAULT_SETTINGS))};
+const actions=createUiActions();const bus=createEventBus();let resolveStep=null,calls=[],modes=[],subs=new Set(),age=Infinity,source='SIMULATED';
+const signal={reader:{getState:()=>({source,sampleAgeMs:age}),subscribe(fn){subs.add(fn);return ()=>subs.delete(fn);}},
+control:{connect(){return Promise.reject(new Error('fixture Bluetooth unavailable'));},setMode(mode){modes.push(mode);},calibrate(step){calls.push(step);return new Promise(resolve=>resolveStep=resolve);}}};
+const a=document.createElement('div'),b=document.createElement('div');root.append(a,b);
+const offPause=pauseMenu.mount(a,{stores,bus,actions}),off=calibration.mount(b,{stores,bus,actions,signal});
+const click=(text)=>[...b.querySelectorAll('button')].find(button=>button.textContent===text).click();
+[...a.querySelectorAll('button')].find(button=>button.textContent==='Recalibrate').click();await tick();
+check('opens from pause without changing game phase',b.querySelector('dialog').open&&stores.snapshot.get().phase==='paused');
+click('Start');
+check('stale source disables Start',b.querySelector('button').disabled);
+age=0;for(const fn of subs)fn();click('Start adaptive calibration');
+check('starts exactly one active calibration with controls disabled',calls.join(',')==='active'&&b.querySelectorAll('button').length===0&&modes[0]==='adaptive');
+b.querySelector('dialog').dispatchEvent(new Event('cancel',{cancelable:true}));
+check('cannot close an in-flight step',b.querySelector('dialog').open);
+resolveStep({step:'active',ok:false,reasonKey:'calibration.noSeparation'});await tick();
+check('failure explains separation and offers safe fallback',b.textContent.includes('two active windows')&&[...b.querySelectorAll('button')].some(x=>x.textContent==='Use steady light'));
+click('Use steady light');check('fallback switches mode then starts resting',modes.at(-1)==='fixed'&&calls.join(',')==='active,resting');
+resolveStep({step:'resting',ok:false});await tick();click('Continue without it');
+check('missing resting calibration offers labelled rescue',b.textContent.includes('ordinary-input rescue'));
+click('Return to pause');await tick();
+check('returns to paused game and recalibrate opener focus',!b.querySelector('dialog').open&&stores.snapshot.get().phase==='paused'&&document.activeElement.textContent==='Recalibrate');
+actions.openCalibration('pause');click('Start');click('Start adaptive calibration');
+const pending=resolveStep;off();pending({step:'active',ok:true});await tick();
+check('unmount ignores pending result and cleans subscriptions',!b.children.length&&subs.size===0&&actions.calibrationFrom.get()===null);
+source='LIVE_EEG';
+const offLive=calibration.mount(b,{stores,bus,actions,signal});actions.openCalibration('pause');click('Start');click('Connect Octopus 16');await tick();
+check('connection failure is readable with no crash',b.textContent.includes('Use Chrome or Edge'));
+offLive();offPause();
+const disabled=createUiActions(true,false);disabled.openCalibration('pause');check('disabled calibration has no opener state',disabled.calibrationFrom.get()===null);
+</script></body></html>

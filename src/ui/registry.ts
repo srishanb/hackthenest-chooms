@@ -40,7 +40,7 @@ const SLOTS: readonly UiSlot[] = ['full', 'center', 'top-left', 'top-right', 'bo
 
 /** Mount every enabled component into its slot. Returns a function that removes them all. */
 export function mountUi(root: HTMLElement, deps: UiDeps, config: UiConfig): () => void {
-  const componentDeps = { ...deps, actions: deps.actions ?? createUiActions(config.components['settings-panel'].enabled) };
+  const componentDeps = { ...deps, actions: deps.actions ?? createUiActions(config.components['settings-panel'].enabled, config.components.calibration.enabled) };
   const slots = new Map<UiSlot, HTMLElement>();
   for (const slot of SLOTS) {
     const element = document.createElement('div');
