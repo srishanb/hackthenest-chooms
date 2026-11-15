@@ -1,0 +1,16 @@
+{
+  "profileId": "bill",
+  "voiceId": "pqHfZKP75CvOlQylNhV4",
+  "model": "eleven_v4",
+  "voiceSettings": {
+    "stability": 0.45,
+    "similarity_boost": 0.7
+  },
+  "lines": [
+    {
+      "id": "intro-bill-01",
+      "text": "Take your time. The mountain isn't going anywhere. Neither am I, apparently.",
+      "clip": "assets/audio/narrator/intro-bill-01-15d91878be65.mp3"
+    }
+  ]
+}

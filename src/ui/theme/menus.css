@@ -39,3 +39,7 @@
 #app:has(#ui[data-phase='paused']) #game { filter: blur(3px) brightness(.48); }
 #ui[data-phase='paused']::before { content: ''; position: absolute; inset: 0; background: var(--overlay-dim); }
 #ui[data-phase='paused'] .ui-slot[data-slot='center'], #ui[data-phase='paused'] .ui-slot[data-slot='full'] { z-index: 1; }
+
+.narrator-voice-control select { font: inherit; min-width: 0; max-width: 100%; color: var(--color-text); background: var(--color-inset); border: 1px solid var(--color-panel-border); padding: var(--space-2); }
+.narrator-voice-control { display: grid !important; }
+.narrator-voice-control small { color: var(--color-text-dim); }

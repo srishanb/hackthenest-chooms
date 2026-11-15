@@ -1,0 +1,16 @@
+{
+  "profileId": "chris",
+  "voiceId": "iP95p4xoKVk53GoZ742B",
+  "model": "eleven_v4",
+  "voiceSettings": {
+    "stability": 0.45,
+    "similarity_boost": 0.7
+  },
+  "lines": [
+    {
+      "id": "intro-chris-01",
+      "text": "Take your time. The mountain isn't going anywhere. Neither am I, apparently.",
+      "clip": "assets/audio/narrator/intro-chris-01-ac2eb950242a.mp3"
+    }
+  ]
+}

@@ -9,7 +9,7 @@ import type { GameEvent } from '../../shared/contracts/events';
 import { createIntroPlayer } from '../narrator/intro-player';
 function setup(missing = false) {
   const sources: Array<{start: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn>; onended: null | (() => void)}> = [];
-  const raw = {currentTime:0,state:'running',createBufferSource(){
+  const raw = {currentTime:0,state:'running',createGain(){return {gain:{setValueAtTime:vi.fn()},connect:vi.fn(),disconnect:vi.fn()};},createBufferSource(){
     const source = {buffer:null,connect:vi.fn(),start:vi.fn(),stop:vi.fn(),disconnect:vi.fn(),onended:null as null | (() => void)};
     sources.push(source); return source;
   }};
@@ -51,4 +51,17 @@ it('waits for gesture unlock, respects mute and uses captions when a clip is una
 });
 it('does not start a late decode after dispose and removes bus/store listeners',async()=>{
   const s=setup();s.player.dispose();await s.player.ready;s.start();s.player.tick();expect(s.sources).toHaveLength(0);
+});
+it('previews during paused settings without consuming the next normal intro',async()=>{
+  const s=setup();await s.player.ready;s.player.setVoice('intro-');
+  s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'paused'});s.player.preview();
+  expect(s.sources).toHaveLength(1);expect(s.player.getActiveLine()).toBe('intro-1');
+  s.player.stopPreview();expect(s.sources[0]!.stop).toHaveBeenCalledTimes(1);
+  s.start();expect(s.sources).toHaveLength(2);s.player.dispose();
+});
+it('changes voice-bank eligibility without overlapping the old voice',async()=>{
+  const s=setup();await s.player.ready;s.player.setVoice('intro-2');s.start();
+  expect(s.player.getActiveLine()).toBe('intro-2');
+  s.player.setVoice('intro-1');expect(s.sources[0]!.stop).toHaveBeenCalledTimes(1);
+  s.player.preview();expect(s.player.getActiveLine()).toBe('intro-1');s.player.dispose();
 });

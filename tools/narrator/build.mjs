@@ -8,6 +8,7 @@ import path from 'node:path';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const packFile = path.join(root, 'tools/narrator/intro-pack.json');
 const draftFile = path.join(root, 'tools/narrator/draft-intros.json');
+const profiles = { chris: { voiceId: 'iP95p4xoKVk53GoZ742B', name: 'Chris' }, bill: { voiceId: 'pqHfZKP75CvOlQylNhV4', name: 'Bill' } };
 const voiceSettings = { stability: 0.65, similarity_boost: 0.75, style: 0.25, use_speaker_boost: true };
 function key(name) {
   const value = process.env[name]?.trim();
@@ -50,21 +51,26 @@ async function draft() {
   await writeFile(draftFile, JSON.stringify(lines,null,2)+'\n');
   console.log(`Saved six candidates to tools/narrator/draft-intros.json using ${model}. Review, then copy to intro-pack.json before building.`);
 }
-async function build() {
-  const secret = key('ELEVENLABS_API_KEY'), voice = key('ELEVENLABS_VOICE_ID');
+async function build(audition = false) {
+  const profileId = process.argv[3] || 'chris';
+  if (!Object.hasOwn(profiles, profileId) && profileId !== 'custom') throw Error('Choose chris, bill or custom.');
+  const profile = profiles[profileId];
+  const secret = key('ELEVENLABS_API_KEY'), voice = profile?.voiceId ?? key('ELEVENLABS_VOICE_ID');
   if (!/^[A-Za-z0-9_-]{10,100}$/.test(voice)) throw Error('Voice ID format is invalid.');
-  const model = process.env.ELEVENLABS_MODEL || 'eleven_multilingual_v2';
-  const lines = validatePack(JSON.parse(await readFile(packFile,'utf8')));
+  const model = process.env.ELEVENLABS_MODEL || 'eleven_v4';
+  const settings = model.startsWith('eleven_v4') ? { stability: 0.45, similarity_boost: 0.7 } : voiceSettings;
+  let lines = validatePack(JSON.parse(await readFile(packFile,'utf8'))).map(line=>({...line,id:line.id.replace('intro-',`intro-${profileId}-`)}));
+  if (audition) lines = lines.slice(0,1);
   const output = path.join(root, 'public/assets/audio/narrator'); await mkdir(output,{recursive:true});
   const manifest = [];
   for (const line of lines) {
-    const hash = createHash('sha256').update(JSON.stringify({text:line.text,voice,model,voiceSettings})).digest('hex').slice(0,12);
+    const hash = createHash('sha256').update(JSON.stringify({text:line.text,voice,model,voiceSettings:settings})).digest('hex').slice(0,12);
     const file = `${line.id}-${hash}.mp3`, target = path.join(output,file);
     let exists = false; try { await access(target); exists=true; } catch { /* First generation. */ }
     if (!exists) {
       const response = await request(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice)}?output_format=mp3_44100_128`, {
         method:'POST',headers:{'xi-api-key':secret,'Content-Type':'application/json','Accept':'audio/mpeg'},
-        body:JSON.stringify({text:line.text,model_id:model,voice_settings:voiceSettings}),
+        body:JSON.stringify({text:line.text,model_id:model,voice_settings:settings}),
       });
       if (!response.headers.get('content-type')?.includes('audio/')) throw Error('Speech API did not return audio.');
       const bytes = Buffer.from(await response.arrayBuffer());
@@ -73,14 +79,24 @@ async function build() {
     } else console.log(`Reused ${file}`);
     manifest.push({...line,clip:`assets/audio/narrator/${file}`});
   }
-  await writeFile(path.join(output,'manifest.json'),JSON.stringify({voiceId:voice,model,voiceSettings,lines:manifest},null,2)+'\n');
-  await writeFile(path.join(root,'src/content/narrator/lines.ts'),`/** Original intro bank. Gemini drafts reviewed before local ElevenLabs generation. No runtime API calls. */\nimport type { NarratorLine } from '../../shared/contracts/content';\nexport const NARRATOR_LINES: readonly NarratorLine[] = ${JSON.stringify(manifest,null,2)};\n`);
-  console.log('Published six local intro clips and their caption text. No keys were printed or written into assets.');
+  const metadata = { profileId, voiceId:voice, model, voiceSettings:settings, lines:manifest };
+  await writeFile(path.join(output,`${audition ? 'audition' : 'manifest'}-${profileId}.json`),JSON.stringify(metadata,null,2)+'\n');
+  if (audition) { console.log(`Saved ${profileId} audition; active game bank unchanged.`); return; }
+  const banks = [];
+  for (const id of Object.keys(profiles)) {
+    try { banks.push(JSON.parse(await readFile(path.join(output,`manifest-${id}.json`),'utf8'))); } catch { /* Not generated yet. */ }
+  }
+  if (profileId === 'custom') banks.push(metadata);
+  const combined = banks.flatMap(bank=>bank.lines);
+  await writeFile(path.join(output,'manifest.json'),JSON.stringify({profiles:banks,lines:combined},null,2)+'\n');
+  await writeFile(path.join(root,'src/content/narrator/lines.ts'),`/** Original short intros. Local stock voices; no runtime API calls. */\nimport type { NarratorLine } from '../../shared/contracts/content';\nexport const NARRATOR_LINES: readonly NarratorLine[] = ${JSON.stringify(combined,null,2)};\n`);
+  console.log(`Published ${combined.length} local clips across ${banks.length} voice banks. No keys displayed.`);
 }
 try {
   const mode=process.argv[2];
   if(mode==='draft') await draft();
   else if(mode==='build') await build();
+  else if(mode==='audition') await build(true);
   else if(mode==='check') { for(const name of ['GEMINI_API_KEY','ELEVENLABS_API_KEY','ELEVENLABS_VOICE_ID']) key(name); console.log('All three private settings are present. Values withheld.'); }
-  else throw Error('Usage: node --env-file=.env.local tools/narrator/build.mjs check|draft|build');
+  else throw Error('Usage: node --env-file=.env.local tools/narrator/build.mjs check|draft|build|audition [chris|bill|custom]');
 } catch(error) { console.error(error instanceof Error ? error.message : 'Narrator build failed. Details withheld.'); process.exitCode=1; }
