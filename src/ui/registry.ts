@@ -18,6 +18,7 @@ import { hud } from './components/hud/hud';
 import { mainMenu } from './components/main-menu/main-menu';
 import { pauseMenu } from './components/pause-menu/pause-menu';
 import { settingsPanel } from './components/settings-panel/settings-panel';
+import { startMenu } from './components/start-menu/start-menu';
 import { sourceBadge } from './components/source-badge/source-badge';
 import './theme/tokens.css';
 import './theme/layout.css';
@@ -25,6 +26,7 @@ import type { UiComponent, UiDeps } from './types';
 import { createUiActions } from './ui-actions';
 
 export const COMPONENTS: readonly UiComponent[] = [
+  startMenu,
   mainMenu,
   pauseMenu,
   settingsPanel,

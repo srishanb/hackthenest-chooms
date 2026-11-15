@@ -81,8 +81,15 @@ export const mainMenu: UiComponent = {
     dialog.addEventListener('keydown', (event) => event.stopPropagation());
     dialog.addEventListener('keyup', (event) => event.stopPropagation());
     dialog.addEventListener('cancel', (event) => { event.preventDefault(); close(); });
-    const offSnapshot = stores.snapshot.subscribe(pauseWhenReady);
-    if (!hasSeenTutorial(storage)) open();
+    // First launch: show the guide once the climb starts (after the start menu's Play), not over the menu.
+    let autoShown = false;
+    const openOnFirstClimb = (): void => {
+      if (autoShown || stores.snapshot.get().phase !== 'playing') return;
+      autoShown = true;
+      if (!hasSeenTutorial(storage)) open();
+    };
+    const offSnapshot = stores.snapshot.subscribe(() => { openOnFirstClimb(); pauseWhenReady(); });
+    openOnFirstClimb();
     return () => {
       offSnapshot();
       if (dialog.open) close();

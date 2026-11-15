@@ -26,12 +26,16 @@ export function createPhaseController(bus: EventBus, snapshot: Store<GameSnapsho
 
   const offPause = bus.on('pause', () => {
     const phase = snapshot.get().phase;
-    if (phase === 'paused' || phase === 'finished') return;
+    if (phase === 'paused' || phase === 'finished' || phase === 'menu') return;
     before = phase;
     setPhase('paused');
   });
   const offResume = bus.on('resume', () => {
     if (snapshot.get().phase === 'paused') setPhase(before);
+  });
+  // The start menu's Play: only leaves 'menu', so a stray `start` mid-climb does nothing.
+  const offStart = bus.on('start', () => {
+    if (snapshot.get().phase === 'menu') setPhase('playing');
   });
 
   return {
@@ -45,6 +49,7 @@ export function createPhaseController(bus: EventBus, snapshot: Store<GameSnapsho
     dispose() {
       offPause();
       offResume();
+      offStart();
     },
   };
 }

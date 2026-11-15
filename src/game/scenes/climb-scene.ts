@@ -116,6 +116,8 @@ export class ClimbScene extends Phaser.Scene {
     this.controls = createKeyboardInput(() => stores.settings.get().keys);
     const keyDown = (event: KeyboardEvent): void => {
       if (event.defaultPrevented || event.isComposing) return;
+      // Before Play nothing reaches the player: no recovery request, no ember placement.
+      if (stores.snapshot.get().phase === 'menu') return;
       if (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, button, [contenteditable="true"]')) return;
       if (!event.repeat && event.code === stores.settings.get().keys.recover) {
         if (stores.snapshot.get().phase === 'ember') this.ember.cancel();

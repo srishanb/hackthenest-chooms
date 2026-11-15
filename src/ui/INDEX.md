@@ -17,6 +17,8 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 | `pauseMenu`, `settingsPanel` | `components/pause-menu/`, `components/settings-panel/` | Pause/resume bus controls and live settings; main-menu start route remains pending. |
 | `createUiActions`, `UiActions` | `ui-actions.ts` | UI-local settings/calibration navigation and enabled-component capabilities. |
 | `remapKey` | `components/settings-panel/settings-editor.ts` | Swap existing bindings on a duplicate choice. |
+| `startMenu` | `components/start-menu/start-menu.ts` | Title, Play (emits `start`) and Settings (opens the settings panel) while the phase is `'menu'`. |
+| `startMenuVisible`, `startsOnKey` | `components/start-menu/start-menu-state.ts` | Pure show/hide and Enter-to-play rules. |
 | `hud` | `components/hud/hud.ts` | Ember status, optional wax collection goal/boost timer/pickup feedback, signal quality and qualitative signal intensity. |
 | `hudState`, `percent`, `intensityLabel` | `components/hud/hud-state.ts` | Presentation mapping and bounded percentage formatting. |
 | `calibration`, `createCueTone` | `components/calibration/` | Pause-entry modal, timed instructions, source connect, safe fallback and local sound cues. |
