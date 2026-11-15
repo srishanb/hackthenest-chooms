@@ -1,4 +1,8 @@
-/** Swapping duplicate bindings keeps every action reachable after a remap. */
+/**
+ * Key remap rules for the settings panel. remapKey swaps duplicate bindings so every action stays
+ * reachable; remapAllowed refuses a remap that would put an action on a reserved key (E, P, Escape)
+ * that another control handles.
+ */
 import type { KeyBindings } from '../../../shared/contracts/settings';
 export function remapKey(keys: KeyBindings, action: keyof KeyBindings, code: string): KeyBindings {
   const next = { ...keys };

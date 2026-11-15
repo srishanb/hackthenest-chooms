@@ -1,5 +1,6 @@
 /**
- * Debug overlay: the numbers behind the signal, toggled with the backtick key.
+ * Debug overlay: the numbers behind the signal, toggled with the debug-overlay key binding
+ * (default Backquote, rebindable in Settings).
  * Owner: signal lane (Srishan), even though it lives in the UI folder.
  *
  * Why: there is no on-screen meter by design, so this is how we (and a judge) see cause
