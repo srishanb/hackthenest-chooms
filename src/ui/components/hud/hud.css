@@ -25,10 +25,39 @@
 .hud__compass.is-empty .hud__needle { visibility: hidden; }
 /* Bottom left: the 12u candle portrait is drawn in the canvas at the 2u edge; the hint panel starts one gap to its right. */
 .hud__context { position: absolute; bottom: var(--hud-corner); left: calc(var(--hud-corner) + 12 * var(--hud-u) + var(--hud-gap)); display: grid; gap: var(--space-1); max-width: calc(min(440px, 43cqw) - 13.96cqw); padding: var(--space-2) var(--space-3); border-left: 2px solid var(--color-panel-border); background: var(--color-panel); border-radius: var(--radius); color: var(--color-text-dim); font-size: var(--hud-text-s); }
+/* Preserved from origin/main (#108) before HUD scale unification (#115):
+.hud__checkpoint { position: absolute; bottom: var(--hud-corner); right: var(--hud-corner); display: flex; align-items: center; gap: var(--space-3); color: var(--color-accent); }
+.hud__checkpoint > div:first-child { display: grid; gap: var(--space-2); padding: var(--space-3); background: var(--color-panel); border: 2px solid var(--color-accent); border-radius: var(--radius); box-shadow: var(--gold-glow); max-width: 190px; }
+.hud__checkpoint strong { font-size: var(--text-md); }
+.hud__checkpoint .hud__recover-hint { font-size: var(--text-xs); }
+.hud__compass { width: 90px; height: 90px; position: relative; border: 2px solid var(--color-accent); border-radius: 50%; background: var(--color-panel); box-shadow: var(--gold-glow); }
+.hud__needle { position: absolute; inset: 13px 34px; background: linear-gradient(90deg, var(--color-accent) 50%, var(--hud-needle) 50%); clip-path: polygon(50% 0, 100% 65%, 50% 50%, 0 65%); transform-origin: center; }
+.hud__compass i { position: absolute; font: inherit; font-size: var(--text-xs); }
+.hud__compass [data-direction='N'] { top: 4px; left: 40px; }
+.hud__compass [data-direction='S'] { bottom: 4px; left: 40px; }
+.hud__compass [data-direction='E'] { right: 5px; top: 38px; }
+.hud__compass [data-direction='W'] { left: 5px; top: 38px; }
+.hud__compass.is-empty { opacity: .4; }
+.hud__compass.is-empty .hud__needle { visibility: hidden; }
+.hud__context { position: absolute; bottom: var(--hud-corner); left: calc(13.96cqw + var(--space-2)); display: grid; gap: var(--space-1); max-width: calc(min(440px, 43cqw) - 13.96cqw); padding: var(--space-2) var(--space-3); border-left: 2px solid var(--color-panel-border); background: var(--color-panel); border-radius: var(--radius); color: var(--color-text-dim); font-size: var(--text-xs); } */
 .hud__prompt, .hud__wax-reward { color: var(--color-accent); }
 .hud__lesson { color: var(--color-text); }
 .hud__context progress { width: 100%; accent-color: var(--color-accent); }
 .hud__context .hud__wax { color: var(--color-accent); }
+/* Preserved from origin/main (#108) before HUD scale unification (#115) replaced small-screen overrides:
+@media (max-width: 600px) {
+  .hud__metrics { min-width: 135px; font-size: var(--hud-stats-font-small); right: calc(var(--hud-corner) + 44px); padding: var(--space-1) var(--space-2); }
+  .hud__metrics .ui-icon { width: 14px; height: 14px; }
+  .hud__pause { width: 36px; height: 40px; }
+  .hud__checkpoint { gap: var(--space-2); }
+  .hud__checkpoint > div:first-child { max-width: 115px; padding: var(--space-2); font-size: 10px; }
+  .hud__checkpoint strong { font-size: var(--text-xs); }
+  .hud__compass { width: 64px; height: 64px; }
+  .hud__needle { inset: 9px 23px; }
+  .hud__compass [data-direction='N'], .hud__compass [data-direction='S'] { left: 27px; }
+  .hud__compass [data-direction='E'], .hud__compass [data-direction='W'] { top: 26px; }
+  .hud__context { max-width: 39cqw; font-size: 9px; padding: var(--space-2); }
+} */
 /* Preview scales anchor each card to its original corner. */
 .hud__metrics { transform: scale(var(--ui-stats-scale, 1)); transform-origin: top right; }
 .hud__context { transform: scale(var(--ui-tutorial-scale, 1)); transform-origin: bottom left; max-width: min(440px, calc(43cqw / var(--ui-tutorial-scale, 1))); }

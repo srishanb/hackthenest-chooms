@@ -5,8 +5,9 @@
  * scripted run of the actual vendored SDK simulator (public/vendor/pieeg.js: its FFT, filters and band
  * powers) on a virtual clock with a seeded random source, so the frames are the SDK's own and a rebuild is
  * byte-identical. The script uses only the simulator's own events: alpha boost (a relaxed, eyes-closed
- * stand-in), jaw clench (muscle activity, which is part of the signal) and noisy pin. One field is scripted:
- * the poor-contact preset sets the contact fraction, because the simulator cannot report poor contact itself.
+ * stand-in), jaw clench (muscle activity, which is part of the signal) and noisy pin. Nothing else is
+ * scripted: even contact quality is whatever the SDK reports (its noisy pin never lowers it, so the noisy-pin
+ * preset stays valid; a preset that goes invalid needs real board data).
  * Presets are plain recordings plus a `baselines` line, so they replay through the real pipeline.
  */
 import { SIGNAL_CONFIG } from '../../src/config/signal.config';
@@ -28,8 +29,6 @@ interface PresetSpec {
   description: string;
   /** Called once per second of the preset (0 to 59), before that second runs. */
   script: (sim: VirtualSimulator, second: number) => void;
-  /** Overrides the contact fraction the SDK reported (see poor-contact). Everything else stays the SDK's own. */
-  contactGood01?: number;
 }
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
@@ -70,13 +69,14 @@ export const PRESET_SPECS: readonly PresetSpec[] = [
     },
   },
   {
-    id: 'poor-contact',
-    label: 'Poor contact',
-    description: 'Poor electrode contact: signal quality is low for the whole run, so the effects ease back to neutral instead of reacting.',
-    script: (sim, s) => { if (s === 0) sim.trigger('noisy_pin', 3); },
-    // The SDK simulator can only spoil one of sixteen pins, and its 1-40 Hz band-pass removes the mains noise, so it
-    // always reports good contact. The frames are the SDK's own; only the contact fraction is set, to 5 of 16 pins.
-    contactGood01: 5 / 16,
+    id: 'noisy-pin',
+    label: 'Noisy pin',
+    description: 'A relaxed signal while one pin picks up interference for a stretch, then the pin is reseated. The simulator still reports good contact, so the reading stays usable.',
+    script: (sim, s) => {
+      if (s === 0) sim.trigger('alpha', true);
+      if (s === 15) sim.trigger('noisy_pin', 3);
+      if (s === 40) sim.trigger('noisy_pin', -1);
+    },
   },
 ];
 
@@ -90,7 +90,7 @@ async function recordPreset(spec: PresetSpec) {
   }
   sim.stop();
   const frames = compactFrames(sim.frames.filter((frame) => frame.t >= startAt), DURATION_S * 1000);
-  return spec.contactGood01 === undefined ? frames : frames.map((frame) => ({ ...frame, contactGood01: spec.contactGood01 ?? null }));
+  return frames;
 }
 
 /** Baselines measured from the same simulator, the way the calibration screens measure them: relaxed (low) against clench (high), and eyes-open against alpha boost for resting. */

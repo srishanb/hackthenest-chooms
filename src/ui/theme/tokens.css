@@ -62,6 +62,8 @@
   --hud-text-s: max(10px, calc(1.2 * var(--hud-u)));
   --hud-text-m: max(11px, calc(1.5 * var(--hud-u)));
   --hud-text-l: max(12px, calc(1.8 * var(--hud-u)));
+  /* Preserved from origin/main (#108) before HUD scale unification (#115):
+     --hud-corner: clamp(12px, 2cqw, 28px); */
   --hud-needle: #ffb63f;
   --overlay-dim: #050914a8;
 }

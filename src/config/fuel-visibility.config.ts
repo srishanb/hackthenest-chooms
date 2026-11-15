@@ -1,8 +1,9 @@
 /** Visual sight curve only. Fuel resources and movement are unchanged. */
 export const FUEL_VISIBILITY_CONFIG = {
+  normalShadowAlpha: 0.6, corruptedShadowAlpha: 0.98,
   candleGlowRadiusPx: 130, normalGlowAlpha: 0.12, corruptedGlowAlpha: 0.04,
   normalVignetteAlpha: 0.1, corruptedVignetteAlpha: 0.32,
-  minimumRadiusPx: 60, normalExponent: 3, corruptedExponent: 4.5,
+  minimumRadiusPx: 60, corruptedExponent: 4.5,
   normalWorldMax01: 0.35,
   decayThresholdScale: 0.4, decayFadeWidth: 0.18, decayOpacity: 1,
 } as const;
