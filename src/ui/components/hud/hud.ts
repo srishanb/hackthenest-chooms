@@ -124,7 +124,7 @@ export const hud: UiComponent = {
       signal.reader.subscribe((next) => { signalState = next; render(); })];
     cleanups.push(bus.on('wax_collected', (event) => {
       clearTimeout(rewardTimer);
-      text(reward, `${t('wax.pickup')} · ${event.collected}/${event.total}`);
+      text(reward, `${t('wax.pickup')} · ${event.collected}${event.total === null ? '' : `/${event.total}`}`);
       reward.hidden = !stores.settings.get().hud.showStatus;
       rewardTimer = setTimeout(() => { reward.hidden = true; }, WAX_CONFIG.toastMs);
     }));

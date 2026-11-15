@@ -7,6 +7,12 @@
  * from a hash of (flame frame, cell), so one frame always looks the same (testable) and the
  * flicker runs at FLAME_FPS like hand-drawn pixel animation. Visual only: nothing here feeds
  * movement. With reduced motion the size still changes but there is no flicker or sway.
+ *
+ * Falling (`fall01`, see fallIntensity): air rushes up past the wick, so the flame burns
+ * hotter, like a fanned fire. It stretches up and narrows, its base turns blue (the colour
+ * of a flame with plenty of air), its rim tears more, and small licks break off above the
+ * tip. The view also runs the flicker clock faster (flickerRate). Reduced motion keeps the
+ * stretch and the blue base but drops the tearing, licks and faster flicker.
  */
 import type { CandleGenome } from './candle-genome';
 import type { Pixel } from './candle-raster';
@@ -23,6 +29,26 @@ export interface FlameInput {
   reducedMotion: boolean;
   /** Signed flame-tip offset in art px (positive is right): aim or trail, see direction-cues.ts. */
   lean: number;
+  /** 0 when not falling, up to 1 in a fast fall (fallIntensity). Optional: 0 by default. */
+  fall01?: number;
+}
+
+/** The blue of a flame with plenty of air, from the hot centre outward. */
+export const OXIDISED = { core: 0xe6f1ff, inner: 0x9cc4ff, outer: 0x5a8ae8 } as const;
+/** Falling slower than this (px/s, downward) looks like a normal flame. */
+const FALL_START_PX_S = 150;
+/** At this downward speed the effect is at its strongest. */
+const FALL_FULL_PX_S = 800;
+
+/** 0..1 how hard the air is rushing past the flame: only while airborne and moving down. */
+export function fallIntensity(grounded: boolean, vy: number): number {
+  if (grounded || !(vy > FALL_START_PX_S)) return 0;
+  return Math.min((vy - FALL_START_PX_S) / (FALL_FULL_PX_S - FALL_START_PX_S), 1);
+}
+
+/** How much faster the flicker runs while falling: 1x at rest, 2.5x in a fast fall. */
+export function flickerRate(fall01: number): number {
+  return 1 + 1.5 * Math.min(Math.max(fall01, 0), 1);
 }
 
 /** A small integer hash to 0..1, deterministic per (seed, frame, i, j). */
@@ -41,12 +67,18 @@ export function flameHeight(size01: number): number {
 export function rasterFlame(genome: CandleGenome, input: FlameInput): Pixel[] {
   const s = Math.min(Math.max(input.size01, 0), 1);
   const frame = input.reducedMotion ? 0 : Math.floor((input.timeMs / 1000) * FLAME_FPS);
-  const { phaseA, phaseB, turbulence, colors } = genome.flame;
-  const tipJitter = input.reducedMotion ? 0 : (hash01(genome.seed, frame, 7, 7) < 0.35 ? 1 : 0);
-  const height = flameHeight(s) + tipJitter;
-  const width = Math.max(2, genome.flame.width * (0.55 + 0.45 * s));
+  const fall = Math.min(Math.max(input.fall01 ?? 0, 0), 1);
+  const { phaseA, phaseB, colors } = genome.flame;
+  const motion = input.reducedMotion ? 0 : 1;
+  const turbulence = genome.flame.turbulence + (0.95 - genome.flame.turbulence) * fall * motion;
+  // At rest the tip jumps 1 px about a third of the time; falling, more often and up to 2 px.
+  const tipJitter = input.reducedMotion ? 0 : hash01(genome.seed, frame, 7, 7) < 0.35 + 0.4 * fall ? 1 + Math.round(fall) : 0;
+  const height = flameHeight(s) + Math.round(3 * fall) + tipJitter;
+  const width = Math.max(2, genome.flame.width * (0.55 + 0.45 * s) * (1 - 0.3 * fall));
   const t = input.timeMs / 1000;
-  const sway = input.reducedMotion ? 0 : Math.sin(t * 5.1 + phaseA) * 0.8 + Math.sin(t * 8.3 + phaseB) * 0.5;
+  const sway = motion * (1 + 1.5 * fall) * (Math.sin(t * 5.1 + phaseA) * 0.8 + Math.sin(t * 8.3 + phaseB) * 0.5);
+  // The blue band at the base grows with the fall.
+  const blueBelow = fall > 0.15 ? 0.12 + 0.25 * fall : 0;
   const pixels: Pixel[] = [];
 
   for (let j = 0; j < height; j++) {
@@ -61,11 +93,22 @@ export function rasterFlame(genome: CandleGenome, input: FlameInput): Pixel[] {
       if (d > 1 && !(drawn === 0 && i === right - 1)) continue;
       // Ragged rim: some outer cells drop out each frame, never the core.
       if (d > 0.7 && hash01(genome.seed, frame, i, j) < turbulence * 0.45) continue;
-      const color = d < 0.35 && v < 0.55 ? colors.core : d < 0.65 && v < 0.8 ? colors.inner : d < 0.95 ? colors.outer : colors.edge;
+      const color = v < blueBelow ? (d < 0.4 ? OXIDISED.core : d < 0.8 ? OXIDISED.inner : OXIDISED.outer)
+        : d < 0.35 && v < 0.55 ? colors.core : d < 0.65 && v < 0.8 ? colors.inner : d < 0.95 ? colors.outer : colors.edge;
       pixels.push({ x: i, y: -(j + 1), color });
       drawn++;
     }
     if (drawn === 0) pixels.push({ x: Math.floor(cx), y: -(j + 1), color: colors.edge });
+  }
+  // Licks: in a hard fall, bits of flame tear off and float a gap above the tip.
+  if (motion && fall > 0.3) {
+    const tipX = Math.floor(0.5 + (sway + input.lean));
+    for (let k = 0; k < 2; k++) {
+      if (hash01(genome.seed, frame, 31 + k, 5) >= fall * 0.6) continue;
+      const gap = 2 + k * 2 + Math.floor(hash01(genome.seed, frame, 41 + k, 5) * 2);
+      const dx = Math.round(hash01(genome.seed, frame, 51 + k, 5) * 2 - 1);
+      pixels.push({ x: tipX + dx, y: -(height + gap), color: k === 0 ? colors.outer : colors.edge });
+    }
   }
   return pixels;
 }

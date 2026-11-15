@@ -5,7 +5,7 @@ Owner: Ali. Search here before adding a function.
 | Export | File | What it does |
 |---|---|---|
 | `createGame(deps)` | `index.ts` | Creates the Phaser game. Everything it needs arrives in `GameDeps`. |
-| `createWaxRewards`, `makeWaxDrops`, `WaxDrop`, `WAX_STORAGE_KEY` | `wax/rewards.ts` | Optional wax goal, once-per-run collection, temporary light bonus and pause/airborne stability. |
+| `createWaxRewards`, `makeWaxDrops`, `WaxDrop`, `WAX_STORAGE_KEY` | `wax/rewards.ts` | Uncapped replenishing wax, one active drop, random respawn delay, bounded save state, temporary light bonus and pause/airborne stability. |
 | `createWaxView` | `wax/view.ts` | Code-drawn wax droplets, reduced-motion-aware hover and pickup pulses. |
 | `createKeyboardInput` | `keyboard-input.ts` | A/D and arrow movement, Space/Up jump, live remaps and buffered jump taps. |
 | `BootScene`, `BOOT_SCENE_KEY`, `CLIMB_SCENE_KEY` | `scenes/boot-scene.ts` | First scene; P8 loads assets here. |
@@ -25,7 +25,7 @@ Owner: Ali. Search here before adding a function.
 | `createCandleGenome`, `seededRandom`, `pickCandleSeed` | `candle/candle-genome.ts` | Seeded candle shape, colours, drips and flame rhythm; new seed each run, `?candleSeed=` in dev. |
 | `stepPose`, `poseFrame`, `bodyShape`, `POSE_TIMING` | `candle/candle-pose.ts` | Ruby-matched pose choice and frame timing, plus how the body squashes and stretches. |
 | `rasterCandle`, `grownSize` | `candle/candle-raster.ts` | Candle body, outline, drips and wick as art pixels. |
-| `rasterFlame`, `flameHeight`, `flameSizeFromRadius` | `candle/flame.ts` | Procedural pixel flame sized by the light radius, flickering at 12 fps (none under reduced motion). |
+| `rasterFlame`, `flameHeight`, `flameSizeFromRadius`, `fallIntensity`, `flickerRate`, `OXIDISED` | `candle/flame.ts` | Procedural pixel flame sized by the light radius, flickering at 12 fps (none under reduced motion); while falling it flickers faster, stretches, turns blue at the base and sheds licks. |
 | `waxGrowth`, `grownMovement` | `candle/growth.ts` | +2% size per wax; walk x growth, launch speeds x sqrt(growth). Wax count only, never the signal. |
 | `flameLean`, `wickLean`, `flightSparks`, `CueInput` | `candle/direction-cues.ts` | Jump-direction cues: aim lean while charging, trailing flame and sparks in flight; never bends the body. |
 | `createCandleView` | `candle/candle-view.ts` | Draws the candle in the scene (replaces the Ruby sprite view). |
