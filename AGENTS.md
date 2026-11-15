@@ -79,6 +79,8 @@ mechanic. It never changes the controls or physics.
    The comment in older plan files ("Agents never write that line") is superseded by this rule.
 4. Who approves: the lane owner for their lane, including a plan that asks for a small contract change; Srishan
    for integrator work (P0, P9, P10, the queue and these rules).
+   Srishan, as the repo owner, may also approve any plan or change a plan's approval terms (an **owner
+   override**). Each override is recorded as a row in `docs/DECISIONS.md` and noted in the plan.
 
 | Person | Lane | GitHub account |
 |---|---|---|
