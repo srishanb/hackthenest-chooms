@@ -35,3 +35,13 @@ Owner: Ali. Search here before adding a function.
 
 `tools/levels/check-levels.ts` runs `checkReachability` from `tools/levels/reach.ts` using the same `stepPlayer` as gameplay.
 Recovery keeps a marker placed after each return. Pickup is required before placing it elsewhere.
+
+## Forest presentation exports
+
+| Export | File | What it does |
+|---|---|---|
+| `preloadForest`, forest texture mappings | `forest/textures.ts` | Boot-only local image and Ruby sheet loading. |
+| `createForestWorld` | `forest/forest-world.ts` | Decorative scenery, platform skins and bounded particles; no collision writes. |
+| `createRubyView` | `forest/ruby-view.ts` | Read-only player pose animation, consistent feet anchor. |
+| `stepForestEffects` | `forest/forest-effects.ts` | Existing engine plus optional dev-only forest field preview. |
+| `stableUnit`, `reveal`, `mixColor` | `forest/presentation.ts` | Deterministic seeds and continuous visual mapping. |

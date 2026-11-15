@@ -9,6 +9,7 @@
  */
 
 export type EffectId =
+  | 'forestCorruption'
   | 'lanternRadius'
   | 'fogDensity'
   | 'shadowDepth'
@@ -17,6 +18,7 @@ export type EffectId =
   | 'lanternFlicker';
 
 export const EFFECT_IDS: readonly EffectId[] = [
+  'forestCorruption',
   'lanternRadius',
   'fogDensity',
   'shadowDepth',
