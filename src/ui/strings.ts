@@ -7,7 +7,7 @@
  */
 export const STRINGS = {
   'stage.finishBlocked': 'Return to the normal world on the final ledge to finish.',
-  'wax.suppressed': 'Wax collected · corruption blocks its light',
+  'wax.suppressed': 'Brief light · corruption returns quickly',
   'hud.fuel': 'Fuel',
   'hud.lantern': 'Lantern strength',
   'hud.height': 'Height',

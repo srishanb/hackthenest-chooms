@@ -39,6 +39,7 @@ export function createWaxRewards({ platforms, gameConfig, bus, snapshot, storage
   let activeId: string | null = null;
   let waitMs = 0;
   let boostMs = 0;
+  let pulseMs = 0, pickupSequence = 0;
   let heldRadius: number | null = null;
   const unit = (): number => Math.max(0, Math.min(0.999999, random()));
   const delay = (): number => config.respawnMinMs + unit() * (config.respawnMaxMs - config.respawnMinMs);
@@ -79,11 +80,13 @@ export function createWaxRewards({ platforms, gameConfig, bus, snapshot, storage
   return {
     drops,
     isSuppressed: (): boolean => suppressed,
+    lightPulse01: (): number => Math.min(1, pulseMs / config.corruptionFadeMs),
     isActive: (id: string): boolean => id === activeId,
     update(player: { x: number; y: number }, dtMs: number, benefit01 = 1): void {
       if (snapshot.get().phase !== 'playing') return;
       const dt = Number.isFinite(dtMs) ? Math.max(0, dtMs) : 0;
       boostMs = Math.max(0, boostMs - dt);
+      pulseMs = Math.max(0, pulseMs - dt);
       const benefit = Number.isFinite(benefit01) ? Math.max(0, Math.min(1, benefit01)) : 1;
       suppressed = benefit === 0;
       if (suppressed) boostMs = 0;
@@ -94,10 +97,10 @@ export function createWaxRewards({ platforms, gameConfig, bus, snapshot, storage
       }
       const active = drops.find((drop) => drop.id === activeId);
       if (active && overlaps(player, active)) {
-        if (suppressed) { publish(); return; }
-        collected++; activeId = null; waitMs = delay(); boostMs = config.boostMs * benefit;
+        pulseMs = config.corruptionPulseMs; pickupSequence++;
+        if (!suppressed) collected++; activeId = null; waitMs = delay(); boostMs = config.boostMs * benefit;
         save();
-        bus.emit({ type: 'wax_collected', id: `${active.id}:${collected}`, x: active.x, y: active.y, collected, total: null });
+        bus.emit({ type: 'wax_collected', id: `${active.id}:${pickupSequence}`, x: active.x, y: active.y, collected, total: null });
       } else if (active && Math.abs(active.y - player.y) > config.retireRangePx) {
         // A missed drop far behind must not strand the only spawn in an earlier stage.
         activeId = null; waitMs = delay(); save();
@@ -119,7 +122,7 @@ export function createWaxRewards({ platforms, gameConfig, bus, snapshot, storage
       if (!airborne || heldRadius === null) heldRadius = desired;
       return heldRadius;
     },
-    reset(): void { collected = 0; activeId = null; waitMs = 0; boostMs = 0; heldRadius = null; save(); publish(); },
+    reset(): void { collected = 0; activeId = null; waitMs = 0; boostMs = 0; heldRadius = null; pulseMs = 0; pickupSequence = 0; save(); publish(); },
     finish(): void { for (const key of [WAX_STORAGE_KEY, LEGACY_KEY]) try { storage.removeItem(key); } catch { /* Continue in memory. */ } },
   };
 }

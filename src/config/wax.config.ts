@@ -8,6 +8,8 @@ export const WAX_CONFIG = {
   retireRangePx: 810,
   /** Each of the first growthCapWax pickups adds +2% candle growth, as before. */
   growthPerWax: 0.02,
+  corruptionPulseMs: 1200,
+  corruptionFadeMs: 600,
   boostMs: 10000,
   lightMultiplier: 1.5,
   maxLightRadiusPx: 420,

@@ -29,17 +29,16 @@ function setup(storage: SaveStorage = createMemorySaveStorage(), random = () => 
 }
 
 describe('replenishing wax', () => {
-  it('keeps suppressed wax available without rewards', () => {
+  it('gives a short fading pulse at full corruption without growth or sustained boost', () => {
     const { wax, active, snapshot, events } = setup();
-    const drop = active();
-    wax.update(drop, 0, 0);
+    wax.update(active(), 0, 0);
     expect(snapshot.get().wax?.collected).toBe(0);
-    expect(wax.isActive(drop.id)).toBe(true);
-    expect(events).toHaveLength(0);
     expect(snapshot.get().wax?.boostRemainingMs).toBe(0);
+    expect(events).toHaveLength(1);
+    expect(wax.lightPulse01()).toBe(1);
+    wax.update(start, 900, 0); expect(wax.lightPulse01()).toBeCloseTo(0.5);
+    wax.update(start, 300, 0); expect(wax.lightPulse01()).toBe(0);
     expect(wax.lightRadius(110, false, 0)).toBe(110);
-    wax.update(drop, 0, 1);
-    expect(snapshot.get().wax?.collected).toBe(1);
   });
   it('collects well beyond both the old cap and the number of ledges, always with at most one active', () => {
     const { wax, snapshot, events, active, storage } = setup();
