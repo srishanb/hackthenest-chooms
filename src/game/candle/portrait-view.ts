@@ -13,7 +13,8 @@ import { PORTRAIT_RADIUS, rasterPortrait } from './portrait';
 
 /** World pixels per art pixel in the portrait (larger than the hero, so it reads as a close-up). */
 const PX = 3;
-const MARGIN = 14;
+/** 2u from the frame edges (1u = 10 game px), matching the HUD's --hud-corner. 120 px across = 12u. */
+const MARGIN = 20;
 const DEPTH = 300;
 /** Match the HUD's panel and gold accent (src/ui/theme/tokens.css). */
 const PANEL = 0x101b2b;

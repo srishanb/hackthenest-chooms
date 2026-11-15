@@ -17,9 +17,9 @@ it('keeps the reminder at the same screen position through jumps and camera scro
   expect(worldTransform(view, 1920)).toBe('translate(-20px, -400px) scale(2)');
   expect(worldTransform({ ...view, scrollY: 300 }, 1920)).toBe('translate(-20px, -600px) scale(2)');
   const moved = { ...view, scrollY: -600, scrollX: 50 };
-  expect(reminderPosition(view).y - view.scrollY).toBe(120);
-  expect(reminderPosition(moved).y - moved.scrollY).toBe(120);
-  expect(reminderPosition(moved).x - moved.scrollX).toBe(24);
+  expect(reminderPosition(view).y - view.scrollY).toBe(60);
+  expect(reminderPosition(moved).y - moved.scrollY).toBe(60);
+  expect(reminderPosition(moved).x - moved.scrollX).toBe(20);
 });
 it('uses current key mappings and keeps the fixed ember pickup/place control', () => {
   expect(controlKeys(DEFAULT_SETTINGS.keys)).toEqual(['← / →', 'Space', 'E', 'R', 'Esc']);

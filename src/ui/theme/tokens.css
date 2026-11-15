@@ -54,7 +54,14 @@
   --font-ui: 'Courier New', ui-monospace, monospace;
   --panel-shadow: 0 24px 80px #000b, inset 0 0 54px #182c3c88;
   --gold-glow: 0 0 8px #e6b85d88, 0 0 28px #c7772e44;
-  --hud-corner: clamp(12px, 2cqw, 28px);
+  /* HUD scale: 1u = 1/54 of the game frame's height (10 px of the 960 x 540 game), so every HUD
+     size is a whole number of units and the HUD keeps its proportions at any window size. */
+  --hud-u: calc(100cqh / 54);
+  --hud-corner: calc(2 * var(--hud-u));
+  --hud-gap: var(--hud-u);
+  --hud-text-s: max(10px, calc(1.2 * var(--hud-u)));
+  --hud-text-m: max(11px, calc(1.5 * var(--hud-u)));
+  --hud-text-l: max(12px, calc(1.8 * var(--hud-u)));
   --hud-needle: #ffb63f;
   --overlay-dim: #050914a8;
 }

@@ -1,46 +1,34 @@
 /* Corner HUD follows the reference without covering the central play area. */
 [data-component='hud'] { position: absolute; inset: 0; overflow: visible !important; pointer-events: none !important; }
-.hud { position: absolute; inset: 0; pointer-events: none; font-size: var(--text-sm); }
-.hud__metrics { position: absolute; right: calc(var(--hud-corner) + 64px); top: var(--hud-corner); padding: var(--space-2) var(--space-3); border: 2px solid var(--color-panel-border); border-radius: var(--radius); background: var(--color-panel); min-width: 196px; font-size: var(--hud-stats-font); box-shadow: var(--panel-shadow); }
-.hud__metrics > div { display: flex; gap: var(--space-2); align-items: center; padding: var(--space-1) 0; }
+.hud { position: absolute; inset: 0; pointer-events: none; font-size: var(--hud-text-s); }
+/* Top right: the stats card (22u wide, 3u rows) and the pause button (4.4u), on the shared top line. */
+.hud__metrics { position: absolute; right: calc(var(--hud-corner) + 4.4 * var(--hud-u) + var(--hud-gap)); top: var(--hud-corner); padding: calc(.5 * var(--hud-u)) calc(1.5 * var(--hud-u)); border: 2px solid var(--color-panel-border); border-radius: var(--radius); background: var(--color-panel); width: calc(22 * var(--hud-u)); box-sizing: border-box; font-size: var(--hud-text-m); box-shadow: var(--panel-shadow); }
+.hud__metrics > div { display: flex; gap: var(--hud-gap); align-items: center; min-height: calc(3 * var(--hud-u)); }
 .hud__metrics > div + div { border-top: 1px solid var(--color-panel-border); }
 .hud__metrics strong { margin-left: auto; color: var(--color-accent); white-space: nowrap; }
-.hud__metrics .ui-icon { color: var(--color-accent); width: 18px; height: 18px; }
-.hud__pause { position: absolute; right: var(--hud-corner); top: var(--hud-corner); width: 48px; height: 48px; border: 2px solid var(--color-panel-border); border-radius: var(--radius); color: var(--color-text); background: var(--color-panel); pointer-events: auto; cursor: pointer; }
+.hud__metrics .ui-icon { color: var(--color-accent); width: calc(1.8 * var(--hud-u)); height: calc(1.8 * var(--hud-u)); }
+.hud__pause { position: absolute; right: var(--hud-corner); top: var(--hud-corner); width: calc(4.4 * var(--hud-u)); height: calc(4.4 * var(--hud-u)); border: 2px solid var(--color-panel-border); border-radius: var(--radius); color: var(--color-text); background: var(--color-panel); pointer-events: auto; cursor: pointer; }
 .hud__pause:hover { color: var(--color-accent); border-color: var(--color-accent); box-shadow: var(--gold-glow); }
-.hud__checkpoint { position: absolute; bottom: var(--hud-corner); right: var(--hud-corner); display: flex; align-items: center; gap: var(--space-3); color: var(--color-accent); }
-.hud__checkpoint > div:first-child { display: grid; gap: var(--space-2); padding: var(--space-3); background: var(--color-panel); border: 2px solid var(--color-accent); border-radius: var(--radius); box-shadow: var(--gold-glow); max-width: 190px; }
-.hud__checkpoint strong { font-size: var(--text-md); }
-.hud__checkpoint .hud__recover-hint { font-size: var(--text-xs); }
-.hud__compass { width: 90px; height: 90px; position: relative; border: 2px solid var(--color-accent); border-radius: 50%; background: var(--color-panel); box-shadow: var(--gold-glow); }
-.hud__needle { position: absolute; inset: 13px 34px; background: linear-gradient(90deg, var(--color-accent) 50%, var(--hud-needle) 50%); clip-path: polygon(50% 0, 100% 65%, 50% 50%, 0 65%); transform-origin: center; }
-.hud__compass i { position: absolute; font: inherit; font-size: var(--text-xs); }
-.hud__compass [data-direction='N'] { top: 4px; left: 40px; }
-.hud__compass [data-direction='S'] { bottom: 4px; left: 40px; }
-.hud__compass [data-direction='E'] { right: 5px; top: 38px; }
-.hud__compass [data-direction='W'] { left: 5px; top: 38px; }
+/* Bottom right: the 9u compass, and the ember panel bottom-aligned beside it. */
+.hud__checkpoint { position: absolute; bottom: var(--hud-corner); right: var(--hud-corner); display: flex; align-items: flex-end; gap: var(--hud-gap); color: var(--color-accent); }
+.hud__checkpoint > div:first-child { display: grid; align-content: center; gap: calc(.6 * var(--hud-u)); min-height: calc(6 * var(--hud-u)); padding: var(--hud-u) calc(1.5 * var(--hud-u)); box-sizing: border-box; background: var(--color-panel); border: 2px solid var(--color-accent); border-radius: var(--radius); box-shadow: var(--gold-glow); max-width: calc(20 * var(--hud-u)); font-size: var(--hud-text-s); }
+.hud__checkpoint strong { font-size: var(--hud-text-m); }
+.hud__checkpoint .hud__recover-hint { font-size: var(--hud-text-s); }
+.hud__compass { width: calc(9 * var(--hud-u)); height: calc(9 * var(--hud-u)); flex-shrink: 0; position: relative; border: 2px solid var(--color-accent); border-radius: 50%; background: var(--color-panel); box-shadow: var(--gold-glow); }
+.hud__needle { position: absolute; inset: 14% 38%; background: linear-gradient(90deg, var(--color-accent) 50%, var(--hud-needle) 50%); clip-path: polygon(50% 0, 100% 65%, 50% 50%, 0 65%); transform-origin: center; }
+.hud__compass i { position: absolute; font: inherit; font-size: var(--hud-text-s); line-height: 1; transform: translate(-50%, -50%); }
+.hud__compass [data-direction='N'] { top: 12%; left: 50%; }
+.hud__compass [data-direction='S'] { top: 88%; left: 50%; }
+.hud__compass [data-direction='E'] { left: 88%; top: 50%; }
+.hud__compass [data-direction='W'] { left: 12%; top: 50%; }
 .hud__compass.is-empty { opacity: .4; }
 .hud__compass.is-empty .hud__needle { visibility: hidden; }
-/* The candle portrait is drawn in the canvas at the bottom left: 14 + 120 logical px of the 960 x 540
-   canvas, which is scaled to fit and centred. Start the hint panel just right of it. */
-.hud__context { position: absolute; bottom: var(--hud-corner); left: calc(13.96cqw + var(--space-2)); display: grid; gap: var(--space-1); max-width: calc(min(440px, 43cqw) - 13.96cqw); padding: var(--space-2) var(--space-3); border-left: 2px solid var(--color-panel-border); background: var(--color-panel); border-radius: var(--radius); color: var(--color-text-dim); font-size: var(--text-xs); }
+/* Bottom left: the 12u candle portrait is drawn in the canvas at the 2u edge; the hint panel starts one gap to its right. */
+.hud__context { position: absolute; bottom: var(--hud-corner); left: calc(var(--hud-corner) + 12 * var(--hud-u) + var(--hud-gap)); display: grid; gap: var(--space-1); max-width: calc(min(440px, 43cqw) - 13.96cqw); padding: var(--space-2) var(--space-3); border-left: 2px solid var(--color-panel-border); background: var(--color-panel); border-radius: var(--radius); color: var(--color-text-dim); font-size: var(--hud-text-s); }
 .hud__prompt, .hud__wax-reward { color: var(--color-accent); }
 .hud__lesson { color: var(--color-text); }
 .hud__context progress { width: 100%; accent-color: var(--color-accent); }
 .hud__context .hud__wax { color: var(--color-accent); }
-@media (max-width: 600px) {
-  .hud__metrics { min-width: 135px; font-size: var(--hud-stats-font-small); right: calc(var(--hud-corner) + 44px); padding: var(--space-1) var(--space-2); }
-  .hud__metrics .ui-icon { width: 14px; height: 14px; }
-  .hud__pause { width: 36px; height: 40px; }
-  .hud__checkpoint { gap: var(--space-2); }
-  .hud__checkpoint > div:first-child { max-width: 115px; padding: var(--space-2); font-size: 10px; }
-  .hud__checkpoint strong { font-size: var(--text-xs); }
-  .hud__compass { width: 64px; height: 64px; }
-  .hud__needle { inset: 9px 23px; }
-  .hud__compass [data-direction='N'], .hud__compass [data-direction='S'] { left: 27px; }
-  .hud__compass [data-direction='E'], .hud__compass [data-direction='W'] { top: 26px; }
-  .hud__context { max-width: 39cqw; font-size: 9px; padding: var(--space-2); }
-}
 /* Preview scales anchor each card to its original corner. */
 .hud__metrics { transform: scale(var(--ui-stats-scale, 1)); transform-origin: top right; }
 .hud__context { transform: scale(var(--ui-tutorial-scale, 1)); transform-origin: bottom left; max-width: min(440px, calc(43cqw / var(--ui-tutorial-scale, 1))); }
