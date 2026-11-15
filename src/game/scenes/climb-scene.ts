@@ -9,7 +9,7 @@
 import * as Phaser from 'phaser';
 import type { Stores } from '../../shared/contracts/app';
 import type { ComposureReader } from '../../shared/contracts/composure';
-import type { GameConfig } from '../../shared/contracts/config';
+import type { EmberConfig, GameConfig } from '../../shared/contracts/config';
 import type { SectionData } from '../../shared/contracts/content';
 import type { EffectRule } from '../../shared/contracts/effects';
 import type { EventBus } from '../../shared/contracts/events';
@@ -17,6 +17,7 @@ import { createDarkness, minCoveringRadius, updateDarkness } from '../effects/da
 import { neutralFrame, stepEffects } from '../effects/effects-engine';
 import { createPlayer, stepPlayer } from '../player/movement';
 import type { PlatformBox, PlayerState } from '../player/types';
+import { landingEvents } from '../world/fall-tracker';
 import type { SaveStorage } from '../save';
 import { createRefugeController } from '../world/refuge';
 import { CLIMB_SCENE_KEY } from './boot-scene';
@@ -28,6 +29,7 @@ export interface ClimbSceneDeps {
   sections: readonly SectionData[];
   gameConfig: GameConfig;
   effectsTable: readonly EffectRule[];
+  emberConfig: EmberConfig;
   storage?: SaveStorage;
 }
 
@@ -101,7 +103,7 @@ export class ClimbScene extends Phaser.Scene {
   }
 
   override update(_time: number, deltaMs: number): void {
-    const { stores, composure, gameConfig, effectsTable, bus } = this.deps;
+    const { stores, composure, gameConfig, effectsTable, bus, emberConfig } = this.deps;
     const settings = stores.settings.get();
     const stepMs = 1000 / gameConfig.stepHz;
     const input = {
@@ -117,6 +119,8 @@ export class ClimbScene extends Phaser.Scene {
       this.state = out.state;
       this.refuges.update(this.state);
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
+      // A fall just ends on whatever catches you; no reset, no death (FAL-1).
+      if (out.events.landed) for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
     }
     if (this.state.charging !== this.precisionActive) {
       this.precisionActive = this.state.charging;
