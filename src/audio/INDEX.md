@@ -17,3 +17,5 @@ Owner: Amrit. Search here before adding a function.
 `createIntroPlayer` (`narrator/intro-player.ts`) preloads the supplied local intro bank, picks one per new run, enforces cooldowns, parks/resumes speech for phase/precision/mute, and emits matching caption events. Ready/dispose and diagnostics are wired through `createAudio`; music ducks by `INTRO_MUSIC_DUCK`. `tools/narrator/build.mjs` is an offline build-time Gemini/ElevenLabs generator with secret-safe diagnostics and hash-based clip reuse. Runtime never calls these APIs.
 
 Voice polish: `createIntroPlayer` accepts a bank prefix and exposes `setVoice`, `preview`, `stopPreview`; previews can play in paused/menu Settings without consuming the next game intro. `narrationGain` (`narrator/level.ts`) measures decoded clips once and sets per-clip level with a peak/headroom and amplification cap. Local voice choice/events and two stock profiles live in audio config.
+
+Narration continues through `precision_window`/jumps and phase `ember`; only actual pause/menu/calibration or explicit audio/session lifecycle controls interrupt it. Regression: `__tests__/intro-player.test.ts`.
