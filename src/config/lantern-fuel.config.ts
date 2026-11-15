@@ -13,7 +13,7 @@ export function waxBenefit01(corruption: number): number {
   return 1 - t * t * (3 - 2 * t);
 }
 
-/** Final visual ceiling: wax, full fuel and held airborne bonuses cannot bypass corruption. */
+/** Final visual ceiling: only the timed wax pulse briefly lifts corrupted visibility. */
 export function corruptionVisibilityRadius(radius: number, corruption: number, waxPulse01 = 0): number {
   const benefit = waxBenefit01(corruption);
   const baseline = Math.min(radius, LANTERN_FUEL_CONFIG.corruptedVisibilityRadiusPx);
