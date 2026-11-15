@@ -10,7 +10,7 @@
 | Acceptance test (from the task) | Result | Confidence |
 |---|---|---|
 | "As built at submission" section in docs/FEATURES.md, one status per id with a proof file | Pass | Medium |
-| "stress" replaced in prose (LAN-1) | Pass | High |
+| Banned wording replaced in prose (LAN-1) | Pass | High |
 | Decision rows D-25 to D-28 added only if missing | Pass (none existed) | High |
 
 ## 2. How I verified it

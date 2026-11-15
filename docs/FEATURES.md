@@ -114,7 +114,7 @@ differ, this one is newer. **Nothing here was verified on a real PiEEG Octopus 1
 | LAN-2 | Changed | Fuel depletion exists: `src/game/forest/lantern-fuel.ts`, `src/config/lantern-fuel.config.ts`. Owner decision D-25: fuel stays. The row's "No fuel depletion" no longer holds. Fuel affects light radius only. |
 | LAN-3 | Changed | `src/game/effects/outline-fade.ts`, `src/game/effects/protected-visibility.ts`; outlines fade at the edge of the light (test `outline-fade.test.ts`). |
 | LAN-4 | Built | `src/game/effects/effects-engine.ts`; test `effects-engine.test.ts`. |
-| ATM-1 | Partly built | `src/audio/music-layers.ts`, `src/audio/mix-rules.ts`; one ambient loop with a bounded mix, no separate tense stem. |
+| ATM-1 | Partly built | `src/audio/music-layers.ts`, `src/audio/mix-rules.ts`; quiet and tense loops (files under `public/assets/audio/music/`) with a bounded mix. |
 | ATM-2 | Changed | `src/game/forest/forest-effects.ts`; effects reverse, but fuel accumulates over play time. |
 | ATM-3 | Built | `src/game/forest/atmosphere.ts`; test `atmosphere.test.ts`. |
 | ATM-4 | Changed | `src/game/forest/corruption-screen.ts`, `src/game/forest/corruption-filter.ts`; bounded shake and glitch filter on the rendered screen, off under reduced motion. |
