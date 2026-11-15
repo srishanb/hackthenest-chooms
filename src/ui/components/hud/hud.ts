@@ -37,11 +37,12 @@ export const hud: UiComponent = {
     panel.append(stage, status, quality, lesson, ember, progress, wax, reward, composure, prompt);
     // The lantern strength bar was replaced by the game's candle portrait (bottom left, in the canvas).
     const metrics = document.createElement('div'); metrics.className = 'hud__metrics';
-    const metric = (key: 'hud.height' | 'wax.label' | 'hud.best', symbol: 'height' | 'wax' | 'trophy') => {
+    const metric = (key: 'hud.height' | 'wax.label' | 'hud.best' | 'hud.fuel', symbol: 'height' | 'wax' | 'trophy') => {
       const row = document.createElement('div'); const label = document.createElement('span'); label.textContent = t(key);
       const value = document.createElement('strong'); row.append(icon(symbol), label, value); metrics.append(row); return value;
     };
     const height = metric('hud.height', 'height'); const waxMetric = metric('wax.label', 'wax'); const best = metric('hud.best', 'trophy');
+    const fuelMetric = metric('hud.fuel', 'wax');
     const pause = document.createElement('button'); pause.type = 'button'; pause.className = 'hud__pause';
     pause.setAttribute('aria-label', t('hud.pause')); pause.append(icon('pause'));
     const onPause = (): void => { if (['playing', 'ember'].includes(stores.snapshot.get().phase)) bus.emit({ type: 'pause' }); };
@@ -71,6 +72,7 @@ export const hud: UiComponent = {
     };
     const render = (): void => {
       const snapshot = stores.snapshot.get();
+      text(fuelMetric, `${Math.round((snapshot.lanternFuel01 ?? 1) * 100)}%`);
       const navigation = snapshot.navigation;
       const nav = navigationView(navigation, HUD_WORLD_PIXELS_PER_METRE);
       const heightPx = (nav?.heightMetres ?? 0) * HUD_WORLD_PIXELS_PER_METRE;

@@ -8,6 +8,7 @@ import type { VisualEnvironment } from '../../config/atmosphere.config';
 import { createVerticalForest } from './vertical-forest';
 import { createAtmosphere } from './atmosphere';
 import { createBackdropGardens } from './backdrop-gardens';
+import { createCorruptionScreen } from './corruption-screen';
 import { fitPropScale, mixColor, reveal, stableUnit } from './presentation';
 
 export interface ForestWorld {
@@ -23,9 +24,11 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
   const background = createVerticalForest(scene);
   const atmosphere = createAtmosphere(scene);
   const gardens = createBackdropGardens(scene);
+  const screen = createCorruptionScreen(scene);
   const mist = scene.add.tileSprite(0, 0, width, height, 'forest-mist').setOrigin(0).setScrollFactor(0)
     .setTileScale(C.pixelScale).setDepth(-8);
-  const terrain: Array<GameObjects.TileSprite | GameObjects.Image> = [];
+  const terrain: GameObjects.TileSprite[] = [];
+  const redTerrain: Array<{ normal: GameObjects.TileSprite; red: GameObjects.TileSprite }> = [];
   const rims: GameObjects.Rectangle[] = [];
   const props: Array<{ healthy: GameObjects.Image; decayed: GameObjects.Image; threshold: number }> = [];
   const platformMarks: Array<{ id: string; x: number; y: number; marks: Array<{
@@ -56,15 +59,27 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
         .setOrigin(0).setTileScale(C.pixelScale).setDepth(0));
     }
     rims.push(scene.add.rectangle(platform.x, top + 1, platform.width, 2, C.rim.calm).setDepth(1));
+    if (!winter) for (const tile of terrain.slice(terrainStart)) {
+      const key = `${tile.texture.key}-red`;
+      if (!scene.textures.exists(key)) continue;
+      const red = scene.add.tileSprite(tile.x, tile.y, tile.width, tile.height, key)
+        .setOrigin(0).setTileScale(C.pixelScale).setDepth(tile.depth + 0.1).setAlpha(0);
+      redTerrain.push({ normal: tile, red });
+      terrain.push(red);
+    }
     if (props.length < C.maxProps) {
-      // Both edges receive seeded vegetation within the fixed 100-pair budget.
-      for (const side of [-1, 1]) {
+      // Stable one/two-plant compositions avoid identical bookends on every platform.
+      const composition = stableUnit(`composition:${platform.id}`);
+      const slots = composition > 0.55 ? [-1, 1] : [composition < 0.25 ? -0.35 : 0.35];
+      for (const side of slots) {
         if (props.length >= C.maxProps) break;
         const seed = stableUnit(`${platform.id}:${side}`);
         const x = platform.x + side * (platform.width / 2 - Math.min(28, platform.width / 4));
-        const healthy = scene.add.image(x, top + 3, winter ? skin.plant : seed > 0.75 ? skin.plant : seed > 0.5 ? 'forest-fern' : seed > 0.12 ? 'forest-mushrooms' : 'grass-stone')
+        const key = winter ? skin.plant : seed > 0.8 ? 'grass-tree' : seed > 0.65 ? skin.plant : seed > 0.45 ? 'forest-fern' : seed > 0.1 ? 'forest-mushrooms' : 'grass-stone';
+        const healthy = scene.add.image(x, top + 3, key)
           .setOrigin(0.5, 1).setScale(C.pixelScale).setDepth(-2);
-        healthy.setScale(Math.min(C.pixelScale, 48 / healthy.height));
+        const targetHeight = 28 + stableUnit(`plant-size:${platform.id}:${side}`) * (slots.length === 1 ? 42 : 24);
+        healthy.setScale(Math.min(C.pixelScale, targetHeight / healthy.height));
         const decayed = scene.add.image(x, top + 3, winter ? skin.decay : seed > 0.5 ? 'forest-thorns' : 'forest-dark-mushrooms')
           .setOrigin(0.5, 1).setScale(C.pixelScale).setDepth(-1).setAlpha(0);
         // Match the healthy prop's height instead of growing a tall atlas fragment over a landing.
@@ -117,6 +132,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       background.update(c);
       gardens.update(c);
       atmosphere.update(c, deltaMs, reducedMotion, paused, strength);
+      screen.update(c, deltaMs, reducedMotion, paused, strength);
       sky.setSize(camera.width, camera.height);
       mist.setSize(camera.width, camera.height);
       mist.tilePositionX = reducedMotion ? 0 : clock / 160;
@@ -124,6 +140,10 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       mist.setTint(mixColor(0xa9d4c0, 0xbf8aa9, c)).setAlpha(0.04 + C.mistMaxAlpha * c);
       const tint = mixColor(C.terrain.calm, C.terrain.corrupted, c);
       for (const tile of terrain) tile.setTint(tint);
+      for (const pair of redTerrain) {
+        pair.normal.setAlpha(1);
+        pair.red.setAlpha(c).setTint(0xffffff);
+      }
       for (const rim of rims) rim.setFillStyle(mixColor(C.rim.calm, C.rim.corrupted, c));
       for (const prop of props) {
         const blend = reveal(c, prop.threshold);

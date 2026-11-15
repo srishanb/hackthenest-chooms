@@ -111,3 +111,10 @@ Kauzz — Pixel Valley Winter Forest: https://kauzz.itch.io/kpwf . Selected crop
 NYKNCK (@nyk_nck) — Wind: https://nyknck.itch.io/wind . W401-1.png through W401-16.png imported unchanged as three animated gust sprites (90ms/frame); runtime tint/alpha/flip. Author permits game use including commercial with credit. Evidence: assets/wind/license-source.md. No TinyForest resources imported.
 
 Ancient Forest extra foliage: canopy-cluster-alt.png derived from existing trees-4.png at x0,y0,width416,height144, irregular elliptical alpha mask matching canopy-cluster.png. Original Lukya Forge license above. Mushrooms and ferns reuse already credited textures; no additional pack copies.
+
+## Corruption shader adaptation
+Jan Vorisek (@odditica), bktGlitch1.3.2 (2022), https://odditica.itch.io/bktglitch . Game-use credit requested by bundled README, preserved in docs/licenses/bkt-glitch/README.txt. src/game/forest/corruption-filter.ts adapts mirrored UV sampling, line offsets and RGB-channel separation to Phaser4. Simplified/capped port replaces GameMaker inputs and texture-noise helper with deterministic hash grain; no original project/demo executable, raw standalone shader pack or unused data redistributed. This is a limited game-specific adaptation, not the complete original effect.
+
+Additional CC0 Grassland resource: GrassLand/Props/GrassLand_Tree.png → public/assets/grassland/tree.png. Used as seeded small/large platform decoration; same Shackhal CC0 notice already preserved above.
+
+Grassland corruption palettes: left-red.png, middle-red.png, right-red.png and soil-red.png derive from the previously credited CC0 crops. Selectively recolor green foliage pixels crimson, preserve alpha and earth pixels; game crossfades them with the original surfaces. No AI-generated artwork.
