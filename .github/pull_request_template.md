@@ -16,6 +16,7 @@
 ## Checklist
 
 - [ ] The plan file reads `Status: APPROVED by <name>`, written by a human
+- [ ] Pre-code check done: this task was not already on `main` or in another PR (result: <!-- not done / partly done: what existed -->)
 - [ ] After-job report added in this PR and linked above
 - [ ] Stayed in my lane (or explained why not below)
 - [ ] No changes to shared files (deps, lockfiles, `src/shared/`, root config, AGENTS.md, .github, hook configs) — or they're the point of this PR

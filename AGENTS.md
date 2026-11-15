@@ -60,6 +60,22 @@ One file per task. Never edit another agent's report. A PR with no new report is
 Claude Code (`.claude/settings.json`), Codex (`.codex/hooks.json`) and Antigravity (`.agents/hooks.json`) run
 `scripts/hooks/report-check.mjs`, which reminds you once.
 
+## Before you write code: check it is not already done
+
+Run this check before you generate any code, for every task, and before you claim it:
+
+1. Get current: `git fetch origin --prune`, then `scripts/wt.sh sync` in your worktree (or `git merge --ff-only origin/main` in `codebase/`).
+2. Look on `main` for the thing you are about to build: `rg` for the file, function or component names you expect to
+   create, read the lane's `INDEX.md`, and skim `git log --oneline -20 origin/main`.
+3. Look at other people's work: `gh pr list --state all --search "<task id or keywords>"`, `git ls-remote --heads origin`,
+   and the newest files in `docs/agent-reports/`.
+4. Decide:
+   - **Already done** (on `main` or in a merged PR): do not build it again. Say what you found and take another task.
+   - **In progress** (an open PR or a claim branch): it is taken. Take another task.
+   - **Partly done:** build only the missing part, and extend the existing code instead of writing a parallel version.
+5. Write the result in your draft PR body as one line: `Pre-code check: not done`, or `Pre-code check: partly done`
+   with what already exists.
+
 ## Task queue and claims
 
 [docs/QUEUE.md](docs/QUEUE.md) is an ordered list of tasks for the continuous builder (agent name `sonnet`).
@@ -69,7 +85,7 @@ Claude Code (`.claude/settings.json`), Codex (`.codex/hooks.json`) and Antigravi
   tests) in the draft PR body. Every other rule still applies: lanes, `npm run check`, the after-job report, and
   shared files never auto-merge. Work that is not in the queue still needs a plan file and a human-written
   approval line.
-- **Claim before you build, every agent, every task.** As soon as you start a task: create the worktree, make an
+- **Claim before you build, every agent, every task.** Do the pre-code check above first. As soon as you start a task: create the worktree, make an
   empty commit `chore(claim): <agent> starts <task>`, push the branch, and open a **draft** PR titled
   `[claim] <task>: <title>`. Before starting anything, run `git fetch origin --prune`, then check
   `git ls-remote --heads origin` and `gh pr list --state all` for the task's id. If a branch or PR for it exists,

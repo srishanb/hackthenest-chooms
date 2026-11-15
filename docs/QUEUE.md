@@ -11,7 +11,7 @@ file or wait for an approval line. Put a short plan in the draft PR body instead
 
 ## How to take a task
 
-1. `git fetch origin --prune`. A task is **taken** if `git ls-remote --heads origin "*/<id>-*"` prints a branch, or
+1. Do the pre-code check in AGENTS.md. Then `git fetch origin --prune`. A task is **taken** if `git ls-remote --heads origin "*/<id>-*"` prints a branch, or
    `gh pr list --state all --search "<id> in:title"` shows a pull request. Skip it.
 2. Take the first task that is not taken and whose "Needs" column is satisfied.
 3. **Claim it before writing any code:**
