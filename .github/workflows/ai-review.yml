@@ -35,15 +35,21 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
         run: |
-          sensitive=$(gh pr diff "$PR" --name-only | grep -E \
-            '^\.github/|^(AGENTS|CLAUDE|GEMINI)\.md$|(^|/)(package\.json|pnpm-lock\.yaml|package-lock\.json|yarn\.lock|pyproject\.toml|uv\.lock|requirements[^/]*\.txt)$' \
+          files=$(gh pr diff "$PR" --name-only)
+          # Shared files (AGENTS.md "Shared files"): manifests, contracts, root config, CI, hooks, scripts, registers.
+          sensitive=$(echo "$files" | grep -E \
+            '^\.github/|^\.claude/|^\.codex/|^\.agents/|^scripts/|^src/shared/|^src/main\.ts$|^public/vendor/|^(AGENTS|CLAUDE|GEMINI)\.md$|^(tsconfig[^/]*\.json|vite\.config\.ts|index\.html)$|^docs/(PLAN|STATUS|DECISIONS|FEATURES)\.md$|(^|/)(package\.json|pnpm-lock\.yaml|package-lock\.json|yarn\.lock|pyproject\.toml|uv\.lock|requirements[^/]*\.txt)$' \
             || true)
+          # After-job report (AGENTS.md "After-job report"): every PR adds one file under docs/agent-reports/.
+          report=$(echo "$files" | grep -E '^docs/agent-reports/.+\.md$' | grep -v '/TEMPLATE\.md$' || true)
           allowed=true
           reason=""
           if [[ ",$LABELS," == *",no-automerge,"* ]]; then
             allowed=false; reason="PR has the no-automerge label."
           elif [[ -n "$sensitive" ]]; then
             allowed=false; reason="PR changes shared files that need a human: $(echo "$sensitive" | tr '\n' ' ')"
+          elif [[ -z "$report" ]]; then
+            allowed=false; reason="PR has no after-job report under docs/agent-reports/ (see AGENTS.md). Say this in your comment."
           fi
           echo "allowed=$allowed" >> "$GITHUB_OUTPUT"
           echo "reason=$reason" >> "$GITHUB_OUTPUT"

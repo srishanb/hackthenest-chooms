@@ -1,9 +1,33 @@
-# hackthenest-chooms
+# lighten (working title)
 
-Hack The Nest 2026 (Nov 14–15, Eastern Michigan University). Idea and stack: **TBD**.
+Hack The Nest 2026 (Nov 14–15, Eastern Michigan University), Mind and Machine (BCI) track.
+
+A 2D charge-jump climbing game played in Chrome or Edge. You carry a lantern up a tower and cannot die; a missed
+jump only costs height. A PiEEG Octopus 16 EEG board drives how far the lantern reaches, the fog and the music, and
+gates a "recovery ember" that returns you to the ledge you fell from. The signal never changes your controls.
+
+It is composure practice and an experimental prototype. It is **not** a medical device, and it does not claim to
+detect emotion or stress; muscle activity is part of the signal.
+
+- **What worked / what didn't:** _to be written before submission (Sun 12:00 PM)._
+- **Stack:** Vite 8.3.8, TypeScript 7.0.2 (strict), Phaser 4.2.1, Vitest 5.1.0, `pieeg.js` (vendored). No backend.
+- **Credits:** the charge-jump climb is in the style of *Jump King*; the narrator's tone is in the spirit of
+  *Getting Over It*. Assets are listed in `CREDITS.md`.
+- **AI tools used:** Claude, Antigravity, Gemini, Codex, ChatGPT.
+
+## Where things are
+
+| Read this | For |
+|---|---|
+| [docs/PLAN.md](docs/PLAN.md) | Architecture, tech stack, phases, timeline, risks |
+| [docs/STATUS.md](docs/STATUS.md) | What is proposed, approved, in progress, done |
+| [docs/HUMAN_TASKS.md](docs/HUMAN_TASKS.md) | Things only a person can do, and what breaks if they are skipped |
+| [docs/FEATURES.md](docs/FEATURES.md) | The feature list and its status (provisional or final) |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | What was decided, when, by whom |
+| [AGENTS.md](AGENTS.md) | Rules for every coding agent |
 
 Multiple coding agents (Claude Code, Codex, Antigravity) work on this repo in parallel, each in its own
-git worktree. Rules for agents live in [AGENTS.md](AGENTS.md).
+git worktree.
 
 ## Setup
 
@@ -12,14 +36,15 @@ git worktree. Rules for agents live in [AGENTS.md](AGENTS.md).
 | What | Why | Check |
 |------|-----|-------|
 | Git 2.20+ | Clone, branches, worktrees | `git --version` |
-| Repo access | Private repo — accept the GitHub collaborator invite | — |
+| Repo access | Accept the GitHub collaborator invite | — |
 | Git auth | SSH key or `gh auth login`, so you can push | `gh auth status` |
 | Bash | `scripts/wt.sh` is bash. Built in on macOS/Linux; **Windows: use Git Bash or WSL** (not PowerShell) | `bash --version` |
 | Git identity | Commits show who made them | `git config --global user.name` / `user.email` |
+| Node.js 26 LTS (includes npm) | Runs the game, tests and tools. Install from [nodejs.org](https://nodejs.org) | `node --version` / `npm --version` |
+| Chrome or Edge | Web Bluetooth (the EEG board) works only in Chromium browsers, on `localhost` | — |
 | A coding agent | Claude Code, Codex, or Antigravity — each reads `CLAUDE.md` / `AGENTS.md` / `GEMINI.md` automatically | — |
 
-Once the stack is chosen (likely): Node.js LTS + pnpm/npm, Python 3.11+ with `uv`/`pip`, and the Vercel /
-Firebase CLI for whoever deploys.
+Per-OS install commands and optional tools are in [docs/PLAN.md §5](docs/PLAN.md#5-install-list).
 
 ### First-time clone
 
@@ -34,6 +59,25 @@ cd codebase
 Copy `.env.example` to `.env.local` and fill in keys shared privately by the team. Never commit `.env*`
 files (other than `.env.example`).
 
+### Verify your setup
+
+These work once Phase 0 has merged (see `docs/STATUS.md`):
+
+```bash
+npm ci
+```
+
+```bash
+npm run check
+```
+
+```bash
+npm run dev
+```
+
+`npm run check` is the type check plus unit tests. `npm run dev` prints a `localhost` URL; open it in Chrome or Edge
+and confirm you see the game canvas and a `SIMULATED INPUT` badge.
+
 ### Working in parallel
 
 ```bash
@@ -43,7 +87,7 @@ scripts/wt.sh sync                         # rebase current branch onto origin/m
 scripts/wt.sh rm <agent-or-name> <task>    # remove a worktree (branch kept)
 ```
 
-Open the new `wt-*` folder in your agent, install dependencies there, and use the `PORT` in its
+Open the new `wt-*` folder in your agent, install dependencies there (`npm ci`), and use the `PORT` in its
 `.env.local` for dev servers. Finish each task with a PR into `main`.
 
 ```
@@ -53,3 +97,22 @@ hackathon/
   wt-codex-<task>/   codex/<task>
   wt-ag-<task>/      ag/<task>
 ```
+
+### How a task flows
+
+1. The agent writes `docs/plans/<phase-id>.md` and opens a draft PR.
+2. A human reads it and changes its status line to `Status: APPROVED by <name>`. Agents never write that line.
+3. The agent builds, runs `npm run check`, and writes an after-job report in `docs/agent-reports/`.
+4. The PR is marked ready. AI review merges it if it is clean, or labels it `needs-human`.
+
+### Hooks (once per tool)
+
+A Stop hook reminds an agent once if its branch has work but no after-job report. Trust it once: accept the workspace
+trust dialog in Claude Code; run `/hooks` in Codex; check Settings → Customizations → Hooks in Antigravity.
+
+## The EEG board
+
+- First-time flash: `octobridge.pieeg.com/flash` in desktop Chrome or Edge with a USB-C **data** cable.
+- **While it is on a head, power it only from a 5 V power bank**, never from a laptop or the wall.
+- No board? Run with `?source=sim` (the default) to use the built-in simulator.
+- Borrowed hardware goes back before we leave.

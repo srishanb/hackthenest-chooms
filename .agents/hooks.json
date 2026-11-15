@@ -1,0 +1,15 @@
+{
+  "after-job-report": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ./scripts/hooks/report-check.mjs antigravity",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
