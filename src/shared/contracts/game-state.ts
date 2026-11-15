@@ -22,7 +22,16 @@ export interface EmberSnapshot {
   canAssist: boolean;
 }
 
+/** Read-only world coordinates. Presentation chooses the distance unit. */
+export interface NavigationSnapshot {
+  player: { x: number; y: number };
+  originY: number;
+  lanternRadiusPx: number;
+  checkpoints: readonly { id: string; x: number; y: number }[];
+}
+
 export interface GameSnapshot {
+  navigation?: NavigationSnapshot;
   /** Current tutorial lesson string key; presentation resolves it in the UI lane. */
   lessonKey?: string;
   /** Optional exploration goal and temporary wax light bonus; unrelated to the signal. */
