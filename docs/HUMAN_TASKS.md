@@ -11,7 +11,7 @@ channels; borrowed hardware goes back; only public, synthetic or our own data.
 | Done | ID | Task | Owner | Deadline | If it is not done |
 |---|---|---|---|---|---|
 | [ ] | H-14 | Review the architecture PR and approve `docs/plans/P0.md` by changing its status line to `Status: APPROVED by <name>` | Srishan | Sat 8:45 PM | Nothing can be scaffolded. Every lane waits. |
-| [ ] | H-01 | Give the **finalised feature list** (edit or confirm `docs/FEATURES.md`, change its status to `FINAL`, add a line to `DECISIONS.md`) | Team | Sat 10:15 PM (with the P0 merge) | Only P0 to P3 may be built. The game core (P4) and everything after it wait, and the Core list will not fit before the 9 AM freeze. |
+| [x] | H-01 | Give the **finalised feature list** (edit or confirm `docs/FEATURES.md`, change its status to `FINAL`, add a line to `DECISIONS.md`) | Team | Sat 10:15 PM (with the P0 merge) | Only P0 to P3 may be built. The game core (P4) and everything after it wait, and the Core list will not fit before the 9 AM freeze. |
 | [ ] | H-08 | On your own laptop: install Node 26 LTS, `gh`, Chrome or Edge; Windows users also Git for Windows. Run the "verify your setup" list in the README after P0 merges | Each person | Sat 10:15 PM | That person can only edit docs and content; their agents cannot run tests. |
 
 ## Hardware
@@ -24,7 +24,6 @@ channels; borrowed hardware goes back; only public, synthetic or our own data.
 | [ ] | H-05 | Pair the board over Web Bluetooth from each of the four laptops once (Chrome or Edge) | Each person | Sun 2:00 AM | We may discover on demo day that the demo laptop cannot pair. |
 | [ ] | H-19 | Midnight checkpoint: confirm a clear eyes-closed rise on a real head, twice, and save the recordings under `recordings/` (band powers only, no names in the file) | Srishan, Neil | Sun 12:00 AM | Team rule: everything else pauses until it works. |
 | [ ] | H-18 | Return the borrowed board | Neil | Sun 2:15 PM | Event rule broken. |
-| [ ] | H-20 | Sign the g.tec waiver, **only if** we ever handle a Unicorn (currently deferred) | Whoever handles it | Before touching one | We may not use the headset. |
 
 ## Questions to ask people
 
