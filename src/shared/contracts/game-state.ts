@@ -23,6 +23,8 @@ export interface EmberSnapshot {
 }
 
 export interface GameSnapshot {
+  /** Current tutorial lesson string key; presentation resolves it in the UI lane. */
+  lessonKey?: string;
   /** Optional exploration goal and temporary wax light bonus; unrelated to the signal. */
   wax?: { collected: number; total: number; boostRemainingMs: number };
   phase: GamePhase;
