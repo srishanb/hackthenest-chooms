@@ -1,9 +1,9 @@
-/** First-launch control guide, with a persistent Controls button for replaying it later. */
+/** On-demand controls and mechanics guide; the tutorial stage has its own minimal reminders. */
 import { getLocalStorage } from '../../../shared/safe-storage';
 import { menuButton } from '../../menu-dom';
 import { t } from '../../strings';
 import type { UiComponent } from '../../types';
-import { hasSeenTutorial, rememberTutorial } from './tutorial-storage';
+import { rememberTutorial } from './tutorial-storage';
 import '../../theme/menus.css';
 import './main-menu.css';
 import { createUiActions } from '../../ui-actions';
@@ -12,6 +12,7 @@ const STEPS = [
   { title: 'tutorial.move.title', body: 'tutorial.move.body', keys: 'tutorial.move.keys', tip: 'tutorial.move.tip' },
   { title: 'tutorial.jump.title', body: 'tutorial.jump.body', keys: 'tutorial.jump.keys', tip: 'tutorial.jump.tip' },
   { title: 'tutorial.climb.title', body: 'tutorial.climb.body', keys: 'tutorial.climb.keys', tip: 'tutorial.climb.tip' },
+  { title: 'tutorial.terrain.title', body: 'tutorial.terrain.body', keys: 'tutorial.terrain.keys', tip: 'tutorial.terrain.tip' },
   { title: 'tutorial.journey.title', body: 'tutorial.journey.body', keys: 'tutorial.journey.keys', tip: 'tutorial.journey.tip' },
 ] as const;
 
@@ -86,20 +87,13 @@ export const mainMenu: UiComponent = {
     dialog.addEventListener('keydown', (event) => event.stopPropagation());
     dialog.addEventListener('keyup', (event) => event.stopPropagation());
     dialog.addEventListener('cancel', (event) => { event.preventDefault(); close(); });
-    // First launch: show the guide once the climb starts (after the start menu's Play), not over the menu.
-    let autoShown = false;
-    const openOnFirstClimb = (): void => {
-      if (autoShown || stores.snapshot.get().phase !== 'playing') return;
-      autoShown = true;
-      if (!hasSeenTutorial(storage)) open();
-    };
+    // The tutorial stage teaches in-world. This dialog remains available on explicit request.
     const offSnapshot = stores.snapshot.subscribe(() => {
       replay.hidden = stores.snapshot.get().phase === 'menu';
-      openOnFirstClimb(); pauseWhenReady();
+      pauseWhenReady();
     });
     const offOpen = uiActions.tutorialOpen.subscribe((requested) => { if (requested) open(); });
     replay.hidden = stores.snapshot.get().phase === 'menu';
-    openOnFirstClimb();
     return () => {
       offSnapshot();
       offOpen();

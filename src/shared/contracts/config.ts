@@ -76,6 +76,7 @@ export interface EmberConfig {
 }
 
 export type UiComponentId =
+  | 'world-tutorial'
   | 'main-menu'
   | 'start-menu'
   | 'pause-menu'

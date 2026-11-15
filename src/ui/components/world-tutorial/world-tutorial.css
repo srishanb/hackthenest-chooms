@@ -1,0 +1,12 @@
+/* Direct lettering on the forest: no card, border, backdrop or input targets. */
+.ui-slot > [data-component='world-tutorial'] { pointer-events: none; overflow: visible; }
+.world-tutorial { position: fixed; overflow: hidden; pointer-events: none; z-index: 0; }
+.world-tutorial__world { position: absolute; inset: 0; transform-origin: 0 0; }
+.world-tutorial__controls {
+  position: absolute; display: grid; grid-template-columns: max-content max-content;
+  gap: var(--space-1) var(--space-2); margin: 0; opacity: .8;
+  font: var(--text-sm)/1.4 var(--font-ui); color: var(--color-text);
+  text-shadow: 0 1px 3px var(--color-bg), 0 0 6px var(--color-bg);
+}
+.world-tutorial__controls dt { color: var(--color-accent); font-family: var(--font-mono); }
+.world-tutorial__controls dd { margin: 0; }

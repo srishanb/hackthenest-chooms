@@ -113,6 +113,18 @@ export class ClimbScene extends Phaser.Scene {
     this.platforms = platformsAt(world.platforms, 0);
     this.worldView = drawWorld(this, world);
     this.forest = this.worldView.forest;
+    // Publish the final camera position, after Phaser has applied follow/pan for this frame.
+    const publishCamera = (): void => {
+      if (!stores.worldView) return;
+      const camera = this.cameras.main, previous = stores.worldView.get();
+      if (previous?.scrollX === camera.scrollX && previous.scrollY === camera.scrollY &&
+        previous.width === camera.width && previous.height === camera.height) return;
+      stores.worldView.set({ scrollX: camera.scrollX, scrollY: camera.scrollY, width: camera.width, height: camera.height });
+    };
+    this.events.on(Phaser.Scenes.Events.RENDER, publishCamera);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off(Phaser.Scenes.Events.RENDER, publishCamera); stores.worldView?.set(null);
+    });
     this.wax = createWaxRewards({ platforms: world.platforms, gameConfig,
       bus: this.deps.bus, snapshot: stores.snapshot, storage: this.deps.storage });
     this.waxView = createWaxView(this, this.wax, this.deps.bus);

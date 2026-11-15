@@ -8,6 +8,7 @@ import type { UiConfig } from '../shared/contracts/config';
 
 export const UI_CONFIG: UiConfig = {
   components: {
+    'world-tutorial': { enabled: true, slot: 'full' },
     'main-menu': { enabled: true, slot: 'center' },
     'start-menu': { enabled: true, slot: 'center' },
     'pause-menu': { enabled: true, slot: 'center' },

@@ -17,6 +17,7 @@ import { emberPrompt } from './components/ember-prompt/ember-prompt';
 import { finishScreen } from './components/finish-screen/finish-screen';
 import { hud } from './components/hud/hud';
 import { mainMenu } from './components/main-menu/main-menu';
+import { worldTutorial } from './components/world-tutorial/world-tutorial';
 import { pauseMenu } from './components/pause-menu/pause-menu';
 import { settingsPanel } from './components/settings-panel/settings-panel';
 import { startMenu } from './components/start-menu/start-menu';
@@ -29,6 +30,7 @@ import type { UiComponent, UiDeps } from './types';
 import { createUiActions } from './ui-actions';
 
 export const COMPONENTS: readonly UiComponent[] = [
+  worldTutorial,
   startMenu,
   mainMenu,
   pauseMenu,

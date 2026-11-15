@@ -6,6 +6,16 @@
  * state refer to text by key, never by literal string.
  */
 export const STRINGS = {
+  'worldTutorial.label': 'Tutorial controls',
+  'worldTutorial.control.move': 'Move',
+  'worldTutorial.control.jump': 'Hold → release to jump',
+  'worldTutorial.control.ember': 'Place / pick up ember',
+  'worldTutorial.control.return': 'Return to ember',
+  'worldTutorial.control.pause': 'Pause',
+  'tutorial.terrain.title': 'Read the world',
+  'tutorial.terrain.keys': 'Moving ledges · ice · wind · wax',
+  'tutorial.terrain.body': 'Moving ledges follow a steady rhythm. Ice has less grip; leave room to stop. Wind nudges you in the air: watch the drifting particles and aim against the gust.',
+  'tutorial.terrain.tip': 'Gold wax briefly boosts your light. Restore the world before landing on each stage’s final ledge to keep climbing.',
   'narrator.voice.title': 'Narrator voice',
   'narrator.voice.label': 'Voice',
   'narrator.voice.chris': 'Chris · conversational',
@@ -136,8 +146,8 @@ export const STRINGS = {
   'tutorial.jump.tip': 'Tap for a small jump. Full power takes 0.6 seconds.',
   'tutorial.climb.title': 'Place. Return. Reuse.',
   'tutorial.climb.keys': 'E = place / pick up  ·  R = recover',
-  'tutorial.climb.body': 'E places your ember on a ledge or picks it up nearby. After a fall, land and press R to return.',
-  'tutorial.climb.tip': 'Ember: unlimited uses, 5-second cooldown. Collect gold wax for a 10-second lantern boost.',
+  'tutorial.climb.body': 'Stand on a safe stationary ledge and press E to place your ember. After a fall, land below it and press R to return. To move it higher, stand next to the ember on its ledge and press E to pick it up; press E on the new ledge to place it again.',
+  'tutorial.climb.tip': 'One reusable ember, 5-second cooldown; moving ledges cannot hold it. Calibrated recovery needs about 4 valid resting-target seconds. Fixed-light or uncalibrated play offers direct assistance.',
   'tutorial.journey.title': 'One continuous climb',
   'tutorial.journey.keys': 'Tutorial → Normal → Snow → Windy → Snowy & Windy',
   'tutorial.journey.body': 'Land on each stage’s final ledge to keep going. The last landing wins. Missed jumps cost height; checkpoints are only the ember you place yourself.',
