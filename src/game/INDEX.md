@@ -4,6 +4,7 @@ Owner: Ali. Search here before adding a function.
 
 | Export | File | What it does |
 |---|---|---|
+| `layoutStorageKey(stages)` | `editor/layouts.ts` | Scopes browser previews to the bundled team layout so merged updates are visible. |
 | `createGame(deps)` | `index.ts` | Creates the Phaser game. Everything it needs arrives in `GameDeps`. |
 | `createWaxRewards`, `makeWaxDrops`, `WaxDrop`, `WAX_STORAGE_KEY` | `wax/rewards.ts` | Uncapped replenishing wax, one active drop, random respawn delay, bounded save state, temporary light bonus and pause/airborne stability. |
 | `createWaxView` | `wax/view.ts` | Code-drawn wax droplets, reduced-motion-aware hover and pickup pulses. |

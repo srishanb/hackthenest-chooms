@@ -4,6 +4,12 @@ import type { SaveStorage } from '../save';
 import { loadSections } from '../world/section-loader';
 export const STAGE_LAYOUT_KEY = 'lighten.stage-layouts.v1';
 export const STAGE_DRAFT_KEY = 'lighten.stage-draft.v1';
+/** Scope local previews to the bundled team layout, so older browser saves cannot hide a team update. */
+export function layoutStorageKey(stages: readonly SectionData[]): string {
+  let hash = 2166136261;
+  for (const char of JSON.stringify(stages)) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+  return `${STAGE_LAYOUT_KEY}.${hash >>> 0}`;
+}
 export function validateLayouts(value: unknown, originals: readonly SectionData[]): SectionData[] {
   if (!Array.isArray(value) || value.length !== originals.length || value.some((stage, index) => stage?.id !== originals[index]?.id)) throw Error('Stage list must match the original stages.');
   loadSections(value as SectionData[], 960);
