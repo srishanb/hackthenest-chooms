@@ -1,57 +1,37 @@
 # Lighten Up
 
-A 2D charge-jump climbing game for Hack The Nest 2026 (Nov 14-15, Eastern Michigan University), Mind and Machine
-(BCI) track. It runs in Chrome or Edge.
-
+A 2D charge-jump climbing game built in 24 hours for Hack The Nest 2026 (Nov 14-15), Mind and Machine (BCI) track.
 You carry a candle up a tall forest tower. You cannot die: a missed jump only costs height. A PiEEG Octopus 16 EEG
-board changes how far your light reaches, how thick the fog is and how the music sounds. It also gates a recovery
-mechanic: a placed ember that returns you to the ledge you fell from.
+board reads composure (calm versus tension) and changes how far your light reaches, how corrupted the forest looks
+and how the music sounds. It also gates a recovery ember that returns you to a ledge you chose. Muscle activity (a
+clenched jaw, for example) is part of the signal, and we say so openly. This is an experimental game prototype, not
+a medical device, and it does not diagnose anything. **The signal never touches the controls or physics.**
 
-**The signal never touches the controls.** Gravity, friction, jump strength, speed and steering are the same whether
-you are calm or tense, and whether the input is a real board, the simulator or a recording. This is enforced by a
-test, not only by a promise (see [How the signal is used](#how-the-signal-is-used)).
+## Play online
 
-It is composure practice and an experimental prototype. It is **not** a medical device and it does not diagnose
-anything. The signal is a measure of calm versus tension, and muscle activity (a clenched jaw, for example) is part
-of it. We say that openly.
+https://srishanb.github.io/hackthenest-chooms/
 
-- **Play online:** https://srishanb.github.io/hackthenest-chooms/ (live once GitHub Pages is enabled). Best in Chrome or
-  Edge, which the real board needs for Web Bluetooth. The simulator and presets should work in any modern browser
-  (untested in Safari and Firefox).
-- **What worked / what didn't:** _to be written before submission (Sun 12:00 PM)._
-- **Stack:** Vite 8.3.8, TypeScript 7.0.2 (strict), Phaser 4.2.1, Vitest 5.1.0, `pieeg.js` (vendored). No backend.
-- **Credits:** see [CREDITS.md](CREDITS.md). The charge-jump climb is in the style of *Jump King*; the narrator's tone
-  is in the spirit of *Getting Over It*. No code, levels or assets are reused from either.
-- **AI tools used:** Claude, Antigravity, Gemini, Codex, ChatGPT.
+Use Chrome or Edge if you want to connect the real board: it needs Web Bluetooth, which only Chromium browsers have.
+The simulator and the replay presets need no board (untested in Safari and Firefox).
 
-## Hardware status, plainly
-
-| Input | Status |
-|---|---|
-| Simulator (default) | Built and tested. Keyboard-driven fake EEG, so the game is fully playable with no board. |
-| Recorded replay | Built and tested. Plays a saved `.jsonl` recording through the same pipeline. |
-| PiEEG Octopus 16 over Web Bluetooth | Code is written and tested against a fake SDK. **It has not yet been run on a real board.** The first-run steps are in [docs/OCTOPUS_TEST.md](docs/OCTOPUS_TEST.md). |
-
-The game always shows which input is active (`LIVE EEG`, `SIMULATED INPUT` or `RECORDED REPLAY`). If the board or
-the signal fails, the game keeps working: effects ease toward neutral and a fixed-light mode is available.
-
-## How to play
+## Controls
 
 | Key | Action |
 |---|---|
 | Left / Right, or A / D | Walk |
-| Hold Space or Up, then release | Charge and launch a jump. Direction keys set the direction. |
-| E | Place your ember on a safe ledge, or pick it up when you stand beside it |
-| R | After a fall, recover to the placed ember (press again to cancel) |
-| Escape | Pause, settings, calibration |
-| Backtick (`` ` ``) | Toggle the signal debug overlay |
+| Hold Space or Up, then release | Charge and launch a jump. Hold a direction to aim. |
+| E | Place your ember on a safe, still ledge, or pick it up when you stand beside it |
+| R | After a fall, recover to your placed ember |
+| Escape or P | Pause menu (settings, calibration) |
+| Backtick (`` ` ``) | Show or hide the signal debug overlay |
+| 1 / 2 / 3 / 4 | Simulator only: alpha boost, jaw clench, eye blink, noisy pin |
 
-Keys can be remapped in Settings. In simulator mode: 1 alpha boost, 2 jaw clench, 3 eye blink, 4 noisy pin.
+Walk, jump, recover, pause and the debug overlay can be remapped in Settings. E is fixed.
 
-The climb is one continuous tower of five stages (Tutorial, Normal, Snow, Windy, Snowy and Windy), ten ledges each.
-Landing on the last ledge of the final stage wins the run.
+The climb is one continuous tower of five stages (Tutorial, Normal, Snow, Windy, Snowy and Windy). Landing on the last
+ledge of the final stage wins the run.
 
-## How the signal is used
+## How the composure signal is used
 
 ```
 PiEEG board / simulator / recording
@@ -60,186 +40,165 @@ PiEEG board / simulator / recording
 src/signal/   quality check, features, calibration, smoothing
         |  ComposureState (the only thing the game may read)
         v
-src/game/     lantern radius, fog, shadows, recovery gate     --> never movement or physics
-src/audio/    music mix (one ambient loop; no separate tense stem yet)
-src/ui/       HUD wording, status
+src/game/     lantern radius, forest corruption, recovery gate   --> never movement or physics
+src/audio/    music mix
+src/ui/       HUD wording, input badge
 ```
 
-- **Composure** is a 0 to 1 `intensity` value personalised to each person by a short resting and active calibration.
-  Higher means more tension. The HUD shows it as words (lower, midrange, higher), never as a score or a percentage.
-- **Lantern, fog, shadows, music:** the music mix is bounded and plays one local ambient loop; a separate tense layer is not
-  included yet. Most effects are rows in `src/config/effects.config.ts`, each with a cap, a smoothing
-  time constant and a written never-rule. Effects move smoothly and ease back when you relax.
-- **Candle fuel:** the one effect that does not fully reverse. Fuel drains with playing time, up to about five times
-  faster under high tension, and wax refills it. Low fuel shrinks the light, never your movement. Its numbers are in
-  `src/config/lantern-fuel.config.ts`; the HUD shows it as a percentage of fuel left, not a composure value.
-- **Recovery ember:** in calibrated play, recovery needs about four seconds of valid, relaxed signal, with a visible
-  progress meter. Brief fluctuations pause progress and never reset it. Invalid or stale data never advances it. With
-  fixed-light play or no calibration, recovery works directly and is labelled as ordinary-input assistance.
-- **Physics are protected:** `src/game/player/` must not import the composure contract, and a lane-boundary test fails
-  the build if it does.
-- **Poor signal:** quality is tracked separately from the value. Bad contact eases effects toward neutral and pauses
-  ember progress.
+- **Composure** is a 0 to 1 `intensity` value, personalised by a short resting and active calibration. Higher means
+  more tension. The HUD shows it as words, never as a score or a ranking.
+- **What it changes:** the lantern radius, the forest corruption and the music mix. These are the three enabled rows
+  in `src/config/effects.config.ts`. Each row has a cap, a smoothing time and a written never-rule, so effects move
+  smoothly and ease back when you relax.
+- **Candle fuel:** fuel drains with playing time, faster under high tension, and wax refills it. Low fuel shrinks the
+  light, never your movement. Its numbers are in `src/config/lantern-fuel.config.ts`.
+- **Recovery ember:** in calibrated play, recovering needs a few seconds of valid, relaxed signal, shown by a progress
+  meter. Brief changes pause progress and never reset it. Invalid or stale data never advances it. Without
+  calibration, or in fixed-light mode, recovery works directly and is labelled as ordinary-input assistance.
+- **Poor signal:** quality is tracked apart from the value. Bad contact eases effects toward neutral.
+- **What it never touches:** gravity, friction, jump strength, speed and steering. `src/game/player/` must not import
+  the composure contract, and a lane-boundary test fails the check if it does.
 
-Full design: [docs/PLAN.md](docs/PLAN.md). Feature list: [docs/FEATURES.md](docs/FEATURES.md).
+The game always shows which input is active (`LIVE EEG`, `SIMULATED INPUT` or `RECORDED REPLAY`).
 
 ## Quick start
 
-You need Git, Node.js 22.12 or newer (the team uses Node 26 LTS; npm comes with it) and Chrome or Edge. Web Bluetooth
-works only in Chromium browsers.
+You need Git, Node.js 22.12 or newer (npm comes with it) and Chrome or Edge.
 
 ```bash
 git clone https://github.com/srishanb/hackthenest-chooms.git
 cd hackthenest-chooms
 npm ci
+node run.mjs doctor   # checks Node, dependencies and the history guard
+node run.mjs dev      # starts the game and opens it
 ```
 
-```bash
-node run.mjs doctor
-```
+`npm run dev` also works; it prints a `localhost` address to open. You should see the start menu. Press Play, then
+walk and jump. The input badge reads `SIMULATED INPUT`.
 
-```bash
-node run.mjs dev
-```
+`npm ci` may warn that esbuild's install script was not run. That is harmless. If `npm ci` fails with a cache
+permission error, run `npm_config_cache="$TMPDIR/npm-cache" npm ci` once.
 
-`doctor` checks Node, dependencies and the history guard. `dev` starts the game and opens it. Prefer plain npm?
-`npm run dev` prints a `localhost` URL to open instead. You should see the start menu; press Play, then walk and jump.
-The source badge reads `SIMULATED INPUT`.
+### Run, check and build
 
-`npm ci` may print a warning that esbuild's install script was not run. That is npm's default and is harmless.
-If `npm ci` fails with a cache permission error, run it once as `npm_config_cache="$TMPDIR/npm-cache" npm ci`.
+| Command | What it does |
+|---|---|
+| `node run.mjs` | Lists every command and feature |
+| `node run.mjs dev` | Start the game and open it. Add a query in quotes: `node run.mjs dev "?mode=fixed"` |
+| `npm run check` (or `node run.mjs check`) | Type check plus every unit test |
+| `npm run build` | Vite build into `dist/` |
+| `node run.mjs build` | Full build into `dist/` with an audit that nothing needs the internet |
+| `node run.mjs preview` | Build, then serve the built game the way the demo runs |
+| `node run.mjs all` | Automated checks of every feature, with a pass/fail table |
+| `node run.mjs <feature>` | One feature: its tests, then a guided hands-on check (for example `game-movement`) |
+| `npm run check:levels` | Checks that every jump in the authored stages is reachable |
+| `npm run eval -- intensity-v2 recordings/<file>.jsonl` | Score a signal algorithm against a recording |
 
-### Choose an input with the URL
+Details: [run/README.md](run/README.md).
+
+### Choose an input with the address
 
 | Address | Effect |
 |---|---|
 | `/` or `/?source=sim` | Simulator (default) |
-| `/?source=live` | Real Octopus 16 over Web Bluetooth (not yet run on a real board) |
-| `/?source=replay&replay=<file>.jsonl` | Replay a recording from `recordings/` (dev server and built game) |
-| `/?mode=fixed` | Fixed-light fallback: intensity stays neutral |
+| `/?source=live` | Real Octopus 16 over Web Bluetooth |
+| `/?source=replay&replay=<file>.jsonl` | Replay a recording from `recordings/` |
+| `/?mode=fixed` | Fixed-light mode: intensity stays neutral |
 | `/?algo=<id>` | Pick a signal algorithm (`intensity-v2` is the default) |
 
 ### Run on the real board
 
-Follow [docs/OCTOPUS_TEST.md](docs/OCTOPUS_TEST.md). In short: flash the board once, power it from a 5 V power bank
-while it is on a head, open `/?source=live`, press backtick for the debug overlay, click **Connect Octopus 16**, then
-run the guided eyes-open / eyes-closed checkpoint. Close any other tab (such as `cloud.pieeg.com`) that talks to the
-board: Bluetooth allows one connection. Never power the board from a laptop or the wall while it is on a head.
+Follow [docs/OCTOPUS_TEST.md](docs/OCTOPUS_TEST.md). In short: power the board from a 5 V power bank while it is on a
+head (never from a laptop or the wall), open `/?source=live`, press backtick for the debug overlay, click
+**Connect Octopus 16**, then calibrate. Close any other tab that talks to the board: Bluetooth allows one connection.
 
-### Tests and build
+## Playing without a headset
 
-| Command | What it does |
-|---|---|
-| `npm run check` | Type check plus every unit test |
-| `npm run check:levels` | Checks that every jump in the authored stages is reachable |
-| `npm run eval -- intensity-v2 recordings/<file>.jsonl` | Score an algorithm against a recording |
-| `node run.mjs all` | Automated checks of every feature, with a pass/fail table |
-| `node run.mjs <feature>` | One feature: its tests, then a guided hands-on check (for example `game-movement`) |
-| `node run.mjs build` | Full build into `dist/` with an audit that nothing needs the internet |
-| `node run.mjs preview` | Build, then serve the built game the way the demo runs |
+- **Simulator (default).** A keyboard-driven fake EEG. Keys 1 to 4 add an alpha boost, a jaw clench, an eye blink
+  or a noisy pin, so you can watch the light, the forest and the music react.
+- **Replay presets in Settings.** Five built-in recordings of band powers: Calm climb, Rising tension, Jaw clench
+  bursts, Mixed climb and Noisy pin. A preset runs through the same signal pipeline as a live board. You can also
+  save the last stretch of your own signal as a preset, then replay or export it. Presets stay in your browser;
+  nothing is uploaded. The built-in files are in `public/recordings/presets/`.
+- **Fixed light.** `/?mode=fixed` keeps intensity neutral for play with no signal at all.
 
-`node run.mjs` with no arguments lists every command and feature. Details: [run/README.md](run/README.md).
+## Architecture
 
-### Offline
+- **Lanes.** Code is split into folders, one per lane. A lane imports only `src/shared/` and `src/config/`, never
+  another lane, and a test enforces this. Each lane has an `INDEX.md` listing its public exports.
+- **Stores and bus.** Signal and game code publish state to stores and events to a typed bus in `src/shared/`. UI,
+  audio, narrator and recorder subscribe. The game never imports a device; it reads `ComposureState` through the
+  reader it is given.
+- **Effects as data.** Every signal-driven effect is a row in `src/config/effects.config.ts`. All tunable numbers
+  live in typed config files with units.
+- **Offline.** Nothing on the play path uses the network. Libraries come from the lockfile, `pieeg.js` is vendored in
+  `public/vendor/`, and music, sound effects and narrator clips are files in `public/assets/`.
 
-Nothing on the play path uses the network. Libraries come from the lockfile, `pieeg.js` is vendored in
-`public/vendor/`, and music, sound effects and narrator clips are files in `public/assets/`. Narrator lines are drafted
-and voiced once at build time by `tools/narrator/` (see [tools/narrator/README.md](tools/narrator/README.md)); the game
-never calls an API while you play. To check: `node run.mjs preview`, turn Wi-Fi off, reload, play.
+Stack: Vite 8.3.8, TypeScript 7.0.2 (strict), Phaser 4.2.1, Vitest 5.1.0. No backend.
 
-## Project structure
-
-Code is split into lanes (folders). A lane imports only `src/shared/` and `src/config/`, never another lane; a test
-enforces it. Each lane has an `INDEX.md` listing its public exports.
+## Repo map
 
 | Path | What is in it | Owner |
 |---|---|---|
-| `src/shared/` | Contracts (types), event bus, store. Frozen after P0. | Srishan |
-| `src/signal/` | Sources (simulator, replay, real board), pipeline, calibration, algorithms, recorder | Srishan |
-| `src/game/` | Phaser scenes, player physics, ember, forest presentation, stage editor | Ali |
-| `src/ui/` | HTML/CSS layer: menus, HUD, settings, calibration, captions | Amrit |
+| `src/shared/` | Contracts (types), event bus, stores | Srishan |
+| `src/signal/` | Sources (simulator, replay, real board), pipeline, calibration, algorithms, presets, recorder | Srishan |
+| `src/game/` | Phaser scenes, player physics, ember, candle, wax, forest, stage editor | Ali |
+| `src/ui/` | HTML and CSS layer: menus, HUD, settings, calibration, captions | Amrit |
 | `src/audio/` | Music mix, sound effects, narrator playback | Amrit |
-| `src/content/` | Stage data, narrator lines | Neil |
+| `src/content/` | Stage layouts, narrator lines | Neil |
 | `src/config/` | Every tunable number, typed, with units | Lane that owns each file |
-| `tools/` | Offline tools: signal eval, level checker, narrator generator, build pipeline | Per lane |
+| `tools/` | Offline tools: signal eval, level checker, presets, narrator generator, build pipeline | Per lane |
 | `run/`, `run.mjs` | One run file per feature, and the menu for all of them | Srishan |
-| `public/assets/`, `public/vendor/` | Local art, audio, and the vendored `pieeg.js` | Neil, Srishan |
-| `recordings/` | EEG recordings (band powers only, no names). Currently only a simulated fixture. | Srishan |
+| `public/` | Local art, audio, preset recordings and the vendored `pieeg.js` | Neil, Srishan |
+| `recordings/` | EEG recordings (band powers only). Currently one simulated fixture. | Srishan |
 | `docs/` | Plan, status, features, decisions, plans, agent reports | Srishan |
 
-## Where to read more
+## Documentation
 
 | Read this | For |
 |---|---|
-| [docs/PLAN.md](docs/PLAN.md) | Architecture, tech stack, phases, timeline, risks |
-| [docs/STATUS.md](docs/STATUS.md) | What is done, in progress, or unverified |
-| [docs/FEATURES.md](docs/FEATURES.md) | The feature list, with "As built" notes where the build moved on |
-| [docs/DECISIONS.md](docs/DECISIONS.md) | What was decided, when, by whom |
-| [docs/HUMAN_TASKS.md](docs/HUMAN_TASKS.md) | Things only a person can do |
+| [docs/PLAN.md](docs/PLAN.md) | Architecture, stack, phases, risks |
+| [docs/STATUS.md](docs/STATUS.md) | What is done, in progress or unverified |
+| [docs/FEATURES.md](docs/FEATURES.md) | The feature list, with "As built" notes |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | What was decided, when and by whom |
 | [docs/OCTOPUS_TEST.md](docs/OCTOPUS_TEST.md) | First run on a real board |
+| [docs/STAGE_EDITOR.md](docs/STAGE_EDITOR.md) | The in-game stage editor |
+| [docs/DEMO.md](docs/DEMO.md) | The demo script |
+| [docs/DEVPOST.md](docs/DEVPOST.md) | The Devpost submission text |
 | [CREDITS.md](CREDITS.md) | Every third-party asset and library, with its licence |
-| [AGENTS.md](AGENTS.md) | Rules for every coding agent |
+| [AGENTS.md](AGENTS.md) | Rules for every contributor and coding agent |
+
+## Known limitations
+
+- **The real board is not proven in this repo.** The Web Bluetooth path is written and tested against a fake SDK.
+  No recording from a real PiEEG Octopus 16 is in `recordings/`, and no agent report records a real-board run.
+- The signal is not pure brain activity. Jaw, face and eye muscles change it, and so does poor electrode contact.
+- Built-in presets use fixed baselines. They show how the game reacts; they are not real brain recordings and do not
+  replace calibration.
+- Only three effects are enabled (lantern radius, forest corruption, music mix). Fog, shadow and background-motion
+  rows exist in the effects table but are switched off.
+- Tested mainly in Chrome. Safari and Firefox are untested.
 
 ## Team
 
 | Person | Lane | GitHub |
 |---|---|---|
-| Srishan | Integrator, signal | `srishanb` |
+| Srishan | Integrator and signal | `srishanb` |
 | Ali | Game | `avinculado` |
 | Amrit | UI, audio and narrator | `prabhuamritkrishna-beep` |
 | Neil | Content and tuning | `LordGlichter` |
 
+The charge-jump climb is in the style of *Jump King*, and the narrator's tone is in the spirit of *Getting Over It*.
+No code, levels or assets are reused from either. AI tools used: Claude, Antigravity, Gemini, Codex, ChatGPT.
+
 ## Licence
 
-The project's own code and documentation are released under the [MIT License](LICENSE). Third-party assets keep
-their own licences, listed in [CREDITS.md](CREDITS.md).
+The project's own code and documentation are released under the [MIT License](LICENSE). Third-party assets keep their
+own licences, listed in [CREDITS.md](CREDITS.md).
 
 ## Contributing
 
-Several coding agents (Claude Code, Codex, Antigravity) and four people work on this repo in parallel. Read
-[AGENTS.md](AGENTS.md) first; it is the rulebook.
-
-### Never delete git history
-
-The most important rule: no force pushes, no rebasing pushed commits, no deleting branches or tags. `npm ci` installs a
-`pre-push` hook (in `.githooks/`) that refuses force pushes and deletions. If a push is rejected, do not force it:
-`git fetch origin`, then `git merge origin/<branch>`, then push again. To undo a pushed change, add a `git revert`
-commit.
-
-### Setup for contributors
-
-| What | Why | Check |
-|------|-----|-------|
-| Git 2.20+ | Clone, branches, worktrees | `git --version` |
-| Repo access and git auth | Push needs a GitHub invite and an SSH key or `gh auth login` | `gh auth status` |
-| Bash | `scripts/wt.sh` is bash. Windows: use Git Bash or WSL, not PowerShell | `bash --version` |
-| Node.js 22.12+ | Runs the game, tests and tools | `node --version` |
-
-Copy `.env.example` to `.env.local` for the dev-server `PORT` and, only if you regenerate narrator clips, the API
-keys shared privately by the team. Never commit `.env*` files other than `.env.example`, and never give a key a
-`VITE_` prefix. Per-OS install commands are in [docs/PLAN.md](docs/PLAN.md#5-install-list).
-
-### Working in parallel
-
-Each task gets its own worktree, created next to the repo:
-
-```bash
-scripts/wt.sh new <agent-or-name> <task>   # creates ../wt-<agent>-<task> on branch <agent>/<task>
-scripts/wt.sh ls                           # list worktrees
-scripts/wt.sh sync                         # merge origin/main into the current branch
-scripts/wt.sh rm <agent-or-name> <task>    # remove a worktree (branch kept)
-```
-
-Install dependencies in the new worktree (`npm ci`) and use the `PORT` in its `.env.local`. Always push with the branch
-name: `git push -u origin <agent>/<task>`.
-
-### How a task flows
-
-1. Check the work is not already done or claimed (pre-code check in [AGENTS.md](AGENTS.md)).
-2. Optionally write a plan in `docs/plans/`. Since Decision D-22 a plan is guidance, not a gate.
-3. Build, run `npm run check`, and write an after-job report in `docs/agent-reports/`.
-4. Open a pull request and mark it ready. The reviewer agent runs the checks and merges it unless it breaks something
-   or goes against the game's rules (D-18, D-22). No human review is needed.
-
-A Stop hook reminds an agent once if its branch has work but no after-job report. Trust it once per tool (Claude Code
-workspace trust dialog; `/hooks` in Codex; Settings, Customizations, Hooks in Antigravity).
+Read [AGENTS.md](AGENTS.md) first. The most important rule: never delete git history. No force pushes, no rebasing
+pushed commits, no deleting branches or tags. `npm ci` installs a `pre-push` hook (in `.githooks/`) that refuses force
+pushes and deletions. Each task gets its own worktree (`scripts/wt.sh new <agent-or-name> <task>`); update it with
+`scripts/wt.sh sync`, which merges `origin/main`.
