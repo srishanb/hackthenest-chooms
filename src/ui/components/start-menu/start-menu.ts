@@ -4,10 +4,13 @@ import { icon } from '../../icons';
 import { t } from '../../strings';
 import type { UiComponent } from '../../types';
 import { createUiActions } from '../../ui-actions';
-import { canContinue, menuSelection, startsOnKey } from './start-menu-state';
+import { canContinue, menuSelection, startStalled, startsOnKey } from './start-menu-state';
 import { createCredits } from './credits';
 import '../../theme/menus.css';
 import './start-menu.css';
+
+/** How long a start may go unanswered before the menu unlocks again (ms). */
+const START_STALL_MS = 1500;
 
 export const startMenu: UiComponent = {
   id: 'start-menu', visibleIn: ['menu'],
@@ -50,7 +53,12 @@ export const startMenu: UiComponent = {
       pending = true; screen.dataset.leaving = 'true';
       for (const button of buttons) button.disabled = true;
       timer = setTimeout(() => {
-        if (alive && stores.snapshot.get().phase === 'menu') bus.emit({ type: 'start' });
+        if (!alive || stores.snapshot.get().phase !== 'menu') return;
+        bus.emit({ type: 'start' });
+        timer = setTimeout(() => {
+          if (!alive || !startStalled(stores.snapshot.get().phase)) return;
+          pending = false; delete screen.dataset.leaving; render(); play.focus({ preventScroll: true });
+        }, START_STALL_MS);
       }, stores.settings.get().reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180);
     };
     const play = menuButton(t('start.play'), start); play.className = 'menu-primary'; play.prepend(icon('play'));

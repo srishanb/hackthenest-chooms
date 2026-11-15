@@ -9,7 +9,8 @@ import type { UiComponent } from '../../types';
 import { createUiActions } from '../../ui-actions';
 import { mountSignalPresetsControl } from '../signal-presets/signal-presets';
 import { mountNarratorVoiceControl } from './narrator-voice-control';
-import { remapKey } from './settings-editor';
+import { remapAllowed, remapKey } from './settings-editor';
+import { keyLabel } from '../world-tutorial/layout';
 import '../../theme/menus.css';
 export const settingsPanel: UiComponent = {
   id: 'settings-panel', visibleIn: ['paused', 'menu'],
@@ -59,7 +60,7 @@ export const settingsPanel: UiComponent = {
     for (const key of Object.keys(stores.settings.get().keys) as Array<keyof KeyBindings>) {
       const button = menuButton('', () => { listening = key; hint.textContent = t('settings.pressKey'); });
       bindings.append(button);
-      renders.push((s) => { button.textContent = `${t(`settings.key.${key}`)}: ${s.keys[key]}`; });
+      renders.push((s) => { button.textContent = `${t(`settings.key.${key}`)}: ${keyLabel(s.keys[key])}`; });
     }
     panel.append(bindings, hint);
     const back = menuButton(t('menu.back'), () => actions.settingsOpen.set(false)); panel.append(back); root.append(panel);
@@ -79,7 +80,7 @@ export const settingsPanel: UiComponent = {
           const action = listening;
           const current = stores.settings.get();
           const candidate = validateSettings({ ...current, keys: { ...current.keys, [action]: event.code } });
-          if (candidate.keys[action] !== event.code) { hint.textContent = t('settings.unsupportedKey'); return; }
+          if (candidate.keys[action] !== event.code || !remapAllowed(current.keys, action, event.code)) { hint.textContent = t('settings.unsupportedKey'); return; }
           update((s) => ({ ...s, keys: remapKey(s.keys, action, event.code) }));
         }
         listening = null; hint.textContent = ''; return;

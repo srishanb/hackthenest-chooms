@@ -26,4 +26,12 @@ describe('compass needle', () => {
   it('reduced motion snaps straight to the target', () => {
     expect(stepNeedle(0, 90, 16, 300, true)).toBe(90);
   });
+
+  it('ignores a non-finite target or frame time instead of sticking at NaN', () => {
+    expect(stepNeedle(40, NaN, 16, 300)).toBe(40);
+    expect(stepNeedle(40, Infinity, 16, 300, true)).toBe(40);
+    expect(stepNeedle(40, 90, NaN, 300)).toBe(40);
+    expect(stepNeedle(NaN, NaN, 16, 300)).toBe(0);
+    expect(Number.isFinite(stepNeedle(NaN, 90, 16, 300))).toBe(true);
+  });
 });

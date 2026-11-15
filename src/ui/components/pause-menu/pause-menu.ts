@@ -1,6 +1,7 @@
 /** Keyboard pause/resume publishes bus events; gameplay remains the game's responsibility. */
 import { menuButton, trapMenuFocus } from '../../menu-dom';
 import { icon } from '../../icons';
+import { menuSelection } from '../start-menu/start-menu-state';
 import { t } from '../../strings';
 import type { UiComponent } from '../../types';
 import { createUiActions } from '../../ui-actions';
@@ -43,6 +44,13 @@ export const pauseMenu: UiComponent = {
     const onKey = (event: KeyboardEvent): void => {
       if (actions.settingsOpen.get() || actions.calibrationFrom.get() !== null) return;
       if (stores.snapshot.get().phase === 'paused') trapMenuFocus(panel, event);
+      if (stores.snapshot.get().phase === 'paused' && !panel.hidden && ['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.code)
+        && event.code !== stores.settings.get().keys.pause) {
+        event.preventDefault();
+        const available = [resume, restart, settings, mainMenu, recalibrate].filter((button) => !button.hidden && !button.disabled);
+        available[menuSelection(available.indexOf(document.activeElement as HTMLButtonElement), available.length, event.code)]?.focus();
+        return;
+      }
       if (event.repeat || ![stores.settings.get().keys.pause, 'Escape', 'KeyP'].includes(event.code) || event.key === 'Tab') return;
       const phase = stores.snapshot.get().phase;
       if (phase !== 'paused' && phase !== 'playing' && phase !== 'ember') return;

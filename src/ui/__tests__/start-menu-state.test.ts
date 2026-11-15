@@ -1,6 +1,6 @@
 /** Start menu rules: shown only before the climb, steps aside for settings, Enter starts Play. */
 import { describe, expect, it } from 'vitest';
-import { canContinue, menuSelection, startMenuVisible, startsOnKey, type StartKeyInput } from '../components/start-menu/start-menu-state';
+import { canContinue, menuSelection, startStalled, startMenuVisible, startsOnKey, type StartKeyInput } from '../components/start-menu/start-menu-state';
 import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state';
 
 const key = (over: Partial<StartKeyInput> = {}): StartKeyInput =>
@@ -53,5 +53,12 @@ describe('startsOnKey', () => {
     expect(startsOnKey(key({ phase: 'playing' }))).toBe(false);
     expect(startsOnKey(key({ phase: 'paused' }))).toBe(false);
     expect(startsOnKey(key({ settingsOpen: true }))).toBe(false);
+  });
+});
+
+describe('startStalled', () => {
+  it('unlocks the menu only when the start request left the phase in menu', () => {
+    expect(startStalled('menu')).toBe(true);
+    for (const phase of ['playing', 'calibrating', 'paused'] as const) expect(startStalled(phase)).toBe(false);
   });
 });

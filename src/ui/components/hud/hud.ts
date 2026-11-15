@@ -2,14 +2,13 @@
 import { SIGNAL_CONFIG } from '../../../config/signal.config';
 import { t, STRINGS, type StringKey } from '../../strings';
 import type { UiComponent } from '../../types';
-import { hudState } from './hud-state';
+import { hudEssentials, hudState, percent, persistsBest, waxToastKey } from './hud-state';
 import { stepNeedle } from './needle';
 import './hud.css';
 import { HUD_WORLD_PIXELS_PER_METRE } from '../../../config/ui.config';
 import { icon } from '../../icons';
 import { navigationView } from './navigation';
 import { WAX_CONFIG } from '../../../config/wax.config';
-import { waxBenefit01 } from '../../../config/lantern-fuel.config';
 
 /** How quickly the compass needle turns toward its target (time constant, ms). */
 const NEEDLE_TAU_MS = 350;
@@ -78,8 +77,9 @@ export const hud: UiComponent = {
     panel.className = 'hud__context';
     const layout = document.createElement('div'); layout.className = 'hud'; layout.append(metrics, pause, checkpoint, panel); root.append(layout);
     let savedBestPx = bestPx;
+    const persist = persistsBest(location.search);
     const saveBest = (): void => {
-      if (bestPx <= savedBestPx) return;
+      if (!persist || bestPx <= savedBestPx) return;
       try { localStorage.setItem('lighten.height-best-px.v1', String(bestPx)); savedBestPx = bestPx; } catch { /* Session-only best. */ }
     };
     const onPageHide = (): void => saveBest();
@@ -90,7 +90,7 @@ export const hud: UiComponent = {
     };
     const render = (): void => {
       const snapshot = stores.snapshot.get();
-      text(fuelMetric, `${Math.round((snapshot.lanternFuel01 ?? 1) * 100)}%`);
+      text(fuelMetric, `${percent(snapshot.lanternFuel01 ?? 1)}%`);
       const navigation = snapshot.navigation;
       const nav = navigationView(navigation, HUD_WORLD_PIXELS_PER_METRE);
       const heightPx = (nav?.heightMetres ?? 0) * HUD_WORLD_PIXELS_PER_METRE;
@@ -130,7 +130,15 @@ export const hud: UiComponent = {
       progress.hidden = !flags.showEmber || !snapshot.ember.active;
       composure.hidden = !flags.showSignal;
       prompt.hidden = !view.prompt;
-      panel.hidden = !flags.showStageDetails || (!flags.showStatus && !flags.showEmber && !flags.showSignal && !view.prompt);
+      if (!flags.showStageDetails) {
+        const essential = hudEssentials(snapshot);
+        stage.hidden = status.hidden = quality.hidden = wax.hidden = composure.hidden = prompt.hidden = true;
+        lesson.hidden = lesson.hidden || !essential.lesson;
+        ember.hidden = ember.hidden || !essential.ember;
+        progress.hidden = progress.hidden || !essential.progress;
+      }
+      panel.hidden = flags.showStageDetails ? !flags.showStatus && !flags.showEmber && !flags.showSignal && !view.prompt
+        : lesson.hidden && ember.hidden && progress.hidden;
     };
     render();
     const cleanups = [stores.snapshot.subscribe(render), stores.settings.subscribe(render),
@@ -138,8 +146,8 @@ export const hud: UiComponent = {
     cleanups.push(bus.on('wax_collected', (event) => {
       clearTimeout(rewardTimer);
       const actual = signalState.valid && signalState.mode !== 'fixed' ? signalState.intensity : 0.2;
-      text(reward, `${t(waxBenefit01(actual) === 0 ? 'wax.suppressed' : 'wax.pickup')} · ${event.collected}${event.total === null ? '' : `/${event.total}`}`);
-      reward.hidden = !stores.settings.get().hud.showStatus;
+      text(reward, `${t(waxToastKey(actual))} · ${event.collected}${event.total === null ? '' : `/${event.total}`}`);
+      reward.hidden = !stores.settings.get().hud.showStatus || !stores.settings.get().hud.showStageDetails;
       rewardTimer = setTimeout(() => { reward.hidden = true; }, WAX_CONFIG.toastMs);
     }));
     cleanups.push(bus.on('land', saveBest));
