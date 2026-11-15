@@ -1,6 +1,6 @@
 /* A separate forest launch screen using existing local assets, fonts and interface tokens. */
 .launch-screen {
-  position: fixed; inset: 0; z-index: 2; box-sizing: border-box; overflow: auto;
+  position: absolute; inset: 0; z-index: 2; box-sizing: border-box; overflow: auto;
   display: flex; flex-direction: column; justify-content: flex-start;
   min-height: 100%; padding: var(--launch-spacing);
   color: var(--color-text); background: var(--launch-floor); isolation: isolate;
@@ -41,12 +41,12 @@
 .launch-source { margin: 0; display: flex; gap: var(--space-2); align-items: center; }
 .launch-source::before { content: ''; width: 6px; height: 6px; background: var(--color-warn); border-radius: 50%; }
 .launch-source[data-ready='true']::before { background: var(--color-ok); }
-.launch-credits { width: min(640px, 100%); max-width: none; max-height: calc(100dvh - 150px); overflow: auto; margin: auto; font-size: var(--text-md); line-height: 1.55; }
+.launch-credits { width: min(640px, 100%); max-width: none; max-height: calc(100cqh - 150px); overflow: auto; margin: auto; font-size: var(--text-md); line-height: 1.55; }
 .launch-credits dl { display: grid; gap: var(--space-2); margin: 0; }
 .launch-credits dt { color: var(--color-accent); margin-top: var(--space-2); }
 .launch-credits dd { margin: 0; color: var(--color-text-dim); }
 /* Settings remains its existing component, layered over the same menu scenery. */
-#ui[data-phase='menu'] [data-component='settings-panel'] { z-index: 3; position: relative; max-height: calc(100dvh - 40px); overflow: auto; }
+#ui[data-phase='menu'] [data-component='settings-panel'] { z-index: 3; position: relative; max-height: calc(100cqh - 40px); overflow: auto; }
 #ui[data-phase='menu'] [data-component='source-badge'] { visibility: hidden; }
 .launch-screen[data-reduced-motion='true'] *, .launch-screen[data-reduced-motion='true'] { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) { .launch-screen, .launch-screen * { animation: none !important; transition: none !important; } }

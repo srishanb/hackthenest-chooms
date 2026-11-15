@@ -17,10 +17,22 @@ body {
   height: 100vh;
 }
 
-#game,
+#game {
+  position: absolute;
+  inset: 0;
+}
+
+/* The UI layer is exactly the scaled canvas rectangle (Phaser FIT, centred): the largest box of the
+   game's aspect ratio that fits the window. --game-width and --game-height are set from the game
+   config in src/main.ts. Everything in #ui is positioned inside this frame, never the window. */
 #ui {
   position: absolute;
   inset: 0;
+  margin: auto;
+  width: min(100vw, calc(100vh * var(--game-width, 16) / var(--game-height, 9)));
+  height: min(100vh, calc(100vw * var(--game-height, 9) / var(--game-width, 16)));
+  overflow: hidden;
+  container-type: size;
 }
 
 #ui {
