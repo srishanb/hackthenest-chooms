@@ -52,6 +52,9 @@ const persistedStages = readLayouts(browserStorage, layoutKey, SECTIONS);
 const runtimeStages = testing ? readLayouts(draftStorage, STAGE_DRAFT_KEY, persistedStages) : persistedStages;
 const testIndex = Math.max(0, Math.min(runtimeStages.length - 1, Number(query.get('editorTest')) || 0));
 function gameBoot(): void {
+const frame = document.documentElement.style;
+frame.setProperty('--game-width', String(GAME_CONFIG.view.width));
+frame.setProperty('--game-height', String(GAME_CONFIG.view.height));
 const bus = createEventBus();
 
 const stores: Stores = {
