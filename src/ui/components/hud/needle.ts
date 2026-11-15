@@ -13,7 +13,9 @@ export function shortestTurn(from: number, to: number): number {
 
 /** Ease `current` toward `target` with time constant `tauMs`. Reduced motion snaps. */
 export function stepNeedle(current: number, target: number, dtMs: number, tauMs: number, reducedMotion = false): number {
+  const from = Number.isFinite(current) ? current : 0;
+  if (!Number.isFinite(target) || !Number.isFinite(dtMs)) return from;
   if (reducedMotion || tauMs <= 0) return target;
   const blend = 1 - Math.exp(-Math.max(0, dtMs) / tauMs);
-  return current + shortestTurn(current, target) * blend;
+  return from + shortestTurn(from, target) * blend;
 }
