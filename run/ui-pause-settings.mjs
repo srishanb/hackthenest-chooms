@@ -13,14 +13,14 @@ export default defineFeature(import.meta.url, {
   steps: [
     'Click the game, start walking, and press Escape.',
     'Use only the keyboard (Tab, Enter, arrow keys) to open Settings.',
-    'Drag "Effect strength" to 0, go back, resume, and press 2 (jaw clench) a few times.',
+    'Set "Effect strength" to 0%, choose "Back to pause", then "Resume climb", and watch the light for a few seconds.',
     'Pause again. Under "Key bindings", change "Charge jump" to W. Resume and jump with W.',
     'Reload the page and check the settings are still as you left them. Then set them back.',
   ],
   expect: [
     'Escape shows "Climb paused" and the character stops; "Resume climb" continues exactly where you were.',
     'Every control can be reached and changed without a mouse.',
-    'With effect strength 0 the light no longer follows the signal, but it is still lit.',
+    'With effect strength 0% the light stops following the signal and holds one size, but it is still lit.',
     'A remapped key works at once, with no reload, and survives a reload.',
   ],
 });

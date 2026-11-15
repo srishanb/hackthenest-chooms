@@ -12,7 +12,7 @@ export default defineFeature(import.meta.url, {
   query: '?algo=passthrough-v0&mode=fixed',
   steps: [
     'Click the game and press ` to open the overlay. It reads mode fixed.',
-    'Press 2 (jaw clench) many times and watch "intensity" and the light.',
+    'Watch "intensity" and the light for ten seconds; press 2 (jaw clench) a few times as well.',
     'Press 1 (alpha boost on) and watch "resting".',
   ],
   expect: [
