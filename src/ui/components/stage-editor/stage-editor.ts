@@ -6,7 +6,7 @@ import './stage-editor.css';
 export interface EditorDeps {
   stages: SectionData[]; originals: readonly SectionData[];
   render(parent: HTMLElement, stages: SectionData[], index: number, selected: string, changed: (id: string, done: boolean) => void): () => void;
-  save(stages: SectionData[]): void; test(stages: SectionData[], index: number): void;
+  save(stages: SectionData[]): Promise<string>; test(stages: SectionData[], index: number): void;
   back(): void;
 }
 export function mountStageEditor(root: HTMLElement, deps: EditorDeps): void {
@@ -17,7 +17,16 @@ export function mountStageEditor(root: HTMLElement, deps: EditorDeps): void {
   const top = document.createElement('header'), left = document.createElement('aside'), center = document.createElement('main'), right = document.createElement('aside');
   const status = document.createElement('p'); status.setAttribute('role', 'status');
   const attempt = (action: () => void) => { try { action(); } catch (error) { status.textContent = String(error); } };
-  top.append(menuButton(t('editor.save'), () => attempt(() => { deps.save(stages); status.textContent = t('editor.saved'); })),
+  const saveButton = menuButton(t('editor.save'), () => {
+    if (saveButton.disabled) return;
+    saveButton.disabled = true; status.textContent = t('editor.publishing');
+    void deps.save(structuredClone(stages)).then(url => {
+      status.textContent = t('editor.saved');
+      const link = document.createElement('a'); link.href = url; link.textContent = t('editor.openPr');
+      link.target = '_blank'; link.rel = 'noopener noreferrer'; status.append(' ', link);
+    }).catch(error => { status.textContent = String(error); }).finally(() => { saveButton.disabled = false; });
+  });
+  top.append(saveButton,
     menuButton(t('editor.test'), () => attempt(() => deps.test(stages, index))),
     menuButton(t('editor.reset'), () => { stages[index] = structuredClone(deps.originals[index]!); selected = stages[index]!.platforms[0]!.id; status.textContent = t('editor.resetNotice'); refresh(); }),
     menuButton(t('editor.back'), deps.back), status);

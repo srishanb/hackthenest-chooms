@@ -1,7 +1,7 @@
 /** Stage count and boundaries guard the authored continuous journey without duplicating the physics checker. */
 import { expect, it } from 'vitest';
 import { GAME_CONFIG } from '../../config/game.config';
-import { SECTIONS } from '../sections';
+import { DEFAULT_SECTIONS as SECTIONS } from '../sections/defaults';
 
 it('has five sequential ten-platform stages with one landing target each and no finish boxes', () => {
   expect(SECTIONS.map((section) => section.stage?.kind)).toEqual(['tutorial', 'normal', 'windy', 'snow', 'snow-windy']);
