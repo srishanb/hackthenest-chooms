@@ -46,4 +46,19 @@ describe('preset controller', () => {
     expect(error).toHaveBeenCalled();
     error.mockRestore();
   });
+
+  it('a slow preset load that was superseded by the simulator does not take over', async () => {
+    let release: (text: string) => void = () => {};
+    const fetchText = vi.fn((url: string) =>
+      url === `${PRESET_BASE_URL}/manifest.json` ? Promise.resolve(manifest) : new Promise<string>((resolve) => (release = resolve)));
+    const { controller, deps, startFrames } = harness({ fetchText });
+    const slow = controller.select({ kind: 'preset', id: 'a' });
+    await vi.waitFor(() => expect(fetchText).toHaveBeenCalledTimes(2));
+    await controller.select({ kind: 'sim' });
+    release(presetText);
+    await slow;
+    expect(startFrames).not.toHaveBeenCalled();
+    expect(deps.setBaselines).not.toHaveBeenCalled();
+    expect(controller.getSelection()).toEqual({ kind: 'sim' });
+  });
 });
