@@ -27,15 +27,23 @@ it('starts once after Play, uses actual clip duration, and ignores menu continua
   expect(s.events.filter(e=>e.type==='narrator_line')).toMatchObject([{lineId:'intro-1',durationMs:5000}]);
   s.sources[0]!.onended?.();s.bus.emit({type:'start'});s.player.tick();expect(s.sources).toHaveLength(1);s.player.dispose();
 });
-it('parks on pause and precision, resumes at exact audio offset with refreshed captions',async()=>{
+it('parks on pause, resumes at exact audio offset, and keeps speaking through jumps and Ember recovery',async()=>{
   const s=setup();await s.player.ready;s.start();s.raw.currentTime=1.5;
   s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'paused'});expect(s.sources[0]!.stop).toHaveBeenCalledTimes(1);
   s.raw.currentTime=8;s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'playing'});
   expect(s.sources[1]!.start).toHaveBeenCalledWith(8,1.5);
   expect(s.events.at(-1)).toMatchObject({type:'narrator_line',durationMs:3500});
-  s.bus.emit({type:'precision_window',active:true});expect(s.sources[1]!.stop).toHaveBeenCalledTimes(1);
+  s.bus.emit({type:'jump',charge01:0.8});
+  s.bus.emit({type:'precision_window',active:true});
   s.player.tick();expect(s.sources).toHaveLength(2);
-  s.bus.emit({type:'precision_window',active:false});expect(s.sources).toHaveLength(3);s.player.dispose();
+  expect(s.sources[1]!.stop).not.toHaveBeenCalled();
+  s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'ember'});
+  expect(s.sources[1]!.stop).not.toHaveBeenCalled();
+  s.bus.emit({type:'precision_window',active:false});
+  s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'playing'});
+  expect(s.sources).toHaveLength(2);
+  s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'paused'});
+  expect(s.sources[1]!.stop).toHaveBeenCalledTimes(1);s.player.dispose();
 });
 it('honors global and repeat cooldowns on restart, with no overlap',async()=>{
   const s=setup();await s.player.ready;s.start();s.raw.currentTime=1;s.bus.emit({type:'run_restart'});
@@ -64,4 +72,13 @@ it('changes voice-bank eligibility without overlapping the old voice',async()=>{
   expect(s.player.getActiveLine()).toBe('intro-2');
   s.player.setVoice('intro-1');expect(s.sources[0]!.stop).toHaveBeenCalledTimes(1);
   s.player.preview();expect(s.player.getActiveLine()).toBe('intro-1');s.player.dispose();
+});
+
+it('mute remains an explicit interruption and resumes the existing speech',async()=>{
+  const s=setup();await s.player.ready;s.start();s.raw.currentTime=2;
+  const settings=s.stores.settings.get();
+  s.stores.settings.set({...settings,volumes:{...settings.volumes,narrator:0}});
+  expect(s.sources[0]!.stop).toHaveBeenCalledTimes(1);
+  s.raw.currentTime=5;s.stores.settings.set(settings);
+  expect(s.sources[1]!.start).toHaveBeenCalledWith(5,2);s.player.dispose();
 });
