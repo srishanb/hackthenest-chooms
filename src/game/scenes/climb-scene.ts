@@ -17,7 +17,11 @@ import { createDarkness, minCoveringRadius, updateDarkness } from '../effects/da
 import { neutralFrame, stepEffects } from '../effects/effects-engine';
 import { createPlayer, stepPlayer } from '../player/movement';
 import type { PlatformBox, PlayerState } from '../player/types';
+import { sectionAt } from '../world/bounds';
 import { landingEvents } from '../world/fall-tracker';
+import { altitude01, bodyInArea, findFinish } from '../world/finish';
+import { createPhaseController, type PhaseController } from '../world/phase-controller';
+import { writeSnapshot } from './snapshot-writer';
 import type { SaveStorage } from '../save';
 import { createRefugeController } from '../world/refuge';
 import { CLIMB_SCENE_KEY } from './boot-scene';
@@ -45,6 +49,7 @@ export class ClimbScene extends Phaser.Scene {
   private state!: PlayerState;
   private accumulatorMs = 0;
   private precisionActive = false;
+  private phase!: PhaseController;
   private refuges!: ReturnType<typeof createRefugeController>;
   private player!: Phaser.GameObjects.Rectangle;
   private darkness!: Phaser.GameObjects.Image;
@@ -99,11 +104,17 @@ export class ClimbScene extends Phaser.Scene {
     this.input.keyboard?.on('keyup', (event: KeyboardEvent) => this.pressed.delete(event.code));
     this.game.events.on(Phaser.Core.Events.BLUR, () => this.pressed.clear());
 
+    this.phase = createPhaseController(this.deps.bus, stores.snapshot, () => {
+      this.pressed.clear();
+      // The refuge controller clears the save when it hears the `finish` event this emits.
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.phase.dispose());
+
     stores.effects.set(neutralFrame(effectsTable));
   }
 
   override update(_time: number, deltaMs: number): void {
-    const { stores, composure, gameConfig, effectsTable, bus, emberConfig } = this.deps;
+    const { stores, composure, gameConfig, effectsTable, bus, emberConfig, sections } = this.deps;
     const settings = stores.settings.get();
     const stepMs = 1000 / gameConfig.stepHz;
     const input = {
@@ -112,7 +123,8 @@ export class ClimbScene extends Phaser.Scene {
       jump: this.pressed.has(settings.keys.jump),
     };
 
-    this.accumulatorMs = Math.min(this.accumulatorMs + deltaMs, stepMs * MAX_STEPS_PER_FRAME);
+    // Only the 'playing' phase steps; pause, ember and finished freeze the body.
+    this.accumulatorMs = this.phase.isRunning() ? Math.min(this.accumulatorMs + deltaMs, stepMs * MAX_STEPS_PER_FRAME) : 0;
     while (this.accumulatorMs >= stepMs) {
       this.accumulatorMs -= stepMs;
       const out = stepPlayer(this.state, input, this.platforms, gameConfig.view.width, gameConfig, stepMs);
@@ -122,11 +134,17 @@ export class ClimbScene extends Phaser.Scene {
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).
       if (out.events.landed) for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
     }
+    const finish = findFinish(sections);
+    if (finish && this.phase.isRunning() && bodyInArea(this.state.x, this.state.y, finish)) this.phase.finish();
     if (this.state.charging !== this.precisionActive) {
       this.precisionActive = this.state.charging;
       bus.emit({ type: 'precision_window', active: this.precisionActive });
     }
     this.player.setPosition(this.state.x, this.state.y);
+    writeSnapshot(stores.snapshot, {
+      sectionId: sectionAt(sections, this.state.y + gameConfig.player.height / 2),
+      altitude01: altitude01(sections, this.state.y),
+    });
 
     const signal = composure.getState();
     const frame = stepEffects(
