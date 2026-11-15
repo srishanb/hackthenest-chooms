@@ -28,6 +28,7 @@ Owner: Ali. Search here before adding a function.
 | `getPlatformType`, `PlatformType` | `world/platform-types/registry.ts` | Platform capabilities, including whether a surface is a safe stationary anchor. |
 | `STATIC_PLATFORM` | `world/platform-types/static.ts` | Stationary-platform capabilities. |
 | `drawWorld` | `world/world-view.ts` | Render validated collision geometry and authored zones. |
+| `platformsAt`, `windAt` | `world/environment.ts` | Deterministic moving-platform positions/deltas and local gusts, shared with the level checker. |
 
 `tools/levels/check-levels.ts` runs `checkReachability` from `tools/levels/reach.ts` using the same `stepPlayer` as gameplay.
 Recovery keeps a marker placed after each return. Pickup is required before placing it elsewhere.

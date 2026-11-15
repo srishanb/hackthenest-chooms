@@ -24,7 +24,7 @@ export function createWaxView(scene: Scene, wax: ReturnType<typeof createWaxRewa
       if (running) animationMs += Math.max(0, dtMs);
       const hover = reduceMotion ? 0 : Math.sin(animationMs / WAX_CONFIG.hoverPeriodMs * Math.PI * 2) * WAX_CONFIG.hoverPx;
       for (const { drop, glow, body, shine } of marks) {
-        const visible = !wax.isCollected(drop.id);
+        const visible = wax.isActive(drop.id);
         glow.setVisible(visible).setPosition(drop.x, drop.y + hover);
         body.setVisible(visible).setPosition(drop.x, drop.y + hover);
         shine.setVisible(visible).setPosition(drop.x - 2, drop.y - 3 + hover);

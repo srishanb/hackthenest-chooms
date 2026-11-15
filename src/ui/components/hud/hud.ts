@@ -1,6 +1,6 @@
 /** Read-only ember and signal HUD. Removing it never changes game or signal state. */
 import { SIGNAL_CONFIG } from '../../../config/signal.config';
-import { t } from '../../strings';
+import { t, STRINGS, type StringKey } from '../../strings';
 import type { UiComponent } from '../../types';
 import { hudState } from './hud-state';
 import './hud.css';
@@ -19,6 +19,7 @@ export const hud: UiComponent = {
     const quality = document.createElement('div');
     const ember = document.createElement('div');
     const wax = document.createElement('div'); wax.className = 'hud__wax';
+    const lesson = document.createElement('div'); lesson.className = 'hud__lesson';
     const reward = document.createElement('div'); reward.className = 'hud__wax-reward';
     reward.setAttribute('role', 'status'); reward.setAttribute('aria-live', 'polite'); reward.hidden = true;
     let rewardTimer: ReturnType<typeof setTimeout> | undefined;
@@ -29,7 +30,7 @@ export const hud: UiComponent = {
     const prompt = document.createElement('div');
     prompt.className = 'hud__prompt';
     prompt.setAttribute('role', 'status');
-    panel.append(status, quality, ember, progress, wax, reward, composure, prompt);
+    panel.append(status, quality, lesson, ember, progress, wax, reward, composure, prompt);
     root.append(panel);
     let signalState = signal.reader.getState();
     const text = (element: HTMLElement, value: string): void => {
@@ -39,6 +40,9 @@ export const hud: UiComponent = {
       const snapshot = stores.snapshot.get();
       const flags = stores.settings.get().hud;
       const view = hudState(snapshot, signalState, SIGNAL_CONFIG.staleAfterMs);
+      const lessonKey = snapshot.lessonKey;
+      text(lesson, lessonKey && Object.hasOwn(STRINGS, lessonKey) ? t(lessonKey as StringKey) : '');
+      lesson.hidden = !flags.showStatus || !lessonKey;
       text(status, t(view.statusKey));
       text(quality, `${t('hud.quality')} ${view.qualityPercent}%`);
       const cooldownSeconds = Math.ceil((snapshot.ember.cooldownRemainingMs ?? 0) / 1000);

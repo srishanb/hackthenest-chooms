@@ -10,7 +10,7 @@ import * as Phaser from 'phaser';
 import type { Stores } from '../../shared/contracts/app';
 import type { ComposureReader } from '../../shared/contracts/composure';
 import type { EmberConfig, GameConfig } from '../../shared/contracts/config';
-import type { SectionData } from '../../shared/contracts/content';
+import type { PlatformData, SectionData } from '../../shared/contracts/content';
 import type { EffectRule } from '../../shared/contracts/effects';
 import type { EventBus } from '../../shared/contracts/events';
 import { createDarkness, minCoveringRadius, updateDarkness } from '../effects/darkness';
@@ -31,6 +31,7 @@ import type { SaveStorage } from '../save';
 import { createRefugeController } from '../world/refuge';
 import { loadSections } from '../world/section-loader';
 import { drawWorld } from '../world/world-view';
+import { platformsAt, windAt } from '../world/environment';
 import { CLIMB_SCENE_KEY } from './boot-scene';
 
 export interface ClimbSceneDeps {
@@ -51,6 +52,9 @@ const MAX_STEPS_PER_FRAME = 8;
 export class ClimbScene extends Phaser.Scene {
   private controls!: ReturnType<typeof createKeyboardInput>;
   private platforms: PlatformBox[] = [];
+  private authoredPlatforms: PlatformData[] = [];
+  private worldView!: ReturnType<typeof drawWorld>;
+  private worldTimeMs = 0;
   private state!: PlayerState;
   private accumulatorMs = 0;
   private precisionActive = false;
@@ -75,8 +79,9 @@ export class ClimbScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#27324a');
 
     const world = loadSections(sections, gameConfig.view.width);
-    this.platforms = world.platforms;
-    drawWorld(this, world);
+    this.authoredPlatforms = world.platforms;
+    this.platforms = platformsAt(world.platforms, 0);
+    this.worldView = drawWorld(this, world);
     this.wax = createWaxRewards({ platforms: world.platforms, gameConfig,
       bus: this.deps.bus, snapshot: stores.snapshot, storage: this.deps.storage });
     this.waxView = createWaxView(this, this.wax, this.deps.bus);
@@ -148,6 +153,7 @@ export class ClimbScene extends Phaser.Scene {
     const offRestart = this.deps.bus.on('run_restart', () => {
       this.wax.reset();
       const spawn = this.ember.restart();
+      this.worldTimeMs = 0;
       this.state = teleportPlayer(spawn.x, spawn.y); clearInput(); this.accumulatorMs = 0;
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { offAssist(); offCancel(); offRestart(); });
@@ -176,7 +182,10 @@ export class ClimbScene extends Phaser.Scene {
     this.accumulatorMs = this.phase.isRunning() ? Math.min(this.accumulatorMs + deltaMs, stepMs * MAX_STEPS_PER_FRAME) : 0;
     while (this.accumulatorMs >= stepMs) {
       this.accumulatorMs -= stepMs;
-      const out = stepPlayer(this.state, this.controls.read(), this.platforms, gameConfig.view.width, gameConfig, stepMs);
+      this.worldTimeMs += stepMs;
+      this.platforms = platformsAt(this.authoredPlatforms, this.worldTimeMs, stepMs);
+      const out = stepPlayer(this.state, this.controls.read(), this.platforms, gameConfig.view.width, gameConfig, stepMs,
+        { windAccelerationX: windAt(sections, this.state, this.worldTimeMs) });
       this.state = out.state;
       this.wax.update(this.state, stepMs);
       this.refuges.update(this.state);
@@ -196,8 +205,14 @@ export class ClimbScene extends Phaser.Scene {
     }
     this.player.setPosition(this.state.x, this.state.y);
     this.waxView.update(deltaMs, this.phase.isRunning(), settings.reducedMotion);
+    this.worldView.update(this.platforms, this.worldTimeMs, settings.reducedMotion);
+    const sectionId = sectionAt(sections, this.state.y + gameConfig.player.height / 2);
+    const lesson = sections.find((section) => section.id === sectionId)?.lesson;
+    if (lesson && stores.snapshot.get().lessonKey !== `lesson.${lesson}`) {
+      stores.snapshot.set({ ...stores.snapshot.get(), lessonKey: `lesson.${lesson}` });
+    }
     writeSnapshot(stores.snapshot, {
-      sectionId: sectionAt(sections, this.state.y + gameConfig.player.height / 2),
+      sectionId,
       altitude01: altitude01(sections, this.state.y),
     });
 

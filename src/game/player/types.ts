@@ -14,6 +14,9 @@ export interface PlayerInput {
 
 /** A one-way platform: solid from above only. Centre and size in world px, y grows downward. */
 export interface PlatformBox {
+  type?: string;
+  dx?: number;
+  dy?: number;
   id: string;
   x: number;
   y: number;
@@ -22,6 +25,8 @@ export interface PlatformBox {
 }
 
 export interface PlayerState {
+  /** Environmental drift, independent of input and never driven by the signal. */
+  windVx?: number;
   /** Centre of the body in world px. */
   x: number;
   y: number;

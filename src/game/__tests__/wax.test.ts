@@ -21,11 +21,43 @@ function setup(storage: SaveStorage = createMemorySaveStorage()) {
   const snapshot = createStore({ ...INITIAL_GAME_SNAPSHOT });
   const bus = createEventBus(() => 0); const events: GameEvent[] = [];
   bus.onAny((event) => events.push(event));
-  const wax = createWaxRewards({ platforms, gameConfig: GAME_CONFIG, snapshot, bus, storage });
+  const wax = createWaxRewards({ platforms, gameConfig: GAME_CONFIG, snapshot, bus, storage, random: () => 0.5 });
   return { wax, snapshot, events, storage };
 }
 
 describe('wax collectibles', () => {
+  it('randomizes a sparse set while exposing only one active collectible', () => {
+    for (const randomValue of [0, 0.5, 0.99]) {
+      const snapshot = createStore({ ...INITIAL_GAME_SNAPSHOT });
+      const wax = createWaxRewards({ platforms, gameConfig: GAME_CONFIG, snapshot, bus: createEventBus(() => 0), random: () => randomValue });
+      expect(snapshot.get().wax?.total).toBe(Math.min(2, 1 + Math.floor(randomValue * 3)));
+      expect(wax.drops.filter((drop) => wax.isActive(drop.id))).toHaveLength(1);
+      const inactive = wax.drops.find((drop) => !wax.isActive(drop.id));
+      if (inactive) { wax.update(inactive, 0); expect(snapshot.get().wax?.collected).toBe(0); }
+      while (wax.drops.some((drop) => wax.isActive(drop.id))) {
+        wax.update(wax.drops.find((drop) => wax.isActive(drop.id))!, 0);
+        expect(wax.drops.filter((drop) => wax.isActive(drop.id)).length).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  it('persists the random set before the first pickup so reloading cannot reroll it', () => {
+    const first = setup();
+    const snapshot = createStore({ ...INITIAL_GAME_SNAPSHOT });
+    const reload = createWaxRewards({ platforms, gameConfig: GAME_CONFIG, snapshot, bus: createEventBus(() => 0), storage: first.storage, random: () => 0 });
+    expect(snapshot.get().wax?.total).toBe(2);
+    expect(reload.drops.filter((drop) => reload.isActive(drop.id))).toEqual(first.wax.drops.filter((drop) => first.wax.isActive(drop.id)));
+  });
+
+  it('caps longer courses at three rewards, on safe stationary ledges only', () => {
+    const snapshot = createStore({ ...INITIAL_GAME_SNAPSHOT });
+    const more = Array.from({ length: 8 }, (_, index) => ({ ...platforms[1]!, id: `extra-${index}`, y: 100 - index * 100 }));
+    const wax = createWaxRewards({ platforms: [...platforms, ...more], gameConfig: GAME_CONFIG, snapshot, bus: createEventBus(() => 0), random: () => 0.99 });
+    expect(snapshot.get().wax?.total).toBe(3);
+    const unsafe = makeWaxDrops([{ ...platforms[1]!, type: 'slippery' }, { ...platforms[2]!, type: 'moving' }], GAME_CONFIG);
+    expect(unsafe).toEqual([]);
+    expect(wax.drops.filter((drop) => wax.isActive(drop.id))).toHaveLength(1);
+  });
   it('places an optional goal on safe ledges, not the starting floor or duplicate surfaces', () => {
     const drops = makeWaxDrops([...platforms, { ...platforms[1]!, id: 'alias' },
       { ...platforms[2]!, id: 'wind', type: 'wind' }], GAME_CONFIG);
