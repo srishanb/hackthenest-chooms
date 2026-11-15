@@ -14,6 +14,9 @@ import { t } from '../../strings';
 import type { UiComponent } from '../../types';
 import './debug-overlay.css';
 
+/** A live board with no frame for this long is shown as not connected. */
+const LIVE_STALE_MS = 2000;
+
 const fixed = (value: number, digits = 2): string => value.toFixed(digits);
 const optionalFixed = (value: number | null, digits = 2): string => (value === null ? 'n/a' : fixed(value, digits));
 
@@ -65,7 +68,17 @@ export const debugOverlay: UiComponent = {
     downloadBtn.className = 'debug-overlay__btn';
     downloadBtn.textContent = t('debug.downloadRecording');
 
-    actions.append(calibrateActiveBtn, calibrateRestingBtn, downloadBtn);
+    const connectBtn = document.createElement('button');
+    connectBtn.type = 'button';
+    connectBtn.className = 'debug-overlay__btn';
+    connectBtn.textContent = t('debug.connectBoard');
+
+    const disconnectBtn = document.createElement('button');
+    disconnectBtn.type = 'button';
+    disconnectBtn.className = 'debug-overlay__btn';
+    disconnectBtn.textContent = t('debug.disconnectBoard');
+
+    actions.append(connectBtn, disconnectBtn, calibrateActiveBtn, calibrateRestingBtn, downloadBtn);
 
     const status = document.createElement('div');
     status.className = 'debug-overlay__status';
@@ -125,6 +138,27 @@ export const debugOverlay: UiComponent = {
     });
     downloadBtn.addEventListener('click', downloadCurrentRecording);
 
+    // connect() must be called straight from the click: Web Bluetooth refuses without a user gesture.
+    connectBtn.addEventListener('click', () => {
+      status.dataset.tone = 'ok';
+      status.textContent = t('debug.boardConnecting');
+      signal.control.connect('LIVE_EEG').then(
+        () => {
+          status.dataset.tone = 'ok';
+          status.textContent = t('debug.boardConnected');
+        },
+        (error: unknown) => {
+          status.dataset.tone = 'bad';
+          status.textContent = error instanceof Error ? error.message : String(error);
+        },
+      );
+    });
+    disconnectBtn.addEventListener('click', () => {
+      signal.control.disconnect();
+      status.dataset.tone = 'ok';
+      status.textContent = t('debug.boardDisconnected');
+    });
+
     const render = (state: ComposureState): void => {
       if (panel.hidden) return;
       const diagnostics = signal.getDiagnostics();
@@ -145,7 +179,7 @@ export const debugOverlay: UiComponent = {
         `${'resting'.padEnd(labelWidth)} ${fixed(state.resting)}  active=${state.restingActive}`,
         `${'quality'.padEnd(labelWidth)} ${fixed(state.quality)}  contact=${optionalFixed(diagnostics.contactGood01)}  loss=${optionalFixed(diagnostics.packetLoss01)}`,
         `${'validity'.padEnd(labelWidth)} valid=${state.valid}  held=${state.held}`,
-        `${'sample age'.padEnd(labelWidth)} ${fixed(state.sampleAgeMs, 0)} ms`,
+        `${'sample age'.padEnd(labelWidth)} ${fixed(state.sampleAgeMs, 0)} ms${state.source === 'LIVE_EEG' && state.sampleAgeMs > LIVE_STALE_MS ? `  (${t('debug.boardNotConnected')})` : ''}`,
         `${'calibrated'.padEnd(labelWidth)} ${state.calibrated}`,
         ...featureEntries.map(([name, value]) => `feat ${name.padEnd(diagKeyWidth)} ${fixed(value, 3)}`),
         ...thresholdEntries.map(([name, value]) => `thr  ${name.padEnd(diagKeyWidth)} ${fixed(value, 3)}`),

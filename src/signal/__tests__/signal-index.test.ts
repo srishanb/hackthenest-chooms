@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SIGNAL_CONFIG } from '../../config/signal.config';
 import { createEventBus } from '../../shared/bus';
 import type { GameEvent } from '../../shared/contracts/events';
-import { createSignal } from '../index';
+import { createSignal, type SignalDeps } from '../index';
+import type { AdapterCallbacks } from '../sources/pieeg-adapter';
 import { createHeader, parseRecording, serializeRecording } from '../sources/recording-format';
 import { createReplaySource } from '../sources/replay-source';
 import { makeSequence } from './fixtures/make-fixture';
@@ -47,9 +48,44 @@ describe('createSignal', () => {
     expect(signal.reader.getState().mode).toBe('adaptive');
   });
 
-  it('refuses LIVE_EEG until P3', async () => {
-    const signal = createSignal(createEventBus(), SIGNAL_CONFIG, { search: '?source=replay&replay=run.jsonl', fetchText: async () => recordingText() });
-    await expect(signal.control.connect('LIVE_EEG')).rejects.toThrow(/P3/);
+  it('?source=live starts nothing and shows the live source label', async () => {
+    const adapterFactory = vi.fn();
+    const signal = createSignal(createEventBus(), SIGNAL_CONFIG, { search: '?source=live', live: { createAdapter: adapterFactory, navigatorLike: { bluetooth: {} } } });
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(adapterFactory).not.toHaveBeenCalled();
+    const state = signal.reader.getState();
+    expect(state.source).toBe('LIVE_EEG');
+    expect(state.valid).toBe(false);
+  });
+
+  it('connect(LIVE_EEG) says so when Web Bluetooth is missing', async () => {
+    const signal = createSignal(createEventBus(), SIGNAL_CONFIG, { search: '?source=live', live: { navigatorLike: {} } });
+    await expect(signal.control.connect('LIVE_EEG')).rejects.toThrow(/Web Bluetooth/);
+  });
+
+  it('live frames flow through, and a board disconnect leads to signal_lost once', async () => {
+    const bus = createEventBus();
+    const events: string[] = [];
+    bus.onAny((event) => events.push(event.type));
+    let callbacks: AdapterCallbacks | null = null;
+    const connect = vi.fn(async () => undefined);
+    const createAdapter = ((_config: unknown, cbs: AdapterCallbacks) => {
+      callbacks = cbs;
+      return { connect, disconnect: vi.fn(), triggerSimEvent: vi.fn() };
+    }) as unknown as NonNullable<SignalDeps['live']>['createAdapter'];
+    const signal = createSignal(bus, SIGNAL_CONFIG, { search: '?source=live&algo=passthrough-v0', live: { createAdapter, navigatorLike: { bluetooth: {} } } });
+    await signal.control.connect('LIVE_EEG');
+    expect(connect).toHaveBeenCalledWith('ble');
+    const push = () => callbacks!.onFrame({ ...makeSequence({ durationMs: 100, startMs: performance.now() })[0]!, source: 'LIVE_EEG' });
+    for (let i = 0; i < 12; i += 1) {
+      push();
+      await vi.advanceTimersByTimeAsync(80);
+    }
+    expect(signal.reader.getState().valid).toBe(true);
+    expect(signal.reader.getState().source).toBe('LIVE_EEG');
+    callbacks!.onDisconnect();
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(events.filter((type) => type === 'signal_lost')).toHaveLength(1);
   });
 
   it('calibrate() runs for the configured time and emits calibration_result', async () => {
