@@ -1,0 +1,34 @@
+{
+  "presets": [
+    {
+      "id": "calm-climb",
+      "label": "Calm climb",
+      "description": "A steady, low-activity signal for a full minute: high alpha, little 13-30 Hz power.",
+      "durationMs": 59917
+    },
+    {
+      "id": "rising-tension",
+      "label": "Rising tension",
+      "description": "The signal tightens slowly from low to high activity over a minute. Muscle activity is part of this signal.",
+      "durationMs": 59917
+    },
+    {
+      "id": "jaw-clench-bursts",
+      "label": "Jaw clench bursts",
+      "description": "Four-second bursts of jaw clenching with rests between. Muscle activity is a large part of this signal.",
+      "durationMs": 59917
+    },
+    {
+      "id": "mixed-climb",
+      "label": "Mixed climb",
+      "description": "Low activity for twenty seconds, then rising tension, then settling again: the whole range in one run.",
+      "durationMs": 59917
+    },
+    {
+      "id": "poor-contact",
+      "label": "Poor contact",
+      "description": "A noisy electrode: signal quality drops, so the effects ease back to neutral instead of reacting.",
+      "durationMs": 59917
+    }
+  ]
+}

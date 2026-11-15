@@ -58,7 +58,10 @@ const stores: Stores = {
 };
 
 // The signal lane is the only one that will ever touch a device.
-const signal = createSignal(bus, SIGNAL_CONFIG);
+const signal = createSignal(bus, SIGNAL_CONFIG, { storage: browserStorage });
+
+// One candle seed for the first run: the menu emblem and the player are the same candle.
+const candleSeed = pickCandleSeed(window.location.search, import.meta.env.DEV);
 
 // One candle seed for the first run: the menu emblem and the player are the same candle.
 const candleSeed = pickCandleSeed(window.location.search, import.meta.env.DEV);

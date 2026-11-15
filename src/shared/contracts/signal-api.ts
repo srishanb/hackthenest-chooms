@@ -39,6 +39,39 @@ export interface SignalControl {
   calibrate(step: CalibrationStep): Promise<CalibrationResult>;
 }
 
+/** One replayable preset: shipped with the game (built-in) or saved in this browser. */
+export interface PresetInfo {
+  id: string;
+  label: string;
+  /** Plain description. May say that muscle activity is part of the signal; never claims a mood or a medical reading. */
+  description: string;
+  durationMs: number;
+  builtIn: boolean;
+}
+
+/** Where the signal comes from right now. A preset replays through the same pipeline as live data. */
+export type SourceChoice = { kind: 'sim' } | { kind: 'live' } | { kind: 'preset'; id: string };
+
+/** Choose, save, import, export and delete replay presets at runtime. Never reloads the page or touches the game. */
+export interface SignalPresets {
+  list(): Promise<PresetInfo[]>;
+  getSelection(): SourceChoice;
+  getLoop(): boolean;
+  setLoop(loop: boolean): void;
+  /** Switch source. `live` must be called from a click (Web Bluetooth). Rejects with a readable error; the old source keeps running then. */
+  select(choice: SourceChoice): Promise<void>;
+  /** Save the last minute or so of this session's signal as a named preset in browser storage. Throws a readable error. */
+  saveCurrent(label: string): PresetInfo;
+  /** Save a recording file's text as a named preset. Throws a readable error for a bad file. */
+  importText(label: string, jsonl: string): PresetInfo;
+  /** The preset as a .jsonl file's text, for download. */
+  exportText(id: string): Promise<string>;
+  /** Delete a saved preset (built-in presets cannot be deleted). */
+  remove(id: string): void;
+  /** Called after the selection, loop flag or saved list changes. */
+  subscribe(listener: () => void): () => void;
+}
+
 /** What `createSignal()` returns to the composition root. */
 export interface SignalHandle {
   reader: ComposureReader;
@@ -46,4 +79,5 @@ export interface SignalHandle {
   getDiagnostics(): SignalDiagnostics;
   /** Everything recorded since page load as JSONL (header, frame, state, event lines), for download and `?source=replay`. */
   exportRecording(): string;
+  presets: SignalPresets;
 }
