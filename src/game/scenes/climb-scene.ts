@@ -134,6 +134,8 @@ export class ClimbScene extends Phaser.Scene {
     this.controls = createKeyboardInput(() => stores.settings.get().keys);
     const keyDown = (event: KeyboardEvent): void => {
       if (event.defaultPrevented || event.isComposing) return;
+      // Before Play nothing reaches the player: no recovery request, no ember placement.
+      if (stores.snapshot.get().phase === 'menu') return;
       if (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, button, [contenteditable="true"]')) return;
       if (!event.repeat && event.code === stores.settings.get().keys.recover) {
         if (stores.snapshot.get().phase === 'ember') this.ember.cancel();
@@ -214,7 +216,6 @@ export class ClimbScene extends Phaser.Scene {
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).
       if (out.events.landed) for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
     }
-    this.visibility.update(this.state.platformId, this.platforms);
     this.ember.refreshPrompt(this.state);
     const anchor = this.ember.getAnchor();
     this.emberMark.setVisible(anchor !== null);
@@ -263,6 +264,7 @@ export class ClimbScene extends Phaser.Scene {
     const baseRadius = Math.max(frame.lanternRadius, minCoveringRadius(gameConfig.view.width, gameConfig.view.height));
     const radius = this.wax.lightRadius(baseRadius, !this.state.grounded);
     updateDarkness(this.darkness, this.state.x, this.state.y, radius);
+    this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius, this.platforms);
     this.lanternMark.setPosition(this.state.x, this.state.y - gameConfig.player.height / 2 - 6);
   }
 }

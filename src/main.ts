@@ -37,7 +37,8 @@ const browserStorage = getLocalStorage(window);
 const bus = createEventBus();
 
 const stores: Stores = {
-  snapshot: createStore(INITIAL_GAME_SNAPSHOT),
+  // With the start menu on, the game waits in 'menu' until Play; with it off, the climb starts at once.
+  snapshot: createStore({ ...INITIAL_GAME_SNAPSHOT, phase: UI_CONFIG.components['start-menu'].enabled ? 'menu' : 'playing' }),
   effects: createStore(neutralFrame(EFFECTS_TABLE)),
   settings: createSettingsStore(browserStorage ?? createMemoryStorage()),
 };

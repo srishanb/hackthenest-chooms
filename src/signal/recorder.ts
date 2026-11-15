@@ -86,7 +86,7 @@ export function createRecorder(options: RecorderOptions): Recorder {
 /** Trigger a browser download of a JSONL recording string. */
 export function downloadRecording(jsonl: string, filename?: string): void {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const name = filename ?? `lighten-recording-${stamp}.jsonl`;
+  const name = filename ?? `lighten-up-recording-${stamp}.jsonl`;
   const blob = new Blob([jsonl], { type: 'application/x-ndjson' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
