@@ -58,7 +58,7 @@ export function stripAnsi(text) {
  */
 export function parseServerOutput(text) {
   const clean = stripAnsi(text);
-  const local = clean.match(/Local:\s+(https?:\/\/[^\s]+)/);
+  const local = clean.match(/Local:\s+(https?:\/\/\S+)[ \t]*\r?\n/); // a whole line, never a half-received one
   if (local?.[1]) return { url: local[1].endsWith('/') ? local[1] : `${local[1]}/`, inUse: false };
   const busy = clean.match(/Port (\d+) is (?:already )?in use/i);
   if (busy?.[1]) return { url: `http://localhost:${busy[1]}/`, inUse: true };
@@ -150,6 +150,43 @@ export function nodeRun(file, args = []) {
   });
 }
 
+// Cleanup that must run however this process ends (normal exit, Ctrl-C, a closed terminal window).
+// The dev server is started in its own process group, so nothing stops it unless we do.
+/** @type {Set<() => void>} */
+const cleanups = new Set();
+/** @type {(() => void) | null} */
+let ctrlCWaiter = null;
+let handlersInstalled = false;
+
+function runCleanups() {
+  for (const cleanup of [...cleanups]) {
+    try {
+      cleanup();
+    } catch {
+      // keep going: every cleanup gets its turn
+    }
+  }
+  cleanups.clear();
+}
+
+function installExitHandlers() {
+  if (handlersInstalled) return;
+  handlersInstalled = true;
+  process.on('exit', runCleanups);
+  for (const signal of /** @type {const} */ (['SIGINT', 'SIGTERM', 'SIGHUP'])) {
+    process.on(signal, () => {
+      runCleanups();
+      if (ctrlCWaiter) {
+        const done = ctrlCWaiter;
+        ctrlCWaiter = null;
+        done(); // someone was waiting for Ctrl-C: let them finish normally
+      } else {
+        process.exit(130);
+      }
+    });
+  }
+}
+
 /** Stop a child process and everything it started. @param {import('node:child_process').ChildProcess} child */
 function killTree(child) {
   if (!child.pid || child.exitCode !== null) return;
@@ -168,19 +205,26 @@ function killTree(child) {
   }
 }
 
-/** True if the page at `url` is this game (its index.html has the #game element). @param {string} url */
-async function looksLikeOurGame(url) {
+/**
+ * What is answering at `url`: this game's dev server, this game's built preview, or something else.
+ * @param {string} url
+ * @returns {Promise<'dev' | 'preview' | 'other'>}
+ */
+async function whatIsServing(url) {
   try {
     const response = await fetch(url, { signal: AbortSignal.timeout(3000) });
-    return response.ok && (await response.text()).includes('id="game"');
+    const page = response.ok ? await response.text() : '';
+    if (!page.includes('id="game"')) return 'other';
+    return page.includes('/@vite/client') ? 'dev' : 'preview';
   } catch {
-    return false;
+    return 'other';
   }
 }
 
 /**
  * Start a Vite server through its npm script (`dev` or `preview`) and wait until it is reachable.
- * If the port is already taken by this game's own server, that server is reused.
+ * If the port is already taken by this game's own dev server, `dev` reuses it. `preview` never
+ * reuses a running server: it must show the build that was just made, not an older page.
  * @param {'dev' | 'preview'} script
  * @param {{ timeoutMs?: number }} [options]
  * @returns {Promise<{ url: string, started: boolean, stop: () => void }>}
@@ -188,10 +232,16 @@ async function looksLikeOurGame(url) {
 export function startServer(script, options = {}) {
   const timeoutMs = options.timeoutMs ?? 40_000;
   return new Promise((ready, fail) => {
+    installExitHandlers();
     const child = spawnNpm(script, [], { stdio: ['ignore', 'pipe', 'pipe'], detached: !IS_WINDOWS });
-    const stop = () => killTree(child);
+    const stop = () => {
+      cleanups.delete(stop);
+      killTree(child);
+    };
+    cleanups.add(stop); // from this moment the server is stopped however we end
     let output = '';
     let settled = false;
+    let serving = false;
 
     const timer = setTimeout(() => {
       if (settled) return;
@@ -209,25 +259,32 @@ export function startServer(script, options = {}) {
       settled = true;
       clearTimeout(timer);
       if (!found.inUse) {
-        process.once('exit', stop);
+        serving = true;
         ready({ url: found.url, started: true, stop });
         return;
       }
       stop();
-      looksLikeOurGame(found.url).then((ours) => {
-        if (ours) ready({ url: found.url, started: false, stop: () => {} });
-        else fail(new Error(`${found.url} is in use by another program. Stop it, or set a different PORT in .env.local.`));
+      whatIsServing(found.url).then((kind) => {
+        if (kind === 'other') fail(new Error(`${found.url} is in use by another program. Stop it, or set a different PORT in .env.local.`));
+        else if (script === 'preview') fail(new Error(`A ${kind} server is already running at ${found.url}. Stop it first (Ctrl-C in its terminal): preview must serve the build that was just made.`));
+        else if (kind === 'preview') fail(new Error(`The built game (preview) is being served at ${found.url}. Stop it first (Ctrl-C in its terminal), then start dev again.`));
+        else ready({ url: found.url, started: false, stop: () => {} });
       });
     };
     child.stdout?.on('data', onData);
-    child.stderr?.on('data', onData);
+    child.stderr?.on('data', (chunk) => {
+      if (serving) process.stderr.write(chunk); // show Vite's own errors once the server is up
+      else onData(chunk);
+    });
     child.on('error', (error) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
       fail(new Error(`could not start "npm run ${script}": ${error.message}`));
     });
-    child.on('exit', (code) => {
+    // 'close' (not 'exit') fires after the last output has been read, so a "port in use" line is never missed.
+    child.on('close', (code) => {
+      cleanups.delete(stop);
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -237,8 +294,8 @@ export function startServer(script, options = {}) {
 }
 
 /**
- * Open a URL in a browser. Prefers Chrome or Edge on a Mac, because Web Bluetooth (the EEG board)
- * only works in Chromium browsers. Returns false if nothing could be started.
+ * Open a URL in a browser. Tries Chrome, then Edge, then the default browser, because Web Bluetooth
+ * (the EEG board) only works in Chromium browsers. Returns false if nothing could be started.
  * @param {string} url
  */
 export function openBrowser(url) {
@@ -251,7 +308,11 @@ export function openBrowser(url) {
           ['open', [url]],
         ]
       : IS_WINDOWS
-        ? [['rundll32', ['url.dll,FileProtocolHandler', url]]]
+        ? [
+            ['powershell', ['-NoProfile', '-Command', `Start-Process chrome '${url}'`]],
+            ['powershell', ['-NoProfile', '-Command', `Start-Process msedge '${url}'`]],
+            ['rundll32', ['url.dll,FileProtocolHandler', url]],
+          ]
         : [['xdg-open', [url]]];
   for (const [command, args] of attempts) {
     const result = spawnSync(command, args, { stdio: 'ignore' });
@@ -260,11 +321,18 @@ export function openBrowser(url) {
   return false;
 }
 
-/** Resolves when the person presses Ctrl-C (or the process is told to stop). */
+/**
+ * Resolves when the person presses Ctrl-C (or the process is told to stop). Cleanups have run by then.
+ * The timer keeps Node alive while waiting: a signal listener alone does not.
+ */
 export function waitForCtrlC() {
+  installExitHandlers();
   return new Promise((done) => {
-    process.once('SIGINT', () => done(undefined));
-    process.once('SIGTERM', () => done(undefined));
+    const keepAlive = setInterval(() => {}, 1 << 30);
+    ctrlCWaiter = () => {
+      clearInterval(keepAlive);
+      done(undefined);
+    };
   });
 }
 
@@ -325,29 +393,42 @@ export function defineFeature(metaUrl, feature) {
   return full;
 }
 
-/** Load every feature file in this folder, in order. @returns {Promise<Feature[]>} */
+/**
+ * Load every feature file in this folder, in order. A file that cannot be loaded is reported in
+ * `broken` (with its name) instead of stopping everything else.
+ * @returns {Promise<{ features: Feature[], broken: { file: string, message: string }[] }>}
+ */
 export async function loadFeatures() {
   const folder = join(ROOT, 'run');
   const files = readdirSync(folder).filter((name) => name.endsWith('.mjs') && !name.startsWith('_'));
   /** @type {Feature[]} */
   const features = [];
+  /** @type {{ file: string, message: string }[]} */
+  const broken = [];
   for (const name of files) {
-    const module = await import(pathToFileURL(join(folder, name)).href);
-    if (module.default) features.push(module.default);
+    try {
+      const module = await import(pathToFileURL(join(folder, name)).href);
+      if (module.default) features.push(module.default);
+      else broken.push({ file: `run/${name}`, message: 'has no default export (use: export default defineFeature(...))' });
+    } catch (error) {
+      broken.push({ file: `run/${name}`, message: error instanceof Error ? error.message : String(error) });
+    }
   }
-  return features.sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+  features.sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+  return { features, broken };
 }
 
-/** @param {Feature['status']} status */
-function statusLabel(status) {
-  if (status === 'ready') return green('READY');
-  if (status === 'partial') return yellow('PARTIAL');
-  return dim('PLANNED');
+/** @param {Feature['status']} status @param {number} [width] pad the word to this width before colouring */
+function statusLabel(status, width = 0) {
+  const word = status.toUpperCase().padEnd(width);
+  if (status === 'ready') return green(word);
+  if (status === 'partial') return yellow(word);
+  return dim(word);
 }
 
 /** One line per feature, for menus. @param {Feature} feature */
 export function featureLine(feature) {
-  return `  ${feature.id.padEnd(22)} ${statusLabel(feature.status).padEnd(useColor ? 16 : 7)} ${feature.title}`;
+  return `  ${feature.id.padEnd(22)} ${statusLabel(feature.status, 7)} ${feature.title}`;
 }
 
 /**

@@ -13,7 +13,7 @@
  *   4. levels      `npm run check:levels`, once the level checker exists
  *   5. bundle      `npm run build` (Vite) into a fresh dist/
  *   6. recordings  copy recordings/*.jsonl into dist/recordings/ so `?source=replay` works in the build
- *   7. audit       the built page loads nothing from the internet and every file it names exists
+ *   7. audit       the built page, styles and scripts load nothing from the internet; files the page names exist
  *   8. stamp       write dist/build-info.json (commit, time, sizes)
  *
  * Why a script and not only `vite build`: the demo must work with the Wi-Fi off, and "it built"
@@ -81,30 +81,63 @@ async function npmStep(script, what) {
 /** @param {string} why @returns {StepResult} */
 const skipped = (why) => ({ ok: true, skipped: true, detail: why });
 
+/** True for an address that needs the internet (http:, https: or protocol-relative //). @param {string} ref */
+const isExternal = (ref) => /^(?:https?:)?\/\//i.test(ref.trim());
+
 /**
- * Find references in built HTML or CSS that would need the internet.
+ * The files a built HTML page would load: values of src, href, srcset and poster on every tag
+ * except <a> (a plain link loads nothing until someone clicks it). Quoted or unquoted.
+ * @param {string} html
+ * @returns {string[]}
+ */
+function loadedByHtml(html) {
+  /** @type {string[]} */
+  const found = [];
+  for (const tag of html.matchAll(/<([a-z][a-z0-9-]*)\b([^>]*)>/gi)) {
+    if ((tag[1] ?? '').toLowerCase() === 'a') continue;
+    for (const attr of (tag[2] ?? '').matchAll(/\b(src|href|srcset|poster)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)) {
+      const value = attr[2] ?? attr[3] ?? attr[4] ?? '';
+      const isSrcset = (attr[1] ?? '').toLowerCase() === 'srcset';
+      const parts = isSrcset ? value.split(',').map((part) => part.trim().split(/\s+/)[0] ?? '') : [value];
+      for (const part of parts) if (part) found.push(part);
+    }
+  }
+  return found;
+}
+
+/**
+ * Find references in built HTML, CSS or JavaScript that would need the internet.
+ * For JavaScript this only catches addresses written out in the code (import, importScripts,
+ * fetch, Worker); an address the code builds while running cannot be seen here.
  * @param {string} text file content
- * @param {'html' | 'css'} kind
+ * @param {'html' | 'css' | 'js'} kind
  * @returns {string[]} the offending references
  */
 export function findExternalReferences(text, kind) {
+  if (kind === 'html') return loadedByHtml(text).filter(isExternal);
   const patterns =
-    kind === 'html'
-      ? [/\b(?:src|href)\s*=\s*["']((?:https?:)?\/\/[^"']+)["']/gi]
-      : [/url\(\s*["']?((?:https?:)?\/\/[^"')]+)/gi, /@import\s+["']((?:https?:)?\/\/[^"']+)["']/gi];
+    kind === 'css'
+      ? [/url\(\s*["']?((?:https?:)?\/\/[^"')\s]+)/gi, /@import\s+["']((?:https?:)?\/\/[^"']+)["']/gi]
+      : [/\b(?:import|importScripts|fetch|Worker|SharedWorker)\s*\(\s*["'`]((?:https?:)?\/\/[^"'`]+)["'`]/g];
   /** @type {string[]} */
   const found = [];
   for (const pattern of patterns) for (const match of text.matchAll(pattern)) if (match[1]) found.push(match[1]);
   return found;
 }
 
-/** Local files named by `src=` or `href=` in built HTML. @param {string} html @returns {string[]} */
+/** Local files a built HTML page would load, without any ?query or #hash. @param {string} html @returns {string[]} */
 export function findLocalReferences(html) {
   /** @type {string[]} */
   const found = [];
-  for (const match of html.matchAll(/\b(?:src|href)\s*=\s*["']([^"'#?]+)[^"']*["']/gi)) {
-    const ref = match[1];
-    if (ref && !/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(ref)) found.push(ref);
+  for (const ref of loadedByHtml(html)) {
+    if (isExternal(ref) || /^[a-z][a-z0-9+.-]*:/i.test(ref)) continue; // remote, or data:, blob:, mailto: and the like
+    const path = ref.split(/[?#]/)[0] ?? '';
+    if (!path) continue;
+    try {
+      found.push(decodeURIComponent(path));
+    } catch {
+      found.push(path);
+    }
   }
   return found;
 }
@@ -164,7 +197,8 @@ const STEPS = [
       const problems = [];
       const files = listFiles(DIST);
       for (const file of files) {
-        const kind = file.endsWith('.html') ? 'html' : file.endsWith('.css') ? 'css' : null;
+        if (file.split(sep)[0] === 'vendor') continue; // third-party code we ship as-is (the EEG library)
+        const kind = file.endsWith('.html') ? 'html' : file.endsWith('.css') ? 'css' : /\.m?js$/.test(file) ? 'js' : null;
         if (!kind) continue;
         const text = readFileSync(join(DIST, file), 'utf8');
         for (const ref of findExternalReferences(text, kind)) problems.push(`${file} loads from the internet: ${ref}`);
@@ -176,7 +210,7 @@ const STEPS = [
       }
       if (!existsSync(join(DIST, 'vendor', 'pieeg.js'))) problems.push('dist/vendor/pieeg.js is missing (the EEG library must ship with the build)');
       if (problems.length > 0) return { ok: false, detail: problems.join('\n         ') };
-      return { ok: true, detail: 'the built page and styles load nothing from the internet; every file they name exists' };
+      return { ok: true, detail: 'no internet address is loaded by the built page, styles or scripts (as written); every file the page names exists' };
     },
   },
   {

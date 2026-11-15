@@ -101,33 +101,44 @@ async function runAll(features) {
   /** @type {{ feature: import('./run/_lib.mjs').Feature, result: string }[]} */
   const rows = [];
   let failures = 0;
+  let passed = 0;
+  let nothingRan = 0;
   for (const feature of features) {
     heading(`${feature.title}  ${dim(`[${feature.id}]`)}`);
     if (feature.tests.length + feature.commands.length === 0) {
+      nothingRan += 1;
       rows.push({ feature, result: dim('no automated checks') });
       console.log(dim('  No automated checks.'));
       continue;
     }
     const outcome = await runAutomated(feature);
-    if (outcome.ran === 0) rows.push({ feature, result: yellow('nothing to run yet') });
-    else if (outcome.ok) rows.push({ feature, result: green('passed') });
-    else {
+    for (const item of outcome.skipped) console.log(yellow(`  skipped, not in the repo yet: ${item}`));
+    const missing = outcome.skipped.length > 0 ? dim(` (${outcome.skipped.length} check${outcome.skipped.length === 1 ? '' : 's'} not in the repo yet)`) : '';
+    if (outcome.ran === 0) {
+      nothingRan += 1;
+      rows.push({ feature, result: yellow('nothing to run yet') });
+    } else if (outcome.ok) {
+      passed += 1;
+      rows.push({ feature, result: `${green('passed')}${missing}` });
+    } else {
       failures += 1;
       rows.push({ feature, result: red('FAILED') });
     }
   }
   heading('Summary');
   for (const { feature, result } of rows) console.log(`  ${feature.id.padEnd(22)} ${result}`);
-  console.log(failures === 0 ? green('\nEvery automated feature check passed.') : red(`\n${failures} feature${failures === 1 ? '' : 's'} failed.`));
-  console.log(dim('Hands-on checks are not part of "all": run a feature by name to do those.'));
+  const counts = `${passed} passed, ${failures} failed, ${nothingRan} with nothing to run yet`;
+  console.log(failures === 0 ? green(`\nNo failures: ${counts}.`) : red(`\n${counts}.`));
+  console.log(dim('"passed" means the checks that exist passed. Hands-on checks are not part of "all": run a feature by name for those.'));
   return failures === 0 ? 0 : 1;
 }
 
 /**
  * Check the run tooling itself: the pure helpers, and that every feature file is well formed.
  * @param {import('./run/_lib.mjs').Feature[]} features
+ * @param {{ file: string, message: string }[]} broken feature files that could not be loaded
  */
-function selfTest(features) {
+function selfTest(features, broken) {
   /** @type {string[]} */
   const problems = [];
   /** @param {boolean} condition @param {string} message */
@@ -138,7 +149,8 @@ function selfTest(features) {
   // Pure helpers.
   const started = parseServerOutput('  \x1b[32m➜\x1b[39m  \x1b[1mLocal\x1b[22m:   \x1b[36mhttp://localhost:\x1b[1m3046\x1b[22m/\x1b[39m\n');
   expect(started?.url === 'http://localhost:3046/' && started.inUse === false, 'parseServerOutput: coloured "Local:" line');
-  expect(parseServerOutput('Local: http://localhost:5173')?.url === 'http://localhost:5173/', 'parseServerOutput: adds the trailing slash');
+  expect(parseServerOutput('Local: http://localhost:5173\n')?.url === 'http://localhost:5173/', 'parseServerOutput: adds the trailing slash');
+  expect(parseServerOutput('  Local:   http://localhost:51') === null, 'parseServerOutput: ignores a half-received line');
   const busy = parseServerOutput('Error: Port 5173 is already in use');
   expect(busy?.url === 'http://localhost:5173/' && busy.inUse === true, 'parseServerOutput: port already in use');
   expect(parseServerOutput('Port 4173 is in use, trying another one...')?.inUse === true, 'parseServerOutput: "is in use" wording');
@@ -159,8 +171,15 @@ function selfTest(features) {
   expect(findExternalReferences('a{background:url(./a.png)} b{background:url(data:image/png;base64,AAAA)}', 'css').length === 0, 'findExternalReferences: local and data urls are fine');
   expect(findLocalReferences(html).join(',') === './assets/a.css', 'findLocalReferences: only local files, no anchors or remote urls');
   expect(findLocalReferences('<script type="module" src="./assets/i.js?v=1"></script>').join(',') === './assets/i.js', 'findLocalReferences: drops the query');
+  expect(findExternalReferences('<script src=https://cdn.example.com/a.js></script><link href=//cdn.example.com/a.css>', 'html').length === 2, 'findExternalReferences: unquoted attributes');
+  expect(findExternalReferences('<img srcset="./a.png 1x, https://cdn.example.com/b.png 2x">', 'html').join(',') === 'https://cdn.example.com/b.png', 'findExternalReferences: srcset');
+  expect(findExternalReferences('<a href="https://devpost.com">Devpost</a>', 'html').length === 0, 'findExternalReferences: a plain link is not a load');
+  expect(findExternalReferences('import("https://cdn.example.com/m.js"); fetch(`//x.example/data`); fetch(url);', 'js').length === 2, 'findExternalReferences: js literals only');
+  expect(findExternalReferences('const docs = "https://phaser.io"; // a string, not a load', 'js').length === 0, 'findExternalReferences: a url in a string is not a load');
+  expect(findLocalReferences('<img src="./my%20file.png"><script>el.src = "./not-a-tag.js"</script>').join(',') === './my file.png', 'findLocalReferences: decodes names, ignores script text');
 
   // Feature files.
+  for (const item of broken) problems.push(`${item.file} could not be loaded: ${item.message}`);
   expect(features.length >= 10, `expected at least 10 feature files, found ${features.length}`);
   const seen = new Set();
   for (const feature of features) {
@@ -209,15 +228,8 @@ async function main() {
     return 1;
   }
 
-  const features = await loadFeatures();
-  if (!command || command === 'list' || command === 'help') {
-    if (flags.has('json')) console.log(JSON.stringify(features, null, 2));
-    else printMenu(features);
-    return 0;
-  }
-  if (command === 'selftest') return selfTest(features);
+  // These need no feature files, so a broken run file can never stop them.
   if (command === 'check') return npmRun('check');
-  if (command === 'all') return runAll(features);
   if (command === 'build') return runBuild(flags);
   if (command === 'dev') return serveAndWait('dev', words[1] ?? '', flags);
   if (command === 'preview') {
@@ -225,6 +237,16 @@ async function main() {
     if (built !== 0) return built;
     return serveAndWait('preview', words[1] ?? '', flags);
   }
+
+  const { features, broken } = await loadFeatures();
+  if (command === 'selftest') return selfTest(features, broken);
+  for (const item of broken) console.error(red(`Skipping ${item.file}: it could not be loaded (${item.message})`));
+  if (!command || command === 'list' || command === 'help') {
+    if (flags.has('json')) console.log(JSON.stringify(features, null, 2));
+    else printMenu(features);
+    return 0;
+  }
+  if (command === 'all') return (await runAll(features)) === 0 && broken.length === 0 ? 0 : 1;
 
   const feature = features.find((item) => item.id === command);
   if (feature) return runFeature(feature, flags);
