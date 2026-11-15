@@ -9,7 +9,7 @@ export const FOREST_CONFIG = {
   sporeDriftPx: 12,
   sporePeriodMs: 9000,
   mistMaxAlpha: 0.17,
-  darknessAlpha: { calm: 0.28, corrupted: 0.96 },
+  darknessAlpha: { calm: 0.28, corrupted: 1 },
   sky: { calm: 0x183e3d, corrupted: 0x24192f },
   terrain: { calm: 0xd4e3ba, corrupted: 0xba83a6 },
   rim: { calm: 0xd3e5a0, corrupted: 0xffcaad },
