@@ -36,6 +36,31 @@ of the game. Approving your plan is still how you tell agents what you want buil
 
 P3 (real board) has no plan file: its tasks are in [docs/QUEUE.md](../QUEUE.md) and are already approved.
 
+## Later and follow-up plans (added during the build)
+
+These plan files were written after the table above, mostly for small follow-up changes. Several have no `Status`
+line or say "PROPOSED"; since D-22 that does not block anything. Each file states its own scope and acceptance tests.
+
+**Foundation and UI:** [P0](P0.md) (foundation), [P1](P1.md) (signal core on the simulator), [P2.3](P2.3.md) (signal and
+ember HUD), [P2.5](P2.5-reference-ui.md) (reference UI redesign).
+
+**Narrator:** [P7.1](P7.1-intro-narrator.md) (offline intro narrator), [P7.2](P7.2-voice-polish.md) (voice choices),
+[P7.3](P7.3-baseline.md) (baseline narrator moments).
+
+**Forest visuals and atmosphere:** [forest-overhaul](forest-overhaul.md), [public-forest-preview](public-forest-preview.md),
+[stage-atmosphere](stage-atmosphere.md), [visual-atmosphere-handoff](visual-atmosphere-handoff.md),
+[focused-visual-polish](focused-visual-polish.md), [forest-seams-decorations](forest-seams-decorations.md),
+[remove-platform-lines](remove-platform-lines.md), [landing-soil-puff](landing-soil-puff.md).
+
+**Corruption, light and fuel:** [corruption-screen-fuel](corruption-screen-fuel.md), [corruption-tuning](corruption-tuning.md),
+[corruption-visibility-cap](corruption-visibility-cap.md), [corruption-only-fov](corruption-only-fov.md),
+[fuel-only-visibility](fuel-only-visibility.md), [full-fuel-screen-visibility](full-fuel-screen-visibility.md),
+[faster-corruption-fuel](faster-corruption-fuel.md), [empty-fuel-ember](empty-fuel-ember.md),
+[wax-brief-light](wax-brief-light.md), [darkness-occlusion](darkness-occlusion.md), [world-shadow-opacity](world-shadow-opacity.md).
+
+**Signal and audio:** [independent-active-calibration](independent-active-calibration.md),
+[sensitive-live-corruption](sensitive-live-corruption.md), [adaptive-corruption-audio](adaptive-corruption-audio.md).
+
 ## Approve in this order
 
 1. **Ali: P4 now.** Everything in the game waits on P4.1 and P4.2.

@@ -1,4 +1,4 @@
-Current update: the old forestHeight scenery-test query has been REMOVED from the game, including development. Weather uses actual player height on ascent/descent. Ignore historical launch instructions below that mention this diagnostic.
+Current update: the old forestHeight scenery-test query has been REMOVED from the game, including development. Weather uses actual player height on ascent/descent. Launch notes below have been corrected to match the code.
 
 # Public preview update
 
@@ -50,7 +50,7 @@ The source PNG inventory was inspected once. Counts: Ancient 82, Dark 79. Select
 
 ## Development controls and launch
 
-Run npm ci, then npm run dev in wt-codex-forest-overhaul. Assigned PORT is 3015. Open http://localhost:3015/?source=sim&forestDemo=0 to opt into the labeled DEV visual-only slider. Values 0/.25/.5/.75/1 are checkpoints on a continuous ramp, not presets. Restore normal input removes the override without changing signal state, calibration, source, recovery or other effect fields. ?forestPreview=1 opens diagnostics following normal input. In production both query switches and override events are ignored.
+Run `npm ci`, then `npm run dev`; use the `PORT` in your worktree's `.env.local`. In the running game, open Settings and tick **Preview corruption** to get the visual-only slider. **Restore normal input** removes the override without changing signal state, calibration, source, recovery or other effect fields. Values 0/.25/.5/.75/1 are checkpoints on a continuous ramp, not presets. The development-only query `?forestDemo=<0..1>` still starts the slider at that value (ignored in production builds). The older `?forestPreview=1` switch no longer exists in the code.
 
 The normal source badge continues to identify simulator/live/replay/ordinary assistance. Diagnostic target values are renderer values, not numeric composure scores. No changes to signal-owned debug-overlay files. Tests verify other effects and input remain unchanged by the preview.
 
@@ -78,7 +78,7 @@ Production preview verified locally with ?forestDemo=1: no diagnostic panel, no 
 
 Current local implementation supersedes the original whole-plate parallax/prop-count descriptions: see docs/plans/stage-atmosphere.md. Wind/snow select themselves through existing stageWeatherAt; no extra weather sliders. Sequence: tutorial → forest → windy → snowy → combined. Source textures, frame sizes, derivations and licenses are in CREDITS and assets/atmosphere-inventory.json. Existing corruption preview affects both weather and forest; Restore normal input remains authoritative.
 
-Local QA: npm run dev on PORT3017. DEV-only ?forestHeight=4000 offsets scenery/weather sampling so snow can be inspected without skipping gameplay; 2600 previews wind, 5200 combined, 20000 high background. It does not teleport or change the camera; HUD still reports actual Tutorial. This is excluded from production. No force/collision/difficulty modulation by the renderer. Overlay count is three, trunks fourteen, canopy slots ten, plants capped at72 pairs. Production controls remain the prior public corruption checkbox/slider.
+Local QA used `npm run dev`. The old `?forestHeight` scenery test has been removed from the code, so the height values once listed here no longer work. The renderer does not modulate force, collision or difficulty. Overlay count is three, trunks fourteen, canopy slots ten, plants capped at 72 pairs. Production controls are the Settings preview checkbox and slider.
 
 Validation: 342 tests/55 files and build pass; all five reordered stages reachable. Observed loop FPS 114.3 combined/corrupted, 119.8 wind (available machine only). See docs/agent-reports/20261115-0313-codex-stage-atmosphere.md for limits and screenshots in docs/screenshots/atmosphere. Canopy uses an irregular elliptical alpha silhouette (original pixels), trunks reflect source rows with matching RGBA endpoints. No full manual stage traversal or hardware verification claimed.
 
