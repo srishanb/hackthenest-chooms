@@ -396,6 +396,7 @@ export class ClimbScene extends Phaser.Scene {
       reducedMotion: settings.reducedMotion,
       visible: stores.snapshot.get().phase !== 'menu' && settings.hud.showStatus,
       paused: !this.phase.isRunning(),
+      shape: this.candle.shape(),
     });
     this.candle.update(this.state, deltaMs, !this.phase.isRunning(), {
       ember: !this.fuel.isLit && this.wax.lightPulse01() === 0,
