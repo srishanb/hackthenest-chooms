@@ -1,102 +1,20 @@
 name: ai-review
 
-# Reviews every non-draft PR with Claude. Clean → squash-merge. Issues → comment,
-# `needs-human` label, and @-mention the author (GitHub notifies them).
+# Runs the checks (type check, tests, build, hook tests) on every PR, drafts included.
+# Review and merging are done by the reviewer agent session, not by this workflow
+# (AGENTS.md, "Review and merge: the reviewer agent").
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+    types: [opened, synchronize, reopened, ready_for_review]
 
 concurrency:
   group: ai-review-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-  id-token: write
+  contents: read
 
 jobs:
-  # Type check, tests and build. Runs on drafts too, so authors see failures early.
   check:
-    permissions:
-      contents: read
     uses: ./.github/workflows/ci.yml
-
-  # Deterministic gate: the AI reviewer only runs, and can only merge, after `check` passes.
-  review:
-    needs: check
-    if: github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      # Deterministic gate: the model never gets merge permission for these PRs.
-      - name: Decide whether auto-merge is allowed
-        id: guard
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number }}
-          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
-        run: |
-          files=$(gh pr diff "$PR" --name-only)
-          # Shared files (AGENTS.md "Shared files"): manifests, contracts, root config, CI, hooks, scripts, registers.
-          sensitive=$(echo "$files" | grep -E \
-            '^\.github/|^\.claude/|^\.codex/|^\.agents/|^scripts/|^src/shared/|^src/main\.ts$|^public/vendor/|^(AGENTS|CLAUDE|GEMINI)\.md$|^(tsconfig[^/]*\.json|vite\.config\.ts|index\.html)$|^docs/(PLAN|STATUS|DECISIONS|FEATURES)\.md$|(^|/)(package\.json|pnpm-lock\.yaml|package-lock\.json|yarn\.lock|pyproject\.toml|uv\.lock|requirements[^/]*\.txt)$' \
-            || true)
-          # After-job report (AGENTS.md "After-job report"): every PR adds one file under docs/agent-reports/.
-          report=$(echo "$files" | grep -E '^docs/agent-reports/.+\.md$' | grep -v '/TEMPLATE\.md$' || true)
-          allowed=true
-          reason=""
-          if [[ ",$LABELS," == *",no-automerge,"* ]]; then
-            allowed=false; reason="PR has the no-automerge label."
-          elif [[ -n "$sensitive" ]]; then
-            allowed=false; reason="PR changes shared files that need a human: $(echo "$sensitive" | tr '\n' ' ')"
-          elif [[ -z "$report" ]]; then
-            allowed=false; reason="PR has no after-job report under docs/agent-reports/ (see AGENTS.md). Say this in your comment."
-          fi
-          echo "allowed=$allowed" >> "$GITHUB_OUTPUT"
-          echo "reason=$reason" >> "$GITHUB_OUTPUT"
-          if [[ "$allowed" == true ]]; then
-            echo "tools=Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr edit:*),Bash(gh pr merge:*)" >> "$GITHUB_OUTPUT"
-          else
-            echo "tools=Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr edit:*)" >> "$GITHUB_OUTPUT"
-          fi
-
-      - uses: anthropics/claude-code-action@v1
-        env:
-          GH_TOKEN: ${{ github.token }}
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # Surface API/auth errors in the log instead of a bare is_error:true (private repo, so logs aren't public)
-          show_full_output: true
-          claude_args: >-
-            --max-turns 20
-            --allowedTools "Read,Glob,Grep,${{ steps.guard.outputs.tools }}"
-          prompt: |
-            You are the merge gatekeeper for PR #${{ github.event.pull_request.number }} in ${{ github.repository }},
-            authored by @${{ github.event.pull_request.user.login }}. Follow the rules in AGENTS.md.
-
-            Review the diff (`gh pr diff ${{ github.event.pull_request.number }}`) for BLOCKING issues only:
-            - bugs that would break the app or the build, obvious runtime errors
-            - committed secrets, API keys, or .env files
-            - edits clearly outside the author's lane that could collide with other agents' work
-            - deleted or broken functionality unrelated to the PR's stated purpose
-            Ignore style nits and minor suggestions; this is a 24-hour hackathon.
-
-            Auto-merge allowed: ${{ steps.guard.outputs.allowed }}. ${{ steps.guard.outputs.reason }}
-
-            Then do exactly one of:
-            A) No blocking issues AND auto-merge allowed:
-               `gh pr comment <n> --body "✅ AI review: no blocking issues, merging."` then
-               `gh pr merge <n> --squash`. Never delete the branch: the repository keeps all history.
-               If the merge fails (e.g. conflicts), fall through to B and say why.
-            B) Otherwise: `gh pr edit <n> --add-label needs-human`, then post ONE comment that starts with
-               "@${{ github.event.pull_request.user.login }} ⚠️ AI review needs a human:" followed by a short
-               bulleted list of the blocking issues (file:line where possible) or the reason auto-merge is off.
-            Never approve or merge in case B.
