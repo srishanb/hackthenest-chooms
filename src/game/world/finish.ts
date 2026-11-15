@@ -19,14 +19,6 @@ export function findFinish(sections: readonly SectionData[]): AreaData | null {
   return null;
 }
 
-/** The refuge the body is inside, or null. */
-export function refugeAt(sections: readonly SectionData[], x: number, y: number): string | null {
-  for (const section of sections) {
-    if (section.refuge && bodyInArea(x, y, section.refuge)) return section.refuge.id;
-  }
-  return null;
-}
-
 /** Height climbed: section 1's spawn is 0, the finish centre is 1. Clamped; 0 when there is no finish. */
 export function altitude01(sections: readonly SectionData[], y: number): number {
   const start = sections[0]?.spawn.y;

@@ -19,6 +19,7 @@ import { createGame } from './game/index';
 import { createEventBus } from './shared/bus';
 import type { Stores } from './shared/contracts/app';
 import { INITIAL_GAME_SNAPSHOT } from './shared/contracts/game-state';
+import { createMemoryStorage, getLocalStorage } from './shared/safe-storage';
 import { createStore } from './shared/store';
 import { createSignal } from './signal/index';
 import { mountUi } from './ui/registry';
@@ -30,12 +31,15 @@ function requireElement(id: string): HTMLElement {
   return element;
 }
 
+// Reading localStorage can throw when the browser blocks storage; fall back to memory then.
+const browserStorage = getLocalStorage(window);
+
 const bus = createEventBus();
 
 const stores: Stores = {
   snapshot: createStore(INITIAL_GAME_SNAPSHOT),
   effects: createStore(neutralFrame(EFFECTS_TABLE)),
-  settings: createSettingsStore(window.localStorage),
+  settings: createSettingsStore(browserStorage ?? createMemoryStorage()),
 };
 
 // The signal lane is the only one that will ever touch a device.
@@ -51,7 +55,7 @@ createGame({
   gameConfig: GAME_CONFIG,
   effectsTable: EFFECTS_TABLE,
   emberConfig: EMBER_CONFIG,
-  storage: window.localStorage,
+  storage: browserStorage,
 });
 
 mountUi(requireElement('ui'), { bus, stores, signal }, UI_CONFIG);
