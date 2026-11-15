@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createCandleGenome } from '../candle/candle-genome';
 import { bodyShape, INITIAL_POSE, stepPose } from '../candle/candle-pose';
 import { type CueInput, flameLean, flightSparks, wickLean } from '../candle/direction-cues';
-import { rasterFlame } from '../candle/flame';
+import { fallIntensity, flickerRate, rasterFlame } from '../candle/flame';
 
 const charging = (aim: -1 | 0 | 1, charge01: number): CueInput => ({ charging: true, charge01, aim, grounded: true, vx: 0, vy: 0 });
 const flying = (vx: number, vy: number): CueInput => ({ charging: false, charge01: 0, aim: 0, grounded: false, vx, vy });
@@ -78,5 +78,45 @@ describe('the drawn flame', () => {
   it('points behind the movement in flight', () => {
     expect(tipShift(flying(360, -420))).toBeLessThan(-1);
     expect(tipShift(flying(-360, -420))).toBeGreaterThan(1);
+  });
+});
+
+describe('falling: flicker and oxidation', () => {
+  const flame = (fall01: number, timeMs = 0, reducedMotion = false) =>
+    rasterFlame(genome, { size01: 0.6, timeMs, reducedMotion, lean: 0, fall01 });
+  const blue = new Set<number>([0xe6f1ff, 0x9cc4ff, 0x5a8ae8]);
+  const height = (pixels: ReturnType<typeof flame>) => -Math.min(...pixels.map((p) => p.y));
+
+  it('only a downward fall in the air counts, up to 1', () => {
+    expect(fallIntensity(true, 900)).toBe(0);
+    expect(fallIntensity(false, -500)).toBe(0);
+    expect(fallIntensity(false, 100)).toBe(0);
+    expect(fallIntensity(false, 475)).toBeCloseTo(0.5);
+    expect(fallIntensity(false, 5000)).toBe(1);
+  });
+
+  it('not falling draws exactly the old flame', () => {
+    expect(flame(0, 1234)).toEqual(rasterFlame(genome, { size01: 0.6, timeMs: 1234, reducedMotion: false, lean: 0 }));
+  });
+
+  it('a fast fall stretches the flame up and turns its base blue', () => {
+    const calm = flame(0, 0, true);
+    const falling = flame(1, 0, true);
+    expect(height(falling)).toBeGreaterThan(height(calm));
+    expect(calm.some((p) => blue.has(p.color))).toBe(false);
+    const base = falling.filter((p) => p.y === -1);
+    expect(base.every((p) => blue.has(p.color))).toBe(true);
+  });
+
+  it('flickers faster and tears licks off the tip, but not with reduced motion', () => {
+    expect(flickerRate(0)).toBe(1);
+    expect(flickerRate(1)).toBe(2.5);
+    const licks = Array.from({ length: 40 }, (_, i) => {
+      const pixels = flame(1, i * 84);
+      const body = new Set(pixels.map((p) => p.y));
+      return pixels.some((p) => !body.has(p.y - 1) && !body.has(p.y + 1) && p.y < -4);
+    });
+    expect(licks.some(Boolean)).toBe(true);
+    expect(flame(1, 0, true)).toEqual(flame(1, 9999, true));
   });
 });
