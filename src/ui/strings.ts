@@ -144,6 +144,13 @@ export const STRINGS = {
   "hud.intensityLower": "Lower",
   "hud.intensityMidrange": "Midrange",
   "hud.intensityHigher": "Higher",
+  'calib.startSteps': 'Start adaptive calibration',
+  'calib.recalibrate': 'Recalibrate',
+  'calib.progress': 'Calibration step progress',
+  'calib.simActive': 'During the active second half, press repeatedly:',
+  'calib.simResting': 'At the resting halfway cue, toggle:',
+  'calib.toneHint': 'A short tone marks halfway; a higher tone means open your eyes.',
+  'calib.returnToPause': 'Return to pause',
 } as const;
 
 export type StringKey = keyof typeof STRINGS;
