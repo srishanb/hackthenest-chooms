@@ -19,6 +19,7 @@ import { neutralFrame } from '../effects/effects-engine';
 import { stepForestEffects } from '../forest/forest-effects';
 import type { ForestWorld } from '../forest/forest-world';
 import { createRubyView } from '../forest/ruby-view';
+import { createProtectedVisibility, type ProtectedVisibility } from '../effects/protected-visibility';
 import { createKeyboardInput } from '../keyboard-input';
 import { createPlayer, stepPlayer, teleportPlayer } from '../player/movement';
 import { createRecoveryEmber } from '../ember/recovery';
@@ -66,6 +67,7 @@ export class ClimbScene extends Phaser.Scene {
   private forest!: ForestWorld;
   private ruby!: ReturnType<typeof createRubyView>;
   private forestPreview: number | null = forestPreviewValue(window.location.search, import.meta.env.DEV);
+  private visibility!: ProtectedVisibility;
 
   constructor(private readonly deps: ClimbSceneDeps) {
     super(CLIMB_SCENE_KEY);
@@ -109,7 +111,8 @@ export class ClimbScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
 
     this.darkness = createDarkness(this, DEPTH.darkness);
-    // Drawn above the darkness: the start of the "always readable" layer P5.2 will build.
+    // Above the darkness (LAN-3): the ledge underfoot and reachable ledges stay readable.
+    this.visibility = createProtectedVisibility(this, DEPTH.alwaysReadable, world.platforms, world, gameConfig);
     this.lanternMark = this.add.circle(0, 0, 4, 0xfff3c4).setDepth(DEPTH.alwaysReadable);
     this.emberMark = this.add.circle(0, 0, 7, 0xf29938).setDepth(DEPTH.alwaysReadable).setVisible(false);
 
@@ -191,6 +194,7 @@ export class ClimbScene extends Phaser.Scene {
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).
       if (out.events.landed) for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
     }
+    this.visibility.update(this.state.platformId);
     this.ember.refreshPrompt(this.state);
     const anchor = this.ember.getAnchor();
     this.emberMark.setVisible(anchor !== null);

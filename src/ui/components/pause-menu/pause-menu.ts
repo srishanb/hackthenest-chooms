@@ -15,11 +15,13 @@ export const pauseMenu: UiComponent = {
     const resume = menuButton(t('menu.resume'), () => bus.emit({ type: 'resume' }));
     const settings = menuButton(t('menu.settings'), () => actions.settingsOpen.set(true));
     settings.hidden = !actions.settingsAvailable;
-    panel.append(title, resume, settings); root.append(panel);
+    const recalibrate = menuButton(t('calib.recalibrate'), () => actions.openCalibration('pause'));
+    recalibrate.hidden = !actions.calibrationAvailable;
+    panel.append(title, resume, settings, recalibrate); root.append(panel);
     let lastPhase = stores.snapshot.get().phase;
     const render = (): void => {
       const phase = stores.snapshot.get().phase;
-      panel.hidden = phase !== 'paused' || actions.settingsOpen.get();
+      panel.hidden = phase !== 'paused' || actions.settingsOpen.get() || actions.calibrationFrom.get() !== null;
       if (phase === 'paused' && lastPhase !== 'paused') {
         previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         queueMicrotask(() => { if (panel.isConnected && !panel.hidden) resume.focus(); });
@@ -31,7 +33,7 @@ export const pauseMenu: UiComponent = {
       lastPhase = phase;
     };
     const onKey = (event: KeyboardEvent): void => {
-      if (actions.settingsOpen.get()) return;
+      if (actions.settingsOpen.get() || actions.calibrationFrom.get() !== null) return;
       if (stores.snapshot.get().phase === 'paused') trapMenuFocus(panel, event);
       if (event.repeat || event.code !== stores.settings.get().keys.pause || event.key === 'Tab') return;
       const phase = stores.snapshot.get().phase;
@@ -44,7 +46,11 @@ export const pauseMenu: UiComponent = {
     const offActions = actions.settingsOpen.subscribe((open) => {
       render(); if (!open && stores.snapshot.get().phase === 'paused') queueMicrotask(() => settings.focus());
     });
+    const offCalibration = actions.calibrationFrom.subscribe((from) => {
+      render();
+      if (from === null && stores.snapshot.get().phase === 'paused') queueMicrotask(() => { if (recalibrate.isConnected) recalibrate.focus(); });
+    });
     render();
-    return () => { window.removeEventListener('keydown', onKey); offSnapshot(); offActions(); panel.remove(); };
+    return () => { window.removeEventListener('keydown', onKey); offSnapshot(); offActions(); offCalibration(); panel.remove(); };
   },
 };
