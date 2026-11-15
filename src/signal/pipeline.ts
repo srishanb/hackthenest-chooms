@@ -79,7 +79,7 @@ export function createPipeline(deps: PipelineDeps): Pipeline {
   let scoresNow = { intensity: config.neutralIntensity, resting: 0 };
 
   const isCalibrated = (): boolean =>
-    !entry.needsCalibration || (baselines.resting !== null && (mode === 'fixed' || baselines.active !== null));
+    !entry.needsCalibration || (mode === 'fixed' ? baselines.resting !== null : baselines.active !== null);
 
   let state: ComposureState = {
     intensity,
@@ -124,8 +124,9 @@ export function createPipeline(deps: PipelineDeps): Pipeline {
     if (Number.isFinite(nowMs)) lastStepMs = nowMs;
 
     intensity = smooth(intensity, targets.intensity, dtMs, config.smoothing.intensityTauMs);
-    resting = smooth(resting, targets.resting, dtMs, config.smoothing.restingTauMs);
-    restingActive = nextRestingActive(restingActive, resting, valid, config.restingThreshold);
+    const restingValid = valid && (!entry.needsCalibration || baselines.resting !== null);
+    resting = restingValid ? smooth(resting, targets.resting, dtMs, config.smoothing.restingTauMs) : 0;
+    restingActive = nextRestingActive(restingActive, resting, restingValid, config.restingThreshold);
 
     state = {
       intensity,

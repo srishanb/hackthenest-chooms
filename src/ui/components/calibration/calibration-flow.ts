@@ -100,9 +100,10 @@ export function stepFlow(state: CalibrationFlow, input: FlowInput,
   if (input.type === 'useSteadyLight' && state.screen === 'activeResult' && state.result?.ok === false) {
     return begin('resting', input.nowMs, [{ type: 'setMode', mode: 'fixed' }]);
   }
-  if (input.type === 'continueWithout' && state.screen === 'restingResult' && state.result?.ok === false) {
+  if (input.type === 'continueWithout' && ((state.screen === 'restingResult' && state.result?.ok === false) ||
+    (state.screen === 'activeResult' && state.activeCalibrated))) {
     return { state: { ...state, screen: 'done', restingCalibrated: false },
-      commands: [{ type: 'setMode', mode: 'fixed' }] };
+      commands: state.activeCalibrated ? [] : [{ type: 'setMode', mode: 'fixed' }] };
   }
   return idle();
 }
