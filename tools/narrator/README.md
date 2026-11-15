@@ -31,7 +31,7 @@ This sends selected text to ElevenLabs and consumes account credits. It download
 
 - Audio loads from bundled files, unlocks on a player gesture, then plays one random intro per new run after the guide closes.
 - Continuing from Main Menu does not repeat an intro. Global 8 s / same-line 120 s cooldowns use existing config.
-- Pausing, menus, calibration, jump precision and mute park speech and clear its caption; returning resumes the exact audio offset and re-emits the remaining caption duration.
+- Pausing, menus, calibration and mute park speech and clear its caption; returning resumes the exact audio offset and re-emits the remaining caption duration.
 - The narrator and master volume sliders use the existing audio bus. Music ducks during speech; SFX are unaffected.
 - Missing/unavailable clips produce captions instead of a game error. No runtime Gemini, ElevenLabs, browser speech synthesis, CDN or key is needed.
 - `/src/audio/__tests__/intro-browser.html` exercises actual local audio, captions and transitions. Root game path uses the same player.
@@ -57,3 +57,5 @@ node --env-file=.env.local tools/narrator/build.mjs build bill
 ```
 
 The current default is Eleven v4 using only stability/similarity_boost parameters supported by that model. Short auditions reuse the exact first final clip. Full builds combine completed profile manifests into the active content bank. `custom` uses the private ELEVENLABS_VOICE_ID if a different approved stock voice is desired. Default build profile is Chris; the old George id need not be changed in the private env file. Old generated files are preserved rather than removed. There are no generation credits spent during gameplay or Preview.
+
+Jump precision and Ember recovery no longer interrupt narration (Amrit request). Actual pause still parks the exact audio offset; unpausing resumes it. Explicit mute, leaving the run, restarting, changing/previewing a voice and disposal retain their normal lifecycle behavior.
