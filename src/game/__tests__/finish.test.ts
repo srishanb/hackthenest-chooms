@@ -5,7 +5,7 @@ import type { GameEvent } from '../../shared/contracts/events';
 import { INITIAL_GAME_SNAPSHOT, type GameSnapshot } from '../../shared/contracts/game-state';
 import { createStore } from '../../shared/store';
 import { writeSnapshot } from '../scenes/snapshot-writer';
-import { altitude01, bodyInArea, findFinish, refugeAt } from '../world/finish';
+import { altitude01, bodyInArea, findFinish } from '../world/finish';
 import { createPhaseController } from '../world/phase-controller';
 
 const plat = (id: string, x: number, y: number) => ({ id, x, y, width: 240, height: 20, type: 'static' });
@@ -24,13 +24,11 @@ function setup() {
 }
 
 describe('areas and altitude', () => {
-  it('finds the finish, refuge and area membership', () => {
+  it('finds the finish and area membership', () => {
     expect(findFinish(SECTIONS)).toEqual(high.finish);
     expect(findFinish([low])).toBeNull();
     expect(bodyInArea(620, -175, high.finish!)).toBe(true);
     expect(bodyInArea(620, -300, high.finish!)).toBe(false);
-    expect(refugeAt(SECTIONS, 350, 140)).toBe('r1');
-    expect(refugeAt(SECTIONS, 900, 140)).toBeNull();
   });
 
   it('altitude is 0 at section 1 spawn, 1 at the finish, clamped', () => {

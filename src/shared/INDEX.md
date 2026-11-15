@@ -16,5 +16,6 @@ Owner: integrator (Srishan). **Frozen after P0:** changes go through an integrat
 | `Stores` | `contracts/app.ts` | The three stores `main.ts` creates. |
 | `createEventBus(now?)` | `bus.ts` | Typed event bus. |
 | `createStore(initial)`, `Store<T>` | `store.ts` | Observable value. |
+| `getLocalStorage(scope)`, `createMemoryStorage()` | `safe-storage.ts` | `localStorage` read in a try/catch (undefined when blocked) and an in-memory fallback. |
 
 `__tests__/lane-boundaries.test.ts` fails the build if a lane imports another lane.
