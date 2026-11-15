@@ -196,7 +196,6 @@ export class ClimbScene extends Phaser.Scene {
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).
       if (out.events.landed) for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
     }
-    this.visibility.update(this.state.platformId, this.platforms);
     this.ember.refreshPrompt(this.state);
     const anchor = this.ember.getAnchor();
     this.emberMark.setVisible(anchor !== null);
@@ -240,6 +239,7 @@ export class ClimbScene extends Phaser.Scene {
     const baseRadius = Math.max(frame.lanternRadius, minCoveringRadius(gameConfig.view.width, gameConfig.view.height));
     const radius = this.wax.lightRadius(baseRadius, !this.state.grounded);
     updateDarkness(this.darkness, this.state.x, this.state.y, radius);
+    this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius, this.platforms);
     this.lanternMark.setPosition(this.state.x, this.state.y - gameConfig.player.height / 2 - 6);
   }
 }

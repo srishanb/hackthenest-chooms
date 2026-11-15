@@ -9,7 +9,7 @@ export default defineFeature(import.meta.url, {
   note: 'Light radius and protected visibility (LAN-3) exist. Fog, shadows and background motion (P5.3) are not built.',
   features: ['LAN-1', 'LAN-2', 'LAN-3', 'LAN-4', 'ATM-2'],
   order: 240,
-  tests: ['src/game/__tests__/effects-engine.test.ts', 'src/game/__tests__/reachable-ledges.test.ts'],
+  tests: ['src/game/__tests__/effects-engine.test.ts', 'src/game/__tests__/reachable-ledges.test.ts', 'src/game/__tests__/outline-fade.test.ts'],
   query: '',
   steps: [
     'Click the game and press ` to open the overlay. Calibrate first: follow signal-calibration (resting, then active) until it reads valid=true.',
@@ -25,8 +25,8 @@ export default defineFeature(import.meta.url, {
     'When you stop, the light grows back: nothing builds up permanently.',
     'The radius does not change between takeoff and landing.',
     'The lantern value always stays between 90 and 280 px.',
-    'The ledge you stand on has a thin pale outline, drawn over the darkness even at its edges.',
-    'Ledges you can jump to from there show a thin line on their top edge; ledges out of reach stay dark.',
+    'The ledge you stand on has a thin pale outline inside the light; it fades out a little past the edge of the light.',
+    'Reachable ledges show a thin top-edge line only where the light reaches; in the dark there are no lines at all.',
     'The outlines change only when you land somewhere new, and never with the signal.',
   ],
 });
