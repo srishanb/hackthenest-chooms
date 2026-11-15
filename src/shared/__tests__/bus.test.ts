@@ -45,4 +45,31 @@ describe('event bus', () => {
     expect(second).toHaveBeenCalledOnce();
     errors.mockRestore();
   });
+
+  it('a listener added during an emit does not receive that event', () => {
+    const bus = createEventBus(() => 0);
+    const late = vi.fn();
+    const lateAny = vi.fn();
+    bus.on('finish', () => {
+      bus.on('finish', late);
+      bus.onAny(lateAny);
+    });
+    bus.emit({ type: 'finish' });
+    expect(late).not.toHaveBeenCalled();
+    expect(lateAny).not.toHaveBeenCalled();
+    bus.emit({ type: 'finish' });
+    expect(late).toHaveBeenCalledOnce();
+    expect(lateAny).toHaveBeenCalledOnce();
+  });
+
+  it('an onAny listener added during an emit does not receive that event', () => {
+    const bus = createEventBus(() => 0);
+    const late = vi.fn();
+    const off = bus.onAny(() => {
+      off();
+      bus.onAny(late);
+    });
+    bus.emit({ type: 'pause' });
+    expect(late).not.toHaveBeenCalled();
+  });
 });

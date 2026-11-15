@@ -25,8 +25,11 @@ export function createEventBus(now: () => number = () => performance.now()): Eve
   return {
     emit(event) {
       const tMs = now();
-      for (const listener of byType.get(event.type) ?? []) call(listener, event, tMs);
-      for (const listener of any) call(listener, event, tMs);
+      // Snapshots: a listener added during this emit waits for the next event.
+      const typed = [...(byType.get(event.type) ?? [])];
+      const anyNow = [...any];
+      for (const listener of typed) call(listener, event, tMs);
+      for (const listener of anyNow) call(listener, event, tMs);
     },
 
     on<T extends GameEventType>(type: T, listener: (event: GameEventOf<T>, tMs: number) => void) {
