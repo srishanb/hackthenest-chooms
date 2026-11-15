@@ -27,4 +27,18 @@ describe('store', () => {
     store.set(5);
     expect(listener).not.toHaveBeenCalled();
   });
+
+  it('a throwing subscriber does not stop later subscribers or throw into set', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const store = createStore(0);
+    const second = vi.fn();
+    store.subscribe(() => {
+      throw new Error('boom');
+    });
+    store.subscribe(second);
+    expect(() => store.set(1)).not.toThrow();
+    expect(second).toHaveBeenCalledWith(1);
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
 });

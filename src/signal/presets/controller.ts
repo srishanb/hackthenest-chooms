@@ -56,11 +56,19 @@ export function createPresetController(deps: PresetControllerDeps): SignalPreset
   let selection: SourceChoice = deps.initial;
   let loop = true;
   let manifest: ManifestEntry[] | null = null;
-  /** Bumped on every switch so an old replay's end callback can tell it is out of date. */
+  /** Bumped on every successful switch so an old replay's end callback can tell it is out of date. */
   let generation = 0;
+  /** Bumped on every select() call, before any await, so a superseded choice can bail out. */
+  let requested = 0;
   let savedBaselines: Baselines | null = null;
 
-  const notify = (): void => listeners.forEach((listener) => listener());
+  const notify = (): void => listeners.forEach((listener) => {
+    try {
+      listener();
+    } catch (error) {
+      console.error('[signal] preset subscriber threw', error);
+    }
+  });
 
   async function builtIn(): Promise<ManifestEntry[]> {
     if (manifest) return manifest;
@@ -85,9 +93,11 @@ export function createPresetController(deps: PresetControllerDeps): SignalPreset
     savedBaselines = null;
   }
 
-  async function playPreset(id: string): Promise<void> {
+  async function playPreset(id: string, isStale: () => boolean): Promise<void> {
     const preset = await load(id);
-    const mine = ++generation;
+    if (isStale()) return;
+    // Set only once this preset is playing: a failed switch must leave the current preset's loop alive.
+    let mine = -1;
     const first = preset.frames[0]!;
     const span = durationMs(preset.frames) + (preset.frames.length > 1 ? durationMs(preset.frames) / (preset.frames.length - 1) : 0);
     const startAt = deps.now();
@@ -108,6 +118,7 @@ export function createPresetController(deps: PresetControllerDeps): SignalPreset
       deps.setBaselines(before);
       throw error;
     }
+    mine = ++generation;
     savedBaselines ??= before;
   }
 
@@ -135,8 +146,11 @@ export function createPresetController(deps: PresetControllerDeps): SignalPreset
     },
     select(choice) {
       // No await before startLive(): the Bluetooth picker must open inside the click that called us.
-      const start = choice.kind === 'live' ? deps.startLive() : choice.kind === 'sim' ? deps.startSim() : playPreset(choice.id);
+      const request = ++requested;
+      const isStale = (): boolean => request !== requested;
+      const start = choice.kind === 'live' ? deps.startLive() : choice.kind === 'sim' ? deps.startSim() : playPreset(choice.id, isStale);
       return start.then(() => {
+        if (isStale()) return;
         if (choice.kind !== 'preset') {
           generation += 1;
           leavePreset();

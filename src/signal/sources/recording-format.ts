@@ -40,7 +40,9 @@ const isObject = (value: unknown): value is Record<string, unknown> => typeof va
 
 function isFrame(value: Record<string, unknown>): boolean {
   const bands = value['bands'];
-  return typeof value['t'] === 'number' && isObject(bands) && ['delta', 'theta', 'alpha', 'beta', 'gamma'].every((key) => typeof bands[key] === 'number');
+  const spectrum = value['spectrum'];
+  const spectrumOk = spectrum === undefined || spectrum === null || (isObject(spectrum) && Array.isArray(spectrum['freqsHz']) && Array.isArray(spectrum['psd']));
+  return Number.isFinite(value['t']) && spectrumOk && isObject(bands) && ['delta', 'theta', 'alpha', 'beta', 'gamma'].every((key) => typeof bands[key] === 'number');
 }
 
 /** Parse a recording. Throws a readable error for a missing header or a malformed line. */
@@ -64,7 +66,7 @@ export function parseRecording(text: string): Recording {
     } else if (parsed['type'] === 'frame') {
       if (!isFrame(parsed)) throw new Error(`recording line ${index + 1} is not a valid frame`);
       const { type: _type, ...frame } = parsed;
-      frames.push(frame as unknown as BandFrame);
+      frames.push({ ...frame, spectrum: frame['spectrum'] ?? null } as unknown as BandFrame);
     }
     // Other types (state, event, ...) belong to later tools; skip them.
   });
