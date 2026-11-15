@@ -10,7 +10,19 @@ export const STRINGS = {
   'source.SIMULATED': 'SIMULATED INPUT',
   'source.REPLAY': 'RECORDED REPLAY',
   'debug.title': 'Signal debug',
-  'debug.hint': 'Press ` to hide',
+  'debug.hint': 'Press ` to hide · Shift+R to download',
+  'debug.calibrateActive': 'Calibrate active',
+  'debug.calibrateResting': 'Calibrate resting',
+  'debug.calibrating': 'Calibrating...',
+  'debug.calibrationOk': 'ok',
+  'debug.calibrationUnknown': 'unknown',
+  'debug.downloadRecording': 'Download recording',
+  'debug.recordingDownloaded': 'Downloaded recording',
+  'debug.simLegendTitle': 'Simulator keys',
+  'debug.simKey.alpha': 'alpha boost (toggle)',
+  'debug.simKey.clench': 'jaw clench',
+  'debug.simKey.blink': 'eye blink',
+  'debug.simKey.noisyPin': 'noisy pin (toggle)',
 } as const;
 
 export type StringKey = keyof typeof STRINGS;
