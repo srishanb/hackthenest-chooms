@@ -15,6 +15,7 @@ import type { EffectRule } from '../../shared/contracts/effects';
 import type { EventBus } from '../../shared/contracts/events';
 import { createDarkness, minCoveringRadius, updateDarkness } from '../effects/darkness';
 import { neutralFrame, stepEffects } from '../effects/effects-engine';
+import { createKeyboardInput } from '../keyboard-input';
 import { createPlayer, stepPlayer } from '../player/movement';
 import type { PlatformBox, PlayerState } from '../player/types';
 import { sectionAt } from '../world/bounds';
@@ -24,6 +25,8 @@ import { createPhaseController, type PhaseController } from '../world/phase-cont
 import { writeSnapshot } from './snapshot-writer';
 import type { SaveStorage } from '../save';
 import { createRefugeController } from '../world/refuge';
+import { loadSections } from '../world/section-loader';
+import { drawWorld } from '../world/world-view';
 import { CLIMB_SCENE_KEY } from './boot-scene';
 
 export interface ClimbSceneDeps {
@@ -37,14 +40,12 @@ export interface ClimbSceneDeps {
   storage?: SaveStorage;
 }
 
-const DEPTH = { world: 0, zone: 1, player: 10, darkness: 100, alwaysReadable: 200 } as const;
+const DEPTH = { player: 10, darkness: 100, alwaysReadable: 200 } as const;
 /** Never simulate more than this many steps in one frame (a long pause must not spiral). */
 const MAX_STEPS_PER_FRAME = 8;
-/** Room above the highest platform so the camera can show the sky. */
-const TOP_MARGIN_PX = 240;
 
 export class ClimbScene extends Phaser.Scene {
-  private readonly pressed = new Set<string>();
+  private controls!: ReturnType<typeof createKeyboardInput>;
   private platforms: PlatformBox[] = [];
   private state!: PlayerState;
   private accumulatorMs = 0;
@@ -65,19 +66,9 @@ export class ClimbScene extends Phaser.Scene {
     if (!first) throw new Error('ClimbScene needs at least one section');
     this.cameras.main.setBackgroundColor('#27324a');
 
-    // One world: every section's platforms, shared ledges counted once.
-    const seen = new Set<string>();
-    for (const section of sections) {
-      for (const p of section.platforms) {
-        if (seen.has(p.id)) continue;
-        seen.add(p.id);
-        this.platforms.push({ id: p.id, x: p.x, y: p.y, width: p.width, height: p.height });
-        this.add.rectangle(p.x, p.y, p.width, p.height, 0x8a93a8).setDepth(DEPTH.world);
-      }
-      for (const [area, color] of [[section.refuge, 0x4e8f6a], [section.finish, 0xf2c14e]] as const) {
-        if (area) this.add.rectangle(area.x, area.y, area.width, area.height, color, 0.25).setDepth(DEPTH.zone);
-      }
-    }
+    const world = loadSections(sections, gameConfig.view.width);
+    this.platforms = world.platforms;
+    drawWorld(this, world);
 
     this.refuges = createRefugeController({
       sections, snapshot: stores.snapshot, bus: this.deps.bus, storage: this.deps.storage,
@@ -90,22 +81,36 @@ export class ClimbScene extends Phaser.Scene {
     });
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
 
-    const top = Math.min(...this.platforms.map((p) => p.y - p.height / 2)) - TOP_MARGIN_PX;
-    const bottom = Math.max(...this.platforms.map((p) => p.y + p.height / 2));
-    this.cameras.main.setBounds(0, top, gameConfig.view.width, bottom - top);
+    this.cameras.main.setBounds(0, world.top, world.width, world.bottom - world.top);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
 
     this.darkness = createDarkness(this, DEPTH.darkness);
     // Drawn above the darkness: the start of the "always readable" layer P5.2 will build.
     this.lanternMark = this.add.circle(0, 0, 4, 0xfff3c4).setDepth(DEPTH.alwaysReadable);
 
-    // Track keys by KeyboardEvent.code so bindings from settings can change live.
-    this.input.keyboard?.on('keydown', (event: KeyboardEvent) => this.pressed.add(event.code));
-    this.input.keyboard?.on('keyup', (event: KeyboardEvent) => this.pressed.delete(event.code));
-    this.game.events.on(Phaser.Core.Events.BLUR, () => this.pressed.clear());
+    // Native events reach the buffer immediately; do not let Space/arrows scroll the page.
+    this.controls = createKeyboardInput(() => stores.settings.get().keys);
+    const keyDown = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented || event.isComposing || !this.phase.isRunning()) return;
+      if (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, button, [contenteditable="true"]')) return;
+      if (this.controls.keyDown(event.code)) event.preventDefault();
+    };
+    const keyUp = (event: KeyboardEvent): void => this.controls.keyUp(event.code);
+    const clearInput = (): void => {
+      this.controls.clear();
+      this.state = { ...this.state, charging: false, chargeMs: 0, jumpLatch: true };
+    };
+    window.addEventListener('keydown', keyDown);
+    window.addEventListener('keyup', keyUp);
+    window.addEventListener('blur', clearInput);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      window.removeEventListener('keydown', keyDown);
+      window.removeEventListener('keyup', keyUp);
+      window.removeEventListener('blur', clearInput);
+    });
 
     this.phase = createPhaseController(this.deps.bus, stores.snapshot, () => {
-      this.pressed.clear();
+      clearInput();
       // The refuge controller clears the save when it hears the `finish` event this emits.
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.phase.dispose());
@@ -117,17 +122,16 @@ export class ClimbScene extends Phaser.Scene {
     const { stores, composure, gameConfig, effectsTable, bus, emberConfig, sections } = this.deps;
     const settings = stores.settings.get();
     const stepMs = 1000 / gameConfig.stepHz;
-    const input = {
-      left: this.pressed.has(settings.keys.left),
-      right: this.pressed.has(settings.keys.right),
-      jump: this.pressed.has(settings.keys.jump),
-    };
+    if (!this.phase.isRunning()) {
+      this.controls.clear();
+      this.state = { ...this.state, charging: false, chargeMs: 0, jumpLatch: true };
+    }
 
     // Only the 'playing' phase steps; pause, ember and finished freeze the body.
     this.accumulatorMs = this.phase.isRunning() ? Math.min(this.accumulatorMs + deltaMs, stepMs * MAX_STEPS_PER_FRAME) : 0;
     while (this.accumulatorMs >= stepMs) {
       this.accumulatorMs -= stepMs;
-      const out = stepPlayer(this.state, input, this.platforms, gameConfig.view.width, gameConfig, stepMs);
+      const out = stepPlayer(this.state, this.controls.read(), this.platforms, gameConfig.view.width, gameConfig, stepMs);
       this.state = out.state;
       this.refuges.update(this.state);
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });

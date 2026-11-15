@@ -1,0 +1,24 @@
+/* A short, keyboard-accessible guide over the climb; all styling uses shared tokens. */
+.tutorial-panel {
+  background: var(--color-bg);
+  width: min(var(--panel-max-width), calc(100% - var(--space-4) * 2));
+  max-height: calc(100% - var(--space-4) * 2);
+  font-family: var(--font-ui); font-size: var(--text-md);
+  line-height: 1.5; overflow: auto;
+}
+.tutorial-panel:not([open]) { display: none; }
+.tutorial-panel::backdrop { background: var(--color-bg); opacity: 0.8; }
+.tutorial-panel h2 { font-size: var(--text-lg); }
+.tutorial-progress, .tutorial-tip { color: var(--color-text-dim); font-size: var(--text-sm); }
+.tutorial-keys {
+  padding: var(--space-3); border: 1px solid var(--color-panel-border);
+  border-radius: var(--radius); color: var(--color-accent); font-family: var(--font-mono);
+}
+.tutorial-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: flex-end; }
+.tutorial-panel .tutorial-primary { border-color: var(--color-accent); color: var(--color-accent); }
+.tutorial-replay {
+  position: fixed; right: var(--space-3); bottom: var(--space-3);
+  padding: var(--space-2) var(--space-3); border: 1px solid var(--color-panel-border);
+  border-radius: var(--radius); color: var(--color-text); background: var(--color-panel);
+  font-family: var(--font-ui); font-size: var(--text-sm); cursor: pointer;
+}
