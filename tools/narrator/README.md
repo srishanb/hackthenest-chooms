@@ -58,4 +58,38 @@ node --env-file=.env.local tools/narrator/build.mjs build bill
 
 The current default is Eleven v4 using only stability/similarity_boost parameters supported by that model. Short auditions reuse the exact first final clip. Full builds combine completed profile manifests into the active content bank. `custom` uses the private ELEVENLABS_VOICE_ID if a different approved stock voice is desired. Default build profile is Chris; the old George id need not be changed in the private env file. Old generated files are preserved rather than removed. There are no generation credits spent during gameplay or Preview.
 
-Jump precision and Ember recovery no longer interrupt narration (Amrit request). Actual pause still parks the exact audio offset; unpausing resumes it. Explicit mute, leaving the run, restarting, changing/previewing a voice and disposal retain their normal lifecycle behavior.
+## Selected game moments (baseline)
+
+Amrit selected six excerpts from a transcript he supplied and stated was authorized
+for reuse. They are not original Gemini text. The current selected voice ID is
+`zwn3aE3GYziMwjvo74dv`, supplied by Amrit; we do not infer the speaker's identity
+from an opaque voice ID. No voice clone was created by this tool.
+
+`tools/narrator/moment-pack.json` is the reviewed script. Generate the seven local clips (six excerpts plus the original fuel reminder):
+
+```
+node --env-file=.env.local tools/narrator/build.mjs moments baseline
+```
+
+The baseline voice is the default and appears as Selected narrator · baseline in
+Settings. A new voice preference key applies this explicitly selected default;
+Chris and Bill remain optional legacy banks. Old files and history are preserved.
+Welcome replaces random opening selection for baseline. Tutorial means completion
+of the actual playable tutorial stage, not skipping/closing the control guide.
+Fall narration requires a drop strictly greater than 25 HUD metres (800 world
+pixels at the shared HUD scale); the game's separate `big` flag is unchanged.
+Intermediate stages play the later milestone
+line. Height requires 256 pixels beyond the saved personal best and another 256
+pixels before requesting again. Finish queues the closing line, which may play on
+the finished screen with captions, without cutting a currently playing line.
+
+There is a 30-second global and 120-second same-line cooldown. Duplicate pending
+moments collapse; stale incidental events expire after 15 seconds. Tutorial/finish
+may wait through pause. Jump precision and Ember recovery never interrupt speech.
+Actual pause or mute parks the exact audio offset; resume continues it. Session
+restart, voice switching and explicit preview controls keep normal lifecycle behavior.
+The game only uses downloaded local files; keys and runtime API calls are absent.
+
+Low-fuel follow-up: the seventh line is an original reminder requested by Amrit, not a transcript excerpt. It triggers once below 25% actual candle fuel, never at empty or from the wax pickup counter. Refilling above 50% rearms it. A queued warning waits for ongoing speech/cooldown and is cancelled if fuel recovers or reaches empty.
+
+Pre-game welcome: first Play requests the explanatory welcome while phase stays menu. Start climbing begins immediately when chosen; ongoing narration continues, without a duplicate welcome. Instructions remain visible without audio and use binding-independent control wording. Existing saved-run Continue skips the introduction. The opening is original game-specific text requested by Amrit; five remaining excerpts and the fuel reminder are unchanged.

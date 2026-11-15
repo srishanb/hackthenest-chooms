@@ -18,7 +18,7 @@ const DEMO_DURATION_MS = 3500;
 
 export const captions: UiComponent = {
   id: 'captions',
-  visibleIn: ['playing', 'ember'],
+  visibleIn: ['playing', 'ember', 'finished'],
   mount(root, { bus, stores }) {
     const box = document.createElement('div');
     box.className = 'captions';

@@ -14,10 +14,23 @@ export const INTRO_MUSIC_DUCK = 0.35;
 
 /** Original stock-voice choices. Selection is local; clips are generated before play. */
 export const NARRATOR_VOICES = [
+  { id: 'baseline', prefix: 'intro-baseline-', nameKey: 'narrator.voice.baseline' },
   { id: 'chris', prefix: 'intro-chris-', nameKey: 'narrator.voice.chris' },
   { id: 'bill', prefix: 'intro-bill-', nameKey: 'narrator.voice.bill' },
 ] as const;
-export const DEFAULT_NARRATOR_VOICE = 'chris';
-export const NARRATOR_VOICE_STORAGE_KEY = 'lighten.narrator-voice.v1';
+export const DEFAULT_NARRATOR_VOICE = 'baseline';
+export const NARRATOR_VOICE_STORAGE_KEY = 'lighten.narrator-voice.v2';
 export const NARRATOR_VOICE_EVENT = 'lighten-narrator-voice';
 export const NARRATOR_LEVELS = { targetRms: 0.1, peakCeiling: 0.85, maxGain: 2 } as const;
+
+/** Sparse event commentary: world pixels, milliseconds; no gameplay effects. */
+export const NARRATOR_MOMENTS = {
+  cooldownMs: 30_000,
+  eventExpiryMs: 15_000,
+  heightStepPx: 256,
+  lowFuel01: 0.25,
+  lowFuelRearm01: 0.5,
+  fallMinMetres: 25, // Strictly greater than this HUD distance triggers narration.
+  // Share the HUD's existing personal-best record, without writing gameplay state.
+  bestStorageKey: 'lighten.height-best-px.v1',
+} as const;
