@@ -11,7 +11,7 @@ Lighten Up
 
 ## Tagline
 
-Climb a dark forest tower by candlelight. Your composure, read by an EEG board, shapes the light, fog and music.
+Climb a dark forest tower by candlelight. Your composure, read by an EEG board, shapes the light, the forest and the music.
 
 ---
 
@@ -35,7 +35,7 @@ and we say so in the game.
 The signal changes:
 
 - **Light.** How far your candle's light reaches.
-- **Atmosphere.** Fog, shadows and a "corruption" look on the world at high tension.
+- **Atmosphere.** A "corruption" look that spreads over the forest at high tension.
 - **Music.** Four local tracks that crossfade from a calm forest piece toward a heavier one as tension rises.
 - **Recovery.** You can place one ember on a safe ledge (E). After a fall, R returns you to it. In calibrated play,
   the return needs about four seconds of valid, relaxed signal, with a progress meter. Brief spikes pause progress
