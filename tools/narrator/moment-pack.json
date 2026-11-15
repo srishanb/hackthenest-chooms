@@ -1,0 +1,37 @@
+[
+  {
+    "id": "intro-welcome",
+    "moment": "welcome",
+    "text": "Welcome to Lighten Up. You're carrying a small candle up a very tall climb. Hold jump to charge, aim, then release. Collect wax along the way to keep your candle burning, and place your Ember on a safe ledge so you have somewhere to return to. Your signal shapes the atmosphere, never your movement. Take your time. The next ledge is enough."
+  },
+  {
+    "id": "intro-tutorial",
+    "moment": "tutorial",
+    "text": "You've learned to hike. There's no way left to go but up."
+  },
+  {
+    "id": "intro-fall",
+    "moment": "fall",
+    "text": "Starting over is harder than starting up. Feel free to go away and come back. I'll be here."
+  },
+  {
+    "id": "intro-height",
+    "moment": "height",
+    "text": "You could have refused, but you didn't. There was something in you that was hidden, that chose to continue."
+  },
+  {
+    "id": "intro-stage",
+    "moment": "stage",
+    "text": "Imaginary mountains build themselves from our efforts to climb them, and it's our repeated attempts to reach the summit that turns those mountains into something real."
+  },
+  {
+    "id": "intro-finish",
+    "moment": "finish",
+    "text": "In a moment I'll shut up, but let me say: I'm glad you came. I dedicate this game to you, the one who came this far."
+  },
+  {
+    "id": "intro-low-fuel",
+    "moment": "low-fuel",
+    "text": "Your candle is running low. Keep an eye out for wax, and keep going\u2014one ledge at a time."
+  }
+]

@@ -8,7 +8,7 @@ import path from 'node:path';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const packFile = path.join(root, 'tools/narrator/intro-pack.json');
 const draftFile = path.join(root, 'tools/narrator/draft-intros.json');
-const profiles = { chris: { voiceId: 'iP95p4xoKVk53GoZ742B', name: 'Chris' }, bill: { voiceId: 'pqHfZKP75CvOlQylNhV4', name: 'Bill' } };
+const profiles = { baseline: {voiceId:'zwn3aE3GYziMwjvo74dv',name:'Selected narrator'}, chris: { voiceId: 'iP95p4xoKVk53GoZ742B', name: 'Chris' }, bill: { voiceId: 'pqHfZKP75CvOlQylNhV4', name: 'Bill' } };
 const voiceSettings = { stability: 0.65, similarity_boost: 0.75, style: 0.25, use_speaker_boost: true };
 function key(name) {
   const value = process.env[name]?.trim();
@@ -20,14 +20,15 @@ async function request(url, options) {
   if (!response.ok) throw Error(`${new URL(url).hostname} returned HTTP ${response.status}. Check key permissions, credits and model access. Response body withheld.`);
   return response;
 }
-function validatePack(value) {
-  if (!Array.isArray(value) || value.length !== 6) throw Error('The pack must contain exactly six intro lines.');
+function validatePack(value, moments = false) {
+  if (!Array.isArray(value) || value.length !== (moments ? 7 : 6)) throw Error('The pack must contain six intros or seven approved game moments.');
   const seen = new Set();
   return value.map((line) => {
     if (!line || !/^intro-[a-z0-9-]+$/.test(line.id) || seen.has(line.id) || typeof line.text !== 'string' ||
-        line.text.trim().length < 20 || line.text.length > 240 || /[\r\n<>]/.test(line.text)) throw Error('Invalid intro pack. Review ids and text.');
+        line.text.trim().length < 20 || line.text.length > (moments ? 600 : 240) || /[\r\n<>]/.test(line.text)) throw Error('Invalid intro pack. Review ids and text.');
     if (/\b(stress|diagnos\w*|therap\w*|emotion\w*)\b/i.test(line.text)) throw Error('Review narrator framing before generation.');
-    seen.add(line.id); return { id: line.id, text: line.text.trim() };
+    if (moments && !['welcome','tutorial','height','fall','stage','finish','low-fuel'].includes(line.moment)) throw Error('Invalid narrator moment.');
+    seen.add(line.id); return { id: line.id, text: line.text.trim(), ...(moments ? {moment:line.moment} : {}) };
   });
 }
 async function draft() {
@@ -53,13 +54,15 @@ async function draft() {
 }
 async function build(audition = false) {
   const profileId = process.argv[3] || 'chris';
-  if (!Object.hasOwn(profiles, profileId) && profileId !== 'custom') throw Error('Choose chris, bill or custom.');
+  if (!Object.hasOwn(profiles, profileId) && profileId !== 'custom') throw Error('Choose baseline, chris, bill or custom.');
   const profile = profiles[profileId];
   const secret = key('ELEVENLABS_API_KEY'), voice = profile?.voiceId ?? key('ELEVENLABS_VOICE_ID');
   if (!/^[A-Za-z0-9_-]{10,100}$/.test(voice)) throw Error('Voice ID format is invalid.');
   const model = process.env.ELEVENLABS_MODEL || 'eleven_v4';
   const settings = model.startsWith('eleven_v4') ? { stability: 0.45, similarity_boost: 0.7 } : voiceSettings;
-  let lines = validatePack(JSON.parse(await readFile(packFile,'utf8'))).map(line=>({...line,id:line.id.replace('intro-',`intro-${profileId}-`)}));
+  const moments = process.argv[2] === 'moments';
+  if (moments && profileId !== 'baseline') throw Error('The approved moment pack uses the baseline voice.');
+  let lines = validatePack(JSON.parse(await readFile(moments ? path.join(root,'tools/narrator/moment-pack.json') : packFile,'utf8')), moments).map(line=>({...line,id:line.id.replace('intro-',`intro-${profileId}-`)}));
   if (audition) lines = lines.slice(0,1);
   const output = path.join(root, 'public/assets/audio/narrator'); await mkdir(output,{recursive:true});
   const manifest = [];
@@ -89,14 +92,14 @@ async function build(audition = false) {
   if (profileId === 'custom') banks.push(metadata);
   const combined = banks.flatMap(bank=>bank.lines);
   await writeFile(path.join(output,'manifest.json'),JSON.stringify({profiles:banks,lines:combined},null,2)+'\n');
-  await writeFile(path.join(root,'src/content/narrator/lines.ts'),`/** Original short intros. Local stock voices; no runtime API calls. */\nimport type { NarratorLine } from '../../shared/contracts/content';\nexport const NARRATOR_LINES: readonly NarratorLine[] = ${JSON.stringify(combined,null,2)};\n`);
+  await writeFile(path.join(root,'src/content/narrator/lines.ts'),`/** Bundled narrator banks: approved supplied excerpts and legacy original intros. No runtime API calls. */\nimport type { NarratorLine } from '../../shared/contracts/content';\nexport const NARRATOR_LINES: readonly NarratorLine[] = ${JSON.stringify(combined,null,2)};\n`);
   console.log(`Published ${combined.length} local clips across ${banks.length} voice banks. No keys displayed.`);
 }
 try {
   const mode=process.argv[2];
   if(mode==='draft') await draft();
-  else if(mode==='build') await build();
+  else if(mode==='build' || mode==='moments') await build();
   else if(mode==='audition') await build(true);
   else if(mode==='check') { for(const name of ['GEMINI_API_KEY','ELEVENLABS_API_KEY','ELEVENLABS_VOICE_ID']) key(name); console.log('All three private settings are present. Values withheld.'); }
-  else throw Error('Usage: node --env-file=.env.local tools/narrator/build.mjs check|draft|build|audition [chris|bill|custom]');
+  else throw Error('Usage: node --env-file=.env.local tools/narrator/build.mjs check|draft|build|audition|moments [baseline|chris|bill|custom]');
 } catch(error) { console.error(error instanceof Error ? error.message : 'Narrator build failed. Details withheld.'); process.exitCode=1; }

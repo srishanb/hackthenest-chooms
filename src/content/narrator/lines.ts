@@ -1,6 +1,48 @@
-/** Original short intros. Local stock voices; no runtime API calls. */
+/** Bundled narrator banks: approved supplied excerpts and legacy original intros. No runtime API calls. */
 import type { NarratorLine } from '../../shared/contracts/content';
 export const NARRATOR_LINES: readonly NarratorLine[] = [
+  {
+    "id": "intro-baseline-welcome",
+    "text": "Welcome to Lighten Up. You're carrying a small candle up a very tall climb. Hold jump to charge, aim, then release. Collect wax along the way to keep your candle burning, and place your Ember on a safe ledge so you have somewhere to return to. Your signal shapes the atmosphere, never your movement. Take your time. The next ledge is enough.",
+    "moment": "welcome",
+    "clip": "assets/audio/narrator/intro-baseline-welcome-35b745a3a24d.mp3"
+  },
+  {
+    "id": "intro-baseline-tutorial",
+    "text": "You've learned to hike. There's no way left to go but up.",
+    "moment": "tutorial",
+    "clip": "assets/audio/narrator/intro-baseline-tutorial-42b62fdd8538.mp3"
+  },
+  {
+    "id": "intro-baseline-fall",
+    "text": "Starting over is harder than starting up. Feel free to go away and come back. I'll be here.",
+    "moment": "fall",
+    "clip": "assets/audio/narrator/intro-baseline-fall-3020f9bc1c72.mp3"
+  },
+  {
+    "id": "intro-baseline-height",
+    "text": "You could have refused, but you didn't. There was something in you that was hidden, that chose to continue.",
+    "moment": "height",
+    "clip": "assets/audio/narrator/intro-baseline-height-ba996ce2a940.mp3"
+  },
+  {
+    "id": "intro-baseline-stage",
+    "text": "Imaginary mountains build themselves from our efforts to climb them, and it's our repeated attempts to reach the summit that turns those mountains into something real.",
+    "moment": "stage",
+    "clip": "assets/audio/narrator/intro-baseline-stage-cb0cb323d5a4.mp3"
+  },
+  {
+    "id": "intro-baseline-finish",
+    "text": "In a moment I'll shut up, but let me say: I'm glad you came. I dedicate this game to you, the one who came this far.",
+    "moment": "finish",
+    "clip": "assets/audio/narrator/intro-baseline-finish-64e027b219be.mp3"
+  },
+  {
+    "id": "intro-baseline-low-fuel",
+    "text": "Your candle is running low. Keep an eye out for wax, and keep going—one ledge at a time.",
+    "moment": "low-fuel",
+    "clip": "assets/audio/narrator/intro-baseline-low-fuel-4cf1f0045dea.mp3"
+  },
   {
     "id": "intro-chris-01",
     "text": "Take your time. The mountain isn't going anywhere. Neither am I, apparently.",

@@ -26,6 +26,8 @@ export type GameEvent =
   | { type: 'main_menu_requested' }
   /** The start menu's Play: the game leaves phase 'menu' and starts stepping. */
   | { type: 'start' }
+  /** Launch menu requests a narrated briefing while the world remains stopped. */
+  | { type: 'narrator_intro_requested' }
   | { type: 'ember_returned'; via: 'eeg' | 'assist' }
   | { type: 'ember_cancelled' }
   /** While active, the narrator must not start a new line. */

@@ -14,10 +14,14 @@ Owner: Amrit. Search here before adding a function.
 | `sfxForEvent`, `SfxId` | `sfx-map.ts` | Pure event-to-cue mapping; big-fall threshold comes from ember config. |
 | `SFX_ASSETS` | `asset-list.ts` | Existing licensed local cue paths; no new/generated assets. |
 
-`createIntroPlayer` (`narrator/intro-player.ts`) preloads the supplied local intro bank, picks one per new run, enforces cooldowns, parks/resumes speech for phase/precision/mute, and emits matching caption events. Ready/dispose and diagnostics are wired through `createAudio`; music ducks by `INTRO_MUSIC_DUCK`. `tools/narrator/build.mjs` is an offline build-time Gemini/ElevenLabs generator with secret-safe diagnostics and hash-based clip reuse. Runtime never calls these APIs.
+`createIntroPlayer` (`narrator/intro-player.ts`) preloads the supplied local intro bank, picks one per new run, enforces cooldowns, parks/resumes speech for pause/menu/calibration/mute, and emits matching caption events. Ready/dispose and diagnostics are wired through `createAudio`; music ducks by `INTRO_MUSIC_DUCK`. `tools/narrator/build.mjs` is an offline build-time Gemini/ElevenLabs generator with secret-safe diagnostics and hash-based clip reuse. Runtime never calls these APIs.
 
 Voice polish: `createIntroPlayer` accepts a bank prefix and exposes `setVoice`, `preview`, `stopPreview`; previews can play in paused/menu Settings without consuming the next game intro. `narrationGain` (`narrator/level.ts`) measures decoded clips once and sets per-clip level with a peak/headroom and amplification cap. Local voice choice/events and two stock profiles live in audio config.
+
+- `watchNarratorMoments` (`narrator/moments.ts`): subscribes to actual big-fall/stage/finish events and read-only navigation; requests approved welcome/tutorial/height/fall/stage/finish content through the existing local player. Uses saved personal best, sparse cooldowns, queue deduplication and expiry. No game writes. Tests: `__tests__/narrator-moments.test.ts`.
 
 Narration continues through `precision_window`/jumps and phase `ember`; only actual pause/menu/calibration or explicit audio/session lifecycle controls interrupt it. Regression: `__tests__/intro-player.test.ts`.
 
 startWorldSoundtrack / soundtrackPosition / metalPosition (world-soundtrack.ts): three-stage local music submix with Insistent transition underlay. createWorldAmbience (world-ambience.ts): quiet seasonal loops and cooldown cues through existing SFX bus. Audition: /src/audio/__tests__/world-audio-browser.html.
+
+`narrator_intro_requested` lets the launch screen play the selected welcome in menu phase, marks it served, and preserves normal pause/resume if the player begins early. The game stays stopped until Start climbing is chosen.
