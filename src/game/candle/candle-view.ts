@@ -51,6 +51,8 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       drawnKey = '';
     },
     seed: (): number => genome.seed,
+    /** The current candle's genome, so the portrait draws the same candle. */
+    genome: (): CandleGenome => genome,
     update(state: PlayerState, deltaMs: number, paused: boolean, look: CandleLook): void {
       tracker = stepPose(tracker, { ...state, aim: look.aim }, deltaMs, paused);
       // Falling feeds the flame air: its flicker clock runs up to 2.5x faster (flame.ts).

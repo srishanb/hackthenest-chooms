@@ -8,7 +8,7 @@
 import type { Store } from '../../shared/store';
 import type { GameSnapshot } from '../../shared/contracts/game-state';
 
-export type SnapshotPatch = Partial<Pick<GameSnapshot, 'sectionId' | 'inRefuge' | 'altitude01' | 'navigation'>>;
+export type SnapshotPatch = Partial<Pick<GameSnapshot, 'sectionId' | 'inRefuge' | 'altitude01' | 'navigation' | 'lanternFuel01'>>;
 
 /** Altitude changes smaller than this are not worth a store update. */
 const ALTITUDE_EPSILON = 0.005;
@@ -16,6 +16,7 @@ const ALTITUDE_EPSILON = 0.005;
 export function writeSnapshot(store: Store<GameSnapshot>, patch: SnapshotPatch): void {
   const current = store.get();
   const changed =
+    (patch.lanternFuel01 !== undefined && patch.lanternFuel01 !== current.lanternFuel01) ||
     (patch.navigation !== undefined && JSON.stringify(patch.navigation) !== JSON.stringify(current.navigation)) ||
     (patch.sectionId !== undefined && patch.sectionId !== current.sectionId) ||
     (patch.inRefuge !== undefined && patch.inRefuge !== current.inRefuge) ||

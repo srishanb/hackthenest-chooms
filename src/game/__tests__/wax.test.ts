@@ -18,17 +18,28 @@ const platforms: PlatformData[] = [
   { id: 'upper', x: 620, y: 260, width: 240, height: 20, type: 'static' },
 ];
 const start = { x: 480, y: 470 };
-function setup(storage: SaveStorage = createMemorySaveStorage(), random = () => 0) {
+function setup(storage: SaveStorage = createMemorySaveStorage(), random = () => 0, course = platforms) {
   const snapshot = createStore({ ...INITIAL_GAME_SNAPSHOT });
   const bus = createEventBus(() => 0); const events: GameEvent[] = [];
   bus.onAny((event) => events.push(event));
-  const wax = createWaxRewards({ platforms, gameConfig: GAME_CONFIG, snapshot, bus, storage, random });
+  const wax = createWaxRewards({ platforms: course, gameConfig: GAME_CONFIG, snapshot, bus, storage, random });
   wax.update(start, 0);
   const active = () => wax.drops.find((drop) => wax.isActive(drop.id))!;
   return { wax, snapshot, events, storage, active };
 }
 
 describe('replenishing wax', () => {
+  it('gives a short fading pulse at full corruption without growth or sustained boost', () => {
+    const { wax, active, snapshot, events } = setup();
+    wax.update(active(), 0, 0);
+    expect(snapshot.get().wax?.collected).toBe(0);
+    expect(snapshot.get().wax?.boostRemainingMs).toBe(0);
+    expect(events).toHaveLength(1);
+    expect(wax.lightPulse01()).toBe(1);
+    wax.update(start, 900, 0); expect(wax.lightPulse01()).toBeCloseTo(0.5);
+    wax.update(start, 300, 0); expect(wax.lightPulse01()).toBe(0);
+    expect(wax.lightRadius(110, false, 0)).toBe(110);
+  });
   it('collects well beyond both the old cap and the number of ledges, always with at most one active', () => {
     const { wax, snapshot, events, active, storage } = setup();
     for (let count = 1; count <= 100; count++) {
@@ -63,10 +74,41 @@ describe('replenishing wax', () => {
     expect(snapshot.get().wax?.collected).toBe(0);
   });
 
-  it('keeps ordinary ledges only, excluding duplicates, floor, moving ledges and ice', () => {
+  it('allows slippery ledges while excluding duplicates, floor and moving ledges', () => {
     const drops = makeWaxDrops([...platforms, { ...platforms[1]!, id: 'alias' },
-      { ...platforms[1]!, id: 'ice', type: 'slippery' }, { ...platforms[2]!, id: 'shuttle', type: 'moving' }], GAME_CONFIG);
-    expect(drops.map((drop) => drop.id)).toEqual(['wax:ledge', 'wax:upper']);
+      { ...platforms[1]!, x: 500, id: 'ice', type: 'slippery' }, { ...platforms[2]!, id: 'shuttle', type: 'moving' }], GAME_CONFIG);
+    expect(drops.map((drop) => drop.id)).toEqual(['wax:ledge', 'wax:upper', 'wax:ice']);
+  });
+
+  it('uses current feet height for every spawn, including equality, without consuming wax on rejection', () => {
+    const { wax, snapshot, events, active } = setup();
+    wax.reset();
+    wax.update({ x: 100, y: 100 }, WAX_CONFIG.respawnMaxMs);
+    expect(active()).toBeUndefined();
+    expect(snapshot.get().wax?.collected).toBe(0);
+    expect(events).toEqual([]);
+    const highest = wax.drops.find((drop) => drop.id === 'wax:upper')!;
+    const feetHeight = highest.y - GAME_CONFIG.player.height / 2;
+    wax.update({ x: 100, y: feetHeight - 0.01 }, 0);
+    expect(active()).toBeUndefined();
+    wax.update({ x: 100, y: feetHeight }, 0);
+    expect(active()).toEqual(highest);
+    wax.reset(); wax.update(start, 0);
+    expect(active().id).toBe('wax:ledge');
+  });
+
+  it('rejects a restored drop below current feet and allows a valid slippery spawn and pickup', () => {
+    const storage = createMemorySaveStorage();
+    storage.setItem(WAX_STORAGE_KEY, JSON.stringify({ collected: 5, activeId: 'wax:ledge', waitMs: 0 }));
+    const snapshot = createStore({ ...INITIAL_GAME_SNAPSHOT });
+    const wax = createWaxRewards({ platforms, gameConfig: GAME_CONFIG, snapshot, storage, bus: createEventBus() });
+    wax.update({ x: 100, y: 100 }, 0);
+    expect(wax.drops.some((drop) => wax.isActive(drop.id))).toBe(false);
+    expect(snapshot.get().wax?.collected).toBe(5);
+    const ice = setup(createMemorySaveStorage(), () => 0, [platforms[0]!, { ...platforms[1]!, type: 'slippery' }]);
+    expect(ice.active().id).toBe('wax:ledge');
+    ice.wax.update(ice.active(), 0);
+    expect(ice.snapshot.get().wax?.collected).toBe(1);
   });
 
   it('persists the active choice and running count; reload cannot renew the boost or bypass the delay', () => {

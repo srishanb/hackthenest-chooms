@@ -92,5 +92,38 @@ Selected resources from Ancient Forest 1.7 and Dark Forest 1.0, used inside Ligh
 
 Author: Lukya Forge (lukyaforge). Runtime tinting/opacity and animation are applied by the game, not the source files. Full dimensions/frame mappings and SHA-256 inventory: docs/visual-design.md and public/assets/forest/inventory.json. These files are game resources, not a standalone pack distribution.
 
+## Stage atmosphere additions (local implementation)
+
+- Lukya Forge, Ancient Forest 1.7, original license in assets/forest/License.txt: trunk-loop.png and canopy-cluster.png derived solely from existing trees-2.png. Trunk crop x176..239,y148..223 reflected vertically (152px total); feathered side alpha. Canopy crop x0..415,y0..143, feathered edges. Used as continuous bark and finite canopy, no AI art.
+- Willosuna, Pixel Weather & Ambient VFX Lite, local pack pixel-weather-vfx-lite-rate-r2. Exact notice preserved in assets/weather/LICENSE.txt. Imported only snow_medium_128px_snow_sheet.png, leaves_autumn_128px_autumn_sheet.png, fog_thin_128px_fog_sheet.png from their manifest paths, renamed snow_medium.png, leaves_autumn.png, fog_thin.png. All 128x128 frames, 32 frames; snow/leaves 80ms, fog120ms. Manifest states horizontal/vertical seamless. Runtime tint/opacity/drift changes; no source artwork claimed. Pack README source: https://willosuna.itch.io/pixel-weather-vfx-lite .
+- reodesuxz, Pixel Platformer Tileset Vol.4 Ice & Snow, local Pixel_Platformer_Tileset_Vol4_v1.0. Exact notice in assets/winter/LICENSE.txt. Imported PNG/native/platforms/snowdirt_plat_left.png, snowdirt_plat_mid.png, snowdirt_plat_right.png and PNG/native/ice/fir_sapling.png, ice_crystal.png only. Native pixels, nearest 2x display, runtime tint/opacity; no geometry/hazards imported. Project use/modification permitted, standalone/pack redistribution forbidden. No AI training.
+
+Both new packs permit personal/commercial game use. Only game-used resources are included, not the complete source packs. Glitch pack excluded.
 ## UI typography
 - Pixelify Sans by Stefie Justprince, SIL Open Font License 1.1. Source: https://github.com/google/fonts/tree/main/ofl/pixelifysans. Bundled locally in `src/ui/theme/fonts/`, including OFL.txt. No runtime font requests.
+
+## Grassland polish
+Diego "Shackhal" del Solar, Multi Platformer Tileset Free. Local ReadMe declares CC0; preserved verbatim at public/assets/grassland/ReadMe.txt. Source https://shackhal.itch.io/ . Used GrassLand/Terrain/Grassland_Terrain_47Tiles.png: left/middle/right crops (0,0,16,16), (16,0,16,16), (32,0,16,16); soil (16,16,16,16). Used GrassLand/Props/GrassLand_Bush.png -> bush.png, GrassLand_Stone_1.png -> stone.png, GrassLand/Background/GrassLand_Cloud_1.png -> cloud.png. Runtime nearest scaling/tint and opacity; no full pack copied. This Free version has only Grassland; winter assets remain separately credited above.
+
+
+## Winter Forest and wind polish
+Kauzz — Pixel Valley Winter Forest: https://kauzz.itch.io/kpwf . Selected crops from Enviroment.png: left (0,32,16,16), middle (32,32,16,16), right (80,32,16,16), pine (6,250,58,110), crown (6,250,58,80; last16rows alpha feather). Used for snowy terrain/pines/background crowns, no physics changes. Non-commercial use with credit; commercial use requires donation/purchase per publisher. Evidence: assets/winter-forest/license-source.md.
+NYKNCK (@nyk_nck) — Wind: https://nyknck.itch.io/wind . W401-1.png through W401-16.png imported unchanged as three animated gust sprites (90ms/frame); runtime tint/alpha/flip. Author permits game use including commercial with credit. Evidence: assets/wind/license-source.md. No TinyForest resources imported.
+
+Ancient Forest extra foliage: canopy-cluster-alt.png derived from existing trees-4.png at x0,y0,width416,height144, irregular elliptical alpha mask matching canopy-cluster.png. Original Lukya Forge license above. Mushrooms and ferns reuse already credited textures; no additional pack copies.
+
+## Corruption shader adaptation
+Jan Vorisek (@odditica), bktGlitch1.3.2 (2022), https://odditica.itch.io/bktglitch . Game-use credit requested by bundled README, preserved in docs/licenses/bkt-glitch/README.txt. src/game/forest/corruption-filter.ts adapts mirrored UV sampling, line offsets and RGB-channel separation to Phaser4. Simplified/capped port replaces GameMaker inputs and texture-noise helper with deterministic hash grain; no original project/demo executable, raw standalone shader pack or unused data redistributed. This is a limited game-specific adaptation, not the complete original effect.
+
+Additional CC0 Grassland resource: GrassLand/Props/GrassLand_Tree.png → public/assets/grassland/tree.png. Used as seeded small/large platform decoration; same Shackhal CC0 notice already preserved above.
+
+Grassland corruption palettes: left-red.png, middle-red.png, right-red.png and soil-red.png derive from the previously credited CC0 crops. Selectively recolor green foliage pixels crimson, preserve alpha and earth pixels; game crossfades them with the original surfaces. No AI-generated artwork.
+
+## Snow/corruption tuning resources
+Ancient Forest trunk-snow.png derives from existing trunk-loop.png: luminance conversion, blue palette (R0.78/G0.90/B1.00), alpha and exact repeat seam preserved. Original Lukya Forge project-use license applies.
+Clastic Artistic, Abstract Textures, texture (25): https://clastic-artistic.itch.io/caabstracttextures . Publisher confirms CC0 and no generative AI. Local README preserved at public/assets/corruption/CC0.txt. Selected source -clasticartistic-_6000-4000px_texture (25).jpg only; central6000x3375 crop at(0,312), downsample64x36, selective green→red palette shift, nearest upscale256x144 as abstract-25.png. Used as a low-opacity corrupted atmosphere layer. No full-resolution source or complete660MB pack copied.
+
+## Original narrator intros
+- Text: Gemini 3 Flash preview drafts, edited by Amrit's Codex agent; original dry, philosophical commentary about the climb. Amrit's listening/content review remains open.
+- Speech: ElevenLabs stock voice George (`JBFqnCBsd6RMkjVDRZzb`), Eleven Multilingual v2, generated through Amrit's paid account on 2026-11-15. Not a clone or imitation of a real person. Local MP3 files and generation manifest: `public/assets/audio/narrator/`.
+- Source/setup: https://elevenlabs.io/docs/eleven-api/quickstart. Paid generated narration; these clips are not represented as CC0 third-party recordings. No keys are included.

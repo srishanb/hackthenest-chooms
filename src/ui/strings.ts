@@ -6,6 +6,14 @@
  * state refer to text by key, never by literal string.
  */
 export const STRINGS = {
+  'uiSize.title': 'UI size',
+  'uiSize.tutorial': 'Tutorial / hints size',
+  'uiSize.stats': 'Height / wax / highscore size',
+  'uiSize.hint': 'Live preview · saved on this browser. Choose sizes, then tell me to set them.',
+  'uiSize.reset': 'Reset sizes',
+  'stage.finishBlocked': 'Return to the normal world on the final ledge to finish.',
+  'wax.suppressed': 'Brief light · corruption returns quickly',
+  'hud.fuel': 'Fuel',
   'hud.lantern': 'Lantern strength',
   'hud.height': 'Height',
   'hud.best': 'Highscore',
@@ -44,15 +52,15 @@ export const STRINGS = {
   'credits.font.label': 'Typography',
   'credits.font.body': 'Pixelify Sans — Stefie Justprince · SIL Open Font License 1.1',
 
-  'forest.preview.title': 'Forest preview · visuals only',
-  'forest.preview.toggle': 'Preview forest visuals',
+  'forest.preview.title': 'Corruption preview · visuals only',
+  'forest.preview.toggle': 'Preview corruption',
   'forest.preview.restore': 'Restore normal input',
   'forest.preview.normal': 'Following normal input',
   'forest.preview.target': 'Visual target:',
   'lesson.basics': 'First jumps: hold, aim, release. Place your ember on a safe ledge.',
   'lesson.moving': 'Green ledge: wait for its cycle. It carries you while you stand on it.',
   'lesson.slippery': 'Blue ice: let go early—you keep sliding. Charging a jump stops you.',
-  'lesson.wind': 'Wind arrows point right. Gusts nudge you only in the air; aim against them.',
+  'lesson.wind': 'Wind gusts show the airflow. Gusts nudge you only in the air; aim against them.',
   'lesson.finish': 'Land on the last tutorial ledge, then keep climbing into the next stage.',
   'stage.tutorial': 'Tutorial',
   'stage.normal': 'Normal',

@@ -1,4 +1,10 @@
 /** Pure continuous visual mapping and stable seeds, independent of devices and player mechanics. */
+/** Match the visible partner, not its unscaled source sheet; never cover a landing with a giant prop. */
+export function fitPropScale(nativeHeight: number, partnerDisplayHeight: number): number {
+  if (!Number.isFinite(nativeHeight) || nativeHeight <= 0 || !Number.isFinite(partnerDisplayHeight)) return 0;
+  return Math.max(0, Math.min(48, partnerDisplayHeight)) / nativeHeight;
+}
+
 export function stableUnit(id: string): number {
   let hash = 2166136261;
   for (const char of id) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);

@@ -1,0 +1,15 @@
+LICENSE - Pixel Weather & Ambient VFX Lite
+by Willosuna
+
+WHAT YOU CAN DO
+  - Use these effects in personal and commercial projects, in any number of
+    projects, royalty free: games, apps, videos, streams.
+  - Edit, recolor, crop, layer and adapt the files however you like.
+  - Attribution is not required, though it is always appreciated.
+
+WHAT YOU CANNOT DO
+  - Sell, share or give away the files themselves, as-is or modified, alone or
+    as part of an asset pack.
+  - Claim the effects as your own artwork.
+
+Made without AI. Every frame is computed by code written for this pack.

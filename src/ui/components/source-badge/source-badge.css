@@ -26,11 +26,6 @@
   color: var(--color-accent); background: var(--color-inset); border: 1px solid var(--color-panel-border);
   padding: var(--space-2); border-radius: var(--radius); cursor: pointer;
 }
-/* Diagnostics must not obscure existing modal flows, especially on narrow screens. */
-#ui:has([data-component='settings-panel']:not([hidden])) .forest-preview,
-#ui:has([data-component='pause-menu']:not([hidden])) .forest-preview,
-#ui:has([data-component='start-menu']:not([hidden])) .forest-preview,
-#ui:has(dialog[open]) .forest-preview { display: none; }
 /* Keep the honest source label clear of the new right-hand metrics. */
 .ui-slot[data-slot='top-right']:has([data-component='source-badge']) { right: auto; left: 50%; transform: translateX(-50%); align-items: center; }
 @media (max-width: 600px) { .ui-slot[data-slot='top-right']:has([data-component='source-badge']) { top: 112px; left: auto; right: var(--hud-corner); transform: none; } }
@@ -42,3 +37,15 @@
   #ui[data-phase='paused'] .ui-slot[data-slot='top-right'],
   #ui[data-phase='menu'] .ui-slot[data-slot='top-right'] { top: var(--space-1); left: 50%; right: auto; transform: translateX(-50%); z-index: 2; }
 }
+
+.ui-size-tuner { margin-top: var(--space-1); font-size: var(--text-sm); }
+.ui-size-tuner summary { cursor: pointer; color: var(--color-accent); padding: var(--space-1) var(--space-2); background: var(--color-panel); border: 1px solid var(--color-panel-border); border-radius: var(--radius); }
+.ui-size-tuner__panel { display: grid; gap: var(--space-3); margin-top: var(--space-1); width: min(280px, 78vw); padding: var(--space-3); background: var(--color-panel); border: 1px solid var(--color-panel-border); border-radius: var(--radius); box-shadow: var(--panel-shadow); }
+.ui-size-tuner label { display: grid; grid-template-columns: 1fr auto; gap: var(--space-2); }
+.ui-size-tuner input { grid-column: 1 / -1; width: 100%; margin: 0; accent-color: var(--color-accent); }
+.ui-size-tuner output { color: var(--color-accent); }
+.ui-size-tuner small { color: var(--color-text-dim); line-height: 1.4; }
+.ui-size-tuner button { font: inherit; color: var(--color-text); background: var(--color-inset); border: 1px solid var(--color-panel-border); border-radius: var(--radius); padding: var(--space-2); cursor: pointer; }
+.ui-slot[data-slot='top-right']:has(.ui-size-tuner[open]) { z-index: 3; }
+/* The shared preview now belongs to the settings dialog, which remains keyboard accessible. */
+#ui [data-component='settings-panel'] .forest-preview { display: grid; max-width: none; }
