@@ -244,7 +244,7 @@ export type GameEvent =
   | { type: 'signal_lost' } | { type: 'signal_restored' }
   | { type: 'calibration_result'; ok: boolean; reason?: string }
   | { type: 'pause' } | { type: 'resume' }
-  | { type: 'narrator_line'; lineId: string }               // captions subscribe to this
+  | { type: 'narrator_line'; lineId: string; text: string; durationMs: number } // captions subscribe to this
   | { type: 'finish' };
 
 export interface EventBus {
