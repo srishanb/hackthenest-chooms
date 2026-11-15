@@ -40,7 +40,7 @@ mechanic. It never changes the controls or physics.
 - Hardware: the PiEEG Octopus 16 plus test data (the simulator and recordings). No other headset.
 - Read before you start: [docs/PLAN.md](docs/PLAN.md) (architecture, phases), [docs/STATUS.md](docs/STATUS.md),
   [docs/FEATURES.md](docs/FEATURES.md), [docs/HUMAN_TASKS.md](docs/HUMAN_TASKS.md), [docs/DECISIONS.md](docs/DECISIONS.md), [docs/QUEUE.md](docs/QUEUE.md).
-- Hard deadlines (Eastern): Devpost draft Sun 12:00 AM; feature freeze Sun 9:00 AM; final submission Sun 12:00 PM.
+- Hard deadlines (Eastern): Devpost draft Sun 12:00 AM; strict feature freeze Sun 10:00 AM (features may still be developed and merged until then; the team now also wraps up: full builds and smoke tests of the built game; after 10:00 AM only fixes, build and smoke-test work, and submission material); final submission Sun 12:00 PM.
 
 ## Binding rules (never break these)
 

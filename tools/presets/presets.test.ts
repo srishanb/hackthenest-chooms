@@ -3,7 +3,7 @@
  * pipeline's response to each built-in preset (through the real intensity-v2 pipeline, never around it).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildPresets, presetBaselines } from './presets';
+import { buildPresets, PRESET_SPECS, presetBaselines } from './presets';
 import { SIGNAL_CONFIG } from '../../src/config/signal.config';
 import { createEventBus } from '../../src/shared/bus';
 import type { SourceChoice } from '../../src/shared/contracts/signal-api';
@@ -17,7 +17,8 @@ import { compactFrames, parsePreset, serializePreset } from '../../src/signal/pr
 import { createPresetStore, MAX_SAVED_PRESETS, PRESET_STORAGE_KEY } from '../../src/signal/presets/preset-store';
 import { makeSequence } from '../../src/signal/__tests__/fixtures/make-fixture';
 
-const built = buildPresets();
+const built = await buildPresets();
+const baselinesOfSdk = await presetBaselines();
 const text = (name: string): string => built.files[`${name}.jsonl`]!;
 
 /** Run a preset's frames through the real pipeline at the recording's own clock; returns intensity and validity per frame. */
@@ -34,8 +35,20 @@ const between = (rows: ReturnType<typeof runThroughPipeline>, fromS: number, toS
 const mean = (values: number[]): number => values.reduce((a, b) => a + b, 0) / values.length;
 
 describe('preset generation', () => {
-  it('is deterministic: two builds are byte-identical', () => {
-    expect(buildPresets()).toEqual(built);
+  it('is deterministic: two builds of the real SDK simulator are byte-identical', async () => {
+    expect(await buildPresets()).toEqual(built);
+  });
+  it('matches the files committed under public/recordings/presets', async () => {
+    const { readFileSync } = await import('node:fs');
+    for (const [name, content] of Object.entries(built.files)) {
+      expect(readFileSync(new URL(`../../public/recordings/presets/${name}`, import.meta.url), 'utf8'), name).toBe(content);
+    }
+  });
+  it('is built from the real SDK: its spectrum has the SDK bin spacing, and its calibration passes', () => {
+    const first = parsePreset(text('calm-climb')).frames[0]!;
+    expect(first.spectrum?.freqsHz[1]).toBeCloseTo(0.977, 2);
+    expect(baselinesOfSdk.active!.high / baselinesOfSdk.active!.low).toBeGreaterThan(1.3);
+    expect(PRESET_SPECS.length).toBe(5);
   });
   it('lists every preset in the manifest with a file, a label, a description and a duration', () => {
     expect(built.manifest.presets.map((p) => p.id)).toEqual(['calm-climb', 'rising-tension', 'jaw-clench-bursts', 'mixed-climb', 'poor-contact']);
@@ -177,7 +190,7 @@ describe('preset controller (source switching)', () => {
     await controller.select({ kind: 'preset', id: 'calm-climb' });
     expect(controller.getSelection()).toEqual({ kind: 'preset', id: 'calm-climb' });
     expect(replays[0]!.frames[0]!.t).toBe(100_000);
-    expect(baselines()).toEqual(presetBaselines());
+    expect(baselines()).toEqual(baselinesOfSdk);
     await controller.select({ kind: 'sim' });
     expect(started).toEqual(['sim']);
     expect(baselines()).toEqual(calibrated);

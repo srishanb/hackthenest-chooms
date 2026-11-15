@@ -1,7 +1,7 @@
 # Plans: review and approve them all at once
 
 Every phase now has a written plan, so nobody waits for one to be generated. Each plan is `Status: PROPOSED` until
-its owner approves it. Written Sat 14 Nov 2026, 11:15 PM Eastern. Feature freeze is Sun 9:00 AM.
+its owner approves it. Written Sat 14 Nov 2026, 11:15 PM Eastern. Strict feature freeze is Sun 10:00 AM (D-24).
 
 ## How to approve a plan (two minutes)
 
@@ -18,7 +18,7 @@ of the game. Approving your plan is still how you tell agents what you want buil
 
 ## The plans
 
-| Plan | Approver | What it covers | Needs first | Fits before 9 AM? |
+| Plan | Approver | What it covers | Needs first | Fits before 10 AM? |
 |---|---|---|---|---|
 | [P2](P2.md) (Amrit's own, PR 20) | Amrit | UI shell: tokens, strings, registry, settings, menus, HUD, captions | P0 | Yes |
 | [P4](P4.md) | **Ali** | Game core: movement, sections, falling, refuges, saving, finish | P0 | Yes, with two agents. **Critical path** |
