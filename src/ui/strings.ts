@@ -6,6 +6,10 @@
  * state refer to text by key, never by literal string.
  */
 export const STRINGS = {
+  'forest.preview.title': 'DEV · Forest visuals only',
+  'forest.preview.restore': 'Restore normal input',
+  'forest.preview.normal': 'Following normal input',
+  'forest.preview.target': 'Visual target:',
   'lesson.basics': 'First jumps: hold, aim, release. Place your ember on a safe ledge.',
   'lesson.moving': 'Green ledge: wait for its cycle. It carries you while you stand on it.',
   'lesson.slippery': 'Blue ice: let go early—you keep sliding. Charging a jump stops you.',

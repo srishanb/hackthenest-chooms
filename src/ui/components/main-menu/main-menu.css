@@ -1,6 +1,6 @@
 /* A short, keyboard-accessible guide over the climb; all styling uses shared tokens. */
 .tutorial-panel {
-  background: var(--color-bg);
+  background: var(--color-panel);
   width: min(var(--panel-max-width), calc(100% - var(--space-4) * 2));
   max-height: calc(100% - var(--space-4) * 2);
   font-family: var(--font-ui); font-size: var(--text-md);

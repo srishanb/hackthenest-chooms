@@ -4,21 +4,21 @@ import type { PlatformBox } from '../player/types';
 import type { LoadedWorld } from './section-loader';
 import { stageWeatherAt } from './stage-weather';
 import { STAGES_CONFIG } from '../../config/stages.config';
+import { createForestWorld } from '../forest/forest-world';
 
 export function drawWorld(scene: Scene, world: LoadedWorld) {
+  const forest = createForestWorld(scene, world);
   const flakes = Array.from({ length: STAGES_CONFIG.snowflakeCount }, (_, index) =>
     scene.add.circle(index * 137 % world.width, index * 83 % 540, 1 + index % 2, 0xe9f6ff, 0)
       .setScrollFactor(0).setDepth(201));
   let lastTimeMs = 0;
   let snowDriftPx = 0;
-  const colors: Record<string, number> = { static: 0x8a93a8, moving: 0x80c99d, slippery: 0x8cdef2 };
   const marks = world.platforms.map((platform) => {
     if (platform.motion) {
       scene.add.rectangle(platform.x, platform.y + platform.height, platform.width + platform.motion.distance * 2, 2, 0x80c99d, 0.2).setDepth(0);
     }
-    const body = scene.add.rectangle(platform.x, platform.y, platform.width, platform.height, colors[platform.type] ?? colors.static).setDepth(0);
     const rim = scene.add.rectangle(platform.x, platform.y - platform.height / 2, platform.width, 3, platform.type === 'slippery' ? 0xd6faff : 0xc8decf, 0.7).setDepth(platform.type === 'static' ? 1 : 200);
-    return { id: platform.id, height: platform.height, body, rim };
+    return { id: platform.id, height: platform.height, rim };
   });
   const arrows = world.sections.flatMap((section) => (section.wind ?? []).flatMap((wind) => {
     scene.add.rectangle(wind.x, wind.y, wind.width, wind.height, 0x8cdef2, 0.045).setDepth(-1);
@@ -31,7 +31,9 @@ export function drawWorld(scene: Scene, world: LoadedWorld) {
     });
   }));
   return {
+    forest,
     update(platforms: readonly PlatformBox[], timeMs: number, reducedMotion: boolean, playerY = 500): void {
+      forest.syncPlatforms(platforms);
       const weather = stageWeatherAt(world.sections, playerY);
       if (timeMs < lastTimeMs) snowDriftPx = 0;
       const dtSeconds = Math.max(0, timeMs - lastTimeMs) / 1000;
@@ -44,13 +46,9 @@ export function drawWorld(scene: Scene, world: LoadedWorld) {
         const y = (index * 83 + seconds * STAGES_CONFIG.snowFallPxPerSecond) % 540;
         flake.setPosition(x, y).setAlpha(weather.snow01 * STAGES_CONFIG.snowOpacity);
       }
-      const r = Math.round(39 + weather.snow01 * 10);
-      const g = Math.round(50 + weather.snow01 * 14 + weather.wind01 * 3);
-      const b = Math.round(74 + weather.snow01 * 16);
-      scene.cameras.main.setBackgroundColor((r << 16) | (g << 8) | b);
       for (const mark of marks) {
         const platform = platforms.find((candidate) => candidate.id === mark.id);
-        if (platform) { mark.body.setPosition(platform.x, platform.y); mark.rim.setPosition(platform.x, platform.y - mark.height / 2); }
+        if (platform) { mark.rim.setPosition(platform.x, platform.y - mark.height / 2); }
       }
       const offset = reducedMotion ? 0 : timeMs % 1200 / 1200 * 24;
       for (const arrow of arrows) {
