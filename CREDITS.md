@@ -92,5 +92,22 @@ Selected resources from Ancient Forest 1.7 and Dark Forest 1.0, used inside Ligh
 
 Author: Lukya Forge (lukyaforge). Runtime tinting/opacity and animation are applied by the game, not the source files. Full dimensions/frame mappings and SHA-256 inventory: docs/visual-design.md and public/assets/forest/inventory.json. These files are game resources, not a standalone pack distribution.
 
+## Stage atmosphere additions (local implementation)
+
+- Lukya Forge, Ancient Forest 1.7, original license in assets/forest/License.txt: trunk-loop.png and canopy-cluster.png derived solely from existing trees-2.png. Trunk crop x176..239,y148..223 reflected vertically (152px total); feathered side alpha. Canopy crop x0..415,y0..143, feathered edges. Used as continuous bark and finite canopy, no AI art.
+- Willosuna, Pixel Weather & Ambient VFX Lite, local pack pixel-weather-vfx-lite-rate-r2. Exact notice preserved in assets/weather/LICENSE.txt. Imported only snow_medium_128px_snow_sheet.png, leaves_autumn_128px_autumn_sheet.png, fog_thin_128px_fog_sheet.png from their manifest paths, renamed snow_medium.png, leaves_autumn.png, fog_thin.png. All 128x128 frames, 32 frames; snow/leaves 80ms, fog120ms. Manifest states horizontal/vertical seamless. Runtime tint/opacity/drift changes; no source artwork claimed. Pack README source: https://willosuna.itch.io/pixel-weather-vfx-lite .
+- reodesuxz, Pixel Platformer Tileset Vol.4 Ice & Snow, local Pixel_Platformer_Tileset_Vol4_v1.0. Exact notice in assets/winter/LICENSE.txt. Imported PNG/native/platforms/snowdirt_plat_left.png, snowdirt_plat_mid.png, snowdirt_plat_right.png and PNG/native/ice/fir_sapling.png, ice_crystal.png only. Native pixels, nearest 2x display, runtime tint/opacity; no geometry/hazards imported. Project use/modification permitted, standalone/pack redistribution forbidden. No AI training.
+
+Both new packs permit personal/commercial game use. Only game-used resources are included, not the complete source packs. Glitch pack excluded.
 ## UI typography
 - Pixelify Sans by Stefie Justprince, SIL Open Font License 1.1. Source: https://github.com/google/fonts/tree/main/ofl/pixelifysans. Bundled locally in `src/ui/theme/fonts/`, including OFL.txt. No runtime font requests.
+
+## Grassland polish
+Diego "Shackhal" del Solar, Multi Platformer Tileset Free. Local ReadMe declares CC0; preserved verbatim at public/assets/grassland/ReadMe.txt. Source https://shackhal.itch.io/ . Used GrassLand/Terrain/Grassland_Terrain_47Tiles.png: left/middle/right crops (0,0,16,16), (16,0,16,16), (32,0,16,16); soil (16,16,16,16). Used GrassLand/Props/GrassLand_Bush.png -> bush.png, GrassLand_Stone_1.png -> stone.png, GrassLand/Background/GrassLand_Cloud_1.png -> cloud.png. Runtime nearest scaling/tint and opacity; no full pack copied. This Free version has only Grassland; winter assets remain separately credited above.
+
+
+## Winter Forest and wind polish
+Kauzz — Pixel Valley Winter Forest: https://kauzz.itch.io/kpwf . Selected crops from Enviroment.png: left (0,32,16,16), middle (32,32,16,16), right (80,32,16,16), pine (6,250,58,110), crown (6,250,58,80; last16rows alpha feather). Used for snowy terrain/pines/background crowns, no physics changes. Non-commercial use with credit; commercial use requires donation/purchase per publisher. Evidence: assets/winter-forest/license-source.md.
+NYKNCK (@nyk_nck) — Wind: https://nyknck.itch.io/wind . W401-1.png through W401-16.png imported unchanged as three animated gust sprites (90ms/frame); runtime tint/alpha/flip. Author permits game use including commercial with credit. Evidence: assets/wind/license-source.md. No TinyForest resources imported.
+
+Ancient Forest extra foliage: canopy-cluster-alt.png derived from existing trees-4.png at x0,y0,width416,height144, irregular elliptical alpha mask matching canopy-cluster.png. Original Lukya Forge license above. Mushrooms and ferns reuse already credited textures; no additional pack copies.

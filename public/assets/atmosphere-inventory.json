@@ -1,0 +1,50 @@
+[
+  {
+    "file": "assets/weather/fog_thin.png",
+    "width": 1024,
+    "sha256": "3b7b5a8355975924c3ebe48a6b88a2c0b46ac66dd93f9ed8d86d35ac7c8504bf",
+    "height": 512
+  },
+  {
+    "file": "assets/weather/leaves_autumn.png",
+    "width": 1024,
+    "sha256": "fceb133ee07453b2667030b5d206b2818723a1f4c559d8ab16effef431fd28d9",
+    "height": 512
+  },
+  {
+    "file": "assets/weather/snow_medium.png",
+    "width": 1024,
+    "sha256": "2c1e29133cca4958bc5d5ee101ffc72e43197d04e72cd08befd2e7648fb492a9",
+    "height": 512
+  },
+  {
+    "file": "assets/winter/fir_sapling.png",
+    "width": 16,
+    "sha256": "7d741e6e1eb303f266a79cfb935231c5a708cd4c46c5f41f57d336b0014e2f5f",
+    "height": 16
+  },
+  {
+    "file": "assets/winter/ice_crystal.png",
+    "width": 16,
+    "sha256": "5caac9b83bb2bb1ed2aa44ddb0df43000d4addfe38d0c59ea21d51bf9930497d",
+    "height": 16
+  },
+  {
+    "file": "assets/winter/snowdirt_plat_left.png",
+    "width": 16,
+    "sha256": "c7124ab7eeaee6c0cc42e2e36e00932a2857409a7b53796afdbafc036e7f7016",
+    "height": 16
+  },
+  {
+    "file": "assets/winter/snowdirt_plat_mid.png",
+    "width": 16,
+    "sha256": "54880c4b48dfafaa2324d155e15ee838d7fbe67fa92582ccc32154f0d6561303",
+    "height": 16
+  },
+  {
+    "file": "assets/winter/snowdirt_plat_right.png",
+    "width": 16,
+    "sha256": "4b2dadae9e5547b45ef06b81906ec0c24607b1d6aa1bbf7bc6c27ca52170be37",
+    "height": 16
+  }
+]

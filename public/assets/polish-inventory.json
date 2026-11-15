@@ -1,0 +1,170 @@
+[
+  {
+    "height": 16,
+    "width": 16,
+    "file": "assets/grassland/bush.png",
+    "sha256": "bc78ce2b0e73243c53f5aee217a7a7064485b6344cf68cf462a09ccbebf87f68"
+  },
+  {
+    "height": 16,
+    "width": 48,
+    "file": "assets/grassland/cloud.png",
+    "sha256": "c0cc2e5784fb9947559814e560f8bd07bd11d613a0832ef57547783c87c929d3"
+  },
+  {
+    "height": 16,
+    "width": 16,
+    "file": "assets/grassland/left.png",
+    "sha256": "3e3213cac2570d027eac09658bd4ab158cf11b4c92ebc631e160a3f819ab0946"
+  },
+  {
+    "height": 16,
+    "width": 16,
+    "file": "assets/grassland/middle.png",
+    "sha256": "874db8c96e0aea191b8ebf6408548f752ef855a5d1bbac5a9a41bfbfe37c2fec"
+  },
+  {
+    "height": 16,
+    "width": 16,
+    "file": "assets/grassland/right.png",
+    "sha256": "9fe829e8b8de883759b37ec5c97f4740b88aeee75229327da58f24af02fa39c1"
+  },
+  {
+    "height": 16,
+    "width": 16,
+    "file": "assets/grassland/soil.png",
+    "sha256": "2d586191e675bc8496d3689ab3702db2b2a7f0e7a9a689616aa7292efb600feb"
+  },
+  {
+    "height": 16,
+    "width": 16,
+    "file": "assets/grassland/stone.png",
+    "sha256": "0ad42cf2dcd53095b2b196baa89220746413e639f69c8cc398fc30884b7a8261"
+  },
+  {
+    "height": 80,
+    "width": 58,
+    "file": "assets/winter-forest/crown.png",
+    "sha256": "1cdd81c15139a69f7a0c24e1ff32229690ee47cdf8ee22e884fefc3012fcfb3b"
+  },
+  {
+    "height": 16,
+    "width": 16,
+    "file": "assets/winter-forest/left.png",
+    "sha256": "f81e65b674df5eabeddea2634b2d115e36fa547b515533a247743f161fa94411"
+  },
+  {
+    "height": 16,
+    "width": 16,
+    "file": "assets/winter-forest/middle.png",
+    "sha256": "2cbe4340be61fc69c284e7ca5bede5b9664a467f16155cfdeb2d4d1013c671b4"
+  },
+  {
+    "height": 110,
+    "width": 58,
+    "file": "assets/winter-forest/pine.png",
+    "sha256": "bee7db90c769415b9e5fc0887cd0e1843d0703b2fc89c0f7319c6ee5a23e24f6"
+  },
+  {
+    "height": 16,
+    "width": 16,
+    "file": "assets/winter-forest/right.png",
+    "sha256": "38a2a34f07a34ebad079c7d95098eb5a13d7222bddad4bad269c588f0c407b37"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-1.png",
+    "sha256": "195a4fe72fa2182554fdbfcb2b022f4d683da7c89946da74d2ba0fe110c081df"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-10.png",
+    "sha256": "1abfb7f8fe765a7a211461baa3723b022363d88811c320039c97960e7394751a"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-11.png",
+    "sha256": "2c809b74c43882a1a10ec660961e8f6e37458888d25e6c225545e36f8e5c1062"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-12.png",
+    "sha256": "f8414df8fa054b303d29fb94b417c70e31a3e3397f276670f9fc6ae4ad717ae4"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-13.png",
+    "sha256": "76c5019ed13e8722d8ecc20d57650af66da95184b05b5e0c107882562c909bcf"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-14.png",
+    "sha256": "781ab662bb6517f1bc24f66e8e488d7ab888762fa9f5e89d368780e24cbbceb3"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-15.png",
+    "sha256": "e5798b246aef229281fb62ec753526a605716eb1aca73d872326135331128863"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-16.png",
+    "sha256": "19b0262e573e7b5a5f58a8c46499a4736b414992050b4ea57c5abd46eb81f6c5"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-2.png",
+    "sha256": "0637b5ee9aa645bfe126778ce0a87beb6ebd2cfa2ed5473444f8b23b4f5bb6b3"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-3.png",
+    "sha256": "da0e720ea17b9f917850fa7c70521ca9955bca7802380dd4027704f51b150419"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-4.png",
+    "sha256": "4e2a40e0da2f7b6c35d2f86a46cccc41a90332329ca882bf226988c751fe3d5d"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-5.png",
+    "sha256": "7d0ebe51fe10590f945b7c5e8978aed31034a9805e3f0403710222ed3666c2ff"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-6.png",
+    "sha256": "985224b776d82443e8a00129b0a3227b27431e6b44342d64809b3258cb925094"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-7.png",
+    "sha256": "73f764a97564e485bac696d75bb8c7f1b4215f0b644b356facb1e33065f463f5"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-8.png",
+    "sha256": "26fb8b874655e66ac70eb17af4f0b7429a5cc3bf952877d67228ec1a6dc11287"
+  },
+  {
+    "height": 512,
+    "width": 512,
+    "file": "assets/wind/W401-9.png",
+    "sha256": "111d56c5ffd4e5e62fa02398b73270175f6eea03634a4f502aa6d82b49f35d5c"
+  }
+]

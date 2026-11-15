@@ -321,7 +321,7 @@ export class ClimbScene extends Phaser.Scene {
       this.forestPreview,
     );
     stores.effects.set(frame);
-    this.forest.update(frame.forestCorruption, deltaMs, settings.reducedMotion, !this.phase.isRunning());
+    this.forest.update(frame.forestCorruption, deltaMs, settings.reducedMotion, !this.phase.isRunning(), settings.effectStrength);
     this.darkness.setAlpha(FOREST_CONFIG.darknessAlpha.calm + frame.forestCorruption *
       (FOREST_CONFIG.darknessAlpha.corrupted - FOREST_CONFIG.darknessAlpha.calm));
 
