@@ -21,6 +21,8 @@ export type GameEvent =
   | { type: 'ember_assist_requested' }
   | { type: 'ember_cancel_request' }
   | { type: 'run_restart' }
+  /** The start menu's Play: the game leaves phase 'menu' and starts stepping. */
+  | { type: 'start' }
   | { type: 'ember_returned'; via: 'eeg' | 'assist' }
   | { type: 'ember_cancelled' }
   /** While active, the narrator must not start a new line. */

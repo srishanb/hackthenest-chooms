@@ -71,6 +71,7 @@ export interface EmberConfig {
 
 export type UiComponentId =
   | 'main-menu'
+  | 'start-menu'
   | 'pause-menu'
   | 'settings-panel'
   | 'hud'
