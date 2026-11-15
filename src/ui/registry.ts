@@ -22,6 +22,7 @@ import { sourceBadge } from './components/source-badge/source-badge';
 import './theme/tokens.css';
 import './theme/layout.css';
 import type { UiComponent, UiDeps } from './types';
+import { createUiActions } from './ui-actions';
 
 export const COMPONENTS: readonly UiComponent[] = [
   mainMenu,
@@ -39,6 +40,7 @@ const SLOTS: readonly UiSlot[] = ['full', 'center', 'top-left', 'top-right', 'bo
 
 /** Mount every enabled component into its slot. Returns a function that removes them all. */
 export function mountUi(root: HTMLElement, deps: UiDeps, config: UiConfig): () => void {
+  const componentDeps = { ...deps, actions: deps.actions ?? createUiActions(config.components['settings-panel'].enabled) };
   const slots = new Map<UiSlot, HTMLElement>();
   for (const slot of SLOTS) {
     const element = document.createElement('div');
@@ -60,7 +62,7 @@ export function mountUi(root: HTMLElement, deps: UiDeps, config: UiConfig): () =
     wrapper.dataset.component = component.id;
     slot.append(wrapper);
     try {
-      cleanups.push(component.mount(wrapper, deps));
+      cleanups.push(component.mount(wrapper, componentDeps));
     } catch (error) {
       console.error(`[ui] component "${component.id}" failed to mount`, error);
       wrapper.remove();

@@ -1,0 +1,33 @@
+<!doctype html><html><head><title>HUD checks</title></head><body>
+<div id="ui"></div><pre id="results" style="position:fixed;inset:auto 0 0;z-index:100;color:white;background:black"></pre>
+<script type="module">
+import { hud } from '../components/hud/hud.ts';
+import { createStore } from '../../shared/store.ts';
+import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state.ts';
+import { DEFAULT_SETTINGS } from '../../shared/contracts/settings.ts';
+import '../theme/tokens.css';
+import '../theme/layout.css';
+const root=document.querySelector('#ui');
+const results=document.querySelector('#results');
+const check=(name,ok)=>{results.textContent+=`${ok?'PASS':'FAIL'} ${name}\n`;if(!ok)throw Error(name);};
+const snapshot=createStore(structuredClone(INITIAL_GAME_SNAPSHOT));
+const settings=createStore(structuredClone(DEFAULT_SETTINGS));
+let state={intensity:0.2,quality:0.6,valid:true,calibrated:true,sampleAgeMs:10};
+const listeners=new Set();
+const signal={reader:{getState:()=>state,subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn);}}};
+const deps={stores:{snapshot,settings},signal};
+const remove=hud.mount(root,deps);
+check('initial ember and quality visible',root.textContent.includes('Recovery ember available')&&root.textContent.includes('60%'));
+check('optional composure hidden initially',Array.from(root.querySelectorAll('section > div')).some(e=>e.hidden&&e.textContent.includes('80%')));
+settings.set({...settings.get(),hud:{showSignal:true,showEmber:false,showStatus:false}});
+check('settings update hides quality and shows composure',Array.from(root.querySelectorAll('section > div')).some(e=>!e.hidden&&e.textContent.includes('80%'))&&root.querySelector('.hud__status').hidden);
+state={...state,valid:false,sampleAgeMs:999};for(const fn of listeners)fn(state);
+check('stale signal shows unavailable composure',root.textContent.includes('unavailable'));
+settings.set({...settings.get(),hud:{showSignal:true,showEmber:true,showStatus:true}});
+snapshot.set({...snapshot.get(),ember:{...snapshot.get().ember,active:true,progress01:0.5},promptKey:'private.unknown'});
+check('progress updates without raw unknown prompt',root.querySelector('progress').value===50&&root.querySelector('.hud__prompt').hidden&&!root.textContent.includes('private.unknown'));
+remove();check('unmount removes DOM and signal listener',!root.children.length&&listeners.size===0);
+snapshot.set({...snapshot.get(),promptKey:'hud.emberReady'});
+settings.set({...settings.get(),hud:{showSignal:false,showEmber:false,showStatus:false}});
+check('post-unmount store updates do not recreate DOM',root.children.length===0);
+</script></body></html>
