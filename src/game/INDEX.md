@@ -22,6 +22,12 @@ Owner: Ali. Search here before adding a function.
 | `targetFor`, `stepEffect`, `stepEffects`, `neutralFrame`, `EffectInput` | `effects/effects-engine.ts` | Pure maths: signal → capped, smoothed effect values. |
 | `createDarkness`, `updateDarkness`, `minCoveringRadius` | `effects/darkness.ts` | The darkness sheet with a soft light hole (P0 spike). |
 | `reachableLedges`, `outlineSegments`, `WorldBounds`, `Segment` | `world/reachable-ledges.ts` | Higher ledges a sampled real jump lands on (LAN-3), and the outline segments to draw. No signal. |
+| `createCandleGenome`, `seededRandom`, `pickCandleSeed` | `candle/candle-genome.ts` | Seeded candle shape, colours, drips and flame rhythm; new seed each run, `?candleSeed=` in dev. |
+| `stepPose`, `poseFrame`, `bodyShape`, `POSE_TIMING` | `candle/candle-pose.ts` | Ruby-matched pose choice and frame timing, plus how the body squashes and stretches. |
+| `rasterCandle`, `grownSize` | `candle/candle-raster.ts` | Candle body, outline, drips and wick as art pixels. |
+| `rasterFlame`, `flameHeight`, `flameSizeFromRadius` | `candle/flame.ts` | Procedural pixel flame sized by the light radius, flickering at 12 fps (none under reduced motion). |
+| `waxGrowth`, `grownMovement` | `candle/growth.ts` | +2% size per wax; walk x growth, launch speeds x sqrt(growth). Wax count only, never the signal. |
+| `createCandleView` | `candle/candle-view.ts` | Draws the candle in the scene (replaces the Ruby sprite view). |
 | `createProtectedVisibility` | `effects/protected-visibility.ts` | Outline layer above the darkness: the ledge underfoot and reachable ledges' top edges, faded out at the edge of the light; cached per ledge. |
 | `fadeAlpha`, `fadeSegments`, `FADE_START_FACTOR`, `FADE_END_FACTOR` | `effects/outline-fade.ts` | Outline alpha from distance to the lantern: full inside the radius, gone at 1.5x. |
 | `createRefugeController` | `world/refuge.ts` | Rest-area entry/exit only. No automatic saves, markers or ember refills. |
