@@ -63,16 +63,20 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
       vx = 0;
     } else {
       if (support?.type === 'slippery' && config.surfaces) {
+        const ice = support.ice01 ?? 1;
         const target = dir * config.walkSpeed;
-        if (dir === 0) vx *= Math.exp(-config.surfaces.iceDrag * dt);
-        else vx += Math.max(-config.surfaces.iceAcceleration * dt, Math.min(config.surfaces.iceAcceleration * dt, target - vx));
+        const drag = config.surfaces.iceDrag / Math.max(0.05, ice);
+        const acceleration = config.surfaces.iceAcceleration / Math.max(0.05, ice);
+        if (ice === 0) vx = target;
+        else if (dir === 0) vx *= Math.exp(-drag * dt);
+        else vx += Math.max(-acceleration * dt, Math.min(acceleration * dt, target - vx));
       } else vx = dir * config.walkSpeed;
     }
   } else {
     const maxWind = config.surfaces?.maxWindSpeed ?? 0;
     windVx = Math.max(-maxWind, Math.min(maxWind,
       (windVx + (environment.windAccelerationX ?? 0) * dt) * Math.exp(-(config.surfaces?.windDecay ?? 0) * dt)));
-    vx = steeredVx(launchVx, dir, config) + windVx;
+    vx = steeredVx(launchVx, dir, config, vy > 0) + windVx;
   }
 
   const prevBottom = y + height / 2;

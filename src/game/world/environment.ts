@@ -18,7 +18,9 @@ export function windAt(sections: readonly SectionData[], player: { x: number; y:
   for (const section of sections) for (const wind of section.wind ?? []) {
     if (Math.abs(player.x - wind.x) > wind.width / 2 || Math.abs(player.y - wind.y) > wind.height / 2) continue;
     const gust = 0.35 + 0.65 * (Math.sin(timeMs / wind.periodMs * Math.PI * 2) + 1) / 2;
-    acceleration += wind.accelerationX * gust;
+    const edge = Math.min(wind.width / 2 - Math.abs(player.x - wind.x), wind.height / 2 - Math.abs(player.y - wind.y));
+    const blend = wind.fadePx ? Math.min(1, Math.max(0, edge / wind.fadePx)) : 1;
+    acceleration += wind.accelerationX * gust * blend;
   }
   return acceleration;
 }

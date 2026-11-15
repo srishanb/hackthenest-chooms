@@ -14,6 +14,7 @@ export interface PlayerInput {
 
 /** A one-way platform: solid from above only. Centre and size in world px, y grows downward. */
 export interface PlatformBox {
+  ice01?: number;
   type?: string;
   dx?: number;
   dy?: number;

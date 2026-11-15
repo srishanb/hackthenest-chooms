@@ -29,7 +29,9 @@ import type { EmberAnchor } from '../save';
 import type { PlatformBox, PlayerState } from '../player/types';
 import { sectionAt } from '../world/bounds';
 import { landingEvents } from '../world/fall-tracker';
-import { altitude01, bodyInArea, findFinish } from '../world/finish';
+import { altitude01 } from '../world/finish';
+import { createStageProgress } from '../world/stage-progress';
+import { lessonAt } from '../world/stage-weather';
 import { createPhaseController, type PhaseController } from '../world/phase-controller';
 import { writeSnapshot } from './snapshot-writer';
 import type { SaveStorage } from '../save';
@@ -60,6 +62,7 @@ export class ClimbScene extends Phaser.Scene {
   private authoredPlatforms: PlatformData[] = [];
   private worldView!: ReturnType<typeof drawWorld>;
   private worldTimeMs = 0;
+  private stages!: ReturnType<typeof createStageProgress>;
   private state!: PlayerState;
   private accumulatorMs = 0;
   private precisionActive = false;
@@ -105,6 +108,7 @@ export class ClimbScene extends Phaser.Scene {
       snapshot: stores.snapshot, bus: this.deps.bus, storage: this.deps.storage,
     });
     this.state = createPlayer(this.ember.spawn.x, this.ember.spawn.y);
+    this.stages = createStageProgress(sections, stores.snapshot, this.deps.bus, this.ember.getAnchor()?.platformId);
     const offFinish = this.deps.bus.on('finish', () => { this.ember.clear(); this.wax.finish(); });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       offFinish();
@@ -184,6 +188,7 @@ export class ClimbScene extends Phaser.Scene {
     const offCheckpoint = this.deps.bus.on('checkpoint_restart_requested', () => this.returnToEmber(this.ember.restartAtAnchor()));
     const offRestart = this.deps.bus.on('run_restart', () => {
       this.wax.reset();
+      this.stages.reset();
       const spawn = this.ember.restart();
       this.worldTimeMs = 0;
       this.state = teleportPlayer(spawn.x, spawn.y); clearInput(); this.accumulatorMs = 0;
@@ -221,7 +226,7 @@ export class ClimbScene extends Phaser.Scene {
 
     // Only the 'playing' phase steps; pause, ember and finished freeze the body.
     this.accumulatorMs = this.phase.isRunning() ? Math.min(this.accumulatorMs + deltaMs, stepMs * MAX_STEPS_PER_FRAME) : 0;
-    while (this.accumulatorMs >= stepMs) {
+    while (this.accumulatorMs >= stepMs && this.phase.isRunning()) {
       this.accumulatorMs -= stepMs;
       this.worldTimeMs += stepMs;
       this.platforms = platformsAt(this.authoredPlatforms, this.worldTimeMs, stepMs);
@@ -232,25 +237,30 @@ export class ClimbScene extends Phaser.Scene {
       this.refuges.update(this.state);
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).
-      if (out.events.landed) for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
+      if (out.events.landed) {
+        for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
+        if (this.stages.land(out.events.landed.platformId)) {
+          this.accumulatorMs = 0;
+          this.phase.finish();
+        }
+      }
     }
     this.ember.refreshPrompt(this.state);
     const anchor = this.ember.getAnchor();
     this.emberMark.setVisible(anchor !== null);
     if (anchor) this.emberMark.setPosition(anchor.x, anchor.y + gameConfig.player.height / 2 - 7);
-    const finish = findFinish(sections);
-    if (finish && this.phase.isRunning() && bodyInArea(this.state.x, this.state.y, finish)) this.phase.finish();
     if (this.state.charging !== this.precisionActive) {
       this.precisionActive = this.state.charging;
       bus.emit({ type: 'precision_window', active: this.precisionActive });
     }
     this.player.setPosition(this.state.x, this.state.y);
     this.waxView.update(deltaMs, this.phase.isRunning(), settings.reducedMotion);
-    this.worldView.update(this.platforms, this.worldTimeMs, settings.reducedMotion);
+    this.worldView.update(this.platforms, this.worldTimeMs, settings.reducedMotion, this.state.y);
     const sectionId = sectionAt(sections, this.state.y + gameConfig.player.height / 2);
-    const lesson = sections.find((section) => section.id === sectionId)?.lesson;
-    if (lesson && stores.snapshot.get().lessonKey !== `lesson.${lesson}`) {
-      stores.snapshot.set({ ...stores.snapshot.get(), lessonKey: `lesson.${lesson}` });
+    const lesson = sectionId === 'tutorial' ? lessonAt(sections, this.state.y) : undefined;
+    const lessonKey = lesson ? `lesson.${lesson}` : sectionId ? `stage.tip.${sectionId}` : undefined;
+    if (stores.snapshot.get().lessonKey !== lessonKey) {
+      stores.snapshot.set({ ...stores.snapshot.get(), lessonKey });
     }
     writeSnapshot(stores.snapshot, {
       sectionId,

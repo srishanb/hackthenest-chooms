@@ -2,10 +2,17 @@
 import type { Scene } from 'phaser';
 import type { PlatformBox } from '../player/types';
 import type { LoadedWorld } from './section-loader';
+import { stageWeatherAt } from './stage-weather';
+import { STAGES_CONFIG } from '../../config/stages.config';
 import { createForestWorld } from '../forest/forest-world';
 
 export function drawWorld(scene: Scene, world: LoadedWorld) {
   const forest = createForestWorld(scene, world);
+  const flakes = Array.from({ length: STAGES_CONFIG.snowflakeCount }, (_, index) =>
+    scene.add.circle(index * 137 % world.width, index * 83 % 540, 1 + index % 2, 0xe9f6ff, 0)
+      .setScrollFactor(0).setDepth(201));
+  let lastTimeMs = 0;
+  let snowDriftPx = 0;
   const marks = world.platforms.map((platform) => {
     if (platform.motion) {
       scene.add.rectangle(platform.x, platform.y + platform.height, platform.width + platform.motion.distance * 2, 2, 0x80c99d, 0.2).setDepth(0);
@@ -15,22 +22,33 @@ export function drawWorld(scene: Scene, world: LoadedWorld) {
   });
   const arrows = world.sections.flatMap((section) => (section.wind ?? []).flatMap((wind) => {
     scene.add.rectangle(wind.x, wind.y, wind.width, wind.height, 0x8cdef2, 0.045).setDepth(-1);
-    return Array.from({ length: 7 }, (_, index) => {
-      const x = wind.x - wind.width / 2 + (index + 1) / 8 * wind.width;
+    const rows = Math.ceil(wind.height / STAGES_CONFIG.windArrowRowSpacingPx);
+    const columns = STAGES_CONFIG.windArrowColumns;
+    return Array.from({ length: rows * columns }, (_, index) => {
+      const x = wind.x - wind.width / 2 + (index % columns + 1) / (columns + 1) * wind.width;
+      const y = wind.y - wind.height / 2 + (Math.floor(index / columns) + 0.5) / rows * wind.height;
       const sign = Math.sign(wind.accelerationX) || 1;
-      const head = scene.add.triangle(x, wind.y, -7, -5, 7, 0, -7, 5, 0xb7e8f4, 0.6).setScale(sign, 1).setDepth(200);
-      const shaft = scene.add.rectangle(x - 8 * sign, wind.y, 16, 2, 0xb7e8f4, 0.6).setDepth(200);
-      return { x, y: wind.y, sign, head, shaft };
+      const head = scene.add.triangle(x, y, -7, -5, 7, 0, -7, 5, 0xb7e8f4, 0.6).setScale(sign, 1).setDepth(200);
+      const shaft = scene.add.rectangle(x - 8 * sign, y, 16, 2, 0xb7e8f4, 0.6).setDepth(200);
+      return { x, y, sign, head, shaft };
     });
   }));
-  for (const section of world.sections) if (section.finish) {
-    const area = section.finish;
-    scene.add.rectangle(area.x, area.y, area.width, area.height, 0xf2c14e, 0.25).setDepth(1);
-  }
   return {
     forest,
-    update(platforms: readonly PlatformBox[], timeMs: number, reducedMotion: boolean): void {
+    update(platforms: readonly PlatformBox[], timeMs: number, reducedMotion: boolean, playerY = 500): void {
       forest.syncPlatforms(platforms);
+      const weather = stageWeatherAt(world.sections, playerY);
+      if (timeMs < lastTimeMs) snowDriftPx = 0;
+      const dtSeconds = Math.max(0, timeMs - lastTimeMs) / 1000;
+      lastTimeMs = timeMs;
+      if (!reducedMotion) snowDriftPx += dtSeconds * STAGES_CONFIG.snowWindPxPerSecond * weather.wind01;
+      // Screen-space flakes avoid a world-sized emitter. Gameplay time freezes on pause/recovery.
+      const seconds = reducedMotion ? 0 : timeMs / 1000;
+      for (const [index, flake] of flakes.entries()) {
+        const x = (index * 137 + (reducedMotion ? 0 : snowDriftPx)) % world.width;
+        const y = (index * 83 + seconds * STAGES_CONFIG.snowFallPxPerSecond) % 540;
+        flake.setPosition(x, y).setAlpha(weather.snow01 * STAGES_CONFIG.snowOpacity);
+      }
       for (const mark of marks) {
         const platform = platforms.find((candidate) => candidate.id === mark.id);
         if (platform) { mark.rim.setPosition(platform.x, platform.y - mark.height / 2); }
