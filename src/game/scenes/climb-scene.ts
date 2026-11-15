@@ -21,6 +21,8 @@ import type { ForestWorld } from '../forest/forest-world';
 import { WAX_CONFIG } from '../../config/wax.config';
 import { pickCandleSeed } from '../candle/candle-genome';
 import { createCandleView } from '../candle/candle-view';
+import { flameSizeFromRadius } from '../candle/flame';
+import { createPortraitView } from '../candle/portrait-view';
 import { grownMovement, waxGrowth } from '../candle/growth';
 import { createProtectedVisibility, type ProtectedVisibility } from '../effects/protected-visibility';
 import { createKeyboardInput } from '../keyboard-input';
@@ -80,6 +82,7 @@ export class ClimbScene extends Phaser.Scene {
   private lanternMark!: Phaser.GameObjects.Arc;
   private forest!: ForestWorld;
   private candle!: ReturnType<typeof createCandleView>;
+  private portrait!: ReturnType<typeof createPortraitView>;
   /** True while the camera slides back to the start after Play again; the player waits. */
   private sliding = false;
   /** Direction held in the latest physics step, for the candle's aim cue (visual only). */
@@ -123,6 +126,8 @@ export class ClimbScene extends Phaser.Scene {
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
     this.player.setVisible(false); // Preserve the camera's original follow target and exact body alignment.
     this.candle = createCandleView(this, gameConfig.player.height, pickCandleSeed(window.location.search, import.meta.env.DEV));
+    // Bottom-left close-up of the same candle: replaces the lantern strength bar.
+    this.portrait = createPortraitView(this, gameConfig.view.height);
     {
       const preview = (event: Event): void => {
         const value: unknown = (event as CustomEvent<unknown>).detail;
@@ -332,11 +337,19 @@ export class ClimbScene extends Phaser.Scene {
     this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius, this.platforms);
     this.lanternMark.setPosition(this.state.x, this.state.y - gameConfig.player.height / 2 - 6);
     const lantern = effectsTable.find((rule) => rule.id === 'lanternRadius');
+    const growth = waxGrowth(stores.snapshot.get().wax?.collected ?? 0, WAX_CONFIG.growthPerWax, WAX_CONFIG.growthCapWax);
+    this.portrait.update(this.candle.genome(), deltaMs, {
+      strength01: flameSizeFromRadius(radius, lantern?.min ?? 90, lantern?.max ?? 280),
+      growth,
+      reducedMotion: settings.reducedMotion,
+      visible: stores.snapshot.get().phase !== 'menu' && settings.hud.showStatus,
+      paused: !this.phase.isRunning(),
+    });
     this.candle.update(this.state, deltaMs, !this.phase.isRunning(), {
       radiusPx: radius,
       minRadiusPx: lantern?.min ?? 90,
       maxRadiusPx: lantern?.max ?? 280,
-      growth: waxGrowth(stores.snapshot.get().wax?.collected ?? 0, WAX_CONFIG.growthPerWax, WAX_CONFIG.growthCapWax),
+      growth,
       charge01: this.state.chargeMs / gameConfig.jump.maxChargeMs,
       aim: this.phase.isRunning() ? this.aim : 0,
       reducedMotion: settings.reducedMotion,
