@@ -10,15 +10,17 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 | `createSettingsStore`, `loadSettings`, `validateSettings`, `mergeWithDefaults`, `SETTINGS_STORAGE_KEY`, `CAPTION_SCALE_RANGE` | `settings-store.ts` | Load, validate types/ranges/key codes, apply live and save settings; caption scale 0.75–2. |
 | `sourceBadge` | `components/source-badge/` | Always-visible input source label. |
 | `debugOverlay` | `components/debug-overlay/` | Backtick-toggled signal numbers. |
-| `mainMenu` | `components/main-menu/` | First-launch controls tutorial, persistent completion and replay button; publishes pause/resume through the bus. |
+| `mainMenu` | `components/main-menu/` | Reused four-step controls/journey/BCI guide, menu How to Play route and in-game replay; publishes pause/resume through the bus. |
 | `hasSeenTutorial`, `rememberTutorial`, `TUTORIAL_STORAGE_KEY` | `components/main-menu/tutorial-storage.ts` | Safely remember the completed/skipped guide independently of checkpoint saves. |
 | `captions` | `components/captions/` | Shows `narrator_line` text for `durationMs`; follows Settings (on/off, size). Dev: `?captionDemo`, `window.lightenCaption(text)`. Helpers `captionDurationMs`, `captionText` in `captions-state.ts`. |
 | `emberPrompt` | `components/ember-prompt/` | Registered, renders nothing: recovery uses the HUD; Play again moved to the finish screen. |
 | `finishScreen`, `finishScreenVisible`, `restartsOnKey` | `components/finish-screen/` | Shown in phase 'finished': Play again (button or Enter) emits `run_restart`. |
 | `pauseMenu`, `settingsPanel` | `components/pause-menu/`, `components/settings-panel/` | Pause/resume bus controls and live settings; main-menu start route remains pending. |
-| `createUiActions`, `UiActions` | `ui-actions.ts` | UI-local settings/calibration navigation and enabled-component capabilities. |
+| `createUiActions`, `UiActions` | `ui-actions.ts` | UI-local settings, guide and calibration navigation; hides unavailable menu routes. |
 | `remapKey` | `components/settings-panel/settings-editor.ts` | Swap existing bindings on a duplicate choice. |
-| `startMenu` | `components/start-menu/start-menu.ts` | Title, Play (emits `start`) and Settings (opens the settings panel) while the phase is `'menu'`. |
+| `startMenu` | `components/start-menu/start-menu.ts` | Dedicated forest launch screen; existing Play/Continue, Settings and guide routes, Credits, signal-source indicator and keyboard navigation. |
+| `canContinue`, `menuSelection` | `components/start-menu/start-menu-state.ts` | Resume-label detection from existing validated game state and wrapping arrow-key focus selection. |
+| `createCredits` | `components/start-menu/credits.ts` | Menu-only credit card drawn from actual project/asset attribution. |
 | `startMenuVisible`, `startsOnKey` | `components/start-menu/start-menu-state.ts` | Pure show/hide and Enter-to-play rules. |
 | `hud` | `components/hud/hud.ts` | Ember status, running wax count/boost timer/pickup feedback, stage progress, signal quality and qualitative signal intensity. |
 | `hudState`, `percent`, `intensityLabel` | `components/hud/hud-state.ts` | Presentation mapping and bounded percentage formatting. |
