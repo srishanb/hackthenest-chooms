@@ -54,3 +54,5 @@
 ## 7. Can a teammate explain this?
 
 Six downloaded voice clips react to existing game events, including finishing the tutorial and reaching the summit. They play locally with captions and cooldowns. Jumping does not interrupt them, while pausing saves the exact position for resume.
+
+Final sync: main's tutorial-controls PR #111 landed after the first push. Merged it and resolved the UI text conflict by retaining both its new keys and the selected-voice label. Re-ran npm run check and npm run build successfully on the merged tree; node --check for the generator and git diff --check also pass.
