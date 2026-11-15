@@ -1,4 +1,4 @@
-import { FUEL_VISIBILITY_CONFIG as V } from '../../config/fuel-visibility.config';
+import { FUEL_VISIBILITY_CONFIG as V, sceneryCorruption } from '../../config/fuel-visibility.config';
 /** Bounded forest scenery and platform skins. All positions are decorative, never collision bodies. */
 import { ENVIRONMENT_ASSETS } from '../../config/environment-assets.config';
 import type { GameObjects, Scene } from 'phaser';
@@ -146,16 +146,17 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       mist.tilePositionX = reducedMotion ? 0 : clock / 160;
       mist.tilePositionY = camera.scrollY * 0.08 / C.pixelScale;
       mist.setTint(mixColor(mixColor(0xa9d4c0, 0xbed5e6, snowMix), 0xbf8aa9, c)).setAlpha(0.04 + C.mistMaxAlpha * c);
-      const tint = mixColor(C.terrain.calm, C.terrain.corrupted, c);
+      const plantCorruption = sceneryCorruption(c);
+      const tint = mixColor(C.terrain.calm, C.terrain.corrupted, plantCorruption);
       for (const tile of terrain) tile.setTint(tint);
       for (const pair of redTerrain) {
         pair.normal.setAlpha(1);
-        pair.red.setAlpha(c).setTint(0xffffff);
+        pair.red.setAlpha(plantCorruption).setTint(0xffffff);
       }
       for (const rim of rims) rim.setFillStyle(mixColor(C.rim.calm, C.rim.corrupted, c));
       for (const prop of props) {
-        const blend = reveal(Math.min(1, c * (0.3 / V.decayFadeWidth)), prop.threshold * V.decayThresholdScale);
-        prop.healthy.setAlpha(0.85 * (1 - blend)).setTint(mixColor(0xd7ebcb, 0xb88da3, c));
+        const blend = reveal(Math.min(1, plantCorruption * (0.3 / V.decayFadeWidth)), prop.threshold * V.decayThresholdScale);
+        prop.healthy.setAlpha(0.85 * (1 - blend)).setTint(mixColor(0xd7ebcb, 0xb88da3, plantCorruption));
         prop.decayed.setAlpha(blend * V.decayOpacity);
       }
       for (const spore of spores) {

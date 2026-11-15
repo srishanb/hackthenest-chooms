@@ -1,3 +1,4 @@
+import { sceneryCorruption } from '../../config/fuel-visibility.config';
 /** Full viewport and depleted sight agree across worlds and view sizes. */
 import { expect, it } from 'vitest';
 import { fuelVisibilityRadius as radius } from '../forest/fuel-visibility';
@@ -8,4 +9,10 @@ it('clears all corners at full fuel in either world and preserves emergency ligh
     expect(radius(0,1,w,h)).toBe(60);
     expect(radius(0.5,1,w,h)).toBeLessThan(radius(0.5,0,w,h));
   }
+});
+
+it('keeps normal scenery healthy and reveals decay only beyond the normal boundary', () => {
+  for (const value of [0, 0.2, 0.35, NaN]) expect(sceneryCorruption(value)).toBe(0);
+  expect(sceneryCorruption(0.6)).toBeGreaterThan(0);
+  expect(sceneryCorruption(1)).toBe(1);
 });
