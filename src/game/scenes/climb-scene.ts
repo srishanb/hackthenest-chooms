@@ -23,6 +23,7 @@ import { pickCandleSeed } from '../candle/candle-genome';
 import { createCandleView } from '../candle/candle-view';
 import { grownMovement, waxGrowth } from '../candle/growth';
 import { createProtectedVisibility, type ProtectedVisibility } from '../effects/protected-visibility';
+import { createLanternFuel } from '../forest/lantern-fuel';
 import { createKeyboardInput } from '../keyboard-input';
 import { createWaxRewards } from '../wax/rewards';
 import { createWaxView } from '../wax/view';
@@ -78,6 +79,7 @@ export class ClimbScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Rectangle;
   private darkness!: Phaser.GameObjects.Image;
   private lanternMark!: Phaser.GameObjects.Arc;
+  private fuel = createLanternFuel();
   private forest!: ForestWorld;
   private candle!: ReturnType<typeof createCandleView>;
   /** True while the camera slides back to the start after Play again; the player waits. */
@@ -193,7 +195,10 @@ export class ClimbScene extends Phaser.Scene {
     const offAssist = this.deps.bus.on('ember_assist_requested', () => this.returnToEmber(this.ember.assist()));
     const offCancel = this.deps.bus.on('ember_cancel_request', () => this.ember.cancel());
     const offCheckpoint = this.deps.bus.on('checkpoint_restart_requested', () => this.returnToEmber(this.ember.restartAtAnchor()));
+    const offFuelWax = this.deps.bus.on('wax_collected', () => this.fuel.refill());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, offFuelWax);
     const offRestart = this.deps.bus.on('run_restart', () => {
+      this.fuel.reset();
       this.wax.reset();
       this.stages.reset();
       const spawn = this.ember.restart();
@@ -234,6 +239,10 @@ export class ClimbScene extends Phaser.Scene {
     });
   }
 
+  private visibleRadius(base: number, airborne: boolean): number {
+    return this.fuel.lightRadius(this.wax.lightRadius(base, airborne), airborne);
+  }
+
   private returnToEmber(anchor: EmberAnchor | null): void {
     if (!anchor) return;
     this.state = teleportPlayer(anchor.x, anchor.y);
@@ -265,6 +274,8 @@ export class ClimbScene extends Phaser.Scene {
         { windAccelerationX: windAt(sections, this.state, this.worldTimeMs) });
       this.state = out.state;
       this.wax.update(this.state, stepMs);
+      const actualSignal = composure.getState();
+      this.fuel.update(actualSignal.valid && actualSignal.mode !== 'fixed' ? actualSignal.intensity : 0.2, stepMs);
       this.refuges.update(this.state);
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).
@@ -294,12 +305,13 @@ export class ClimbScene extends Phaser.Scene {
       stores.snapshot.set({ ...stores.snapshot.get(), lessonKey });
     }
     writeSnapshot(stores.snapshot, {
+      lanternFuel01: Math.round(this.fuel.value * 100) / 100,
       sectionId,
       altitude01: altitude01(sections, this.state.y),
       navigation: {
         player: { x: Math.round(this.state.x), y: Math.round(this.state.y) },
         originY: sections[0]?.spawn.y ?? this.state.y,
-        lanternRadiusPx: Math.round(this.wax.lightRadius(Math.max(stores.effects.get().lanternRadius,
+        lanternRadiusPx: Math.round(this.visibleRadius(Math.max(stores.effects.get().lanternRadius,
           minCoveringRadius(gameConfig.view.width, gameConfig.view.height)), !this.state.grounded)),
         checkpoints: anchor ? [{ id: anchor.platformId, x: anchor.x, y: anchor.y }] : [],
       },
