@@ -45,7 +45,7 @@ This sends selected text to ElevenLabs and consumes account credits. It download
 
 ## Current voice comparison (2026-11-15)
 
-George was rejected by Amrit. Current game defaults to conversational Chris; mature Bill is the alternative. Settings → Narrator voice → Preview voice plays the same short opening for a fair comparison. Choose a voice to save it locally; Stop preview or closing Settings stops the audition. Preview uses existing master/narrator volumes, captions and music ducking, and does not consume the next intro. Six shorter lines per voice are 3–5.6 seconds each. Decoded levels are balanced once, with peak headroom and capped amplification; no per-frame analysis or live synthesis.
+George was rejected by Amrit. The voice comparison offered conversational Chris and mature Bill; the game now defaults to the baseline voice (see "Selected game moments" below), and Chris and Bill remain optional. Settings → Narrator voice → Preview voice plays the same short opening for a fair comparison. Choose a voice to save it locally; Stop preview or closing Settings stops the audition. Preview uses existing master/narrator volumes, captions and music ducking, and does not consume the next intro. Six shorter lines per voice are 3–5.6 seconds each. Decoded levels are balanced once, with peak headroom and capped amplification; no per-frame analysis or live synthesis.
 
 Generation commands (API key remains in private env file):
 
@@ -56,7 +56,7 @@ node --env-file=.env.local tools/narrator/build.mjs build chris
 node --env-file=.env.local tools/narrator/build.mjs build bill
 ```
 
-The current default is Eleven v4 using only stability/similarity_boost parameters supported by that model. Short auditions reuse the exact first final clip. Full builds combine completed profile manifests into the active content bank. `custom` uses the private ELEVENLABS_VOICE_ID if a different approved stock voice is desired. Default build profile is Chris; the old George id need not be changed in the private env file. Old generated files are preserved rather than removed. There are no generation credits spent during gameplay or Preview.
+The current default is Eleven v4 using only stability/similarity_boost parameters supported by that model. Short auditions reuse the exact first final clip. Full builds combine completed profile manifests into the active content bank. `custom` uses the private ELEVENLABS_VOICE_ID if a different approved stock voice is desired. The `audition` and `build` commands default to the Chris profile when no profile is given; the old George id need not be changed in the private env file. Old generated files are preserved rather than removed. There are no generation credits spent during gameplay or Preview.
 
 ## Selected game moments (baseline)
 
