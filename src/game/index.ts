@@ -34,6 +34,8 @@ export function createGame(deps: GameDeps): Phaser.Game {
 
   return new Phaser.Game({
     type: Phaser.AUTO,
+    pixelArt: true,
+    roundPixels: true,
     parent: deps.parent,
     backgroundColor: '#05060a',
     scale: {

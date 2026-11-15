@@ -7,6 +7,7 @@
  * driven by the signal.
  */
 import * as Phaser from 'phaser';
+import { FOREST_CONFIG, FOREST_PREVIEW_EVENT, forestPreviewValue } from '../../config/forest.config';
 import type { Stores } from '../../shared/contracts/app';
 import type { ComposureReader } from '../../shared/contracts/composure';
 import type { EmberConfig, GameConfig } from '../../shared/contracts/config';
@@ -14,7 +15,10 @@ import type { SectionData } from '../../shared/contracts/content';
 import type { EffectRule } from '../../shared/contracts/effects';
 import type { EventBus } from '../../shared/contracts/events';
 import { createDarkness, minCoveringRadius, updateDarkness } from '../effects/darkness';
-import { neutralFrame, stepEffects } from '../effects/effects-engine';
+import { neutralFrame } from '../effects/effects-engine';
+import { stepForestEffects } from '../forest/forest-effects';
+import type { ForestWorld } from '../forest/forest-world';
+import { createRubyView } from '../forest/ruby-view';
 import { createKeyboardInput } from '../keyboard-input';
 import { createPlayer, stepPlayer, teleportPlayer } from '../player/movement';
 import { createRecoveryEmber } from '../ember/recovery';
@@ -59,6 +63,9 @@ export class ClimbScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Rectangle;
   private darkness!: Phaser.GameObjects.Image;
   private lanternMark!: Phaser.GameObjects.Arc;
+  private forest!: ForestWorld;
+  private ruby!: ReturnType<typeof createRubyView>;
+  private forestPreview: number | null = forestPreviewValue(window.location.search, import.meta.env.DEV);
 
   constructor(private readonly deps: ClimbSceneDeps) {
     super(CLIMB_SCENE_KEY);
@@ -72,7 +79,7 @@ export class ClimbScene extends Phaser.Scene {
 
     const world = loadSections(sections, gameConfig.view.width);
     this.platforms = world.platforms;
-    drawWorld(this, world);
+    this.forest = drawWorld(this, world);
 
     this.refuges = createRefugeController({
       sections, snapshot: stores.snapshot, bus: this.deps.bus,
@@ -87,6 +94,16 @@ export class ClimbScene extends Phaser.Scene {
       offFinish();
     });
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
+    this.player.setVisible(false); // Preserve the camera's original follow target and exact body alignment.
+    this.ruby = createRubyView(this, gameConfig.player.height);
+    if (import.meta.env.DEV) {
+      const preview = (event: Event): void => {
+        const value: unknown = (event as CustomEvent<unknown>).detail;
+        this.forestPreview = typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : null;
+      };
+      window.addEventListener(FOREST_PREVIEW_EVENT, preview);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => window.removeEventListener(FOREST_PREVIEW_EVENT, preview));
+    }
 
     this.cameras.main.setBounds(0, world.top, world.width, world.bottom - world.top);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
@@ -191,7 +208,7 @@ export class ClimbScene extends Phaser.Scene {
     });
 
     const signal = composure.getState();
-    const frame = stepEffects(
+    const frame = stepForestEffects(
       stores.effects.get(),
       effectsTable,
       {
@@ -203,8 +220,13 @@ export class ClimbScene extends Phaser.Scene {
         reducedMotion: settings.reducedMotion,
       },
       deltaMs,
+      this.forestPreview,
     );
     stores.effects.set(frame);
+    this.forest.update(frame.forestCorruption, deltaMs, settings.reducedMotion, !this.phase.isRunning());
+    this.ruby.update(this.state, deltaMs, !this.phase.isRunning());
+    this.darkness.setAlpha(FOREST_CONFIG.darknessAlpha.calm + frame.forestCorruption *
+      (FOREST_CONFIG.darknessAlpha.corrupted - FOREST_CONFIG.darknessAlpha.calm));
 
     // Never let the sheet shrink so far that its edge shows on screen.
     const radius = Math.max(frame.lanternRadius, minCoveringRadius(gameConfig.view.width, gameConfig.view.height));

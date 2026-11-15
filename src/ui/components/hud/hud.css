@@ -9,6 +9,8 @@
   color: var(--color-text-dim);
   font-size: var(--text-sm);
   max-width: var(--panel-max-width);
+  box-shadow: var(--panel-shadow);
+  border-left: 3px solid var(--color-accent);
 }
 .hud__status { color: var(--color-text); }
 .hud__prompt { color: var(--color-accent); }
