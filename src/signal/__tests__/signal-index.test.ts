@@ -3,7 +3,8 @@ import { SIGNAL_CONFIG } from '../../config/signal.config';
 import { createEventBus } from '../../shared/bus';
 import type { GameEvent } from '../../shared/contracts/events';
 import { createSignal } from '../index';
-import { createHeader, serializeRecording } from '../sources/recording-format';
+import { createHeader, parseRecording, serializeRecording } from '../sources/recording-format';
+import { createReplaySource } from '../sources/replay-source';
 import { makeSequence } from './fixtures/make-fixture';
 
 // createSignal starts a 12 Hz timer; fake timers keep tests fast and leave nothing running.
@@ -72,5 +73,21 @@ describe('createSignal', () => {
     await expect(second).rejects.toThrow(/already running/);
     await vi.advanceTimersByTimeAsync(SIGNAL_CONFIG.calibration.restingMs + 10);
     await expect(first).resolves.toMatchObject({ step: 'resting' });
+  });
+
+  it('exportRecording() returns frames, states and events that replay again', async () => {
+    const bus = createEventBus();
+    const signal = createSignal(bus, SIGNAL_CONFIG, { search: '?source=replay&replay=run.jsonl&algo=passthrough-v0', fetchText: async () => recordingText() });
+    await vi.advanceTimersByTimeAsync(1500);
+    bus.emit({ type: 'signal_lost' });
+    const text = signal.exportRecording();
+    const lines = text.trim().split('\n').map((line) => JSON.parse(line) as { type: string });
+    expect(lines[0]).toMatchObject({ type: 'header', format: 'lighten-recording', algo: 'passthrough-v0' });
+    for (const type of ['frame', 'state', 'event']) expect(lines.some((line) => line.type === type)).toBe(true);
+    const recording = parseRecording(text);
+    expect(recording.frames.length).toBeGreaterThan(0);
+    const frames: number[] = [];
+    await createReplaySource({ frames: recording.frames, speed: Infinity }).start((frame) => frames.push(frame.t));
+    expect(frames.length).toBe(recording.frames.length);
   });
 });
