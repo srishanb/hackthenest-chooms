@@ -1,0 +1,5 @@
+# Sensitive live corruption
+
+Neil requested small incidental activity spikes trigger corruption without deliberate strong tension. Add calibrated v2 gain1.8,600ms attack and1600ms release before existing world-effect smoothing. Zero baseline preserved, bounded0–1; only valid adaptive v2 input is boosted. Other algorithms/fixed/invalid inputs keep original mapping/smoothing; calibration and contact/stale gates unchanged. No stress diagnosis, no physics change. Files: new config/test and pipeline. Pre-code check: partly done. Human tasks: real-head sensitivity tuning remains; battery-only worn operation. Acceptance: smaller calibrated changes amplified, zero/bounds kept, tests/build. Manual physiological/eyebrow specificity unverified; effect still includes muscle activity. Confidence high in mapping, medium subjective sensitivity. Live page reload may require reconnect/calibration. No shared contracts/dependencies or abandoned approaches.
+
+World corruption effect smoothing900ms complements600ms signal attack; effects.config.ts is also touched.
