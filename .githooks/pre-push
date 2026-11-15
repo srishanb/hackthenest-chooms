@@ -1,0 +1,51 @@
+#!/bin/sh
+# pre-push guard: never delete or rewrite git history (AGENTS.md, rule one).
+#
+# Git runs this before every push and feeds it one line per ref on stdin:
+#   <local_ref> <local_sha> <remote_ref> <remote_sha>
+# We refuse any push that would delete a remote branch or tag, or move a remote ref to a
+# commit that does not contain the commit it points to now (a force push of rewritten
+# history, or a push that would drop commits the remote has and we do not).
+# There is deliberately no override switch. The fix is always: fetch, merge, push.
+# Installed by `npm ci` (scripts/hooks/install-git-hooks.mjs) and by `scripts/wt.sh new`.
+
+is_zero() {
+  case "$1" in
+    *[!0]*) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+status=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -n "$remote_ref" ] || continue
+
+  if is_zero "$local_sha"; then
+    {
+      echo "REFUSED: this push would DELETE ${remote_ref} on the remote."
+      echo "Never delete git history: no branch or tag that was pushed may be removed (AGENTS.md, rule one)."
+      echo "Merged branches stay. Skip this step; if you think it is needed, stop and tell Srishan."
+    } >&2
+    status=1
+    continue
+  fi
+
+  if is_zero "$remote_sha"; then
+    continue
+  fi
+
+  if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+    branch="${remote_ref#refs/heads/}"
+    {
+      echo "REFUSED: this push would overwrite history on ${remote_ref}."
+      echo "The remote is at ${remote_sha}, which is not an ancestor of what you are pushing (${local_sha})."
+      echo "That means either your history was rewritten (rebase, amend of a pushed commit, reset)"
+      echo "or the remote has commits you do not have locally."
+      echo "Fix: git fetch origin && git merge origin/${branch}, resolve conflicts, then push again."
+      echo "Never force. To undo a pushed change, add a new commit with git revert."
+    } >&2
+    status=1
+  fi
+done
+
+exit "$status"

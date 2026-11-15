@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm run test",
-    "eval": "tsx tools/eval/run-eval.ts"
+    "eval": "tsx tools/eval/run-eval.ts",
+    "prepare": "node scripts/hooks/install-git-hooks.mjs"
   },
   "dependencies": {
     "phaser": "4.2.1"
