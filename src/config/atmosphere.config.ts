@@ -5,6 +5,7 @@ export interface VisualEnvironment {
 }
 export const ATMOSPHERE_CONFIG = {
   seed: 'lighten-forest-v2', chunkPx: 640, crownSlots: 10, trunksPerLayer: 7,
+  gardenSlots: 8, gardenSpacingPx: 260,
   weatherTauMs: 700, windPxPerSecond: 80, snowOpacity: 0.26,
   leavesOpacity: 0.38, fogOpacity: 0.14,
 } as const;

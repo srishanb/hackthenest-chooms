@@ -8,7 +8,7 @@ import type { VisualEnvironment } from '../../config/atmosphere.config';
 import { createVerticalForest } from './vertical-forest';
 import { createAtmosphere } from './atmosphere';
 import { createBackdropGardens } from './backdrop-gardens';
-import { mixColor, reveal, stableUnit } from './presentation';
+import { fitPropScale, mixColor, reveal, stableUnit } from './presentation';
 
 export interface ForestWorld {
   update(corruption: number, deltaMs: number, reducedMotion: boolean, paused: boolean, strength?: number): void;
@@ -36,23 +36,23 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
     const skin = winter ? ENVIRONMENT_ASSETS.winter : ENVIRONMENT_ASSETS.forest;
     const terrainStart = terrain.length, rimStart = rims.length, propStart = props.length;
     const left = platform.x - platform.width / 2, top = platform.y - platform.height / 2;
-    terrain.push(scene.add.tileSprite(left, top, platform.width, Math.min(12, platform.height), skin.middle)
+    terrain.push(scene.add.tileSprite(left, top, platform.width, Math.min(6, platform.height), skin.middle)
       .setOrigin(0).setTileScale(C.pixelScale).setDepth(0));
     // A tapered, stepped island silhouette rather than a full rectangular slab.
     // These are render-only soil columns; the original landing boxes are authoritative.
-    const columns = 9, columnWidth = platform.width / columns;
+    const columns = 13, columnWidth = platform.width / columns;
     for (let column = 0; column < columns; column++) {
-      const edge = Math.min(column, columns - column - 1);
-      const variation = Math.floor(stableUnit(`soil:${platform.id}:${column}`) * 3) * 2;
-      const depth = 4 + Math.min(edge, 3) * 4 + variation;
-      const inset = column === 0 || column === columns - 1 ? 5 : 0;
+      const normalized = (column + 0.5) / columns * 2 - 1;
+      const variation = Math.floor(stableUnit(`soil:${platform.id}:${column}`) * 2) * 2;
+      const depth = 2 + Math.round(Math.sqrt(1 - normalized * normalized) * 24 / 2) * 2 + variation;
+      const inset = column === 0 || column === columns - 1 ? 6 : 0;
       terrain.push(scene.add.tileSprite(left + column * columnWidth + (column === 0 ? inset : 0),
-        top + 10, columnWidth - inset, depth, winter ? skin.middle : 'grass-soil')
+        top + 4, columnWidth - inset, depth, winter ? skin.middle : 'grass-soil')
         .setOrigin(0).setTileScale(C.pixelScale).setDepth(-1));
     }
     const capWidth = Math.min(32, platform.width / 2);
     for (const [x, key] of [[left, skin.left], [left + platform.width - capWidth, skin.right]] as const) {
-      terrain.push(scene.add.tileSprite(x, top, capWidth, Math.min(12, platform.height), key)
+      terrain.push(scene.add.tileSprite(x, top, capWidth, Math.min(6, platform.height), key)
         .setOrigin(0).setTileScale(C.pixelScale).setDepth(0));
     }
     rims.push(scene.add.rectangle(platform.x, top + 1, platform.width, 2, C.rim.calm).setDepth(1));
@@ -68,7 +68,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
         const decayed = scene.add.image(x, top + 3, winter ? skin.decay : seed > 0.5 ? 'forest-thorns' : 'forest-dark-mushrooms')
           .setOrigin(0.5, 1).setScale(C.pixelScale).setDepth(-1).setAlpha(0);
         // Match the healthy prop's height instead of growing a tall atlas fragment over a landing.
-        decayed.setScale(C.pixelScale * healthy.height / decayed.height);
+        decayed.setScale(fitPropScale(decayed.height, healthy.displayHeight));
         props.push({ healthy, decayed, threshold: seed * 0.65 });
       }
     }
@@ -95,6 +95,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
     setEnvironment(value) {
       atmosphere.setEnvironment(value);
       background.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
+      gardens.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
     },
     syncPlatforms(platforms) {
       const positions = new Map(platforms.map((platform) => [platform.id, platform]));
