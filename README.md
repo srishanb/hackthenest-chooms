@@ -175,8 +175,8 @@ Stack: Vite 8.3.8, TypeScript 7.0.2 (strict), Phaser 4.2.1, Vitest 5.1.0. No bac
 - The signal is not pure brain activity. Jaw, face and eye muscles change it, and so does poor electrode contact.
 - Built-in presets use fixed baselines. They show how the game reacts; they are not real brain recordings and do not
   replace calibration.
-- Only three effects are enabled (lantern radius, forest corruption, music mix). Fog, shadow and background-motion
-  rows exist in the effects table but are switched off.
+- Only three effects are enabled (lantern radius, forest corruption, music mix). Fog, shadow, background-motion
+  and lantern-flicker rows exist in the effects table but are switched off.
 - Tested mainly in Chrome. Safari and Firefox are untested.
 
 ## Team
