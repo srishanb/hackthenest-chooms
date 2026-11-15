@@ -29,8 +29,12 @@ export const sourceBadge: UiComponent = {
       badge.textContent = t(LABEL[source]);
     };
     render(signal.reader.getState().source);
-    return signal.reader.subscribe((state) => {
+    const unsubscribe = signal.reader.subscribe((state) => {
       if (badge.dataset.source !== state.source) render(state.source);
     });
+    return () => {
+      unsubscribe();
+      badge.remove();
+    };
   },
 };

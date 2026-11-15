@@ -1,0 +1,45 @@
+<!doctype html><html><head><title>UI shell lifecycle check</title></head><body>
+<div id="ui"></div><pre id="results" style="position:fixed;z-index:100;color:white;background:black;inset:0 0 auto 0"></pre>
+<script type="module">
+import { mountUi } from '/src/ui/registry.ts';
+import { UI_CONFIG } from '/src/config/ui.config.ts';
+import { INITIAL_GAME_SNAPSHOT } from '/src/shared/contracts/game-state.ts';
+import { DEFAULT_SETTINGS } from '/src/shared/contracts/settings.ts';
+import { createStore } from '/src/shared/store.ts';
+import { createEventBus } from '/src/shared/bus.ts';
+const root = document.querySelector('#ui');
+const output = document.querySelector('#results');
+const checks = [];
+function check(name, pass) { checks.push(`${pass ? 'PASS' : 'FAIL'} ${name}`); output.textContent = checks.join('\n'); if (!pass) throw Error(name); }
+const snapshot = createStore({...INITIAL_GAME_SNAPSHOT, phase:'menu'});
+const settings = createStore(DEFAULT_SETTINGS);
+const frame = {intensity:0, resting:0, restingActive:false, quality:1, valid:true, sampleAgeMs:0, held:false, mode:'adaptive', calibrated:true, source:'SIMULATED', algo:'test', t:0};
+let signalListeners = new Set();
+const deps = {bus:createEventBus(), stores:{snapshot,settings,effects:createStore({})}, signal:{reader:{getState:()=>frame,subscribe(fn){signalListeners.add(fn);return ()=>signalListeners.delete(fn);}}, control:{}}};
+const config = structuredClone(UI_CONFIG);
+config.components['debug-overlay'].enabled=false;
+const unmount = mountUi(root, deps, config);
+check('six named slots created', root.querySelectorAll('.ui-slot').length===6);
+const menu=root.querySelector('[data-component="main-menu"]');
+const pause=root.querySelector('[data-component="pause-menu"]');
+check('main menu in configured center slot', menu.parentElement.dataset.slot==='center');
+check('initial phase hides pause menu', !menu.hidden && pause.hidden);
+snapshot.set({...snapshot.get(),phase:'paused'});
+check('phase change shows pause and hides main menu', menu.hidden && !pause.hidden);
+check('disabled overlay is omitted', !root.querySelector('[data-component="debug-overlay"]'));
+const badge=root.querySelector('.source-badge');
+const original=getComputedStyle(badge).color;
+document.documentElement.style.setProperty('--color-warn','rgb(1, 2, 3)');
+check('existing badge follows theme token live', getComputedStyle(badge).color==='rgb(1, 2, 3)' && original!=='rgb(1, 2, 3)');
+document.documentElement.style.removeProperty('--color-warn');
+check('source has one subscription', signalListeners.size===1);
+unmount();
+check('unmount removes all slots and source subscription',root.children.length===0 && signalListeners.size===0);
+snapshot.set({...snapshot.get(),phase:'playing'});
+check('snapshot update after unmount leaves DOM empty',root.children.length===0);
+const disabled=structuredClone(UI_CONFIG);
+for(const item of Object.values(disabled.components)) item.enabled=false;
+const remove=mountUi(root,deps,disabled);
+check('all disabled mounts no components or signal subscription',root.querySelectorAll('[data-component]').length===0 && signalListeners.size===0);
+remove();
+</script></body></html>

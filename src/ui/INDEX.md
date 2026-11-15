@@ -7,7 +7,7 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 | `mountUi(root, deps, config)`, `COMPONENTS` | `registry.ts` | Registers and mounts every component into its slot; shows and hides by game phase. |
 | `UiComponent`, `UiDeps` | `types.ts` | The shape of a component and what it is given. |
 | `STRINGS`, `t(key)`, `StringKey` | `strings.ts` | All player-facing text. |
-| `createSettingsStore`, `loadSettings`, `mergeWithDefaults`, `SETTINGS_STORAGE_KEY` | `settings-store.ts` | Load, validate, apply live and save settings. |
+| `createSettingsStore`, `loadSettings`, `validateSettings`, `mergeWithDefaults`, `SETTINGS_STORAGE_KEY`, `CAPTION_SCALE_RANGE` | `settings-store.ts` | Load, validate types/ranges/key codes, apply live and save settings; caption scale 0.75–2. |
 | `sourceBadge` | `components/source-badge/` | Always-visible input source label. |
 | `debugOverlay` | `components/debug-overlay/` | Backtick-toggled signal numbers. |
 | `mainMenu`, `pauseMenu`, `settingsPanel`, `hud`, `captions`, `calibration`, `emberPrompt` | `components/<id>/` | **P0 stubs:** registered, render nothing. |

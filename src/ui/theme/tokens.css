@@ -28,6 +28,9 @@
   --space-4: 20px;
 
   --radius: 6px;
+  --focus-width: 2px;
+  --focus-offset: 3px;
+  --panel-max-width: 480px;
 
   --layer-ui: 10;
   --layer-debug: 20;
