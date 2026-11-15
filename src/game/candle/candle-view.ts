@@ -13,6 +13,7 @@ import type { PlayerState } from '../player/types';
 import { createCandleGenome, type CandleGenome } from './candle-genome';
 import { bodyShape, INITIAL_POSE, poseFrame, stepPose, type PoseTracker } from './candle-pose';
 import { rasterCandle } from './candle-raster';
+import { type Aim, flameLean, flightSparks, wickLean } from './direction-cues';
 import { FLAME_FPS, flameSizeFromRadius, rasterFlame } from './flame';
 
 /** The light, the wax growth and the settings the candle draws from this frame. */
@@ -25,6 +26,8 @@ export interface CandleLook {
   growth: number;
   /** 0..1 of a full jump charge. */
   charge01: number;
+  /** Direction held this step (-1, 0, 1): shows where a charged jump will go. */
+  aim: Aim;
   reducedMotion: boolean;
 }
 
@@ -49,27 +52,30 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
     },
     seed: (): number => genome.seed,
     update(state: PlayerState, deltaMs: number, paused: boolean, look: CandleLook): void {
-      tracker = stepPose(tracker, state, deltaMs, paused);
+      tracker = stepPose(tracker, { ...state, aim: look.aim }, deltaMs, paused);
       if (!paused) clockMs += Math.max(0, deltaMs);
       graphics.setPosition(state.x, state.y + bodyHeight / 2);
 
       const size01 = Math.round(flameSizeFromRadius(look.radiusPx, look.minRadiusPx, look.maxRadiusPx) * SIZE_STEPS) / SIZE_STEPS;
       const flameFrame = look.reducedMotion ? 0 : Math.floor((clockMs / 1000) * FLAME_FPS);
-      const shape = bodyShape(tracker, look.charge01);
-      const trail = Math.sign(state.vx) * Math.min(2, Math.round(Math.abs(state.vx) / 110));
-      const key = `${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${trail}`;
+      const cue = { charging: state.charging, charge01: look.charge01, aim: look.aim, grounded: state.grounded, vx: state.vx, vy: state.vy };
+      // Direction cues never bend the body: only the wick tilts, the flame leans and sparks trail.
+      const shape = { ...bodyShape(tracker, look.charge01), lean: wickLean(cue) };
+      const lean = flameLean(cue);
+      const sparks = flightSparks(genome, cue, flameFrame, look.reducedMotion);
+      const key = `${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${JSON.stringify(sparks)}`;
       if (key === drawnKey) return;
       drawnKey = key;
 
       const body = rasterCandle(genome, shape, look.growth, tracker.facingLeft);
       // The flame is drawn from the frame's own time so it matches the frame index above.
-      const flame = rasterFlame(genome, { size01, timeMs: (flameFrame * 1000) / FLAME_FPS, reducedMotion: look.reducedMotion, vx: trail * 110 });
+      const flame = rasterFlame(genome, { size01, timeMs: (flameFrame * 1000) / FLAME_FPS, reducedMotion: look.reducedMotion, lean });
       graphics.clear();
       for (const p of body.pixels) {
         graphics.fillStyle(p.color, 1);
         graphics.fillRect(p.x * px, p.y * px, px, px);
       }
-      for (const p of flame) {
+      for (const p of [...sparks, ...flame]) {
         graphics.fillStyle(p.color, 1);
         graphics.fillRect((body.wickTip.x + p.x) * px, (body.wickTip.y + p.y) * px, px, px);
       }

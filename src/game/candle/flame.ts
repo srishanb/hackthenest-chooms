@@ -2,8 +2,8 @@
  * The procedural pixel-art flame. It grows and shrinks with the lantern light and flickers.
  *
  * How: each row of the flame has a half-width from a teardrop profile (wide low, pointed at
- * the tip). The centre line sways with two slow sines in the candle's own rhythm and trails
- * behind the movement. Colours band from a pale core to a red edge. The outer edge is ragged
+ * the tip). The centre line sways with two slow sines in the candle's own rhythm and bends
+ * by `lean` (the aim while charging, a trail in motion). Colours band from a pale core to a red edge. The outer edge is ragged
  * from a hash of (flame frame, cell), so one frame always looks the same (testable) and the
  * flicker runs at FLAME_FPS like hand-drawn pixel animation. Visual only: nothing here feeds
  * movement. With reduced motion the size still changes but there is no flicker or sway.
@@ -21,8 +21,8 @@ export interface FlameInput {
   size01: number;
   timeMs: number;
   reducedMotion: boolean;
-  /** Player velocity in px/s, for the trailing lean. */
-  vx: number;
+  /** Signed flame-tip offset in art px (positive is right): aim or trail, see direction-cues.ts. */
+  lean: number;
 }
 
 /** A small integer hash to 0..1, deterministic per (seed, frame, i, j). */
@@ -47,13 +47,12 @@ export function rasterFlame(genome: CandleGenome, input: FlameInput): Pixel[] {
   const width = Math.max(2, genome.flame.width * (0.55 + 0.45 * s));
   const t = input.timeMs / 1000;
   const sway = input.reducedMotion ? 0 : Math.sin(t * 5.1 + phaseA) * 0.8 + Math.sin(t * 8.3 + phaseB) * 0.5;
-  const trail = -Math.sign(input.vx) * Math.min(2, Math.abs(input.vx) / 110);
   const pixels: Pixel[] = [];
 
   for (let j = 0; j < height; j++) {
     const v = (j + 0.5) / height;
     const half = (width / 2) * (v < 0.3 ? Math.sqrt(v / 0.3) : Math.pow(1 - (v - 0.3) / 0.7, 0.9));
-    const cx = 0.5 + (sway + trail) * v * v;
+    const cx = 0.5 + (sway + input.lean) * v * v;
     const left = Math.floor(cx - half);
     const right = Math.ceil(cx + half);
     let drawn = 0;
