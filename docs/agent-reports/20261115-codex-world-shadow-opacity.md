@@ -1,0 +1,5 @@
+# World shadow opacity
+
+Neil requested semi-transparent outer FOV shadow in normal world and more opaque shadow in corruption at the same fuel level. Set normal alpha0.60, ramp smoothly through existing sceneryCorruption mapping to0.98 at full corruption. Fuel radius/curve, glow, physics and resource behavior unchanged. No shared contract/dependency/assets. Files: fuel-visibility config and climb scene. Pre-code check: partly done. Acceptance: normal shows dim scenery outside light, corruption mostly obscures it; radius still follows fuel. Typecheck/tests/build required. Hardware tasks don't block. Manual visual/headset playtest not performed; opacity is subjective tuning. Confidence high in alpha wiring. No abandoned approach.
+
+Validation: TypeScript,499 tests/77 files and build pass with existing Vite/pieeg warnings.
