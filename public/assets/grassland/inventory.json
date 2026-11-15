@@ -1,0 +1,74 @@
+[
+  {
+    "height": 16,
+    "file": "assets/grassland/bush.png",
+    "sha256": "bc78ce2b0e73243c53f5aee217a7a7064485b6344cf68cf462a09ccbebf87f68",
+    "width": 16
+  },
+  {
+    "height": 16,
+    "file": "assets/grassland/cloud.png",
+    "sha256": "c0cc2e5784fb9947559814e560f8bd07bd11d613a0832ef57547783c87c929d3",
+    "width": 48
+  },
+  {
+    "height": 16,
+    "file": "assets/grassland/left-red.png",
+    "sha256": "c51d79f4162de715073b2190f9fc1e41bca68577aa071b268e3100d06cd44aaf",
+    "width": 16
+  },
+  {
+    "height": 16,
+    "file": "assets/grassland/left.png",
+    "sha256": "3e3213cac2570d027eac09658bd4ab158cf11b4c92ebc631e160a3f819ab0946",
+    "width": 16
+  },
+  {
+    "height": 16,
+    "file": "assets/grassland/middle-red.png",
+    "sha256": "b0d07304b3e8ada9f9d6a5322c60057ef3b2ec506f17ef3e172e19af3ac2f1ba",
+    "width": 16
+  },
+  {
+    "height": 16,
+    "file": "assets/grassland/middle.png",
+    "sha256": "874db8c96e0aea191b8ebf6408548f752ef855a5d1bbac5a9a41bfbfe37c2fec",
+    "width": 16
+  },
+  {
+    "height": 16,
+    "file": "assets/grassland/right-red.png",
+    "sha256": "c9f81f0aeca971f43cfb9a96bc65274dbe552954d66b52046252daa045f1b817",
+    "width": 16
+  },
+  {
+    "height": 16,
+    "file": "assets/grassland/right.png",
+    "sha256": "9fe829e8b8de883759b37ec5c97f4740b88aeee75229327da58f24af02fa39c1",
+    "width": 16
+  },
+  {
+    "height": 16,
+    "file": "assets/grassland/soil-red.png",
+    "sha256": "2d586191e675bc8496d3689ab3702db2b2a7f0e7a9a689616aa7292efb600feb",
+    "width": 16
+  },
+  {
+    "height": 16,
+    "file": "assets/grassland/soil.png",
+    "sha256": "2d586191e675bc8496d3689ab3702db2b2a7f0e7a9a689616aa7292efb600feb",
+    "width": 16
+  },
+  {
+    "height": 16,
+    "file": "assets/grassland/stone.png",
+    "sha256": "0ad42cf2dcd53095b2b196baa89220746413e639f69c8cc398fc30884b7a8261",
+    "width": 16
+  },
+  {
+    "height": 80,
+    "file": "assets/grassland/tree.png",
+    "sha256": "b261f53f088592c1d00269094b8ff046b91c257134b975d2b4732881304f950d",
+    "width": 64
+  }
+]

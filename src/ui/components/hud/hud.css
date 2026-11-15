@@ -1,14 +1,6 @@
 /* Corner HUD follows the reference without covering the central play area. */
 [data-component='hud'] { position: absolute; inset: 0; overflow: visible !important; pointer-events: none !important; }
 .hud { position: absolute; inset: 0; pointer-events: none; font-size: var(--text-sm); }
-.hud__lantern { position: absolute; top: var(--hud-corner); left: var(--hud-corner); display: grid; grid-template-columns: 52px minmax(70px, 145px); align-items: center; }
-.hud__flame { width: 52px; height: 58px; display: grid; place-items: center; border: 2px solid var(--color-accent); border-radius: 50%; color: var(--hud-needle); background: var(--color-panel); box-shadow: var(--gold-glow); z-index: 1; }
-.hud__flame .ui-icon { width: 34px; height: 42px; filter: drop-shadow(0 0 6px var(--hud-needle)); }
-.hud__lantern meter { width: 100%; height: 28px; margin-left: -4px; appearance: none; border: 2px solid var(--color-accent); border-radius: var(--radius); background: var(--color-bg); box-shadow: var(--gold-glow); overflow: hidden; }
-.hud__lantern meter::-webkit-meter-bar { background: var(--color-bg); border: 0; }
-.hud__lantern meter::-webkit-meter-optimum-value { background: repeating-linear-gradient(90deg, var(--color-accent) 0 23px, var(--hud-needle) 23px 29px, var(--color-bg) 29px 32px); }
-.hud__lantern meter::-moz-meter-bar { background: var(--color-accent); }
-.hud__lantern > span:last-child { grid-column: 2; font-size: var(--text-xs); color: var(--color-text); margin-top: -6px; text-shadow: 0 2px 3px var(--color-bg); }
 .hud__metrics { position: absolute; right: calc(var(--hud-corner) + 64px); top: var(--hud-corner); padding: var(--space-2) var(--space-3); border: 2px solid var(--color-panel-border); border-radius: var(--radius); background: var(--color-panel); min-width: 180px; box-shadow: var(--panel-shadow); }
 .hud__metrics > div { display: flex; gap: var(--space-2); align-items: center; padding: var(--space-1) 0; }
 .hud__metrics > div + div { border-top: 1px solid var(--color-panel-border); }
@@ -28,16 +20,14 @@
 .hud__compass [data-direction='W'] { left: 5px; top: 38px; }
 .hud__compass.is-empty { opacity: .4; }
 .hud__compass.is-empty .hud__needle { visibility: hidden; }
-.hud__context { position: absolute; bottom: var(--hud-corner); left: var(--hud-corner); display: grid; gap: var(--space-1); max-width: min(440px, 43vw); padding: var(--space-2) var(--space-3); border-left: 2px solid var(--color-panel-border); background: var(--color-panel); border-radius: var(--radius); color: var(--color-text-dim); font-size: var(--text-xs); }
+/* The candle portrait is drawn in the canvas at the bottom left: 14 + 120 logical px of the 960 x 540
+   canvas, which is scaled to fit and centred. Start the hint panel just right of it. */
+.hud__context { position: absolute; bottom: var(--hud-corner); left: calc(max(0px, (100vw - 177.78vh) / 2) + min(13.96vw, 24.82vh) + var(--space-2)); display: grid; gap: var(--space-1); max-width: calc(min(440px, 43vw) - min(13.96vw, 24.82vh)); padding: var(--space-2) var(--space-3); border-left: 2px solid var(--color-panel-border); background: var(--color-panel); border-radius: var(--radius); color: var(--color-text-dim); font-size: var(--text-xs); }
 .hud__prompt, .hud__wax-reward { color: var(--color-accent); }
 .hud__lesson { color: var(--color-text); }
 .hud__context progress { width: 100%; accent-color: var(--color-accent); }
 .hud__context .hud__wax { color: var(--color-accent); }
 @media (max-width: 600px) {
-  .hud__lantern { grid-template-columns: 38px 80px; }
-  .hud__flame { width: 36px; height: 44px; }
-  .hud__flame .ui-icon { width: 24px; height: 32px; }
-  .hud__lantern > span:last-child { font-size: 9px; }
   .hud__metrics { min-width: 125px; font-size: var(--text-xs); right: calc(var(--hud-corner) + 44px); padding: var(--space-1) var(--space-2); }
   .hud__metrics .ui-icon { width: 14px; height: 14px; }
   .hud__pause { width: 36px; height: 40px; }

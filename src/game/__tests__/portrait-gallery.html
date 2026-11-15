@@ -1,0 +1,25 @@
+<!doctype html><html><head><title>Portrait gallery</title>
+<style>body{margin:0;background:#0b121d;color:#cfd6e4;font:12px monospace}canvas{display:block}</style></head><body>
+<p style="padding:6px 10px">Candle portrait at strength 1, 0.7, 0.45, 0.25, 0.1, 0.02 (two seeds). Animated.</p>
+<canvas id="c"></canvas>
+<script type="module">
+// Dev-only visual check of the dying-candle portrait; draws the pure raster with a plain 2D canvas.
+import { createCandleGenome } from './../candle/candle-genome.ts';
+import { PORTRAIT_RADIUS, rasterPortrait } from './../candle/portrait.ts';
+const STRENGTHS=[1,0.7,0.45,0.25,0.1,0.02],SEEDS=[40,6006],PX=3,R=PORTRAIT_RADIUS*PX,CELL=R*2+16;
+const canvas=document.querySelector('#c');canvas.width=STRENGTHS.length*CELL;canvas.height=SEEDS.length*CELL;
+const ctx=canvas.getContext('2d');
+const hex=(n)=>'#'+n.toString(16).padStart(6,'0');
+function frame(now){
+  ctx.fillStyle='#0b121d';ctx.fillRect(0,0,canvas.width,canvas.height);
+  SEEDS.forEach((seed,row)=>STRENGTHS.forEach((s,col)=>{
+    const cx=col*CELL+CELL/2,cy=row*CELL+CELL/2,p=rasterPortrait(createCandleGenome(seed),{strength01:s,timeMs:now,reducedMotion:false,growth:1});
+    ctx.fillStyle='#101b2b';ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fill();
+    for(let ring=5;ring>=1;ring--){ctx.globalAlpha=0.05*p.glow01;ctx.fillStyle='#ffb347';ctx.beginPath();ctx.arc(cx,cy-6*PX,ring*3.2*PX*(0.4+0.6*p.glow01),0,Math.PI*2);ctx.fill();}
+    for(const px of p.pixels){ctx.globalAlpha=px.alpha;ctx.fillStyle=hex(px.color);ctx.fillRect(cx+px.x*PX,cy+px.y*PX,PX,PX);}
+    ctx.globalAlpha=1;ctx.strokeStyle='#ffda70';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.stroke();
+  }));
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script></body></html>
