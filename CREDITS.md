@@ -136,3 +136,10 @@ Clastic Artistic, Abstract Textures, texture (25): https://clastic-artistic.itch
 - Voice metadata source: https://api.elevenlabs.io/v1/voices. Model/settings source: https://elevenlabs.io/docs/overview/models and https://github.com/elevenlabs/skills/blob/main/text-to-speech/references/voice-settings.md. Final subjective voice choice belongs to Amrit.
 
 Additional Pixel Platformer Tileset Vol.4 by reodesuxz game decorations: native climb/vine_hanging.png and ice/snowy_bush.png, copied to assets/winter. Same existing Vol.4 license applies; used only as integrated game art.
+
+## Adaptive corruption soundtrack and original sound design
+
+- `audio/music/transition-gothic.ogg`: **The Time Is Upon Us**, by Kaiser (uploaded by The Oracle), [source/CC0](https://opengameart.org/content/the-time-is-upon-us). User-supplied `01_the_time_is_upon_us.flac`; converted to24kHz stereo Vorbis, level matched and120ms endpoint fades. Transition stage.
+- `audio/music/corruption-metal.ogg`: **Untitled Metal Track**, by Kistol, [source/CC0](https://opengameart.org/content/untitled-metal-track). User-supplied OGG; converted to24kHz stereo Vorbis, level matched and120ms endpoint fades. Full corruption stage.
+- Existing **Insistent** by yd remains unchanged, used as a quieter transition underlay. Original source and CC0 evidence above.
+- New `audio/ember/` WAVs (`soil-land`, `snow-land`, `wax-drip`, `corruption-entry`, `wick-sputter`, `ice-creak`, `bird`, `victory-chime`, `forest-air`, `wind-air`): original procedural sound design for Lighten Up, made from seeded filtered noise and oscillator envelopes. These are synthesized effects, not field recordings or voice clones. Project license applies.

@@ -1,0 +1,9 @@
+# Adaptive corruption audio
+
+Neil explicitly requested transition track The Time Is Upon Us, full-corruption Untitled Metal Track, Insistent audibility repair, material landings, wax/flame cue, corruption-entry swell, environmental ambience, unique victory chime and low-fuel sputter. This chat instruction authorizes work despite the default feature-freeze guidance; no gameplay changes.
+
+Pre-code check: partly done. Existing two music buses, crossfade, SFX bus and narrator ducking reused. New submix routes gothic transition and metal through tense bus; Insistent retained underneath transition. Music follows displayed forestCorruption, fixing visual-preview/audio mismatch. Normal <=0.35 quiet only;0.7–0.95 fades transition into metal. Original music source decodes; measured RMS0.06766, not a missing/silent file. Source analysis doesn't prove user speaker settings; browser output measured separately.
+
+No new runtime dependencies, game physics or shared contracts. Audio-lane/config/assets plus own docs/CREDITS only. Human hardware tasks don't block simulator work. Supplied CC0 tracks verified from original item pages; local derivatives credited. Original synthesized nonverbal effects use no external samples. Assets compressed2.6MB for new music. SFX/narrator volume controls and music ducking preserved. Ambience enters SFX bus; all files local.
+
+Acceptance: three states play, Insistent retained at transition, four music sources/loops cleanly stop, entry and low-fuel cues limited by cooldown, pause suppresses ambience/cues, winter contacts use snow sound. Unit lifecycle/routing tests plus browser Web Audio decode/output check; check/build required. Manual listening and full headset gameplay remain unverified. Risk: unrelated song tempos and loop endpoint fades need ear tuning; user feedback on balance needed. No promises of beat synchronization.

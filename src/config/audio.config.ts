@@ -21,3 +21,11 @@ export const DEFAULT_NARRATOR_VOICE = 'chris';
 export const NARRATOR_VOICE_STORAGE_KEY = 'lighten.narrator-voice.v1';
 export const NARRATOR_VOICE_EVENT = 'lighten-narrator-voice';
 export const NARRATOR_LEVELS = { targetRms: 0.1, peakCeiling: 0.85, maxGain: 2 } as const;
+
+/** Requested soundtrack progression and subtle environmental feedback. */
+export const WORLD_AUDIO_CONFIG = {
+  normalMax01: 0.35, metalStart01: 0.7, metalFull01: 0.95,
+  musicEaseSeconds: 0.65, insistentGain: 0.32,
+  ambienceGain: 0.4, entryCooldownSeconds: 12, cueCooldownSeconds: 9,
+  lowFuel01: 0.2,
+} as const;

@@ -19,3 +19,5 @@ Owner: Amrit. Search here before adding a function.
 Voice polish: `createIntroPlayer` accepts a bank prefix and exposes `setVoice`, `preview`, `stopPreview`; previews can play in paused/menu Settings without consuming the next game intro. `narrationGain` (`narrator/level.ts`) measures decoded clips once and sets per-clip level with a peak/headroom and amplification cap. Local voice choice/events and two stock profiles live in audio config.
 
 Narration continues through `precision_window`/jumps and phase `ember`; only actual pause/menu/calibration or explicit audio/session lifecycle controls interrupt it. Regression: `__tests__/intro-player.test.ts`.
+
+startWorldSoundtrack / soundtrackPosition / metalPosition (world-soundtrack.ts): three-stage local music submix with Insistent transition underlay. createWorldAmbience (world-ambience.ts): quiet seasonal loops and cooldown cues through existing SFX bus. Audition: /src/audio/__tests__/world-audio-browser.html.

@@ -1,7 +1,7 @@
 /** Pure game-event to sound mapping. Big-land threshold is supplied from ember config. */
 import type { GameEvent } from '../shared/contracts/events';
 export type SfxId = 'jump' | 'land' | 'landHard' | 'refuge' | 'save' | 'emberGained'
-  | 'emberRequested' | 'emberReturned' | 'emberCancelled' | 'finish' | 'wax';
+  | 'emberRequested' | 'emberReturned' | 'emberCancelled' | 'finish' | 'wax' | 'landSnow' | 'corruptionEntry' | 'lowFuel' | 'bird' | 'iceCreak';
 export function sfxForEvent(event: GameEvent, bigFallPx: number): SfxId | null {
   switch (event.type) {
     case 'jump': return 'jump';
