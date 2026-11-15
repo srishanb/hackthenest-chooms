@@ -27,7 +27,7 @@ export default defineFeature(import.meta.url, {
   expect: [
     'The badge at the top right always reads SIMULATED INPUT, even with the overlay hidden.',
     'Alpha boost on: "resting" climbs within about three seconds; off: it falls back.',
-    'KNOWN GAP (seen 15 Nov): the simulated noisy pin does not lower "quality" or "contact" yet; both stay at 1.00. If they drop for you, the gap has been fixed.',
+    'KNOWN GAP (seen 15 Nov): the simulated noisy pin does not lower "quality" or "contact"; both stay at 1.00, because the filtered noise stays under the library\'s bad-contact limit. To see a real quality drop, run signal-replay and watch seconds 25 to 27.',
     'With this algorithm (passthrough-v0) a jaw clench barely moves "intensity". To see clenches drive the light, use signal-calibration.',
     'The simulator keys are 1 to 4. Space, A and C do nothing to the signal (Space is the jump key).',
   ],

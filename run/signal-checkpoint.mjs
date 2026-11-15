@@ -20,6 +20,6 @@ export default defineFeature(import.meta.url, {
   expect: [
     'The overlay prints "closed/open" with a ratio. Above 1.3 it says "clear separation".',
     'A labelled recording downloads; it can be replayed or measured with: npm run eval -- intensity-v2 recordings/<file>.jsonl',
-    'If you never press 1, the ratio is near 1 and it says "weak separation".',
+    'If you never press 1, the ratio is near 1 and it says "weak separation". If no ratio can be worked out it says "no usable data: check the connection"; the file still downloads.',
   ],
 });

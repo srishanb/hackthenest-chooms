@@ -6,7 +6,7 @@ export default defineFeature(import.meta.url, {
   id: 'narrator',
   title: 'Narrator and captions',
   status: 'planned',
-  note: 'Not built. Plans: docs/plans/P7.md (narrator, waiting for Amrit\'s approval) and P2.4 (captions). No lines are written yet.',
+  note: 'Not built. Plans: docs/plans/P7.md (narrator, waiting for Amrit\'s approval) and the P2.4 captions part of docs/plans/P2.md. No lines are written yet.',
   features: ['NAR-1', 'NAR-2', 'NAR-3', 'NAR-4'],
   order: 410,
   tests: ['src/audio/__tests__/director.test.ts', 'src/ui/__tests__/captions.test.ts'],

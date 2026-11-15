@@ -81,12 +81,27 @@ async function npmStep(script, what) {
 /** @param {string} why @returns {StepResult} */
 const skipped = (why) => ({ ok: true, skipped: true, detail: why });
 
-/** True for an address that needs the internet (http:, https: or protocol-relative //). @param {string} ref */
-const isExternal = (ref) => /^(?:https?:)?\/\//i.test(ref.trim());
+/** True for an address that needs the network (http, https, ws, wss, or protocol-relative //). @param {string} ref */
+const isExternal = (ref) => /^(?:(?:https?|wss?):)?\/\//i.test(ref.trim());
+
+const CSS_PATTERNS = [/url\(\s*["']?((?:https?:)?\/\/[^"')\s]+)/gi, /@import\s+["']((?:https?:)?\/\/[^"']+)["']/gi];
+const JS_PATTERNS = [
+  /\b(?:import|importScripts|fetch|Worker|SharedWorker|WebSocket|EventSource)\s*\(\s*["'`]((?:(?:https?|wss?):)?\/\/[^"'`]+)["'`]/g,
+  /\bfrom\s*["']((?:https?:)?\/\/[^"']+)["']/g, // import x from "https://..."
+];
+
+/** @param {string} text @param {RegExp[]} patterns @returns {string[]} */
+function matchAll(text, patterns) {
+  /** @type {string[]} */
+  const found = [];
+  for (const pattern of patterns) for (const match of text.matchAll(pattern)) if (match[1]) found.push(match[1]);
+  return found;
+}
 
 /**
  * The files a built HTML page would load: values of src, href, srcset and poster on every tag
  * except <a> (a plain link loads nothing until someone clicks it). Quoted or unquoted.
+ * `data-src` and the like are not loads, so the attribute name must stand alone.
  * @param {string} html
  * @returns {string[]}
  */
@@ -95,8 +110,9 @@ function loadedByHtml(html) {
   const found = [];
   for (const tag of html.matchAll(/<([a-z][a-z0-9-]*)\b([^>]*)>/gi)) {
     if ((tag[1] ?? '').toLowerCase() === 'a') continue;
-    for (const attr of (tag[2] ?? '').matchAll(/\b(src|href|srcset|poster)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)) {
-      const value = attr[2] ?? attr[3] ?? attr[4] ?? '';
+    for (const attr of (tag[2] ?? '').matchAll(/(?<![\w-])(src|href|srcset|poster)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)) {
+      const unquoted = attr[4];
+      const value = (attr[2] ?? attr[3] ?? (unquoted ? unquoted.replace(/\/$/, '') : '')).trim();
       const isSrcset = (attr[1] ?? '').toLowerCase() === 'srcset';
       const parts = isSrcset ? value.split(',').map((part) => part.trim().split(/\s+/)[0] ?? '') : [value];
       for (const part of parts) if (part) found.push(part);
@@ -106,22 +122,23 @@ function loadedByHtml(html) {
 }
 
 /**
- * Find references in built HTML, CSS or JavaScript that would need the internet.
- * For JavaScript this only catches addresses written out in the code (import, importScripts,
- * fetch, Worker); an address the code builds while running cannot be seen here.
+ * Find references in built HTML, CSS or JavaScript that would need the network.
+ *
+ * This is an audit, not a proof. It reads addresses that are written out: tag attributes, inline
+ * <style> and <script> blocks and style="" in HTML; url() and @import in CSS; import, fetch,
+ * workers and sockets with a literal address in JavaScript. An address the code builds while
+ * running cannot be seen here, which is why the hands-on check with the Wi-Fi off still matters.
  * @param {string} text file content
  * @param {'html' | 'css' | 'js'} kind
  * @returns {string[]} the offending references
  */
 export function findExternalReferences(text, kind) {
-  if (kind === 'html') return loadedByHtml(text).filter(isExternal);
-  const patterns =
-    kind === 'css'
-      ? [/url\(\s*["']?((?:https?:)?\/\/[^"')\s]+)/gi, /@import\s+["']((?:https?:)?\/\/[^"']+)["']/gi]
-      : [/\b(?:import|importScripts|fetch|Worker|SharedWorker)\s*\(\s*["'`]((?:https?:)?\/\/[^"'`]+)["'`]/g];
-  /** @type {string[]} */
-  const found = [];
-  for (const pattern of patterns) for (const match of text.matchAll(pattern)) if (match[1]) found.push(match[1]);
+  if (kind === 'css') return matchAll(text, CSS_PATTERNS);
+  if (kind === 'js') return matchAll(text, JS_PATTERNS);
+  const found = loadedByHtml(text).filter(isExternal);
+  for (const block of text.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)) found.push(...matchAll(block[1] ?? '', CSS_PATTERNS));
+  for (const attr of text.matchAll(/\bstyle\s*=\s*(?:"([^"]*)"|'([^']*)')/gi)) found.push(...matchAll(attr[1] ?? attr[2] ?? '', CSS_PATTERNS));
+  for (const block of text.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) found.push(...matchAll(block[1] ?? '', JS_PATTERNS));
   return found;
 }
 

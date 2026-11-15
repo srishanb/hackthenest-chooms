@@ -18,7 +18,6 @@ export default defineFeature(import.meta.url, {
   expect: [
     'Entering the refuge saves immediately. No signal condition is involved.',
     'After the reload you start at the refuge, not on the floor.',
-    'The HUD at the top left still says "Recovery ember available" after the reload.',
     'After removing the save and reloading, you start on the floor again.',
   ],
 });

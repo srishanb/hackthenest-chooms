@@ -11,12 +11,12 @@ export default defineFeature(import.meta.url, {
   tests: ['src/game/__tests__/finish.test.ts'],
   query: '?algo=passthrough-v0',
   steps: [
-    'Click the game and climb all seven ledges of the test climb. The finish zone is just above the top ledge.',
+    'Click the game and climb the six ledges above the floor. The finish zone is around the top ledge.',
     'Once you are in it, try to move.',
     'Reload the page.',
   ],
   expect: [
-    'Entering the finish zone ends the climb once: movement stops and the HUD goes away (the phase is "finished").',
+    'Entering the finish zone ends the climb once: the character freezes where it is (possibly still rising through the top ledge) and the HUD goes away (the phase is "finished").',
     'The signal plays no part: it finishes the same with the simulator untouched.',
     'After the reload you start from the bottom again, because finishing clears the save for the next player.',
   ],

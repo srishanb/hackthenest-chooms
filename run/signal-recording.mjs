@@ -19,7 +19,7 @@ export default defineFeature(import.meta.url, {
   ],
   expect: [
     'The downloaded file is text: one JSON object per line, starting with a header line.',
-    'It holds band powers, quality and events only: no raw samples and no names.',
+    'It holds band powers, the spectrum, quality, the composure state and events. It never holds raw samples or names.',
     'Replaying it shows RECORDED REPLAY and the same rises and falls you made while recording.',
   ],
 });

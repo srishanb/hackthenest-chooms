@@ -27,6 +27,7 @@ import {
   dim,
   doctor,
   featureLine,
+  featureShapeProblem,
   featureUrl,
   green,
   heading,
@@ -71,7 +72,7 @@ function printMenu(features) {
 async function serveAndWait(script, query, flags) {
   const server = await startServer(script);
   const url = featureUrl(server.url, query);
-  console.log(server.started ? `Server started at ${server.url}` : `Using the server already running at ${server.url}`);
+  console.log(server.started ? `Server started at ${server.url}` : `Using the server already running at ${server.url} ${dim('(if that is another checkout of this repo, stop it first)')}`);
   if (flags.has('no-open')) console.log(`Open this in Chrome or Edge: ${bold(url)}`);
   else if (openBrowser(url)) console.log(`Opened ${bold(url)}`);
   else console.log(yellow(`Could not open a browser. Open this in Chrome or Edge: ${url}`));
@@ -178,6 +179,14 @@ function selfTest(features, broken) {
   expect(findExternalReferences('const docs = "https://phaser.io"; // a string, not a load', 'js').length === 0, 'findExternalReferences: a url in a string is not a load');
   expect(findLocalReferences('<img src="./my%20file.png"><script>el.src = "./not-a-tag.js"</script>').join(',') === './my file.png', 'findLocalReferences: decodes names, ignores script text');
 
+  expect(findExternalReferences('<img data-src="https://x.example/a.png"><div data-href="//x.example">', 'html').length === 0, 'findExternalReferences: data-src and data-href are not loads');
+  expect(findExternalReferences('<style>a{background:url(https://x.example/a.png)}</style><p style="background:url(//x.example/b.png)">', 'html').length === 2, 'findExternalReferences: inline styles');
+  expect(findExternalReferences('<script type="module">import x from "https://x.example/m.js";</script>', 'html').length === 1, 'findExternalReferences: inline script imports');
+  expect(findExternalReferences('import a from "https://x.example/a.js"; new WebSocket("wss://x.example/s");', 'js').length === 2, 'findExternalReferences: import-from and web sockets');
+  expect(findLocalReferences('<img src=" ./a.png "><img src=b.png/>').join(',') === './a.png,b.png', 'findLocalReferences: trims values and a trailing slash');
+  expect(featureShapeProblem({}) !== null && featureShapeProblem(5) !== null && featureShapeProblem(undefined) !== null, 'featureShapeProblem: rejects malformed exports');
+  expect(features.every((feature) => featureShapeProblem(feature) === null), 'featureShapeProblem: accepts every real feature');
+
   // Feature files.
   for (const item of broken) problems.push(`${item.file} could not be loaded: ${item.message}`);
   expect(features.length >= 10, `expected at least 10 feature files, found ${features.length}`);
@@ -223,7 +232,8 @@ async function main() {
   }
   if (command === 'doctor') return doctor() === 0 ? 0 : 1;
 
-  if (command && command !== 'list' && !existsSync(join(ROOT, 'node_modules', 'vite'))) {
+  const needsNoDependencies = !command || ['list', 'help', 'selftest'].includes(command);
+  if (!needsNoDependencies && !existsSync(join(ROOT, 'node_modules', 'vite'))) {
     console.error(red('Dependencies are not installed. Run: npm ci'));
     return 1;
   }

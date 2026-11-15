@@ -235,6 +235,7 @@ export function startServer(script, options = {}) {
     installExitHandlers();
     const child = spawnNpm(script, [], { stdio: ['ignore', 'pipe', 'pipe'], detached: !IS_WINDOWS });
     const stop = () => {
+      stoppedByUs = true;
       cleanups.delete(stop);
       killTree(child);
     };
@@ -242,6 +243,7 @@ export function startServer(script, options = {}) {
     let output = '';
     let settled = false;
     let serving = false;
+    let stoppedByUs = false;
 
     const timer = setTimeout(() => {
       if (settled) return;
@@ -285,6 +287,14 @@ export function startServer(script, options = {}) {
     // 'close' (not 'exit') fires after the last output has been read, so a "port in use" line is never missed.
     child.on('close', (code) => {
       cleanups.delete(stop);
+      if (serving && !stoppedByUs) {
+        console.error(red(`\nThe ${script} server stopped by itself (exit ${code}). Start it again to continue.`));
+        if (ctrlCWaiter) {
+          const done = ctrlCWaiter;
+          ctrlCWaiter = null;
+          done(); // nothing left to wait for
+        }
+      }
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -394,6 +404,25 @@ export function defineFeature(metaUrl, feature) {
 }
 
 /**
+ * Why a value is not a usable feature, or null if it is one. Keeps one malformed run file from
+ * breaking the menu and every other feature.
+ * @param {unknown} value
+ * @returns {string | null}
+ */
+export function featureShapeProblem(value) {
+  if (value === undefined) return 'has no default export (use: export default defineFeature(import.meta.url, {...}))';
+  if (typeof value !== 'object' || value === null) return 'its default export is not a feature object';
+  const feature = /** @type {Record<string, unknown>} */ (value);
+  if (typeof feature.id !== 'string' || typeof feature.title !== 'string') return 'needs an "id" and a "title" (both text)';
+  if (!['ready', 'partial', 'planned'].includes(String(feature.status))) return '"status" must be ready, partial or planned';
+  if (typeof feature.order !== 'number' || !Number.isFinite(feature.order)) return '"order" must be a number';
+  for (const key of ['features', 'tests', 'commands', 'steps', 'expect']) {
+    if (!Array.isArray(feature[key])) return `"${key}" must be a list (did you build it with defineFeature?)`;
+  }
+  return null;
+}
+
+/**
  * Load every feature file in this folder, in order. A file that cannot be loaded is reported in
  * `broken` (with its name) instead of stopping everything else.
  * @returns {Promise<{ features: Feature[], broken: { file: string, message: string }[] }>}
@@ -408,8 +437,9 @@ export async function loadFeatures() {
   for (const name of files) {
     try {
       const module = await import(pathToFileURL(join(folder, name)).href);
-      if (module.default) features.push(module.default);
-      else broken.push({ file: `run/${name}`, message: 'has no default export (use: export default defineFeature(...))' });
+      const problem = featureShapeProblem(module.default);
+      if (problem) broken.push({ file: `run/${name}`, message: problem });
+      else features.push(module.default);
     } catch (error) {
       broken.push({ file: `run/${name}`, message: error instanceof Error ? error.message : String(error) });
     }
@@ -498,7 +528,7 @@ export async function runFeature(feature, flags) {
   heading('2. Hands-on check in the browser');
   const server = await startServer('dev');
   const url = featureUrl(server.url, feature.query);
-  console.log(server.started ? `Dev server started at ${server.url}` : `Using the dev server already running at ${server.url}`);
+  console.log(server.started ? `Dev server started at ${server.url}` : `Using the dev server already running at ${server.url} ${dim('(if that is another checkout of this repo, stop it first: you would be testing its code)')}`);
   if (flags.has('no-open')) console.log(`Open this in Chrome or Edge: ${bold(url)}`);
   else if (openBrowser(url)) console.log(`Opened ${bold(url)} ${dim('(use Chrome or Edge; the EEG board needs one of them)')}`);
   else console.log(yellow(`Could not open a browser. Open this in Chrome or Edge: ${url}`));
