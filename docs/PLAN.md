@@ -318,7 +318,8 @@ public/
 src/
   main.ts                         integrator   composition root: the only file that imports every lane
   shared/                         integrator   FROZEN after P0
-    contracts/                    composure.ts events.ts game-state.ts effects.ts settings.ts signal-internal.ts
+    contracts/                    composure.ts signal-api.ts signal-internal.ts events.ts game-state.ts
+                                  effects.ts settings.ts config.ts content.ts app.ts
     bus.ts store.ts               tiny typed event bus and observable store
     __tests__/lane-boundaries.test.ts
     INDEX.md
@@ -339,12 +340,12 @@ src/
     player/                       movement.ts charge-jump.ts            pure functions, no Phaser, unit tested
     world/                        section-loader.ts refuge.ts bounds.ts platform-types/
     ember/                        ember-machine.ts return-anchor.ts     pure state machine
-    effects/                      effects-engine.ts lantern.ts fog.ts background.ts
+    effects/                      effects-engine.ts darkness.ts (P0) lantern.ts fog.ts background.ts (P5)
     save.ts index.ts
     INDEX.md
   ui/                             Amrit        (components/debug-overlay/ is owned by Srishan)
-    registry.ts strings.ts settings-store.ts
-    theme/tokens.css
+    registry.ts types.ts strings.ts settings-store.ts
+    theme/tokens.css theme/layout.css
     components/                   main-menu/ pause-menu/ settings-panel/ hud/ source-badge/ captions/
                                   calibration/ ember-prompt/ debug-overlay/
     INDEX.md
