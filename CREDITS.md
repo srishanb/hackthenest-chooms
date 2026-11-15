@@ -122,3 +122,12 @@ Grassland corruption palettes: left-red.png, middle-red.png, right-red.png and s
 ## Snow/corruption tuning resources
 Ancient Forest trunk-snow.png derives from existing trunk-loop.png: luminance conversion, blue palette (R0.78/G0.90/B1.00), alpha and exact repeat seam preserved. Original Lukya Forge project-use license applies.
 Clastic Artistic, Abstract Textures, texture (25): https://clastic-artistic.itch.io/caabstracttextures . Publisher confirms CC0 and no generative AI. Local README preserved at public/assets/corruption/CC0.txt. Selected source -clasticartistic-_6000-4000px_texture (25).jpg only; central6000x3375 crop at(0,312), downsample64x36, selective green→red palette shift, nearest upscale256x144 as abstract-25.png. Used as a low-opacity corrupted atmosphere layer. No full-resolution source or complete660MB pack copied.
+
+## Original narrator intros
+- Text: Gemini 3 Flash preview drafts, edited by Amrit's Codex agent; original dry, philosophical commentary about the climb. Amrit's listening/content review remains open.
+- Speech: ElevenLabs stock voice George (`JBFqnCBsd6RMkjVDRZzb`), Eleven Multilingual v2, generated through Amrit's paid account on 2026-11-15. Not a clone or imitation of a real person. Local MP3 files and generation manifest: `public/assets/audio/narrator/`.
+- Source/setup: https://elevenlabs.io/docs/eleven-api/quickstart. Paid generated narration; these clips are not represented as CC0 third-party recordings. No keys are included.
+
+### Current narrator voice choices
+- Current selectable recordings: ElevenLabs stock Chris (`iP95p4xoKVk53GoZ742B`) and Bill (`pqHfZKP75CvOlQylNhV4`), generated with Eleven v4 on 2026-11-15 through Amrit's paid account. Original shorter text edited by Amrit's Codex agent. Six local clips per voice. Previous George recordings remain archived and are not selected by the current bank. No real-person voice imitation or cloning.
+- Voice metadata source: https://api.elevenlabs.io/v1/voices. Model/settings source: https://elevenlabs.io/docs/overview/models and https://github.com/elevenlabs/skills/blob/main/text-to-speech/references/voice-settings.md. Final subjective voice choice belongs to Amrit.

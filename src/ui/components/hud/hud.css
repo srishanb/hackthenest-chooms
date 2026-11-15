@@ -1,7 +1,7 @@
 /* Corner HUD follows the reference without covering the central play area. */
 [data-component='hud'] { position: absolute; inset: 0; overflow: visible !important; pointer-events: none !important; }
 .hud { position: absolute; inset: 0; pointer-events: none; font-size: var(--text-sm); }
-.hud__metrics { position: absolute; right: calc(var(--hud-corner) + 64px); top: var(--hud-corner); padding: var(--space-2) var(--space-3); border: 2px solid var(--color-panel-border); border-radius: var(--radius); background: var(--color-panel); min-width: 180px; box-shadow: var(--panel-shadow); }
+.hud__metrics { position: absolute; right: calc(var(--hud-corner) + 64px); top: var(--hud-corner); padding: var(--space-2) var(--space-3); border: 2px solid var(--color-panel-border); border-radius: var(--radius); background: var(--color-panel); min-width: 196px; font-size: var(--hud-stats-font); box-shadow: var(--panel-shadow); }
 .hud__metrics > div { display: flex; gap: var(--space-2); align-items: center; padding: var(--space-1) 0; }
 .hud__metrics > div + div { border-top: 1px solid var(--color-panel-border); }
 .hud__metrics strong { margin-left: auto; color: var(--color-accent); white-space: nowrap; }
@@ -28,7 +28,7 @@
 .hud__context progress { width: 100%; accent-color: var(--color-accent); }
 .hud__context .hud__wax { color: var(--color-accent); }
 @media (max-width: 600px) {
-  .hud__metrics { min-width: 125px; font-size: var(--text-xs); right: calc(var(--hud-corner) + 44px); padding: var(--space-1) var(--space-2); }
+  .hud__metrics { min-width: 135px; font-size: var(--hud-stats-font-small); right: calc(var(--hud-corner) + 44px); padding: var(--space-1) var(--space-2); }
   .hud__metrics .ui-icon { width: 14px; height: 14px; }
   .hud__pause { width: 36px; height: 40px; }
   .hud__checkpoint { gap: var(--space-2); }
@@ -40,3 +40,6 @@
   .hud__compass [data-direction='E'], .hud__compass [data-direction='W'] { top: 26px; }
   .hud__context { max-width: 39vw; font-size: 9px; padding: var(--space-2); }
 }
+/* Preview scales anchor each card to its original corner. */
+.hud__metrics { transform: scale(var(--ui-stats-scale, 1)); transform-origin: top right; }
+.hud__context { transform: scale(var(--ui-tutorial-scale, 1)); transform-origin: bottom left; max-width: min(440px, calc(43vw / var(--ui-tutorial-scale, 1))); }
