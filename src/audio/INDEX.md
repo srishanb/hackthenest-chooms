@@ -22,4 +22,6 @@ Voice polish: `createIntroPlayer` accepts a bank prefix and exposes `setVoice`, 
 
 Narration continues through `precision_window`/jumps and phase `ember`; only actual pause/menu/calibration or explicit audio/session lifecycle controls interrupt it. Regression: `__tests__/intro-player.test.ts`.
 
+startWorldSoundtrack / soundtrackPosition / metalPosition (world-soundtrack.ts): three-stage local music submix with Insistent transition underlay. createWorldAmbience (world-ambience.ts): quiet seasonal loops and cooldown cues through existing SFX bus. Audition: /src/audio/__tests__/world-audio-browser.html.
+
 `narrator_intro_requested` lets the launch screen play the selected welcome in menu phase, marks it served, and preserves normal pause/resume if the player begins early. The game stays stopped until Start climbing is chosen.

@@ -1,0 +1,27 @@
+<!doctype html><html><head><title>Lighten Up soundtrack audition</title></head><body style="background:#102328;color:#eee;font:16px system-ui;padding:24px">
+<h1>Lighten Up soundtrack audition</h1><p>Local audio only. Start audio, then compare worlds. Music follows the displayed corruption.</p>
+<button id="start">Start audio</button><button data-c="0.2">Normal forest</button><button data-c="0.65">Transition gothic</button><button data-c="1">Full corruption metal</button>
+<button id="snow">Snow landing</button><button id="wax">Wax refill</button><button id="low">Low fuel</button><button id="win">Victory</button><button id="pause">Pause</button>
+<pre id="result">Loading local audio...</pre>
+<script type="module">
+import {createAudio} from '../index.ts'; import {MUSIC_ASSETS} from '../asset-list.ts';
+import {AUDIO_CONFIG} from '../../config/audio.config.ts'; import {createStore} from '../../shared/store.ts';
+import {createEventBus} from '../../shared/bus.ts'; import {DEFAULT_SETTINGS} from '../../shared/contracts/settings.ts';
+import {INITIAL_GAME_SNAPSHOT} from '../../shared/contracts/game-state.ts';
+const bus=createEventBus(), stores={settings:createStore(structuredClone(DEFAULT_SETTINGS)), snapshot:createStore({...structuredClone(INITIAL_GAME_SNAPSHOT),phase:'playing',sectionId:'normal',lanternFuel01:1}), effects:createStore({musicTenseMix:0,forestCorruption:0.2})};
+let analyser, decoded=0, ready=false; const musicDurations=[];
+const audio=createAudio({bus,stores,config:AUDIO_CONFIG,narratorLines:[]},{assets:MUSIC_ASSETS,gestures:window,baseURL:new URL('/',location.href),createContext(){
+ const ctx=new AudioContext(); analyser=ctx.createAnalyser(); analyser.fftSize=2048; analyser.connect(ctx.destination); Object.defineProperty(ctx,'destination',{value:analyser});
+ const decode=ctx.decodeAudioData.bind(ctx); ctx.decodeAudioData=async bytes=>{const buffer=await decode(bytes);decoded++; if(buffer.duration>20)musicDurations.push(+buffer.duration.toFixed(1));return buffer;}; return ctx;
+}});
+audio.ready.then(()=>{ready=true;});
+document.querySelector('#start').onclick=()=>{};
+for(const button of document.querySelectorAll('[data-c]'))button.onclick=()=>{stores.snapshot.set({...stores.snapshot.get(),phase:'playing',sectionId:'normal'});stores.effects.set({musicTenseMix:0,forestCorruption:+button.dataset.c});};
+document.querySelector('#snow').onclick=()=>{stores.snapshot.set({...stores.snapshot.get(),sectionId:'snow'});bus.emit({type:'land',platformId:'snow-2',fallHeightPx:120});};
+document.querySelector('#wax').onclick=()=>bus.emit({type:'wax_collected',id:'test',x:0,y:0,collected:1,total:null});
+document.querySelector('#low').onclick=()=>stores.snapshot.set({...stores.snapshot.get(),lanternFuel01:0.1});
+document.querySelector('#win').onclick=()=>bus.emit({type:'finish'});
+document.querySelector('#pause').onclick=()=>stores.snapshot.set({...stores.snapshot.get(),phase:'paused'});
+setInterval(()=>{const samples=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(samples);const rms=Math.sqrt(samples.reduce((s,x)=>s+x*x,0)/samples.length);
+ document.querySelector('#result').textContent=JSON.stringify({ready,decoded,musicDurations,corruption:stores.effects.get().forestCorruption,outputRms:+rms.toFixed(5),...audio.getDiagnostics()},null,2);},300);
+</script></body></html>

@@ -137,6 +137,13 @@ Clastic Artistic, Abstract Textures, texture (25): https://clastic-artistic.itch
 
 Additional Pixel Platformer Tileset Vol.4 by reodesuxz game decorations: native climb/vine_hanging.png and ice/snowy_bush.png, copied to assets/winter. Same existing Vol.4 license applies; used only as integrated game art.
 
+## Adaptive corruption soundtrack and original sound design
+
+- `audio/music/transition-gothic.ogg`: **The Time Is Upon Us**, by Kaiser (uploaded by The Oracle), [source/CC0](https://opengameart.org/content/the-time-is-upon-us). User-supplied `01_the_time_is_upon_us.flac`; converted to24kHz stereo Vorbis, level matched and120ms endpoint fades. Transition stage.
+- `audio/music/corruption-metal.ogg`: **Untitled Metal Track**, by Kistol, [source/CC0](https://opengameart.org/content/untitled-metal-track). User-supplied OGG; converted to24kHz stereo Vorbis, level matched and120ms endpoint fades. Full corruption stage.
+- Existing **Insistent** by yd remains unchanged, used as a quieter transition underlay. Original source and CC0 evidence above.
+- New `audio/ember/` WAVs (`soil-land`, `snow-land`, `wax-drip`, `corruption-entry`, `wick-sputter`, `ice-creak`, `bird`, `victory-chime`, `forest-air`, `wind-air`): original procedural sound design for Lighten Up, made from seeded filtered noise and oscillator envelopes. These are synthesized effects, not field recordings or voice clones. Project license applies.
+
 ### Selected baseline narrator bank
 - Script: five active excerpts from Bennett Foddy's Getting Over It narration, supplied as a transcript and selected by Amrit. Amrit stated permission for reuse in this session. Source reference: https://www.youtube.com/watch?v=IO6ouSMm7Uc. These excerpts are not represented as original Gemini writing or as public-domain material.
 - Speech: generated using Amrit's supplied ElevenLabs voice ID `zwn3aE3GYziMwjvo74dv`, Eleven v4, through his paid account. The ID does not verify a speaker's identity; this repo did not create a voice clone. Five excerpt clips plus an original explanatory welcome and low-fuel reminder requested by Amrit, with generation settings, are recorded in `public/assets/audio/narrator/manifest-baseline.json`.
