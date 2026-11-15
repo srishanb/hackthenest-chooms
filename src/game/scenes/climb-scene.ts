@@ -72,7 +72,7 @@ export class ClimbScene extends Phaser.Scene {
   private phase!: PhaseController;
   private refuges!: ReturnType<typeof createRefugeController>;
   private ember!: ReturnType<typeof createRecoveryEmber>;
-  private emberMark!: Phaser.GameObjects.Arc;
+  private emberMark!: Phaser.GameObjects.Container;
   private wax!: ReturnType<typeof createWaxRewards>;
   private waxView!: ReturnType<typeof createWaxView>;
   private player!: Phaser.GameObjects.Rectangle;
@@ -138,9 +138,16 @@ export class ClimbScene extends Phaser.Scene {
     this.darkness = createDarkness(this, DEPTH.darkness);
     // Above the darkness (LAN-3): the ledge underfoot and reachable ledges stay readable.
     this.visibility = createProtectedVisibility(this, DEPTH.alwaysReadable, world.platforms, world, gameConfig);
-    // The candle's own flame is the light now; the old dot would draw a second one.
     this.lanternMark = this.add.circle(0, 0, 4, 0xfff3c4).setDepth(DEPTH.alwaysReadable).setVisible(false);
-    this.emberMark = this.add.circle(0, 0, 7, 0xf29938).setDepth(DEPTH.alwaysReadable).setVisible(false);
+    // Code-drawn shrine; original character, forest and platform art stay untouched.
+    const shrine = this.add.graphics();
+    shrine.fillStyle(0xffb83f, 0.12).fillCircle(0, -14, 26);
+    shrine.fillStyle(0x6c8291).fillRect(-12, -20, 24, 22);
+    shrine.fillStyle(0x142231).fillRect(-7, -18, 14, 19);
+    shrine.fillStyle(0xaac4d2).fillRect(-15, 0, 30, 5).fillRect(-10, -24, 20, 5);
+    shrine.fillStyle(0xff9b26).fillTriangle(-6, -3, 0, -20, 7, -3);
+    shrine.fillStyle(0xffe68c).fillTriangle(-3, -3, 1, -13, 4, -3);
+    this.emberMark = this.add.container(0, 0, [shrine]).setDepth(DEPTH.alwaysReadable).setVisible(false);
 
     // Native events reach the buffer immediately; do not let Space/arrows scroll the page.
     this.controls = createKeyboardInput(() => stores.settings.get().keys);
@@ -185,6 +192,7 @@ export class ClimbScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.phase.dispose());
     const offAssist = this.deps.bus.on('ember_assist_requested', () => this.returnToEmber(this.ember.assist()));
     const offCancel = this.deps.bus.on('ember_cancel_request', () => this.ember.cancel());
+    const offCheckpoint = this.deps.bus.on('checkpoint_restart_requested', () => this.returnToEmber(this.ember.restartAtAnchor()));
     const offRestart = this.deps.bus.on('run_restart', () => {
       this.wax.reset();
       this.stages.reset();
@@ -194,8 +202,17 @@ export class ClimbScene extends Phaser.Scene {
       this.candle.reseed(pickCandleSeed('', false));
       this.slideCameraTo(spawn.x, spawn.y);
     });
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { offAssist(); offCancel(); offRestart(); });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { offAssist(); offCancel(); offRestart(); offCheckpoint(); });
 
+    let cameraFrozen = false;
+    const offCamera = stores.snapshot.subscribe((snapshot) => {
+      const frozen = snapshot.phase === 'paused' || snapshot.phase === 'menu';
+      if (frozen === cameraFrozen) return;
+      cameraFrozen = frozen;
+      if (frozen) this.cameras.main.stopFollow();
+      else this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, offCamera);
     stores.effects.set(neutralFrame(effectsTable));
   }
 
@@ -231,7 +248,7 @@ export class ClimbScene extends Phaser.Scene {
     const stepMs = 1000 / gameConfig.stepHz;
     if (!this.phase.isRunning()) {
       this.controls.clear();
-      this.state = { ...this.state, charging: false, chargeMs: 0, jumpLatch: true };
+      if (stores.snapshot.get().phase !== 'paused' && stores.snapshot.get().phase !== 'menu') this.state = { ...this.state, charging: false, chargeMs: 0, jumpLatch: true };
     }
 
     // Only the 'playing' phase steps; pause, ember and finished freeze the body.
@@ -279,10 +296,17 @@ export class ClimbScene extends Phaser.Scene {
     writeSnapshot(stores.snapshot, {
       sectionId,
       altitude01: altitude01(sections, this.state.y),
+      navigation: {
+        player: { x: Math.round(this.state.x), y: Math.round(this.state.y) },
+        originY: sections[0]?.spawn.y ?? this.state.y,
+        lanternRadiusPx: Math.round(this.wax.lightRadius(Math.max(stores.effects.get().lanternRadius,
+          minCoveringRadius(gameConfig.view.width, gameConfig.view.height)), !this.state.grounded)),
+        checkpoints: anchor ? [{ id: anchor.platformId, x: anchor.x, y: anchor.y }] : [],
+      },
     });
 
     const signal = composure.getState();
-    const frame = stepForestEffects(
+    const frame = stores.snapshot.get().phase === 'paused' || stores.snapshot.get().phase === 'menu' ? stores.effects.get() : stepForestEffects(
       stores.effects.get(),
       effectsTable,
       {

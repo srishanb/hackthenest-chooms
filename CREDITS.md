@@ -91,3 +91,6 @@ Selected resources from Ancient Forest 1.7 and Dark Forest 1.0, used inside Ligh
 | `public/assets/forest/ruby-land.png` | Ancient Forest 1.7/Ruby V4 - Demo/Jump/Sheet/end_jump-Sheet.png | Unmodified PNG |
 
 Author: Lukya Forge (lukyaforge). Runtime tinting/opacity and animation are applied by the game, not the source files. Full dimensions/frame mappings and SHA-256 inventory: docs/visual-design.md and public/assets/forest/inventory.json. These files are game resources, not a standalone pack distribution.
+
+## UI typography
+- Pixelify Sans by Stefie Justprince, SIL Open Font License 1.1. Source: https://github.com/google/fonts/tree/main/ofl/pixelifysans. Bundled locally in `src/ui/theme/fonts/`, including OFL.txt. No runtime font requests.

@@ -6,6 +6,21 @@
  * state refer to text by key, never by literal string.
  */
 export const STRINGS = {
+  'hud.lantern': 'Lantern strength',
+  'hud.height': 'Height',
+  'hud.best': 'Highscore',
+  'hud.checkpoint': 'Ember checkpoint',
+  'hud.noCheckpoint': 'No Ember placed',
+  'hud.placeCheckpoint': 'E · Place on a safe ledge',
+  'hud.metres': 'm',
+  'hud.pause': 'Pause game',
+  'menu.checkpointRestart': 'Restart from Checkpoint',
+  'menu.noCheckpoint': 'Place an Ember to enable checkpoint restart.',
+  'menu.mainMenu': 'Main Menu',
+  'start.eyebrow': 'A little light. A long way up.',
+  'start.controlsHint': 'Hold jump · Aim · Release to climb',
+  'start.rulesHint': 'Keep your light. Find your way.',
+
   'forest.preview.title': 'Forest preview · visuals only',
   'forest.preview.toggle': 'Preview forest visuals',
   'forest.preview.restore': 'Restore normal input',
@@ -146,8 +161,8 @@ export const STRINGS = {
   "hud.emberEmpty": "No recovery ember",
   "hud.emberRecovering": "Recovery in progress",
   "hud.recoveryProgress": "Recovery progress",
-  "menu.paused": "Climb paused",
-  "menu.resume": "Resume climb",
+  "menu.paused": "Paused",
+  "menu.resume": "Resume",
   "menu.settings": "Settings",
   "menu.back": "Back to pause",
   "menu.backToStart": "Back to start",
