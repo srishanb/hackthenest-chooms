@@ -59,3 +59,17 @@ it('the last of a dying flame burns blue; a healthy one does not', () => {
   expect(lit(0.1).pixels.some((p) => blue.has(p.color))).toBe(true);
   expect(lit(0.8).pixels.some((p) => blue.has(p.color))).toBe(false);
 });
+
+it('copies the hero\'s squash and stretch: a charge is shorter, a launch is taller', () => {
+  const height = (p: ReturnType<typeof portrait>) => {
+    const body = p.pixels.filter((x) => x.color !== 0x8a8f99);
+    return Math.max(...body.map((x) => x.y)) - Math.min(...body.map((x) => x.y));
+  };
+  const at = (shape: { dWidth: number; dHeight: number; lean: number; lift: number }) =>
+    rasterPortrait(genome, { strength01: 1, timeMs: 0, reducedMotion: true, growth: 1, shape });
+  const resting = at({ dWidth: 0, dHeight: 0, lean: 0, lift: 0 });
+  const charging = at({ dWidth: 1, dHeight: -3, lean: 1, lift: 0 });
+  const rising = at({ dWidth: -1, dHeight: 2, lean: 0, lift: 0 });
+  expect(height(charging)).toBeLessThan(height(resting));
+  expect(height(rising)).toBeGreaterThan(height(resting));
+});

@@ -16,7 +16,7 @@
  * glow still show the strength. Pure and visual only; same genome as the hero candle.
  */
 import { scaleColor, type CandleGenome } from './candle-genome';
-import { bodyShape, INITIAL_POSE } from './candle-pose';
+import { bodyShape, INITIAL_POSE, type BodyShape } from './candle-pose';
 import { rasterCandle } from './candle-raster';
 import { FLAME_FPS, OXIDISED, rasterFlame } from './flame';
 
@@ -45,6 +45,8 @@ export interface PortraitInput {
   timeMs: number;
   reducedMotion: boolean;
   growth: number;
+  /** The hero candle's body shape this frame, so the close-up squashes and stretches with every jump. Idle breathing without it. */
+  shape?: BodyShape;
 }
 
 export interface Portrait {
@@ -81,9 +83,11 @@ export function rasterPortrait(genome: CandleGenome, input: PortraitInput): Port
     if (keep(x, y)) pixels.push({ x, y, color, alpha });
   };
 
-  // The body breathes like the idle pose and dims as the light leaves it.
+  // The body copies the hero's squash and stretch (charge, launch, landing), or breathes like the
+  // idle pose when no shape is given, and dims as the light leaves it. The wick stays upright.
   const idle = { ...INITIAL_POSE, elapsedMs: input.timeMs * motion };
-  const body = rasterCandle(genome, bodyShape(idle, 0), input.growth, false);
+  const shape = input.shape ? { ...input.shape, lean: 0 } : bodyShape(idle, 0);
+  const body = rasterCandle(genome, shape, input.growth, false);
   const dim = 0.45 + 0.55 * s;
   for (const p of body.pixels) push(p.x, p.y + FEET_Y, scaleColor(p.color, dim));
   const tipX = body.wickTip.x;
