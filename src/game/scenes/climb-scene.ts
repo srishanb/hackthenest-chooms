@@ -19,9 +19,11 @@ import { createPlayer, stepPlayer } from '../player/movement';
 import type { PlatformBox, PlayerState } from '../player/types';
 import { sectionAt } from '../world/bounds';
 import { landingEvents } from '../world/fall-tracker';
-import { altitude01, bodyInArea, findFinish, refugeAt } from '../world/finish';
+import { altitude01, bodyInArea, findFinish } from '../world/finish';
 import { createPhaseController, type PhaseController } from '../world/phase-controller';
 import { writeSnapshot } from './snapshot-writer';
+import type { SaveStorage } from '../save';
+import { createRefugeController } from '../world/refuge';
 import { CLIMB_SCENE_KEY } from './boot-scene';
 
 export interface ClimbSceneDeps {
@@ -32,11 +34,8 @@ export interface ClimbSceneDeps {
   gameConfig: GameConfig;
   effectsTable: readonly EffectRule[];
   emberConfig: EmberConfig;
-  storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | undefined;
+  storage?: SaveStorage;
 }
-
-/** Where P4.4 keeps the save (docs/plans/P4.md). Finishing clears it so the next player starts fresh. */
-const SAVE_KEY = 'lighten.save.v1';
 
 const DEPTH = { world: 0, zone: 1, player: 10, darkness: 100, alwaysReadable: 200 } as const;
 /** Never simulate more than this many steps in one frame (a long pause must not spiral). */
@@ -51,6 +50,7 @@ export class ClimbScene extends Phaser.Scene {
   private accumulatorMs = 0;
   private precisionActive = false;
   private phase!: PhaseController;
+  private refuges!: ReturnType<typeof createRefugeController>;
   private player!: Phaser.GameObjects.Rectangle;
   private darkness!: Phaser.GameObjects.Image;
   private lanternMark!: Phaser.GameObjects.Arc;
@@ -79,7 +79,15 @@ export class ClimbScene extends Phaser.Scene {
       }
     }
 
-    this.state = createPlayer(first.spawn.x, first.spawn.y);
+    this.refuges = createRefugeController({
+      sections, snapshot: stores.snapshot, bus: this.deps.bus, storage: this.deps.storage,
+    });
+    this.state = createPlayer(this.refuges.spawn.x, this.refuges.spawn.y);
+    const offFinish = this.deps.bus.on('finish', () => this.refuges.clear());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      offFinish();
+      this.refuges.destroy();
+    });
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
 
     const top = Math.min(...this.platforms.map((p) => p.y - p.height / 2)) - TOP_MARGIN_PX;
@@ -98,7 +106,7 @@ export class ClimbScene extends Phaser.Scene {
 
     this.phase = createPhaseController(this.deps.bus, stores.snapshot, () => {
       this.pressed.clear();
-      this.deps.storage?.removeItem(SAVE_KEY);
+      // The refuge controller clears the save when it hears the `finish` event this emits.
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.phase.dispose());
 
@@ -121,6 +129,7 @@ export class ClimbScene extends Phaser.Scene {
       this.accumulatorMs -= stepMs;
       const out = stepPlayer(this.state, input, this.platforms, gameConfig.view.width, gameConfig, stepMs);
       this.state = out.state;
+      this.refuges.update(this.state);
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).
       if (out.events.landed) for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
@@ -134,7 +143,6 @@ export class ClimbScene extends Phaser.Scene {
     this.player.setPosition(this.state.x, this.state.y);
     writeSnapshot(stores.snapshot, {
       sectionId: sectionAt(sections, this.state.y + gameConfig.player.height / 2),
-      inRefuge: refugeAt(sections, this.state.x, this.state.y) !== null,
       altitude01: altitude01(sections, this.state.y),
     });
 

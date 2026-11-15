@@ -18,5 +18,7 @@ Owner: Ali. Search here before adding a function.
 | `PlayerInput`, `PlayerState`, `PlatformBox`, `StepEvents` | `player/types.ts` | Plain data shared with the level checker (P4.2). |
 | `targetFor`, `stepEffect`, `stepEffects`, `neutralFrame`, `EffectInput` | `effects/effects-engine.ts` | Pure maths: signal → capped, smoothed effect values. |
 | `createDarkness`, `updateDarkness`, `minCoveringRadius` | `effects/darkness.ts` | The darkness sheet with a soft light hole (P0 spike). |
+| `createRefugeController` | `world/refuge.ts` | Entry saves, reload spawn, one-time ember refill, shared refuge state. |
+| `parseSave`, `serializeSave`, `loadSave`, `writeSave`, `clearSave`, `createMemorySaveStorage`, `SAVE_KEY` | `save.ts` | Versioned progress; safe fallback when browser storage is unavailable. |
 
-Not built yet: `world/` (section loader, refuge, finish), `ember/`, `save.ts`.
+Not built yet: section loading and reachability (P4.2), finish (P4.5), and `ember/` (P6).
