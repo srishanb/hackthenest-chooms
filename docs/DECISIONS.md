@@ -18,6 +18,7 @@ One line per decision. Only the integrator edits this file. A **Decision** was c
 | D-09 | 14 Nov 2026 | Srishan | The climb is two authored sections, about two minutes for a stranger. |
 | D-10 | 14 Nov 2026 | Srishan | Approvals: each lane owner approves plans in their own lane; Srishan approves P0 and anything touching shared files. |
 | D-11 | 14 Nov 2026 | Srishan | The Stop hook blocks once when a branch has work but no after-job report, then allows the agent to stop. |
+| D-12 | 14 Nov 2026 | Srishan | `docs/plans/P0.md` approved in chat at about 7:55 PM. At his instruction the agent recorded the approval line and merged the architecture PR (#3). One-off; the approval-gate rule is unchanged. |
 
 ## Recommendations in force (overrule by adding a Decision row)
 
