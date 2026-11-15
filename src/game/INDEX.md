@@ -75,3 +75,5 @@ createCorruptionScreen / createCorruptionFilter (forest/): bounded high-corrupti
 Stage authoring: `createStageCanvas` (`editor/canvas.ts`) reuses the forest/platform renderer with draggable handles. `readLayouts`, `writeLayouts`, `validateLayouts` (`editor/layouts.ts`) validate browser-local overrides with the existing section loader.
 
 Wax reward update/lightRadius accept optional benefit01 (default 1); real corruption suppresses benefit via waxBenefit01 in config/lantern-fuel.config.ts, while counts/respawns persist.
+
+createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow flecks, paused with game and disabled by Reduced Motion.
