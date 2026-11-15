@@ -1,4 +1,5 @@
-/** Pending P4.2 integration: export drafts separately so the current scene stays playable. */
+/** Early two-section drafts (lower and upper corridors), kept for reference and tests.
+ * The game runs on `SECTIONS` from index.ts, not on these. */
 import type { SectionData } from '../../shared/contracts/content';
 import { SECTION_ONE_DRAFT } from './section-1';
 import { SECTION_TWO_DRAFT } from './section-2';

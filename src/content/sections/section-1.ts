@@ -1,4 +1,5 @@
-/** Wide, forgiving first-climb draft. P4.2 must supply refuge/finish semantics before shipping. */
+/** Early lower-corridors draft: wide, forgiving ledges for the first climb.
+ * Kept for reference and tests; the game runs on `SECTIONS` from index.ts. */
 import type { SectionData } from '../../shared/contracts/content';
 
 export const SECTION_ONE_DRAFT: SectionData = {
