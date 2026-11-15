@@ -72,8 +72,10 @@ ranking.
   smoothing time and a written rule about what it may never do.
 - **Lanes:** the code is split into folders (signal, game, UI, audio, content). A lane may import only shared
   contracts and config, never another lane. A test enforces this.
-- **Narrator:** lines were drafted with Gemini, edited, and voiced once with ElevenLabs stock voices by an offline tool
-  (`tools/narrator/`). The game plays the saved files. Nothing on the play path calls the network.
+- **Narrator:** every clip was generated once, offline, with ElevenLabs by a build tool (`tools/narrator/`). The
+  default voice reads short excerpts from the narration of *Getting Over It* plus two lines written for this game;
+  `CREDITS.md` records the source and the permission note. Two alternative stock voices read original lines
+  drafted with Gemini and edited. The game plays the saved files. Nothing on the play path calls the network.
 - **Testing:** Vitest unit tests (`npm run check`), a level checker that proves every authored jump is reachable
   (`npm run check:levels`), and an offline eval tool that scores an algorithm against a recording (`npm run eval`).
 - **Team process:** four people and several AI coding agents (Claude, Codex, Antigravity) worked in parallel, each in
