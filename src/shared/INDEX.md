@@ -19,3 +19,14 @@ Owner: integrator (Srishan). **Frozen after P0:** changes go through an integrat
 | `getLocalStorage(scope)`, `createMemoryStorage()` | `safe-storage.ts` | `localStorage` read in a try/catch (undefined when blocked) and an in-memory fallback. |
 
 `__tests__/lane-boundaries.test.ts` fails the build if a lane imports another lane.
+
+Also exported (not listed above):
+
+| Export | File | What it is |
+|---|---|---|
+| `KeyValueStorage` | `safe-storage.ts` | The `getItem`/`setItem`/`removeItem` shape both storages satisfy. |
+| `Baselines`, `Preprocess`, `FeatureExtractor`, `QualityEstimator`, `Calibrator`, `Scorer`, `Smoother` | `contracts/signal-internal.ts` | Pipeline stage interfaces for the signal lane. |
+| `PresetInfo`, `SourceChoice`, `SignalPresets` | `contracts/signal-api.ts` | Replay presets: list entry, source choice (sim, live or preset id) and the runtime preset controls. |
+| `WorldViewSnapshot` | `contracts/world-view.ts` | Camera coordinates published after rendering (`Stores.worldView`). |
+| `NavigationSnapshot` | `contracts/game-state.ts` | Read-only world coordinates for UI. |
+| `NarratorMoment`, `StageKind` | `contracts/content.ts` | Narrator moment names and stage kinds (tutorial, normal, snow, windy, snow-windy). |
