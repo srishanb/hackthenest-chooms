@@ -1,20 +1,32 @@
-/** One original local intro per run, with cooldowns, caption sync and resumable silence.
+/** Local welcome and event commentary, with cooldowns, caption sync and resumable silence.
  * Never fetches an API or changes gameplay. The existing audio loader supplies local buffers.
  */
+import { NARRATOR_MOMENTS } from '../../config/audio.config';
+import { watchNarratorMoments } from './moments';
 import { narrationGain } from './level';
 import type { Stores } from '../../shared/contracts/app';
 import type { AudioConfig } from '../../shared/contracts/config';
-import type { NarratorLine } from '../../shared/contracts/content';
+import type { NarratorLine, NarratorMoment } from '../../shared/contracts/content';
 import type { EventBus } from '../../shared/contracts/events';
 interface Speech { line: NarratorLine; buffer: AudioBuffer; offset: number; startedAt: number; node: AudioBufferSourceNode | null; gain: GainNode | null }
 export function createIntroPlayer(context: AudioContext, output: GainNode, bus: EventBus, stores: Stores,
   lines: readonly NarratorLine[], config: AudioConfig['narrator'], load: (path: string | null) => Promise<AudioBuffer | null>,
-  random: () => number = Math.random, voicePrefix: string | null = null) {
+  random: () => number = Math.random, voicePrefix: string | null = null, initialBestPx = 0) {
   const buffers = new Map<string, AudioBuffer | null>(), used = new Map<string, number>();
   const levels = new Map<string, number>();
   let previewing = false, previewLine: NarratorLine | null = null;
   let disposed = false, loaded = false, precision = false, served = false;
   let pending = stores.snapshot.get().phase === 'playing', speech: Speech | null = null, lastStart = -Infinity;
+  const queue: Array<{moment: NarratorMoment; at: number}> = [];
+  const hasMoments = lines.some(line => line.moment !== undefined);
+  const matchesVoice = (line: NarratorLine): boolean => voicePrefix === null || line.id.startsWith(voicePrefix);
+  const request = (moment: NarratorMoment): void => {
+    if (!lines.some(line => line.moment === moment && matchesVoice(line))) return;
+    if (queue.some(item => item.moment === moment)) return;
+    // Completion guidance wins over a simultaneous height milestone.
+    if (moment === 'stage' || moment === 'tutorial') queue.splice(0, queue.length);
+    if (queue.length < 3) queue.push({moment,at:context.currentTime*1000});
+  };
   const clearCaption = (lineId: string): void => bus.emit({type:'narrator_line',lineId,text:'',durationMs:0});
   const detach = (value: Speech): void => {
     const node = value.node; if (!node) return;
@@ -49,14 +61,17 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
       return;
     }
     if (speech) { if (!speech.node) startSpeech(speech); return; }
-    if (!pending || served) return;
     const now = context.currentTime * 1000;
-    if (now - lastStart < config.cooldownMs) return;
-    const available = lines.filter((line) => (voicePrefix === null || line.id.startsWith(voicePrefix)) && now - (used.get(line.id) ?? -Infinity) >= config.repeatCooldownMs);
-    if (!available.length) return;
+    while (queue.length && now - queue[0]!.at > NARRATOR_MOMENTS.eventExpiryMs && queue[0]!.moment !== 'tutorial') queue.shift();
+    const opening = pending && !served;
+    const moment = opening ? 'welcome' : queue[0]?.moment;
+    if (!moment || now - lastStart < (hasMoments ? NARRATOR_MOMENTS.cooldownMs : config.cooldownMs)) return;
+    const available = lines.filter((line) => matchesVoice(line) && (opening ? line.moment === 'welcome' || (!line.moment && !lines.some(l => matchesVoice(l) && l.moment === 'welcome')) : line.moment === moment) && now - (used.get(line.id) ?? -Infinity) >= config.repeatCooldownMs);
+    if (!available.length) { if (!opening) queue.shift(); return; }
     const line = available[Math.min(available.length - 1, Math.max(0, Math.floor(random() * available.length)))];
     if (!line) return;
-    pending = false; served = true; lastStart = now; used.set(line.id, now);
+    if (opening) { pending = false; served = true; } else queue.shift();
+    lastStart = now; used.set(line.id, now);
     const buffer = buffers.get(line.id);
     if (!buffer) {
       bus.emit({type:'narrator_line',lineId:line.id,text:line.text,durationMs:Math.max(4000,line.text.split(/\s+/).length*400)});
@@ -65,16 +80,17 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
     speech = {line,buffer,offset:0,startedAt:context.currentTime,node:null,gain:null}; startSpeech(speech);
   };
   const cleanups = [bus.on('start', () => { if (!served) pending = true; tick(); }),
-    bus.on('run_restart', () => { cancel(); served = false; pending = true; tick(); }),
-    bus.on('finish', () => { pending = false; cancel(); }),
+    bus.on('run_restart', () => { cancel(); queue.length = 0; served = false; pending = true; tick(); }),
+    bus.on('finish', () => { pending = false; queue.length = 0; cancel(); }),
     bus.on('precision_window', (event) => { precision = event.active; tick(); }),
+    watchNarratorMoments(bus, stores.snapshot, request, initialBestPx),
     stores.snapshot.subscribe(tick), stores.settings.subscribe(tick)];
   const ready = Promise.all(lines.map(async (line) => { const buffer = await load(line.clip); if (!disposed) { buffers.set(line.id, buffer); if (buffer) levels.set(line.id,narrationGain(buffer)); } }))
     .then(() => { loaded = true; tick(); });
   return {ready,tick,
-    setVoice(prefix: string): void { cancel(); voicePrefix = prefix; },
+    setVoice(prefix: string): void { cancel(); queue.length = 0; voicePrefix = prefix; },
     preview(): void {
-      const line = lines.find(candidate => voicePrefix === null || candidate.id.startsWith(voicePrefix));
+      const line = lines.find(candidate => matchesVoice(candidate) && candidate.moment === 'welcome') ?? lines.find(matchesVoice);
       if (!line || disposed) return;
       cancel(); previewing = true; previewLine = line; tick();
     },

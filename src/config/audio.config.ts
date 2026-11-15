@@ -21,3 +21,12 @@ export const DEFAULT_NARRATOR_VOICE = 'chris';
 export const NARRATOR_VOICE_STORAGE_KEY = 'lighten.narrator-voice.v1';
 export const NARRATOR_VOICE_EVENT = 'lighten-narrator-voice';
 export const NARRATOR_LEVELS = { targetRms: 0.1, peakCeiling: 0.85, maxGain: 2 } as const;
+
+/** Sparse event commentary: world pixels, milliseconds; no gameplay effects. */
+export const NARRATOR_MOMENTS = {
+  cooldownMs: 30_000,
+  eventExpiryMs: 15_000,
+  heightStepPx: 256,
+  // Share the HUD's existing personal-best record, without writing gameplay state.
+  bestStorageKey: 'lighten.height-best-px.v1',
+} as const;

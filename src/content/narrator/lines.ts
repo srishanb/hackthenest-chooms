@@ -60,5 +60,35 @@ export const NARRATOR_LINES: readonly NarratorLine[] = [
     "id": "intro-bill-06",
     "text": "Welcome back. I kept the mountain exactly where you left it.",
     "clip": "assets/audio/narrator/intro-bill-06-79027a95a520.mp3"
+  },
+  {
+    "id": "intro-chris-welcome",
+    "text": "Hey, welcome to Lighten Up! Let's get you started.",
+    "moment": "welcome",
+    "clip": "assets/audio/narrator/intro-chris-welcome-314aec4c33cc.mp3"
+  },
+  {
+    "id": "intro-chris-tutorial",
+    "text": "Hey, congrats on finishing the tutorial! Good luck up there.",
+    "moment": "tutorial",
+    "clip": "assets/audio/narrator/intro-chris-tutorial-15905e5b2b24.mp3"
+  },
+  {
+    "id": "intro-chris-height",
+    "text": "Hey, a new personal best! Look at you go.",
+    "moment": "height",
+    "clip": "assets/audio/narrator/intro-chris-height-9f518687a47e.mp3"
+  },
+  {
+    "id": "intro-chris-fall",
+    "text": "Ah, that was a long way down. You're good—take your time.",
+    "moment": "fall",
+    "clip": "assets/audio/narrator/intro-chris-fall-97a6566bae9c.mp3"
+  },
+  {
+    "id": "intro-chris-stage",
+    "text": "Nice, you made it! On to the next one.",
+    "moment": "stage",
+    "clip": "assets/audio/narrator/intro-chris-stage-afc8ed76d196.mp3"
   }
 ];

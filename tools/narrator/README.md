@@ -57,3 +57,24 @@ node --env-file=.env.local tools/narrator/build.mjs build bill
 ```
 
 The current default is Eleven v4 using only stability/similarity_boost parameters supported by that model. Short auditions reuse the exact first final clip. Full builds combine completed profile manifests into the active content bank. `custom` uses the private ELEVENLABS_VOICE_ID if a different approved stock voice is desired. Default build profile is Chris; the old George id need not be changed in the private env file. Old generated files are preserved rather than removed. There are no generation credits spent during gameplay or Preview.
+
+## Approved game moments (baseline)
+
+`tools/narrator/moment-pack.json` contains Amrit's five approved lines. Run
+`node --env-file=.env.local tools/narrator/build.mjs moments chris` to download only
+that bank and combine it with existing banks. Identical content/settings reuse files.
+No regeneration occurs in gameplay. The separate calmer voice auditions in the chat's
+outputs folder are review samples, not the selected production bank.
+
+Chris's welcome replaces random Chris opening selection. Existing Bill openings remain
+available. The playable tutorial's actual stage-completion event triggers congratulations;
+skipping/closing the control guide does not. Large falls use the game's existing `big`
+flag. Intermediate stages trigger the next-stage line; the final stage does not. Height
+commentary requires beating the saved HUD personal best by 256 pixels (8 displayed metres),
+then another 256 pixels before requesting it again. It never writes game state.
+
+Event banks have a 30-second global cooldown and the existing 120-second same-line
+cooldown. Duplicate pending moments are collapsed; stale falls/heights/stage remarks
+expire after 15 seconds. Tutorial completion may wait through pause. Existing speech
+parks during pause, precision and mute, and resumes from the exact offset. Welcome
+plays after Play and any first-launch controls guide has closed.

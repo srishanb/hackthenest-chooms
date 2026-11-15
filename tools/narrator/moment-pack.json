@@ -1,0 +1,27 @@
+[
+  {
+    "id": "intro-welcome",
+    "moment": "welcome",
+    "text": "Hey, welcome to Lighten Up! Let's get you started."
+  },
+  {
+    "id": "intro-tutorial",
+    "moment": "tutorial",
+    "text": "Hey, congrats on finishing the tutorial! Good luck up there."
+  },
+  {
+    "id": "intro-height",
+    "moment": "height",
+    "text": "Hey, a new personal best! Look at you go."
+  },
+  {
+    "id": "intro-fall",
+    "moment": "fall",
+    "text": "Ah, that was a long way down. You're good\u2014take your time."
+  },
+  {
+    "id": "intro-stage",
+    "moment": "stage",
+    "text": "Nice, you made it! On to the next one."
+  }
+]

@@ -20,14 +20,15 @@ async function request(url, options) {
   if (!response.ok) throw Error(`${new URL(url).hostname} returned HTTP ${response.status}. Check key permissions, credits and model access. Response body withheld.`);
   return response;
 }
-function validatePack(value) {
-  if (!Array.isArray(value) || value.length !== 6) throw Error('The pack must contain exactly six intro lines.');
+function validatePack(value, moments = false) {
+  if (!Array.isArray(value) || value.length !== (moments ? 5 : 6)) throw Error('The pack must contain six intros or five approved game moments.');
   const seen = new Set();
   return value.map((line) => {
     if (!line || !/^intro-[a-z0-9-]+$/.test(line.id) || seen.has(line.id) || typeof line.text !== 'string' ||
         line.text.trim().length < 20 || line.text.length > 240 || /[\r\n<>]/.test(line.text)) throw Error('Invalid intro pack. Review ids and text.');
     if (/\b(stress|diagnos\w*|therap\w*|emotion\w*)\b/i.test(line.text)) throw Error('Review narrator framing before generation.');
-    seen.add(line.id); return { id: line.id, text: line.text.trim() };
+    if (moments && !['welcome','tutorial','height','fall','stage'].includes(line.moment)) throw Error('Invalid narrator moment.');
+    seen.add(line.id); return { id: line.id, text: line.text.trim(), ...(moments ? {moment:line.moment} : {}) };
   });
 }
 async function draft() {
@@ -59,7 +60,9 @@ async function build(audition = false) {
   if (!/^[A-Za-z0-9_-]{10,100}$/.test(voice)) throw Error('Voice ID format is invalid.');
   const model = process.env.ELEVENLABS_MODEL || 'eleven_v4';
   const settings = model.startsWith('eleven_v4') ? { stability: 0.45, similarity_boost: 0.7 } : voiceSettings;
-  let lines = validatePack(JSON.parse(await readFile(packFile,'utf8'))).map(line=>({...line,id:line.id.replace('intro-',`intro-${profileId}-`)}));
+  const moments = process.argv[2] === 'moments';
+  if (moments && profileId !== 'chris') throw Error('The approved moment pack uses Chris only.');
+  let lines = validatePack(JSON.parse(await readFile(moments ? path.join(root,'tools/narrator/moment-pack.json') : packFile,'utf8')), moments).map(line=>({...line,id:line.id.replace('intro-',`intro-${profileId}-`)}));
   if (audition) lines = lines.slice(0,1);
   const output = path.join(root, 'public/assets/audio/narrator'); await mkdir(output,{recursive:true});
   const manifest = [];
@@ -80,12 +83,13 @@ async function build(audition = false) {
     manifest.push({...line,clip:`assets/audio/narrator/${file}`});
   }
   const metadata = { profileId, voiceId:voice, model, voiceSettings:settings, lines:manifest };
-  await writeFile(path.join(output,`${audition ? 'audition' : 'manifest'}-${profileId}.json`),JSON.stringify(metadata,null,2)+'\n');
+  await writeFile(path.join(output,`${audition ? 'audition' : 'manifest'}-${profileId}${moments ? '-moments' : ''}.json`),JSON.stringify(metadata,null,2)+'\n');
   if (audition) { console.log(`Saved ${profileId} audition; active game bank unchanged.`); return; }
   const banks = [];
   for (const id of Object.keys(profiles)) {
     try { banks.push(JSON.parse(await readFile(path.join(output,`manifest-${id}.json`),'utf8'))); } catch { /* Not generated yet. */ }
   }
+  try { banks.push(JSON.parse(await readFile(path.join(output,'manifest-chris-moments.json'),'utf8'))); } catch { /* Optional approved moment bank. */ }
   if (profileId === 'custom') banks.push(metadata);
   const combined = banks.flatMap(bank=>bank.lines);
   await writeFile(path.join(output,'manifest.json'),JSON.stringify({profiles:banks,lines:combined},null,2)+'\n');
@@ -95,7 +99,7 @@ async function build(audition = false) {
 try {
   const mode=process.argv[2];
   if(mode==='draft') await draft();
-  else if(mode==='build') await build();
+  else if(mode==='build' || mode==='moments') await build();
   else if(mode==='audition') await build(true);
   else if(mode==='check') { for(const name of ['GEMINI_API_KEY','ELEVENLABS_API_KEY','ELEVENLABS_VOICE_ID']) key(name); console.log('All three private settings are present. Values withheld.'); }
   else throw Error('Usage: node --env-file=.env.local tools/narrator/build.mjs check|draft|build|audition [chris|bill|custom]');

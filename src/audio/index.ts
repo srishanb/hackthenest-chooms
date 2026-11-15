@@ -14,6 +14,7 @@ import { createAudioLoader } from './loader';
 import { computeMix, type MixGains } from './mix-rules';
 import { startMusicLayers } from './music-layers';
 import { createSfxPlayer, type SfxAssets } from './sfx';
+import { NARRATOR_MOMENTS } from '../config/audio.config';
 import { createIntroPlayer } from './narrator/intro-player';
 import { sfxForEvent } from './sfx-map';
 
@@ -67,9 +68,11 @@ export function createAudio(deps: AudioDeps, environment?: AudioEnvironment): Au
   let storedVoice: string | null = null;
   try { storedVoice = voiceStorage?.getItem(NARRATOR_VOICE_STORAGE_KEY) ?? null; } catch { /* Private mode. */ }
   const chosenVoice = NARRATOR_VOICES.find(voice => voice.id === storedVoice) ?? NARRATOR_VOICES.find(voice => voice.id === DEFAULT_NARRATOR_VOICE)!;
+  let initialBestPx = 0;
+  try { const saved = Number(voiceStorage?.getItem(NARRATOR_MOMENTS.bestStorageKey)); if (Number.isFinite(saved) && saved > 0) initialBestPx = saved; } catch { /* Session-only milestones. */ }
   const narrator = createIntroPlayer(context, engine.nodes.narrator, deps.bus, deps.stores,
     deps.narratorLines, deps.config.narrator, load, Math.random,
-    deps.narratorLines.some(line => line.id.startsWith(chosenVoice.prefix)) ? chosenVoice.prefix : null);
+    deps.narratorLines.some(line => line.id.startsWith(chosenVoice.prefix)) ? chosenVoice.prefix : null, initialBestPx);
   const onVoice = (event: Event): void => {
     const detail: unknown = (event as CustomEvent<unknown>).detail;
     if (!detail || typeof detail !== 'object') return;
