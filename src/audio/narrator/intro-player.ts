@@ -71,7 +71,8 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
     const moment = opening ? 'welcome' : queue[0]?.moment;
     if (!moment || now - lastStart < (hasMoments ? NARRATOR_MOMENTS.cooldownMs : config.cooldownMs)) return;
     const available = lines.filter((line) => matchesVoice(line) && (opening ? line.moment === 'welcome' || (!line.moment && !lines.some(l => matchesVoice(l) && l.moment === 'welcome')) : line.moment === moment) && now - (used.get(line.id) ?? -Infinity) >= config.repeatCooldownMs);
-    if (!available.length) { if (!opening) queue.shift(); return; }
+    // A restart inside the repeat cooldown skips the welcome rather than holding every moment for it.
+    if (!available.length) { if (opening) { pending = false; served = true; tick(); } else queue.shift(); return; }
     const line = available[Math.min(available.length - 1, Math.max(0, Math.floor(random() * available.length)))];
     if (!line) return;
     if (opening) { pending = false; served = true; } else queue.shift();
