@@ -56,3 +56,5 @@ Recovery keeps a marker placed after each return. Pickup is required before plac
 | `stableUnit`, `reveal`, `mixColor` | `forest/presentation.ts` | Deterministic seeds and continuous visual mapping. |
 
 Atmosphere: createAtmosphere (forest/atmosphere.ts) consumes existing corruption and renderer-only stage weather; createVerticalForest and vertical-layout helpers provide bounded continuous background composition. ForestWorld.setEnvironment is the level integration point; no signal/physics import.
+
+createBackdropGardens (forest/backdrop-gardens.ts): five pooled, seeded non-collidable parallax garden ledges; no physics or bright landing rims.

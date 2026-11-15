@@ -1,0 +1,2 @@
+Winter Forest source: https://kauzz.itch.io/kpwf
+Author: Kauzz. Verified 2026-11-15. Publisher permits non-commercial game use with credit; asks for donation/purchase for commercial games. Not represented as CC0 or unrestricted commercial license. Local game use is the non-commercial hackathon prototype; obtain applicable commercial permission/payment before monetization. Selected resources cropped from Enviroment.png; no full pack redistribution.

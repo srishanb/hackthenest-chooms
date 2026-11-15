@@ -1,5 +1,7 @@
 /** Live, keyboard-accessible controls for the existing settings schema; no gameplay writes. */
 import type { Settings, KeyBindings } from '../../../shared/contracts/settings';
+import { mountForestPreview } from '../source-badge/forest-preview';
+import '../source-badge/source-badge.css';
 import { menuButton, trapMenuFocus } from '../../menu-dom';
 import { CAPTION_SCALE_RANGE, validateSettings } from '../../settings-store';
 import { t, type StringKey } from '../../strings';
@@ -32,6 +34,7 @@ export const settingsPanel: UiComponent = {
     }
     range('settings.captionSize', CAPTION_SCALE_RANGE.min, CAPTION_SCALE_RANGE.max, 0.05,
       (s) => s.captions.scale, (s, scale) => ({ ...s, captions: { ...s.captions, scale } }));
+    const removeForestPreview = mountForestPreview(panel);
     range('settings.effects', 0, 1, 0.05, (s) => s.effectStrength, (s, effectStrength) => ({ ...s, effectStrength }));
     function checkbox(labelKey: StringKey, read: (s: Settings) => boolean, write: (s: Settings, value: boolean) => Settings): void {
       const label = document.createElement('label'); label.className = 'menu-row';
@@ -87,6 +90,6 @@ export const settingsPanel: UiComponent = {
       if (open) queueMicrotask(() => { if (panel.isConnected && !panel.hidden) panel.querySelector<HTMLElement>('input')?.focus(); });
     });
     render();
-    return () => { window.removeEventListener('keydown', onKey, true); offSettings(); offSnapshot(); offActions(); panel.remove(); };
+    return () => { removeForestPreview(); window.removeEventListener('keydown', onKey, true); offSettings(); offSnapshot(); offActions(); panel.remove(); };
   },
 };

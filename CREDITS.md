@@ -101,3 +101,13 @@ Author: Lukya Forge (lukyaforge). Runtime tinting/opacity and animation are appl
 Both new packs permit personal/commercial game use. Only game-used resources are included, not the complete source packs. Glitch pack excluded.
 ## UI typography
 - Pixelify Sans by Stefie Justprince, SIL Open Font License 1.1. Source: https://github.com/google/fonts/tree/main/ofl/pixelifysans. Bundled locally in `src/ui/theme/fonts/`, including OFL.txt. No runtime font requests.
+
+## Grassland polish
+Diego "Shackhal" del Solar, Multi Platformer Tileset Free. Local ReadMe declares CC0; preserved verbatim at public/assets/grassland/ReadMe.txt. Source https://shackhal.itch.io/ . Used GrassLand/Terrain/Grassland_Terrain_47Tiles.png: left/middle/right crops (0,0,16,16), (16,0,16,16), (32,0,16,16); soil (16,16,16,16). Used GrassLand/Props/GrassLand_Bush.png -> bush.png, GrassLand_Stone_1.png -> stone.png, GrassLand/Background/GrassLand_Cloud_1.png -> cloud.png. Runtime nearest scaling/tint and opacity; no full pack copied. This Free version has only Grassland; winter assets remain separately credited above.
+
+
+## Winter Forest and wind polish
+Kauzz — Pixel Valley Winter Forest: https://kauzz.itch.io/kpwf . Selected crops from Enviroment.png: left (0,32,16,16), middle (32,32,16,16), right (80,32,16,16), pine (6,250,58,110), crown (6,250,58,80; last16rows alpha feather). Used for snowy terrain/pines/background crowns, no physics changes. Non-commercial use with credit; commercial use requires donation/purchase per publisher. Evidence: assets/winter-forest/license-source.md.
+NYKNCK (@nyk_nck) — Wind: https://nyknck.itch.io/wind . W401-1.png through W401-16.png imported unchanged as three animated gust sprites (90ms/frame); runtime tint/alpha/flip. Author permits game use including commercial with credit. Evidence: assets/wind/license-source.md. No TinyForest resources imported.
+
+Ancient Forest extra foliage: canopy-cluster-alt.png derived from existing trees-4.png at x0,y0,width416,height144, irregular elliptical alpha mask matching canopy-cluster.png. Original Lukya Forge license above. Mushrooms and ferns reuse already credited textures; no additional pack copies.

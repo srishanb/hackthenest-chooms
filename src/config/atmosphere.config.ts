@@ -4,9 +4,9 @@ export interface VisualEnvironment {
   snowEnabled: boolean; snow01: number;
 }
 export const ATMOSPHERE_CONFIG = {
-  seed: 'lighten-forest-v2', chunkPx: 640, crownSlots: 5, trunksPerLayer: 7,
-  weatherTauMs: 700, windPxPerSecond: 45, snowOpacity: 0.26,
-  leavesOpacity: 0.18, fogOpacity: 0.1,
+  seed: 'lighten-forest-v2', chunkPx: 640, crownSlots: 10, trunksPerLayer: 7,
+  weatherTauMs: 700, windPxPerSecond: 80, snowOpacity: 0.26,
+  leavesOpacity: 0.38, fogOpacity: 0.14,
 } as const;
 export const DEFAULT_ENVIRONMENT: VisualEnvironment = {
   windEnabled: false, wind01: 0.5, direction: 1, snowEnabled: false, snow01: 0.5,
