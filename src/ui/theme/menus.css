@@ -1,0 +1,41 @@
+/* Shared menu appearance; all palette, typography and spacing come from tokens. */
+.menu-panel {
+  display: grid; gap: var(--space-3); padding: var(--space-4);
+  max-width: var(--panel-max-width); box-sizing: border-box;
+  background: var(--color-panel); color: var(--color-text);
+  border: 1px solid var(--color-panel-border); border-radius: var(--radius);
+  box-shadow: var(--panel-shadow); border-top: 3px solid var(--color-accent);
+}
+.menu-panel h2, .menu-panel p { margin: 0; }
+.menu-panel h2 { font-family: var(--font-display); color: var(--color-accent); font-weight: 400; }
+.menu-panel button, .menu-panel input { font: inherit; }
+.menu-panel button {
+  padding: var(--space-2) var(--space-3); color: var(--color-text);
+  background: var(--color-bg); border: 1px solid var(--color-panel-border);
+  border-radius: var(--radius); cursor: pointer;
+  min-height: 40px; transition: background-color 120ms ease;
+}
+.menu-panel button:hover, .menu-panel button:focus-visible { background: var(--color-hover); border-color: var(--color-accent); }
+.menu-panel fieldset { background: var(--color-inset); }
+.menu-panel legend { color: var(--color-accent); }
+.menu-row { justify-content: space-between; line-height: 1.6; }
+.menu-row input[type='range'] { flex: 1; }
+@media (prefers-reduced-motion: reduce) { .menu-panel button { transition: none; } }
+.menu-panel fieldset { display: flex; flex-wrap: wrap; gap: var(--space-2); border: 1px solid var(--color-panel-border); }
+.menu-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.menu-row input { accent-color: var(--color-accent); min-width: 0; }
+.menu-row output { color: var(--color-accent); font-family: var(--font-mono); }
+/* Reference panels retain the existing settings and keyboard focus behavior. */
+.ui-icon { width: 24px; height: 24px; flex: 0 0 auto; vertical-align: middle; }
+.menu-panel { border: 2px solid var(--color-panel-border); padding: clamp(20px, 4vw, 40px); gap: var(--space-3); }
+.menu-panel h2 { text-align: center; font-size: clamp(24px, 4vw, 34px); font-weight: 700; color: var(--color-text); margin-bottom: var(--space-3); }
+.menu-panel h2::before, .menu-panel h2::after { content: '—'; padding: 0 var(--space-3); color: var(--color-text-dim); }
+.menu-panel button { min-height: 46px; border: 2px solid var(--color-panel-border); display: flex; align-items: center; justify-content: center; gap: var(--space-3); transition: background 120ms ease, box-shadow 120ms ease; }
+.menu-panel button:hover, .menu-panel button:focus-visible, .menu-panel .menu-primary { color: var(--color-accent); border-color: var(--color-accent); box-shadow: var(--gold-glow); background: var(--color-hover); }
+.menu-panel button:disabled { opacity: .45; cursor: default; box-shadow: none; border-color: var(--color-panel-border); }
+.pause-menu { width: min(420px, 92vw); }
+.pause-menu small { color: var(--color-text-dim); text-align: center; line-height: 1.5; }
+.menu-panel .menu-tertiary { border: 0; min-height: 30px; font-size: var(--text-xs); background: transparent; box-shadow: none; }
+#app:has(#ui[data-phase='paused']) #game { filter: blur(3px) brightness(.48); }
+#ui[data-phase='paused']::before { content: ''; position: absolute; inset: 0; background: var(--overlay-dim); }
+#ui[data-phase='paused'] .ui-slot[data-slot='center'], #ui[data-phase='paused'] .ui-slot[data-slot='full'] { z-index: 1; }

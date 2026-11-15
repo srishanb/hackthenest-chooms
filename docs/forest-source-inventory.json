@@ -1,0 +1,968 @@
+[
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Hud/Hud.png",
+    "width": 400,
+    "height": 400
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Tiles/Tiles 3.png",
+    "width": 400,
+    "height": 400
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Tiles/Tiles 4.png",
+    "width": 400,
+    "height": 624
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Tiles/Tiles.png",
+    "width": 400,
+    "height": 224
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Tiles/Trees.png",
+    "width": 511,
+    "height": 544
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Animals/Birds/blue_bird-Sheet.png",
+    "width": 576,
+    "height": 16
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Animals/Birds/red_bird-Sheet.png",
+    "width": 576,
+    "height": 16
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Animals/Birds/yellow_bird-Sheet.png",
+    "width": 576,
+    "height": 16
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Animated Tiles/Little Fire/Little Fire-Sheet.png",
+    "width": 48,
+    "height": 32
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Animated Tiles/Lum/Lum-Sheet.png",
+    "width": 2160,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Animated Tiles/Simple Chest/simple_chest_idle.png",
+    "width": 64,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Animated Tiles/Simple Chest/simple_chest_open.png",
+    "width": 64,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Animated Tiles/Simple Chest/simple_chest_opening-Sheet.png",
+    "width": 576,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Animated Tiles/Water/Water-Sheet.png",
+    "width": 128,
+    "height": 32
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Animated Tiles/Watterfall/Waterfall-Sheet.png",
+    "width": 256,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Blind Sky/blind_background.png",
+    "width": 480,
+    "height": 272
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Blind Sky/front_blind.png",
+    "width": 480,
+    "height": 272
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Deep Forest/Background 1.png",
+    "width": 416,
+    "height": 256
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Deep Forest/Background 2.png",
+    "width": 416,
+    "height": 256
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Deep Forest/Background 3.png",
+    "width": 416,
+    "height": 256
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Deep Forest/Background 4.png",
+    "width": 416,
+    "height": 256
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Deep Forest/Background 5.png",
+    "width": 416,
+    "height": 256
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Mountain/Background 1.png",
+    "width": 480,
+    "height": 272
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Mountain/Background 2.png",
+    "width": 480,
+    "height": 272
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Mountain/Clounds.png",
+    "width": 480,
+    "height": 272
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Mountain/Mountain.png",
+    "width": 256,
+    "height": 272
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Mountain/Sky.png",
+    "width": 480,
+    "height": 272
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Mountain/Stars.png",
+    "width": 480,
+    "height": 272
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Parallax Water/parallax_water_1.png",
+    "width": 128,
+    "height": 160
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Parallax Water/parallax_water_2.png",
+    "width": 128,
+    "height": 160
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Parallax Water/parallax_water_3.png",
+    "width": 128,
+    "height": 160
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Background/Parallax Water/parallax_water_4.png",
+    "width": 128,
+    "height": 160
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/AcidSpitter/Attack/Acid-Sheet.png",
+    "width": 96,
+    "height": 31
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/AcidSpitter/Attack/Spit Acid-Sheet.png",
+    "width": 320,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/AcidSpitter/Damage/Damage-Sheet.png",
+    "width": 128,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/AcidSpitter/Dead/Dead (Red)-Sheet.png",
+    "width": 320,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/AcidSpitter/Dead/Dead-Sheet.png",
+    "width": 256,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/AcidSpitter/Idle/Idle-Sheet.png",
+    "width": 320,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Cursed Ghost/Attack/Blood Claw-Sheet.png",
+    "width": 640,
+    "height": 80
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Cursed Ghost/Attack/Summon  Thorn-Sheet.png",
+    "width": 640,
+    "height": 80
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Cursed Ghost/Attack/Thorn-Sheet.png",
+    "width": 400,
+    "height": 80
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Cursed Ghost/Damage/Damage-Sheet.png",
+    "width": 320,
+    "height": 80
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Cursed Ghost/Dead/Dead (Red)-Sheet.png",
+    "width": 400,
+    "height": 80
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Cursed Ghost/Dead/Dead-Sheet.png",
+    "width": 480,
+    "height": 80
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Cursed Ghost/Float/Float-Sheet.png",
+    "width": 320,
+    "height": 80
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Cursed Ghost/Idle/Idle-Sheet.png",
+    "width": 480,
+    "height": 80
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Green Slime/Attack/green_slime_attack-Sheet.png",
+    "width": 512,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Green Slime/Death/green_slime_death-Sheet.png",
+    "width": 240,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Green Slime/Hurt/green_slime_hurt-Sheet.png",
+    "width": 96,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Green Slime/Idle/green_slime_idle-Sheet.png",
+    "width": 288,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Green Slime/Walk/green_slime_walk-Sheet.png",
+    "width": 288,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Leaf Shadow/Damage/Damage-Sheet.png",
+    "width": 144,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Leaf Shadow/Dead/Dead (Red)-Sheet.png",
+    "width": 240,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Leaf Shadow/Dead/Dead-Sheet.png",
+    "width": 432,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Leaf Shadow/Idle/Idle.png",
+    "width": 48,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Leaf Shadow/Jump/Jump-Sheet.png",
+    "width": 576,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Leaf Shadow/Surprise Jump/Surprise Jump-Sheet.png",
+    "width": 576,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Leaf Shadow/Walk/Walk-Sheet.png",
+    "width": 288,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Poison Larva/Crawl/Crawl-Sheet.png",
+    "width": 192,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Poison Larva/Damage/Damage-Sheet.png",
+    "width": 144,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Poison Larva/Dead/Dead (Red)-Sheet.png",
+    "width": 240,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Poison Larva/Dead/Dead-Sheet.png",
+    "width": 288,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Poison Larva/Fall/Fall-Sheet.png",
+    "width": 288,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Pursuit Core/Green/Chase/Chase-Sheet.png",
+    "width": 160,
+    "height": 32
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Pursuit Core/Green/Damage/Damage-Sheet.png",
+    "width": 64,
+    "height": 32
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Pursuit Core/Green/Dead/Dead-Sheet.png",
+    "width": 160,
+    "height": 32
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Pursuit Core/Red/Chase/Chase-Sheet.png",
+    "width": 160,
+    "height": 32
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Pursuit Core/Red/Damage/Damage-Sheet.png",
+    "width": 64,
+    "height": 32
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Enemies/Pursuit Core/Red/Dead/Dead-Sheet.png",
+    "width": 160,
+    "height": 32
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "NPCs/Blacksmith/Blacksmith-Sheet.png",
+    "width": 3840,
+    "height": 64
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "NPCs/Mage Girl/Mage Girl.png",
+    "width": 960,
+    "height": 64
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Ruby V4 - Demo/Attack/attack_1-Sheet.png",
+    "width": 448,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Ruby V4 - Demo/Death/deatht-Sheet.png",
+    "width": 960,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Ruby V4 - Demo/Hurt/hurt-Sheet.png",
+    "width": 320,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Ruby V4 - Demo/Idle/ruby_idle-Sheet.png",
+    "width": 640,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Ruby V4 - Demo/Portrait/Portrait.png",
+    "width": 64,
+    "height": 64
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Ruby V4 - Demo/Run/run-Sheet.png",
+    "width": 640,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Ruby V4 - Demo/Jump/Sheet/end_jump-Sheet.png",
+    "width": 192,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Ruby V4 - Demo/Jump/Sheet/fall-Sheet.png",
+    "width": 192,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Ruby V4 - Demo/Jump/Sheet/jump_up-Sheet.png",
+    "width": 192,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Ruby V4 - Demo/Jump/Sheet/start_jump-Sheet.png",
+    "width": 384,
+    "height": 48
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "file": "Ruby V4 - Demo/Jump/Sheet/up_to_fall-Sheet.png",
+    "width": 128,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Backgrounds/Back Forest.png",
+    "width": 416,
+    "height": 224
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Backgrounds/Clouds.png",
+    "width": 416,
+    "height": 240
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Backgrounds/Fortress.png",
+    "width": 368,
+    "height": 192
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Backgrounds/Sky.png",
+    "width": 416,
+    "height": 240
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Backgrounds/Tree BG.png",
+    "width": 416,
+    "height": 240
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Hud/Hud.png",
+    "width": 400,
+    "height": 400
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Itens/Set Icon.png",
+    "width": 192,
+    "height": 128
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Tiles/Dark.png",
+    "width": 400,
+    "height": 400
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Tiles/Exterior House.png",
+    "width": 320,
+    "height": 240
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Tiles/Green.png",
+    "width": 400,
+    "height": 400
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Tiles/Interior House.png",
+    "width": 320,
+    "height": 240
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Tiles/Runes.png",
+    "width": 208,
+    "height": 176
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Tiles/Tiles 2.png",
+    "width": 400,
+    "height": 400
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/No Sword/Attack (punch)/Ruby Punch-Sheet.png",
+    "width": 576,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/No Sword/Damage/Ruby Death-Sheet.png",
+    "width": 256,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/No Sword/Dead/Ruby Death-Sheet.png",
+    "width": 704,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/No Sword/Fall/Ruby Fall-Sheet.png",
+    "width": 192,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/No Sword/Idle/Ruby Idle-Sheet.png",
+    "width": 320,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/No Sword/Idle/Very Idle-Sheet.png",
+    "width": 704,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/No Sword/Jump/Ruby Jump-Sheet.png",
+    "width": 192,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/No Sword/Portraits/Frame.png",
+    "width": 64,
+    "height": 64
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/No Sword/Portraits/Portrait 1.png",
+    "width": 64,
+    "height": 64
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/No Sword/Portraits/Portrait 2.png",
+    "width": 64,
+    "height": 64
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/No Sword/Portraits/Portrait 3.png",
+    "width": 64,
+    "height": 64
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/No Sword/Portraits/Portrait 4.png",
+    "width": 64,
+    "height": 64
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/No Sword/Roll/Ruby Idle-Sheet.png",
+    "width": 384,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/No Sword/Run/Ruby Run-Sheet.png",
+    "width": 704,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/With Sword/Attack/Ruby Attack-Sheet.png",
+    "width": 1600,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/With Sword/Damage/Ruby Damage-Sheet.png",
+    "width": 256,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/With Sword/Dash/Dash-Sheet.png",
+    "width": 704,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/With Sword/Dead/Ruby Dead-Sheet.png",
+    "width": 704,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/With Sword/Fall/Ruby Fall-Sheet.png",
+    "width": 192,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/With Sword/Idle/Ruby Idle-Sheet.png",
+    "width": 320,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/With Sword/Jump/Ruby Jump-Sheet.png",
+    "width": 192,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/With Sword/Run/Ruby Run-Sheet.png",
+    "width": 704,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Character Ruby 0.6/With Sword/Shield/Ruby Shield-Sheet.png",
+    "width": 576,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/AcidSpitter/Attack/Acid-Sheet.png",
+    "width": 96,
+    "height": 31
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/AcidSpitter/Attack/Spit Acid-Sheet.png",
+    "width": 320,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/AcidSpitter/Damage/Damage-Sheet.png",
+    "width": 128,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/AcidSpitter/Dead/Dead (Red)-Sheet.png",
+    "width": 320,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/AcidSpitter/Dead/Dead-Sheet.png",
+    "width": 256,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/AcidSpitter/Idle/Idle-Sheet.png",
+    "width": 320,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Cursed Ghost/Attack/Blood Claw-Sheet.png",
+    "width": 640,
+    "height": 80
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Cursed Ghost/Attack/Summon  Thorn-Sheet.png",
+    "width": 640,
+    "height": 80
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Cursed Ghost/Attack/Thorn-Sheet.png",
+    "width": 400,
+    "height": 80
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Cursed Ghost/Damage/Damage-Sheet.png",
+    "width": 320,
+    "height": 80
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Cursed Ghost/Dead/Dead (Red)-Sheet.png",
+    "width": 400,
+    "height": 80
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Cursed Ghost/Dead/Dead-Sheet.png",
+    "width": 480,
+    "height": 80
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Cursed Ghost/Float/Float-Sheet.png",
+    "width": 320,
+    "height": 80
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Cursed Ghost/Idle/Idle-Sheet.png",
+    "width": 480,
+    "height": 80
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Darkwood Guardian (Boss)/Damage/Damage-Sheet.png",
+    "width": 2080,
+    "height": 224
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Darkwood Guardian (Boss)/Dead/Dead-Sheet.png",
+    "width": 9984,
+    "height": 224
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Darkwood Guardian (Boss)/Idle/Idle-Sheet.png",
+    "width": 2496,
+    "height": 224
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Darkwood Guardian (Boss)/Attack/Root Assault/Root Assault-Sheet.png",
+    "width": 8736,
+    "height": 224
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Darkwood Guardian (Boss)/Attack/Spike Attack/Spike Attack-Sheet.png",
+    "width": 6656,
+    "height": 224
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Darkwood Guardian (Boss)/Attack/Spit Seed/Seed.png",
+    "width": 16,
+    "height": 16
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Darkwood Guardian (Boss)/Attack/Spit Seed/Spit Seed-Sheet.png",
+    "width": 1664,
+    "height": 224
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Darkwood Guardian (Boss)/Attack/Summon Poison Larva/Summon Poison Larva-Sheet.png",
+    "width": 2496,
+    "height": 224
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Leaf Shadow/Damage/Damage-Sheet.png",
+    "width": 144,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Leaf Shadow/Dead/Dead (Red)-Sheet.png",
+    "width": 240,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Leaf Shadow/Dead/Dead-Sheet.png",
+    "width": 432,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Leaf Shadow/Idle/Idle.png",
+    "width": 48,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Leaf Shadow/Jump/Jump-Sheet.png",
+    "width": 576,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Leaf Shadow/Surprise Jump/Surprise Jump-Sheet.png",
+    "width": 576,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Leaf Shadow/Walk/Walk-Sheet.png",
+    "width": 288,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Poison Larva/Crawl/Crawl-Sheet.png",
+    "width": 192,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Poison Larva/Damage/Damage-Sheet.png",
+    "width": 144,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Poison Larva/Dead/Dead (Red)-Sheet.png",
+    "width": 240,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Poison Larva/Dead/Dead-Sheet.png",
+    "width": 288,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Poison Larva/Fall/Fall-Sheet.png",
+    "width": 288,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Pursuit Core/Green/Chase/Chase-Sheet.png",
+    "width": 160,
+    "height": 32
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Pursuit Core/Green/Damage/Damage-Sheet.png",
+    "width": 64,
+    "height": 32
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Pursuit Core/Green/Dead/Dead-Sheet.png",
+    "width": 160,
+    "height": 32
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Pursuit Core/Red/Chase/Chase-Sheet.png",
+    "width": 160,
+    "height": 32
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Pursuit Core/Red/Damage/Damage-Sheet.png",
+    "width": 64,
+    "height": 32
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Enemies/Pursuit Core/Red/Dead/Dead-Sheet.png",
+    "width": 160,
+    "height": 32
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Npcs/Blacksmith/Blacksmith-Sheet.png",
+    "width": 3840,
+    "height": 64
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Npcs/Girl 1/Girl 1-Sheet.png",
+    "width": 160,
+    "height": 48
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "file": "Npcs/Mage Girl/Mage Girl.png",
+    "width": 960,
+    "height": 64
+  }
+]

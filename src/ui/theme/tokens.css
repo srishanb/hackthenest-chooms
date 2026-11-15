@@ -4,12 +4,16 @@
  * Fonts are system fonts on purpose: nothing is fetched from the network.
  */
 :root {
-  --color-bg: #05060a;
-  --color-panel: rgba(12, 14, 22, 0.86);
-  --color-panel-border: rgba(255, 243, 196, 0.22);
-  --color-text: #f4f1e6;
-  --color-text-dim: #a9a79c;
-  --color-accent: #f2c14e;
+  --color-bg: #0b1b20;
+  --color-panel: rgba(12, 31, 33, 0.96);
+  --color-panel-border: #5e826e;
+  --color-text: #edf2d7;
+  --color-text-dim: #b6c9ba;
+  --color-accent: #f2d492;
+  --color-hover: #25483f;
+  --color-inset: #132b2c;
+  --panel-shadow: 0 4px 0 #061315, 0 18px 60px #0008;
+  --font-display: Georgia, 'Times New Roman', serif;
   --color-ok: #7fd1a0;
   --color-warn: #f0a35e;
   --color-bad: #e8776f;
@@ -27,8 +31,45 @@
   --space-3: 12px;
   --space-4: 20px;
 
-  --radius: 6px;
+  --radius: 2px;
+  --focus-width: 2px;
+  --focus-offset: 3px;
+  --panel-max-width: 480px;
 
   --layer-ui: 10;
   --layer-debug: 20;
+}
+/* Reference palette: midnight glass, pale blue edging and warm lantern gold. */
+:root {
+  --color-bg: #0b121d;
+  --color-panel: #101b2b9c;
+  --color-panel-border: #9db7ca;
+  --color-text: #f3f0df;
+  --color-text-dim: #b8c4cf;
+  --color-accent: #ffda70;
+  --color-hover: #29303a99;
+  --color-inset: #14213288;
+  --font-display: 'Courier New', ui-monospace, monospace;
+  --font-ui: 'Courier New', ui-monospace, monospace;
+  --radius: 14px;
+  --panel-shadow: none;
+  --gold-glow: none;
+  --hud-corner: clamp(12px, 2vw, 28px);
+  --hud-needle: #ffb63f;
+  --overlay-dim: #030a1470;
+}
+
+@font-face { font-family: 'Pixelify Sans'; src: url('./fonts/PixelifySans[wght].ttf') format('truetype'); font-style: normal; font-weight: 400 700; font-display: swap; }
+:root { --font-ui: 'Pixelify Sans', ui-monospace, monospace; --font-display: 'Pixelify Sans', ui-monospace, monospace; }
+
+/* Launch-only atmosphere; gameplay colors and layout stay unchanged. */
+:root {
+  --launch-veil: #071219d9;
+  --launch-floor: #030b12;
+  --launch-glass: var(--color-panel);
+  --color-primary-glass: #8e743a40;
+  --launch-mist: #bbd9c41a;
+  --launch-max-width: 1120px;
+  --launch-title: clamp(58px, 8.4vw, 112px);
+  --launch-spacing: clamp(24px, 5vw, 72px);
 }

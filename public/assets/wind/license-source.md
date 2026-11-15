@@ -1,0 +1,2 @@
+Wind source: https://nyknck.itch.io/wind
+Author NYKNCK (@nyk_nck). Verified 2026-11-15. Publisher explicitly permits commercial game use with credit in its reply to realKG20. Original W401-1.png through W401-16.png used as looping game effects; runtime tint/alpha/flip. Not claimed as original artwork or a standalone asset distribution.

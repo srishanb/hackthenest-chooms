@@ -7,6 +7,7 @@
  */
 import { createAudio } from './audio/index';
 import { AUDIO_CONFIG } from './config/audio.config';
+import { EMBER_CONFIG } from './config/ember.config';
 import { EFFECTS_TABLE } from './config/effects.config';
 import { GAME_CONFIG } from './config/game.config';
 import { SIGNAL_CONFIG } from './config/signal.config';
@@ -18,6 +19,7 @@ import { createGame } from './game/index';
 import { createEventBus } from './shared/bus';
 import type { Stores } from './shared/contracts/app';
 import { INITIAL_GAME_SNAPSHOT } from './shared/contracts/game-state';
+import { createMemoryStorage, getLocalStorage } from './shared/safe-storage';
 import { createStore } from './shared/store';
 import { createSignal } from './signal/index';
 import { mountUi } from './ui/registry';
@@ -29,12 +31,16 @@ function requireElement(id: string): HTMLElement {
   return element;
 }
 
+// Reading localStorage can throw when the browser blocks storage; fall back to memory then.
+const browserStorage = getLocalStorage(window);
+
 const bus = createEventBus();
 
 const stores: Stores = {
-  snapshot: createStore(INITIAL_GAME_SNAPSHOT),
+  // With the start menu on, the game waits in 'menu' until Play; with it off, the climb starts at once.
+  snapshot: createStore({ ...INITIAL_GAME_SNAPSHOT, phase: UI_CONFIG.components['start-menu'].enabled ? 'menu' : 'playing' }),
   effects: createStore(neutralFrame(EFFECTS_TABLE)),
-  settings: createSettingsStore(window.localStorage),
+  settings: createSettingsStore(browserStorage ?? createMemoryStorage()),
 };
 
 // The signal lane is the only one that will ever touch a device.
@@ -49,6 +55,8 @@ createGame({
   sections: SECTIONS,
   gameConfig: GAME_CONFIG,
   effectsTable: EFFECTS_TABLE,
+  emberConfig: EMBER_CONFIG,
+  storage: browserStorage,
 });
 
 mountUi(requireElement('ui'), { bus, stores, signal }, UI_CONFIG);

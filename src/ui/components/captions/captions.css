@@ -1,0 +1,16 @@
+/* Captions for narrator lines. Colours, sizes and spacing come from tokens.css only. */
+.captions {
+  box-sizing: border-box;
+  max-width: min(var(--panel-max-width), 100%);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-panel-border);
+  border-radius: var(--radius);
+  background: var(--color-panel);
+  box-shadow: var(--panel-shadow);
+  color: var(--color-text);
+  font-size: calc(var(--text-md) * var(--caption-scale, 1));
+  line-height: 1.4;
+  text-align: center;
+  pointer-events: none;
+}
+.captions[hidden] { display: none; }

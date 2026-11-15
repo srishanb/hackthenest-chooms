@@ -8,6 +8,7 @@
  */
 
 export type GameEvent =
+  | { type: 'wax_collected'; id: string; x: number; y: number; collected: number; total: number | null }
   | { type: 'jump'; charge01: number }
   | { type: 'land'; platformId: string; fallHeightPx: number }
   | { type: 'fall'; heightPx: number; big: boolean }
@@ -17,6 +18,14 @@ export type GameEvent =
   | { type: 'checkpoint_saved'; refugeId: string }
   | { type: 'ember_gained' }
   | { type: 'ember_requested' }
+  /** UI requests; the game owns the resulting state transitions. */
+  | { type: 'ember_assist_requested' }
+  | { type: 'ember_cancel_request' }
+  | { type: 'run_restart' }
+  | { type: 'checkpoint_restart_requested' }
+  | { type: 'main_menu_requested' }
+  /** The start menu's Play: the game leaves phase 'menu' and starts stepping. */
+  | { type: 'start' }
   | { type: 'ember_returned'; via: 'eeg' | 'assist' }
   | { type: 'ember_cancelled' }
   /** While active, the narrator must not start a new line. */
@@ -26,8 +35,9 @@ export type GameEvent =
   | { type: 'calibration_result'; ok: boolean; reasonKey?: string }
   | { type: 'pause' }
   | { type: 'resume' }
-  /** The narrator started a line. Captions subscribe to this. */
-  | { type: 'narrator_line'; lineId: string }
+  /** The narrator started a line. Captions subscribe to this and show `text` for `durationMs`, so they need no content lookup. */
+  | { type: 'narrator_line'; lineId: string; text: string; durationMs: number }
+  | { type: 'stage_completed'; stageId: string; index: number }
   | { type: 'finish' };
 
 export type GameEventType = GameEvent['type'];

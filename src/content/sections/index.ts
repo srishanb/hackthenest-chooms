@@ -1,19 +1,6 @@
-/**
- * The authored climb, in order. Owner: content (Neil).
- *
- * P0 holds one tiny test section so the foundation has something to stand on.
- * P8.2 replaces it with the two real sections; to add one, write `section-<n>.ts`
- * and add it to this list.
- */
+/** One continuous world: five independently authored stages, each with ten unique platforms. */
 import type { SectionData } from '../../shared/contracts/content';
+import { TUTORIAL_STAGE } from './tutorial';
+import { buildStage, STAGE_LAYOUTS } from './stage-layouts';
 
-const foundationTestSection: SectionData = {
-  id: 'p0-test',
-  spawn: { x: 480, y: 300 },
-  platforms: [
-    { id: 'ground', x: 480, y: 500, width: 720, height: 24, type: 'static' },
-    { id: 'ledge', x: 700, y: 400, width: 160, height: 16, type: 'static' },
-  ],
-};
-
-export const SECTIONS: readonly SectionData[] = [foundationTestSection];
+export const SECTIONS: readonly SectionData[] = [TUTORIAL_STAGE, ...STAGE_LAYOUTS.map(buildStage)];

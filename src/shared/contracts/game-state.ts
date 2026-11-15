@@ -10,6 +10,8 @@
 export type GamePhase = 'menu' | 'calibrating' | 'playing' | 'paused' | 'ember' | 'finished';
 
 export interface EmberSnapshot {
+  /** Remaining return cooldown; zero when ready. */
+  cooldownRemainingMs?: number;
   /** The player owns an ember. */
   available: boolean;
   /** Recovery is in progress (gameplay frozen). */
@@ -20,9 +22,26 @@ export interface EmberSnapshot {
   canAssist: boolean;
 }
 
+/** Read-only world coordinates. Presentation chooses the distance unit. */
+export interface NavigationSnapshot {
+  player: { x: number; y: number };
+  originY: number;
+  lanternRadiusPx: number;
+  checkpoints: readonly { id: string; x: number; y: number }[];
+}
+
 export interface GameSnapshot {
+  navigation?: NavigationSnapshot;
+  /** Ordered stage progress is monotonic until an explicit new run. */
+  stage?: { id: string; index: number; total: number; completed: number };
+  /** Current tutorial lesson string key; presentation resolves it in the UI lane. */
+  lessonKey?: string;
+  /** Wax count/bonus; total null means replenishing supply without a collection target. */
+  wax?: { collected: number; total: number | null; boostRemainingMs: number };
   phase: GamePhase;
   sectionId: string | null;
+  /** True while the player stands inside a refuge (audio quiets, the refuge is lit). */
+  inRefuge: boolean;
   /** Height climbed, 0 (bottom) to 1 (finish). */
   altitude01: number;
   ember: EmberSnapshot;
@@ -33,6 +52,7 @@ export interface GameSnapshot {
 export const INITIAL_GAME_SNAPSHOT: GameSnapshot = {
   phase: 'playing',
   sectionId: null,
+  inRefuge: false,
   altitude01: 0,
   ember: { available: true, active: false, progress01: 0, canAssist: false },
   promptKey: null,

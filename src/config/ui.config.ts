@@ -9,13 +9,20 @@ import type { UiConfig } from '../shared/contracts/config';
 export const UI_CONFIG: UiConfig = {
   components: {
     'main-menu': { enabled: true, slot: 'center' },
+    'start-menu': { enabled: true, slot: 'center' },
     'pause-menu': { enabled: true, slot: 'center' },
     'settings-panel': { enabled: true, slot: 'center' },
-    hud: { enabled: true, slot: 'top-left' },
+    hud: { enabled: true, slot: 'full' },
     'source-badge': { enabled: true, slot: 'top-right' },
     captions: { enabled: true, slot: 'bottom-center' },
     calibration: { enabled: true, slot: 'full' },
     'ember-prompt': { enabled: true, slot: 'center' },
+    'finish-screen': { enabled: true, slot: 'center' },
     'debug-overlay': { enabled: true, slot: 'bottom-left' },
   },
 };
+
+/** Presentation scale: 32 world pixels represent one metre in the HUD. */
+export const HUD_WORLD_PIXELS_PER_METRE = 32;
+/** Radius represented by the complete lantern gauge, including wax light bonuses. */
+export const HUD_LANTERN_FULL_RADIUS_PX = 520;

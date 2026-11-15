@@ -4,9 +4,10 @@ Owner: Srishan. Search here before adding a function.
 
 | Export | File | What it does |
 |---|---|---|
-| `createSignal(bus, config, deps?)` | `index.ts` | Returns the `SignalHandle` (reader, control, diagnostics): the real pipeline, fed by a sim or replay source chosen from the URL params, published at 12 Hz. `deps` (`search`, `now`, `fetchText`) is for tests. |
+| `createSignal(bus, config, deps?)` | `index.ts` | Returns the `SignalHandle` (reader, control, diagnostics): the real pipeline, fed by a sim or replay source chosen from the URL params, published at 12 Hz. `deps` (`search`, `now`, `fetchText`, `live`) is for tests. |
 | `getPiEEGConstructor()`, `PiEEG*` types | `vendor/pieeg-types.ts` | Typed subset of the vendored SDK. The only place the global `PiEEG` is read. |
 | `createPiEEGAdapter(config, callbacks)`, `toBandFrame(...)` | `sources/pieeg-adapter.ts` | SDK to `BandFrame`. `connect('simulator')` needs no click; `connect('ble')` must run in a click handler. |
+| `createPiEEGSource(deps)` | `sources/pieeg-source.ts` | `Source` for the real board over `connect('ble')`. Starts in the click handler; readable errors for no Web Bluetooth or a cancelled picker; an SDK error or disconnect ends it once. |
 | `createSimSource(deps)`, `simKeyLegend(config)` | `sources/sim-source.ts` | `Source` over the SDK simulator, keyboard-driven (keys from `simKeys` config). |
 | `createReplaySource(deps)` | `sources/replay-source.ts` | `Source` that plays recorded frames at 1x, faster, or `Infinity` (headless). Frames keep their timestamps; `source` becomes `REPLAY`. |
 | `createHeader`, `serializeRecording`, `parseRecording`, `Recording`, `RecordingHeader` | `sources/recording-format.ts` | JSONL recording format (`header` + `frame` lines; unknown types skipped). |

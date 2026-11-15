@@ -12,9 +12,10 @@ Owner: integrator (Srishan). **Frozen after P0:** changes go through an integrat
 | `EffectId`, `EFFECT_IDS`, `EffectRule`, `EffectsFrame` | `contracts/effects.ts` | Effects as data. |
 | `Settings`, `KeyBindings`, `Volumes`, `DEFAULT_SETTINGS` | `contracts/settings.ts` | Player settings schema and defaults. |
 | `SignalConfig`, `GameConfig`, `EmberConfig`, `UiConfig`, `UiComponentId`, `UiSlot`, `AudioConfig` | `contracts/config.ts` | Types of the files in `src/config/`. |
-| `SectionData`, `PlatformData`, `NarratorLine` | `contracts/content.ts` | Authored content shapes (starting shape). |
+| `SectionData` (with `refuge`, `finish`), `PlatformData`, `AreaData`, `NarratorLine` | `contracts/content.ts` | Authored content shapes (starting shape). |
 | `Stores` | `contracts/app.ts` | The three stores `main.ts` creates. |
 | `createEventBus(now?)` | `bus.ts` | Typed event bus. |
 | `createStore(initial)`, `Store<T>` | `store.ts` | Observable value. |
+| `getLocalStorage(scope)`, `createMemoryStorage()` | `safe-storage.ts` | `localStorage` read in a try/catch (undefined when blocked) and an in-memory fallback. |
 
 `__tests__/lane-boundaries.test.ts` fails the build if a lane imports another lane.

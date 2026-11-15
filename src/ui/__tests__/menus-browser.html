@@ -1,0 +1,35 @@
+<!doctype html><html><head><title>Pause and settings checks</title></head><body>
+<div id="ui"></div><pre id="results" style="position:fixed;inset:auto 0 0;z-index:100;color:white;background:black"></pre>
+<script type="module">
+import { pauseMenu } from '../components/pause-menu/pause-menu.ts';
+import { settingsPanel } from '../components/settings-panel/settings-panel.ts';
+import { createUiActions } from '../ui-actions.ts';
+import { createStore } from '../../shared/store.ts';
+import { createEventBus } from '../../shared/bus.ts';
+import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state.ts';
+import { DEFAULT_SETTINGS } from '../../shared/contracts/settings.ts';
+import '../theme/tokens.css'; import '../theme/layout.css';
+const root=document.querySelector('#ui'),results=document.querySelector('#results');
+const check=(name,ok)=>{results.textContent+=`${ok?'PASS':'FAIL'} ${name}\n`;if(!ok)throw Error(name);};
+const stores={snapshot:createStore(structuredClone(INITIAL_GAME_SNAPSHOT)),settings:createStore(structuredClone(DEFAULT_SETTINGS))};
+const actions=createUiActions();const bus=createEventBus();let pauses=0,resumes=0;
+bus.on('pause',()=>{pauses++;stores.snapshot.set({...stores.snapshot.get(),phase:'paused'});});
+bus.on('resume',()=>{resumes++;stores.snapshot.set({...stores.snapshot.get(),phase:'playing'});});
+const a=document.createElement('div'),b=document.createElement('div');root.append(a,b);
+const offA=pauseMenu.mount(a,{stores,bus,actions}),offB=settingsPanel.mount(b,{stores,bus,actions});
+const key=(code,key=code)=>window.dispatchEvent(new KeyboardEvent('keydown',{code,key,bubbles:true,cancelable:true}));
+key('Escape','Escape');await new Promise(queueMicrotask);
+check('pause shortcut emits bus and shows pause dialog',pauses===1&&!a.querySelector('section').hidden);
+[...a.querySelectorAll('button')].find(e=>e.textContent==='Settings').click();await new Promise(queueMicrotask);
+check('settings opens alone and focuses first control',a.querySelector('section').hidden&&!b.querySelector('section').hidden&&document.activeElement===b.querySelector('input'));
+const master=b.querySelector('input[type=range]');master.value='0.2';master.dispatchEvent(new Event('input'));
+check('range updates settings live',stores.settings.get().volumes.master===0.2);
+[...b.querySelectorAll('button')].find(e=>e.textContent.startsWith('Charge jump:')).click();key('KeyW','w');
+check('key binding updates live',stores.settings.get().keys.jump==='KeyW');
+key('Escape','Escape');await new Promise(queueMicrotask);
+check('Escape returns to pause without resuming game',resumes===0&&stores.snapshot.get().phase==='paused'&&!a.querySelector('section').hidden&&b.querySelector('section').hidden);
+a.querySelector('button').click();
+check('Resume emits bus and leaves paused phase',resumes===1&&stores.snapshot.get().phase==='playing');
+offA();offB();key('Escape','Escape');
+check('unmount removes menus and keyboard listener',pauses===1&&!a.children.length&&!b.children.length);
+</script></body></html>

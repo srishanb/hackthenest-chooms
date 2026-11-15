@@ -244,7 +244,7 @@ export type GameEvent =
   | { type: 'signal_lost' } | { type: 'signal_restored' }
   | { type: 'calibration_result'; ok: boolean; reason?: string }
   | { type: 'pause' } | { type: 'resume' }
-  | { type: 'narrator_line'; lineId: string }               // captions subscribe to this
+  | { type: 'narrator_line'; lineId: string; text: string; durationMs: number } // captions subscribe to this
   | { type: 'finish' };
 
 export interface EventBus {
@@ -723,7 +723,7 @@ beyond a master, persistence between sessions, and Gemini-assisted drafting.
 | `@google/genai` and `@elevenlabs/elevenlabs-js` API usage | P7 plan, from official docs |
 | Node 26 being the LTS line everyone installs (read from nodejs.org's index, not release notes) | H-08 |
 | Best Beginner criteria; whether simulated or replayed signal counts if hardware fails; whether device choice matters | H-06 |
-| Availability of the name "Lighten Up" as a domain or Devpost title | H-11 |
+| Availability of the name "Lighten Up" as a domain or Devpost title (name decided, D-23) | H-11 |
 | `winget install GitHub.cli` package id on the two Windows laptops | H-08 |
 
 ### Sources opened for this plan

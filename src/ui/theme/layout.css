@@ -36,6 +36,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  max-width: calc(100% - var(--space-3) * 2);
+  max-height: calc(100% - var(--space-3) * 2);
 }
 
 .ui-slot > * {
@@ -72,6 +74,7 @@ body {
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  padding: var(--space-3);
 }
 
 .ui-slot[data-slot='full'] {
@@ -79,6 +82,22 @@ body {
   pointer-events: none;
 }
 
+#ui :focus-visible {
+  outline: var(--focus-width) solid var(--color-accent);
+  outline-offset: var(--focus-offset);
+}
+
+.ui-slot > [data-component] {
+  max-width: 100%;
+  min-height: 0;
+  overflow: auto;
+}
+
 [hidden] {
   display: none !important;
 }
+.ui-slot[data-slot='full'], .ui-slot[data-slot='center'] { max-width: none; max-height: none; }
+@media (max-height: 580px) { .pause-menu { padding: var(--space-4); gap: var(--space-2); } .pause-menu h2 { margin-bottom: var(--space-1); } }
+/* Narrator text stays above the corner instruments, including narrow screens. */
+#ui[data-phase='playing'] .ui-slot[data-slot='bottom-center'],
+#ui[data-phase='ember'] .ui-slot[data-slot='bottom-center'] { bottom: calc(var(--hud-corner) + 130px); }
