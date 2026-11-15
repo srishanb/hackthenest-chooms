@@ -8,7 +8,7 @@
 import * as Phaser from 'phaser';
 import type { Stores } from '../shared/contracts/app';
 import type { ComposureReader } from '../shared/contracts/composure';
-import type { GameConfig } from '../shared/contracts/config';
+import type { EmberConfig, GameConfig } from '../shared/contracts/config';
 import type { SectionData } from '../shared/contracts/content';
 import type { EffectRule } from '../shared/contracts/effects';
 import type { EventBus } from '../shared/contracts/events';
@@ -24,6 +24,9 @@ export interface GameDeps {
   sections: readonly SectionData[];
   gameConfig: GameConfig;
   effectsTable: readonly EffectRule[];
+  emberConfig: EmberConfig;
+  /** Where the save lives. Optional: P4.4 falls back to memory. */
+  storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 }
 
 export function createGame(deps: GameDeps): Phaser.Game {

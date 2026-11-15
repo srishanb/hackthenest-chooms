@@ -40,6 +40,10 @@ export interface GameConfig {
   view: { width: number; height: number };
   /** Downward acceleration in px/s^2. EEG never changes this. */
   gravityY: number;
+  /** Player body size in px. Movement and the level checker use the same box. */
+  player: { width: number; height: number };
+  /** Fixed physics steps per second (the same maths runs in the level checker). */
+  stepHz: number;
   walkSpeed: number;
   jump: {
     /** Holding longer than this adds nothing. */

@@ -9,6 +9,8 @@ import type { GameConfig } from '../shared/contracts/config';
 export const GAME_CONFIG: GameConfig = {
   view: { width: 960, height: 540 }, // logical pixels; the canvas scales to fit the window
   gravityY: 1400, // px/s^2
+  player: { width: 24, height: 36 }, // px
+  stepHz: 120, // fixed physics steps per second
   walkSpeed: 180, // px/s
   jump: {
     maxChargeMs: 900,
