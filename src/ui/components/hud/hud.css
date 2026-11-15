@@ -40,3 +40,6 @@
   .hud__compass [data-direction='E'], .hud__compass [data-direction='W'] { top: 26px; }
   .hud__context { max-width: 39vw; font-size: 9px; padding: var(--space-2); }
 }
+/* Preview scales anchor each card to its original corner. */
+.hud__metrics { transform: scale(var(--ui-stats-scale, 1)); transform-origin: top right; }
+.hud__context { transform: scale(var(--ui-tutorial-scale, 1)); transform-origin: bottom left; max-width: min(440px, calc(43vw / var(--ui-tutorial-scale, 1))); }

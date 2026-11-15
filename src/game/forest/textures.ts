@@ -3,6 +3,8 @@ import type { Scene } from 'phaser';
 import { FOREST_CONFIG } from '../../config/forest.config';
 
 export const FOREST_IMAGES = {
+  'forest-trunk-snow': 'forest/trunk-snow.png',
+  'corruption-abstract': 'corruption/abstract-25.png',
   'forest-crown-alt': 'forest/canopy-cluster-alt.png',
   'snowforest-crown': 'winter-forest/crown.png',
   'snowforest-left': 'winter-forest/left.png', 'snowforest-middle': 'winter-forest/middle.png', 'snowforest-right': 'winter-forest/right.png', 'snowforest-pine': 'winter-forest/pine.png',

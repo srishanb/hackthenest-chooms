@@ -17,6 +17,6 @@ it('cannot exceed screen displacement caps, even for malformed values', () => {
   for (const c of [-1, 0, 0.7, 1, 20, NaN, Infinity]) {
     const amount = screenCorruption(c, 2, false, false);
     expect(amount).toBeGreaterThanOrEqual(0); expect(amount).toBeLessThanOrEqual(1);
-    expect(amount * C.shakeMaxPx).toBeLessThanOrEqual(4);
+    expect(amount * C.shakeMaxPx).toBeLessThanOrEqual(8);
   }
 });

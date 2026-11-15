@@ -9,6 +9,7 @@ export function createStageProgress(sections: readonly SectionData[], snapshot: 
   const stages = sections.filter((section) => section.stage);
   // A saved manual ember already required traversing all lower stage boundaries.
   let completed = Math.max(0, stages.findIndex((stage) => stage.platforms.some((platform) => platform.id === resumePlatformId)));
+  let pending = false;
   function publish(): void {
     const index = Math.min(completed, stages.length - 1);
     const current = stages[index];
@@ -17,14 +18,20 @@ export function createStageProgress(sections: readonly SectionData[], snapshot: 
   publish();
   return {
     /** Called only for the collision solver's landed event, never for height or overlap. */
-    land(platformId: string): boolean {
+    land(platformId: string, normalWorld = true): boolean {
       const stage = stages[completed];
       if (snapshot.get().phase !== 'playing' || !stage || stage.stage!.finalPlatformId !== platformId) return false;
+      if (completed === stages.length - 1 && !normalWorld) { pending = true; return false; }
+      pending = false;
       completed++;
       publish();
       bus.emit({ type: 'stage_completed', stageId: stage.id, index: completed - 1 });
       return completed === stages.length;
     },
-    reset(): void { completed = 0; publish(); },
+    finishIfReady(platformId: string | null, normalWorld: boolean): boolean {
+      return pending && platformId !== null && normalWorld ? this.land(platformId, true) : false;
+    },
+    isFinishBlocked: (): boolean => pending,
+    reset(): void { pending = false; completed = 0; publish(); },
   };
 }

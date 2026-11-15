@@ -64,3 +64,5 @@ createBackdropGardens (forest/backdrop-gardens.ts): five pooled, seeded non-coll
 fitPropScale (forest/presentation.ts) fits corrupted decorations to their partner's displayed height with48px cap, preventing oversized winter crystals.
 
 createCorruptionScreen / createCorruptionFilter (forest/): bounded high-corruption visual-only motion/filter. createLanternFuel / burnFuel (forest/lantern-fuel.ts): actual playing-time resource with wax refill and held airborne light radius; never reads preview values.
+
+Wax reward update/lightRadius accept optional benefit01 (default1); real corruption suppresses benefit via waxBenefit01 in config/lantern-fuel.config.ts, while counts/respawns persist.
