@@ -38,7 +38,7 @@ describe('outlineSegments', () => {
   it('outlines the current platform on four sides and only the top edge of a reachable one', () => {
     const segments = outlineSegments(platforms, 'floor', ['a']);
     expect(segments).toHaveLength(5);
-    expect(segments[4]).toEqual({ x1: 230, y1: 385, x2: 470, y2: 385 });
+    expect(segments[4]).toEqual({ x1: 230, y1: 385, x2: 470, y2: 385, current: false });
   });
 
   it('draws nothing for a ledge that is not reachable', () => {

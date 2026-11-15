@@ -71,6 +71,8 @@ export interface Segment {
   y1: number;
   x2: number;
   y2: number;
+  /** True for the platform under the feet, false for a reachable ledge's top edge. */
+  current: boolean;
 }
 
 /**
@@ -86,13 +88,13 @@ export function outlineSegments(platforms: readonly PlatformBox[], currentId: st
     if (p.id === currentId) {
       const bottom = p.y + p.height / 2;
       segments.push(
-        { x1: left, y1: top, x2: right, y2: top },
-        { x1: right, y1: top, x2: right, y2: bottom },
-        { x1: right, y1: bottom, x2: left, y2: bottom },
-        { x1: left, y1: bottom, x2: left, y2: top },
+        { x1: left, y1: top, x2: right, y2: top, current: true },
+        { x1: right, y1: top, x2: right, y2: bottom, current: true },
+        { x1: right, y1: bottom, x2: left, y2: bottom, current: true },
+        { x1: left, y1: bottom, x2: left, y2: top, current: true },
       );
     } else if (reachableIds.includes(p.id)) {
-      segments.push({ x1: left, y1: top, x2: right, y2: top });
+      segments.push({ x1: left, y1: top, x2: right, y2: top, current: false });
     }
   }
   return segments;
