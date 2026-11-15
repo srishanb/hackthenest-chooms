@@ -26,30 +26,16 @@ Build tools (Vite, TypeScript, Vitest, tsx) are listed in `package.json`.
 
 ## Music and sound effects
 
-The five SFX entries below record the original selections; the P8.1 table records the imported subset and final filenames. CC0 was checked on each original item page. Entries without an imported-file row remain candidates. Cure Magic and fire crackling are excluded.
+The rows below record the original selections; the P8.1 table records the imported subset and final filenames. CC0 was checked on each original item page. Candidates that were never imported (stone footsteps, the Lokif GUI pack, the ansimuz `top-down-fantasy-1.ogg` music, Cure Magic, fire crackling) are not in the repo and are not listed.
 
 | File | Author | Licence | Source |
 |---|---|---|---|
-| `Footsteps_Stone.wav` — stone walking | Galbenshire | CC0 | [Freesound item](https://freesound.org/people/Galbenshire/sounds/464520/) |
 | Footsteps (`01-footstep.ogg` through `06-footstep.ogg`) — corridor walking | GboxMikeFozzy | CC0 | [OpenGameArt item](https://opengameart.org/content/footsteps-0) |
-| GUI Sound Effects (`GUI_Sound_Effects_by_Lokif.7z`) — menu selection and confirmation; individual files TBD | Lokif (LokiF) | CC0 | [OpenGameArt item](https://opengameart.org/content/gui-sound-effects) |
 | Interface Sounds (`kenney_interfaceSounds.zip`) — additional menu clicks; individual files TBD | Kenney | CC0 | [OpenGameArt item](https://opengameart.org/content/interface-sounds) |
 | `fantasy_magic_button_1.mp3` — recovery ember activation candidate | Almitory | CC0 | [OpenGameArt item](https://opengameart.org/content/fantasy-magic-spell) |
-| `top-down-fantasy-1.ogg` (downloaded candidate; not integrated) | Distributed by ansimuz; composer not verified | **Unverified: do not integrate or redistribute until explicit music terms are confirmed.** The art ZIP license does not explicitly cover this separate download. | [Download page](https://ansimuz.itch.io/gothicvania-cold-corridors) |
 
-## Narrator voice
+License evidence checked against the downloaded archives on 2026-11-14. The Godot reference project and the unverified standalone music from the same pack are not in this repo. Narrator voices are listed under the narrator sections near the end of this file.
 
-| Voice | Provider | Notes |
-|---|---|---|
-| _not chosen yet (H-10)_ | ElevenLabs | Stock or designed voice only |
-
-## Downloaded reference project
-
-| File | Author | Licence | Source |
-|---|---|---|---|
-| `GodotProject.zip` (reference only; not integrated) | Luis Zuno (ansimuz) | Custom bundled [license](docs/licenses/cold-corridors/godot-project-license.pdf): personal/commercial project use and modification allowed; standalone asset redistribution/resale prohibited. Do not treat this archive as CC0. | [Asset page](https://ansimuz.itch.io/gothicvania-cold-corridors) |
-
-License evidence checked against the downloaded archives on 2026-11-14. The reference project and unverified standalone music were not integrated; the imported art/audio subset is recorded below.
 ## P8.1 prepared local files (Neil Pawar)
 
 These files were prepared in P8.1. The listed music and selected SFX are now used by the local audio engine; the Cold Corridors art remains available while current scenery uses the forest assets below. Each P8.1 file is CC0-1.0. No AI-generated assets, Godot reference files or unverified standalone music are included. Original bytes are preserved; only filenames/paths were changed where noted. Exact metadata and SHA-256 values: `public/assets/inventory.json`.
@@ -63,12 +49,12 @@ These files were prepared in P8.1. The listed music and selected SFX are now use
 | `public/assets/audio/music/cathedral-in-the-forest.ogg` | congusbongus | [Item-page CC0 evidence](public/assets/licenses/source-evidence.md) | https://opengameart.org/content/cathedral-in-the-forest-ambient-loop — renamed from `forest_2_0.ogg` |
 | `public/assets/audio/music/insistent.ogg` — the tense layer | yd | [Item-page CC0 evidence](public/assets/licenses/source-evidence.md) | https://opengameart.org/content/insistent-background-loop — renamed from `Insistent.ogg`; original bytes |
 
-The ambient loop is a single mixed bed, not calm/tense stems. Original `top-down-fantasy-1.ogg` remains excluded pending explicit terms. This section complements the independent license-review work in PR #10 and does not supersede its restrictions.
+The ambient loop is a single mixed bed, not calm/tense stems. The ansimuz `top-down-fantasy-1.ogg` is not in the repo. This section complements the independent license-review work in PR #10 and does not supersede its restrictions.
 
 
 ## Forest overhaul: Lukya Forge
 
-Selected resources from Ancient Forest 1.7 and Dark Forest 1.0, used inside Lighten Up only. Custom project-use license, **not CC0**: permits personal/commercial games and modification; prohibits redistributing/reselling the standalone product and NFTs. Original notice: [forest/License.txt](public/assets/forest/License.txt). Both packs are listed under the publisher LICENSE at https://lukyaforge.itch.io/ancientforest (checked 2026-11-15). No audio imported. Downloads originals untouched.
+Selected resources from Ancient Forest 1.7 and Dark Forest 1.0, used inside Lighten Up only. Custom project-use license, **not CC0**: permits personal/commercial games and modification; prohibits redistributing/reselling the standalone product and NFTs. Original notice: [forest/License.txt](public/assets/forest/License.txt). Both packs are listed under the publisher LICENSE at https://lukyaforge.itch.io/ancientforest (checked 2026-11-15). No audio imported.
 
 | Exact used game file | Original pack/file | Modification |
 |---|---|---|
@@ -101,11 +87,13 @@ Author: Lukya Forge (lukyaforge). Runtime tinting/opacity and animation are appl
 
 Both new packs permit personal/commercial game use. Only game-used resources are included, not the complete source packs. Glitch pack excluded.
 ## UI typography
+
 - Pixelify Sans by Stefie Justprince, SIL Open Font License 1.1. Source: https://github.com/google/fonts/tree/main/ofl/pixelifysans. Bundled locally in `src/ui/theme/fonts/`, including OFL.txt. No runtime font requests.
 - IM Fell English SC (title font), Copyright (c) 2010 Igino Marini, SIL Open Font License 1.1. Source: https://github.com/google/fonts/tree/main/ofl/imfellenglishsc. Bundled in `src/ui/theme/fonts/imfellenglishsc/` with its OFL.txt.
 - Alegreya Sans SC Bold (menu and HUD font), Copyright 2013 The Alegreya Sans Project Authors, SIL Open Font License 1.1. Source: https://github.com/google/fonts/tree/main/ofl/alegreyasanssc. Bundled in `src/ui/theme/fonts/alegreyasanssc/` with its OFL.txt.
 
 ## Grassland polish
+
 Diego "Shackhal" del Solar, Multi Platformer Tileset Free. Local ReadMe declares CC0; preserved verbatim at public/assets/grassland/ReadMe.txt. Source https://shackhal.itch.io/ . Used GrassLand/Terrain/Grassland_Terrain_47Tiles.png: left/middle/right crops (0,0,16,16), (16,0,16,16), (32,0,16,16); soil (16,16,16,16). Used GrassLand/Props/GrassLand_Bush.png -> bush.png, GrassLand_Stone_1.png -> stone.png, GrassLand/Background/GrassLand_Cloud_1.png -> cloud.png. Runtime nearest scaling/tint and opacity; no full pack copied. This Free version has only Grassland; winter assets remain separately credited above.
 
 
@@ -127,6 +115,7 @@ Ancient Forest trunk-snow.png derives from existing trunk-loop.png: luminance co
 Clastic Artistic, Abstract Textures, texture (25): https://clastic-artistic.itch.io/caabstracttextures . Publisher confirms CC0 and no generative AI. Local README preserved at public/assets/corruption/CC0.txt. Selected source -clasticartistic-_6000-4000px_texture (25).jpg only; central6000x3375 crop at(0,312), downsample64x36, selective green→red palette shift, nearest upscale256x144 as abstract-25.png. Used as a low-opacity corrupted atmosphere layer. No full-resolution source or complete660MB pack copied.
 
 ## Original narrator intros
+
 - Text: Gemini 3 Flash preview drafts, edited by Amrit's Codex agent; original dry, philosophical commentary about the climb. Amrit's listening/content review remains open.
 - Speech: ElevenLabs stock voice George (`JBFqnCBsd6RMkjVDRZzb`), Eleven Multilingual v2, generated through Amrit's paid account on 2026-11-15. Not a clone or imitation of a real person. Local MP3 files and generation manifest: `public/assets/audio/narrator/`.
 - Source/setup: https://elevenlabs.io/docs/eleven-api/quickstart. Paid generated narration; these clips are not represented as CC0 third-party recordings. No keys are included.
@@ -147,3 +136,7 @@ Additional Pixel Platformer Tileset Vol.4 by reodesuxz game decorations: native 
 ### Selected baseline narrator bank
 - Script: five active excerpts from Bennett Foddy's Getting Over It narration, supplied as a transcript and selected by Amrit. Amrit stated permission for reuse in this session. Source reference: https://www.youtube.com/watch?v=IO6ouSMm7Uc. These excerpts are not represented as original Gemini writing or as public-domain material.
 - Speech: generated using Amrit's supplied ElevenLabs voice ID `zwn3aE3GYziMwjvo74dv`, Eleven v4, through his paid account. The ID does not verify a speaker's identity; this repo did not create a voice clone. Five excerpt clips plus an original explanatory welcome and low-fuel reminder requested by Amrit, with generation settings, are recorded in `public/assets/audio/narrator/manifest-baseline.json`.
+
+## Replay presets and recordings
+
+`public/recordings/presets/*.jsonl` (calm-climb, rising-tension, jaw-clench-bursts, mixed-climb, noisy-pin) are generated by this project from the pieeg.js built-in simulator (`npm run presets:build`; see `public/recordings/presets/manifest.json`). `recordings/sim-fixture.jsonl` is marked `SIMULATED` in its header. They contain simulated signal only and are not third-party assets. The simulator is part of the MIT-licensed pieeg.js listed under Libraries.
