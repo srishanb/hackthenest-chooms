@@ -28,6 +28,7 @@ export const NARRATOR_MOMENTS = {
   cooldownMs: 30_000,
   eventExpiryMs: 15_000,
   heightStepPx: 256,
+  fallMinMetres: 25, // Strictly greater than this HUD distance triggers narration.
   // Share the HUD's existing personal-best record, without writing gameplay state.
   bestStorageKey: 'lighten.height-best-px.v1',
 } as const;

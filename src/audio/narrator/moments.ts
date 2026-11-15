@@ -1,4 +1,5 @@
 /** Turns actual game events into sparse narration requests. No game state writes. */
+import { HUD_WORLD_PIXELS_PER_METRE } from '../../config/ui.config';
 import { NARRATOR_MOMENTS } from '../../config/audio.config';
 import type { NarratorMoment } from '../../shared/contracts/content';
 import type { EventBus } from '../../shared/contracts/events';
@@ -10,7 +11,10 @@ export function watchNarratorMoments(bus: EventBus, snapshot: Store<GameSnapshot
   let bestPx = Math.max(0, initialBestPx), nextHeightPx = bestPx + NARRATOR_MOMENTS.heightStepPx;
   const cleanups = [
     bus.on('finish', () => request('finish')),
-    bus.on('fall', event => { if (event.big && snapshot.get().phase === 'playing') request('fall'); }),
+    bus.on('fall', event => {
+      const metres = event.heightPx / HUD_WORLD_PIXELS_PER_METRE;
+      if (Number.isFinite(metres) && metres > NARRATOR_MOMENTS.fallMinMetres && snapshot.get().phase === 'playing') request('fall');
+    }),
     bus.on('stage_completed', event => {
       // Stage 0 is the actual playable tutorial, not the skippable controls guide.
       // Final stage has no next stage; don't promise one on the finish screen.

@@ -25,7 +25,7 @@ function setup() {
 it('routes welcome, actual tutorial completion, big fall, personal best and stage to the right clips',async()=>{
   const s=setup();await s.player.ready;s.start();expect(s.player.getActiveLine()).toBe('intro-chris-welcome');s.end();
   s.raw.currentTime=31;s.bus.emit({type:'stage_completed',stageId:'tutorial',index:0});s.player.tick();expect(s.player.getActiveLine()).toBe('intro-chris-tutorial');s.end();
-  s.raw.currentTime=62;s.bus.emit({type:'fall',heightPx:400,big:true});s.player.tick();expect(s.player.getActiveLine()).toBe('intro-chris-fall');s.end();
+  s.raw.currentTime=62;s.bus.emit({type:'fall',heightPx:801,big:true});s.player.tick();expect(s.player.getActiveLine()).toBe('intro-chris-fall');s.end();
   s.raw.currentTime=93;s.stores.snapshot.set({...s.stores.snapshot.get(),navigation:{originY:1000,player:{x:0,y:200},lanternRadiusPx:100,checkpoints:[]}});expect(s.player.getActiveLine()).toBe('intro-chris-height');s.end();
   s.raw.currentTime=124;s.bus.emit({type:'stage_completed',stageId:'normal',index:1});s.player.tick();expect(s.player.getActiveLine()).toBe('intro-chris-stage');s.player.dispose();
 });
@@ -39,9 +39,9 @@ it('never says personal best below the saved record, or for each pixel or repeat
 it('drops stale falls, ignores small falls, deduplicates and obeys repeat cooldown',async()=>{
   const s=setup();await s.player.ready;s.start();s.end();
   s.raw.currentTime=2;s.bus.emit({type:'fall',heightPx:20,big:false});s.player.tick();expect(s.sources).toHaveLength(1);
-  s.bus.emit({type:'fall',heightPx:400,big:true});s.bus.emit({type:'fall',heightPx:400,big:true});s.raw.currentTime=31;s.player.tick();expect(s.sources).toHaveLength(1);
-  s.bus.emit({type:'fall',heightPx:400,big:true});s.player.tick();expect(s.sources).toHaveLength(2);s.end();
-  s.raw.currentTime=62;s.bus.emit({type:'fall',heightPx:400,big:true});s.player.tick();expect(s.sources).toHaveLength(2);s.player.dispose();
+  s.bus.emit({type:'fall',heightPx:801,big:true});s.bus.emit({type:'fall',heightPx:801,big:true});s.raw.currentTime=31;s.player.tick();expect(s.sources).toHaveLength(1);
+  s.bus.emit({type:'fall',heightPx:801,big:true});s.player.tick();expect(s.sources).toHaveLength(2);s.end();
+  s.raw.currentTime=62;s.bus.emit({type:'fall',heightPx:801,big:true});s.player.tick();expect(s.sources).toHaveLength(2);s.player.dispose();
 });
 it('holds tutorial completion through pause, gives it priority, and does not promise another final stage',async()=>{
   const s=setup();await s.player.ready;s.start();s.end();s.raw.currentTime=5;
@@ -65,4 +65,14 @@ it('does not cut an ongoing line on finish, jump or recovery, and pauses the clo
   s.end();s.raw.currentTime=31;s.player.tick();expect(s.player.getActiveLine()).toBe('intro-chris-finish');
   s.raw.currentTime=32;s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'paused'});
   expect(s.sources[1]!.stop).toHaveBeenCalledTimes(1);s.player.dispose();
+});
+
+it('requires a finite fall strictly greater than 25 HUD metres, independently of the game big flag',()=>{
+  const bus=createEventBus(),snapshot=createStore<GameSnapshot>(structuredClone(INITIAL_GAME_SNAPSHOT)),request=vi.fn();
+  const off=watchNarratorMoments(bus,snapshot,request);
+  for (const heightPx of [-1,300,799,800,NaN,Infinity]) bus.emit({type:'fall',heightPx,big:true});
+  expect(request).not.toHaveBeenCalled();
+  bus.emit({type:'fall',heightPx:801,big:false});expect(request).toHaveBeenCalledExactlyOnceWith('fall');
+  snapshot.set({...snapshot.get(),phase:'paused'});bus.emit({type:'fall',heightPx:1000,big:true});
+  expect(request).toHaveBeenCalledTimes(1);off();
 });

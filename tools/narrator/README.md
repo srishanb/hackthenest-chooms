@@ -76,7 +76,9 @@ Settings. A new voice preference key applies this explicitly selected default;
 Chris and Bill remain optional legacy banks. Old files and history are preserved.
 Welcome replaces random opening selection for baseline. Tutorial means completion
 of the actual playable tutorial stage, not skipping/closing the control guide.
-Large falls use the game's `big` flag; intermediate stages play the later milestone
+Fall narration requires a drop strictly greater than 25 HUD metres (800 world
+pixels at the shared HUD scale); the game's separate `big` flag is unchanged.
+Intermediate stages play the later milestone
 line. Height requires 256 pixels beyond the saved personal best and another 256
 pixels before requesting again. Finish queues the closing line, which may play on
 the finished screen with captions, without cutting a currently playing line.
