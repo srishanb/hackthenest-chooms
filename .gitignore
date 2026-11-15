@@ -19,3 +19,6 @@ build/
 
 # agent-local state
 .claude/settings.local.json
+
+# agent-local preview config (the port differs per worktree)
+.claude/launch.json
