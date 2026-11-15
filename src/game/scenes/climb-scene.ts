@@ -293,7 +293,7 @@ export class ClimbScene extends Phaser.Scene {
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).
       if (out.events.landed) {
         for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
-        if (this.stages.land(out.events.landed.platformId,
+        if (this.stages.land(out.events.landed.platformId, this.fuel.isLit &&
           Math.max(actualSignal.valid && actualSignal.mode !== 'fixed' ? actualSignal.intensity : 0.2,
             stores.effects.get().forestCorruption, this.forestPreview ?? 0) <= LANTERN_FUEL_CONFIG.normalWorldMax01)) {
           this.accumulatorMs = 0;
@@ -302,7 +302,7 @@ export class ClimbScene extends Phaser.Scene {
       }
     }
     const finishSignal = composure.getState();
-    const normalWorld = Math.max(finishSignal.valid && finishSignal.mode !== 'fixed' ? finishSignal.intensity : 0.2,
+    const normalWorld = this.fuel.isLit && Math.max(finishSignal.valid && finishSignal.mode !== 'fixed' ? finishSignal.intensity : 0.2,
       stores.effects.get().forestCorruption, this.forestPreview ?? 0) <= LANTERN_FUEL_CONFIG.normalWorldMax01;
     if (this.stages.finishIfReady(this.state.grounded ? this.state.platformId : null, normalWorld)) this.phase.finish();
     this.ember.refreshPrompt(this.state);
@@ -318,7 +318,7 @@ export class ClimbScene extends Phaser.Scene {
     this.worldView.update(this.platforms, this.worldTimeMs, settings.reducedMotion, this.state.y);
     const sectionId = sectionAt(sections, this.state.y + gameConfig.player.height / 2);
     const lesson = sectionId === 'tutorial' ? lessonAt(sections, this.state.y) : undefined;
-    const lessonKey = this.stages.isFinishBlocked() ? 'stage.finishBlocked' : lesson ? `lesson.${lesson}` : sectionId ? `stage.tip.${sectionId}` : undefined;
+    const lessonKey = this.stages.isFinishBlocked() ? (this.fuel.isLit ? 'stage.finishBlocked' : 'stage.relightRequired') : lesson ? `lesson.${lesson}` : sectionId ? `stage.tip.${sectionId}` : undefined;
     if (stores.snapshot.get().lessonKey !== lessonKey) {
       stores.snapshot.set({ ...stores.snapshot.get(), lessonKey });
     }
@@ -371,6 +371,8 @@ export class ClimbScene extends Phaser.Scene {
       paused: !this.phase.isRunning(),
     });
     this.candle.update(this.state, deltaMs, !this.phase.isRunning(), {
+      ember: !this.fuel.isLit && this.wax.lightPulse01() === 0,
+      corruptedEmber: frame.forestCorruption > LANTERN_FUEL_CONFIG.normalWorldMax01,
       radiusPx: radius,
       minRadiusPx: lantern?.min ?? 90,
       maxRadiusPx: lantern?.max ?? 280,

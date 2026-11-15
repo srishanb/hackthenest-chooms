@@ -9,13 +9,14 @@ export function createLanternFuel() {
   let fuel = 1, corruption = 0.2, heldRadius: number | null = null;
   return {
     get value() { return fuel; },
+    get isLit() { return fuel > 0; },
     get waxBenefit() { return waxBenefit01(corruption); },
     update(value: number, dtMs: number) { corruption = unit(value, 0.2); fuel = burnFuel(fuel, corruption, dtMs); },
-    refill() { fuel = Math.min(1, fuel + C.waxRefill01 * waxBenefit01(corruption)); },
+    refill() { if (corruption > C.normalWorldMax01) return; fuel = Math.min(1, fuel + C.waxRefill01 * waxBenefit01(corruption)); },
     reset() { fuel = 1; corruption = 0.2; heldRadius = null; },
     lightRadius(base: number, airborne: boolean) {
-      const desired = Math.max(C.minimumRadiusPx, base * (C.emptyRadiusScale + (1 - C.emptyRadiusScale) * fuel) * (0.55 + 0.45 * waxBenefit01(corruption)));
-      if (!airborne || heldRadius === null) heldRadius = desired;
+      const desired = fuel === 0 ? C.minimumRadiusPx : Math.max(C.minimumRadiusPx, base * (C.emptyRadiusScale + (1 - C.emptyRadiusScale) * fuel) * (0.55 + 0.45 * waxBenefit01(corruption)));
+      if (fuel === 0 || !airborne || heldRadius === null) heldRadius = desired;
       return heldRadius;
     },
   };
