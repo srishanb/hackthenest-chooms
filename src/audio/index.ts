@@ -1,3 +1,8 @@
+/**
+ * Audio entry point: createAudio() wires the music, sound effects, ambience and narrator into one handle.
+ * It unlocks the browser audio context on the first key press or click, then keeps the mix in step with the stores and bus.
+ * It exists so the rest of the app has one place to start and stop all sound, and sound failures never break gameplay.
+ */
 import { startWorldSoundtrack, soundtrackPosition } from './world-soundtrack';
 import { createWorldAmbience } from './world-ambience';
 /** Local audio composition: gesture unlock, music loading and live mix subscriptions.
