@@ -4,7 +4,7 @@ Owner: Srishan. Search here before adding a function.
 
 | Export | File | What it does |
 |---|---|---|
-| `createSignal(bus, config, deps?)` | `index.ts` | Returns the `SignalHandle` (reader, control, diagnostics): the real pipeline, fed by a sim or replay source chosen from the URL params, published at 12 Hz. `deps` (`search`, `now`, `fetchText`, `live`) is for tests. |
+| `createSignal(bus, config, deps?)` | `index.ts` | Returns the `SignalHandle` (reader, control, diagnostics): the real pipeline, fed by a sim, replay or live-board source chosen from the URL params, published at 12 Hz. `deps` (`search`, `now`, `fetchText`, `live`) is for tests. |
 | `getPiEEGConstructor()`, `PiEEG*` types | `vendor/pieeg-types.ts` | Typed subset of the vendored SDK. The only place the global `PiEEG` is read. |
 | `createPiEEGAdapter(config, callbacks)`, `toBandFrame(...)` | `sources/pieeg-adapter.ts` | SDK to `BandFrame`. `connect('simulator')` needs no click; `connect('ble')` must run in a click handler. |
 | `createPiEEGSource(deps)` | `sources/pieeg-source.ts` | `Source` for the real board over `connect('ble')`. Starts in the click handler; readable errors for no Web Bluetooth or a cancelled picker; an SDK error or disconnect ends it once. |
@@ -22,10 +22,12 @@ Owner: Srishan. Search here before adding a function.
 | `extractFeatures` | `stages/features.ts` | `BandFrame` to features (P1.2). |
 | `estimateQuality` | `stages/quality.ts` | Signal quality 0..1 (P1.2). |
 | `calibrateBaseline`, `createCalibrationCollector`, `stepCalibrationCollector`, `quantile` | `stages/calibration.ts` | Baseline calibration windows and the quantile helper (P1.3). |
+| `createRecorder(options)`, `downloadRecording`, `Recorder`, `RecorderOptions` | `recorder.ts` | In-memory JSONL recorder (band frames, states, bus events; never raw EEG samples). `createSignal` feeds it and exposes `exportRecording()`. |
+| `CHECKPOINT_PLAN`, `summariseCheckpoint`, `appendLabels`, `CHECKPOINT_PASS_RATIO` | `../ui/components/debug-overlay/checkpoint.ts` | The guided eyes-open / eyes-closed checkpoint used by the debug overlay (signal lane owns the overlay). |
 
-Tests: `__tests__/sources.test.ts` (fake SDK), `__tests__/real-sdk.test.ts` (the real vendored simulator in Node, about 6 s), `__tests__/stages-p14.test.ts` (scorer, smoother, gates, registry, url params), `__tests__/pipeline.test.ts`, `__tests__/signal-index.test.ts` (createSignal end to end with fake timers), plus the P1.2/P1.3 stage tests.
+Tests: `__tests__/sources.test.ts` (fake SDK), `__tests__/pieeg-source.test.ts` (real-board source against a fake SDK), `__tests__/real-sdk.test.ts` (the real vendored simulator in Node, about 6 s), `__tests__/stages-p14.test.ts` (scorer, smoother, gates, registry, url params), `__tests__/pipeline.test.ts`, `__tests__/signal-index.test.ts` (createSignal end to end with fake timers), `__tests__/recorder.test.ts`, `__tests__/intensity-v2.test.ts`, plus the P1.2/P1.3 stage tests.
 
-Not built yet: `PiEEGSource` for the real board (P3.1), recorder (P1.5), overlay sim legend and Calibrate buttons (P1.6).
+Verification status: the real-board source (`pieeg-source.ts`) has been tested only against a fake SDK. It has not been run on a real Octopus 16 (see `docs/OCTOPUS_TEST.md`).
 
 ## Presets (replay presets in Settings)
 

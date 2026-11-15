@@ -14,7 +14,7 @@ import '../../theme/menus.css';
 export const settingsPanel: UiComponent = {
   id: 'settings-panel', visibleIn: ['paused', 'menu'],
   mount(root, { stores, bus, signal, actions = createUiActions() }) {
-    const panel = document.createElement('section'); panel.className = 'menu-panel';
+    const panel = document.createElement('section'); panel.className = 'menu-panel settings-panel';
     panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true');
     panel.setAttribute('aria-label', t('menu.settings'));
     const title = document.createElement('h2'); title.textContent = t('menu.settings'); panel.append(title);

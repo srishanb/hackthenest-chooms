@@ -67,3 +67,31 @@
   .launch-copy h1 { font-size: clamp(50px, 7vw, 90px); } .launch-emblem { display: none; }
   .launch-actions { padding: var(--space-4); } .launch-actions button { min-height: 42px; font-size: var(--text-md); }
 }
+
+/* Srishan's cinematic look, ported from his earlier .start-menu design onto this launch screen.
+   Layout and buttons stay as above; only colour, rings, type and the backdrop change. */
+.launch-scenery::after {
+  background: radial-gradient(ellipse at 27% 45%, var(--launch-mist), transparent 65%),
+    linear-gradient(110deg, #131f2bc4 0%, #0b111cd9 62%, #0b1112d0 100%),
+    url('/assets/dark-forest/tree-bg.png') center / cover no-repeat;
+  opacity: .9;
+}
+.launch-emblem {
+  position: relative; display: grid; place-items: center;
+  width: clamp(72px, 9vw, 110px); height: clamp(72px, 9vw, 110px);
+  border: 1px solid #d6aa5a; border-radius: 50%;
+  background: radial-gradient(circle, #e5b9602b, #101a26 68%);
+  box-shadow: 0 0 0 8px #d8ab5520, 0 0 34px #de9e3d55, inset 0 0 22px #e0a8452a;
+  color: #f4c66a; filter: none;
+}
+.launch-emblem::before, .launch-emblem::after { content: ''; position: absolute; inset: -15px; border: 1px solid #c18c4140; border-radius: 50%; }
+.launch-emblem::after { inset: -24px; border-color: #a5b1ad26; }
+.launch-emblem .ui-icon { width: 58%; height: 64%; filter: drop-shadow(0 0 12px #ffcf63); }
+.launch-eyebrow { text-transform: uppercase; letter-spacing: .22em; font-size: 11px; }
+.launch-copy h1 { color: var(--color-text); text-shadow: 0 3px 0 #080d16, 0 0 24px #f2c8703a; }
+.launch-subtitle { color: #d4d1c7; letter-spacing: .035em; }
+.launch-actions button { text-transform: uppercase; letter-spacing: .1em; }
+.launch-actions .menu-primary { border-color: var(--color-accent); color: #ffdc91; background: linear-gradient(105deg, #795629, #392c20 55%, #151a20); box-shadow: var(--gold-glow); }
+.launch-actions .menu-primary:hover, .launch-actions .menu-primary:focus-visible { color: #ffdc91; background: linear-gradient(105deg, #9b7136, #57412a 55%, #1a2027); }
+.launch-key-hint { color: #9da9a5; font-size: var(--text-xs); letter-spacing: .12em; text-transform: uppercase; }
+@media (max-width: 720px) { .launch-emblem { width: 64px; height: 64px; margin-inline: auto; } }
