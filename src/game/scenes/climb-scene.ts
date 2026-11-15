@@ -16,7 +16,9 @@ import type { EventBus } from '../../shared/contracts/events';
 import { createDarkness, minCoveringRadius, updateDarkness } from '../effects/darkness';
 import { neutralFrame, stepEffects } from '../effects/effects-engine';
 import { createKeyboardInput } from '../keyboard-input';
-import { createPlayer, stepPlayer } from '../player/movement';
+import { createPlayer, stepPlayer, teleportPlayer } from '../player/movement';
+import { createRecoveryEmber } from '../ember/recovery';
+import type { EmberAnchor } from '../save';
 import type { PlatformBox, PlayerState } from '../player/types';
 import { sectionAt } from '../world/bounds';
 import { landingEvents } from '../world/fall-tracker';
@@ -52,6 +54,8 @@ export class ClimbScene extends Phaser.Scene {
   private precisionActive = false;
   private phase!: PhaseController;
   private refuges!: ReturnType<typeof createRefugeController>;
+  private ember!: ReturnType<typeof createRecoveryEmber>;
+  private emberMark!: Phaser.GameObjects.Arc;
   private player!: Phaser.GameObjects.Rectangle;
   private darkness!: Phaser.GameObjects.Image;
   private lanternMark!: Phaser.GameObjects.Arc;
@@ -71,13 +75,16 @@ export class ClimbScene extends Phaser.Scene {
     drawWorld(this, world);
 
     this.refuges = createRefugeController({
-      sections, snapshot: stores.snapshot, bus: this.deps.bus, storage: this.deps.storage,
+      sections, snapshot: stores.snapshot, bus: this.deps.bus,
     });
-    this.state = createPlayer(this.refuges.spawn.x, this.refuges.spawn.y);
-    const offFinish = this.deps.bus.on('finish', () => this.refuges.clear());
+    this.ember = createRecoveryEmber({
+      sections, gameConfig, config: this.deps.emberConfig,
+      snapshot: stores.snapshot, bus: this.deps.bus, storage: this.deps.storage,
+    });
+    this.state = createPlayer(this.ember.spawn.x, this.ember.spawn.y);
+    const offFinish = this.deps.bus.on('finish', () => this.ember.clear());
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       offFinish();
-      this.refuges.destroy();
     });
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
 
@@ -87,12 +94,26 @@ export class ClimbScene extends Phaser.Scene {
     this.darkness = createDarkness(this, DEPTH.darkness);
     // Drawn above the darkness: the start of the "always readable" layer P5.2 will build.
     this.lanternMark = this.add.circle(0, 0, 4, 0xfff3c4).setDepth(DEPTH.alwaysReadable);
+    this.emberMark = this.add.circle(0, 0, 7, 0xf29938).setDepth(DEPTH.alwaysReadable).setVisible(false);
 
     // Native events reach the buffer immediately; do not let Space/arrows scroll the page.
     this.controls = createKeyboardInput(() => stores.settings.get().keys);
     const keyDown = (event: KeyboardEvent): void => {
-      if (event.defaultPrevented || event.isComposing || !this.phase.isRunning()) return;
+      if (event.defaultPrevented || event.isComposing) return;
       if (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, button, [contenteditable="true"]')) return;
+      if (!event.repeat && event.code === stores.settings.get().keys.recover) {
+        if (stores.snapshot.get().phase === 'ember') this.ember.cancel();
+        else if (this.ember.request(this.state)) {
+          const signal = this.deps.composure.getState();
+          if (signal.mode === 'fixed' || !signal.calibrated) this.returnToEmber(this.ember.assist());
+        }
+        event.preventDefault(); return;
+      }
+      if (!this.phase.isRunning()) return;
+      if (event.code === 'KeyE') {
+        if (!event.repeat) this.ember.placeOrPickup(this.state);
+        event.preventDefault(); return;
+      }
       if (this.controls.keyDown(event.code)) event.preventDefault();
     };
     const keyUp = (event: KeyboardEvent): void => this.controls.keyUp(event.code);
@@ -114,13 +135,28 @@ export class ClimbScene extends Phaser.Scene {
       // The refuge controller clears the save when it hears the `finish` event this emits.
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.phase.dispose());
+    const offAssist = this.deps.bus.on('ember_assist_requested', () => this.returnToEmber(this.ember.assist()));
+    const offCancel = this.deps.bus.on('ember_cancel_request', () => this.ember.cancel());
+    const offRestart = this.deps.bus.on('run_restart', () => {
+      const spawn = this.ember.restart();
+      this.state = teleportPlayer(spawn.x, spawn.y); clearInput(); this.accumulatorMs = 0;
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { offAssist(); offCancel(); offRestart(); });
 
     stores.effects.set(neutralFrame(effectsTable));
+  }
+
+  private returnToEmber(anchor: EmberAnchor | null): void {
+    if (!anchor) return;
+    this.state = teleportPlayer(anchor.x, anchor.y);
+    this.controls.clear(); this.accumulatorMs = 0;
+    this.player.setPosition(anchor.x, anchor.y);
   }
 
   override update(_time: number, deltaMs: number): void {
     const { stores, composure, gameConfig, effectsTable, bus, emberConfig, sections } = this.deps;
     const settings = stores.settings.get();
+    this.returnToEmber(this.ember.advance(composure.getState(), performance.now()));
     const stepMs = 1000 / gameConfig.stepHz;
     if (!this.phase.isRunning()) {
       this.controls.clear();
@@ -138,6 +174,10 @@ export class ClimbScene extends Phaser.Scene {
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).
       if (out.events.landed) for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
     }
+    this.ember.refreshPrompt(this.state);
+    const anchor = this.ember.getAnchor();
+    this.emberMark.setVisible(anchor !== null);
+    if (anchor) this.emberMark.setPosition(anchor.x, anchor.y + gameConfig.player.height / 2 - 7);
     const finish = findFinish(sections);
     if (finish && this.phase.isRunning() && bodyInArea(this.state.x, this.state.y, finish)) this.phase.finish();
     if (this.state.charging !== this.precisionActive) {

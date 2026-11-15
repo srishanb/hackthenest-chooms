@@ -1,13 +1,18 @@
 /** Versioned progress storage. Invalid or unavailable browser storage never prevents a run. */
-export const SAVE_KEY = 'lighten.save.v1';
+export const SAVE_KEY = 'lighten.manual-ember.v2';
 
 export type SaveStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
+export interface EmberAnchor {
+  platformId: string;
+  x: number;
+  y: number;
+}
+
 export interface SavedProgress {
-  v: 1;
-  refugeId: string | null;
-  emberAvailable: boolean;
-  visitedRefugeIds: string[];
+  v: 2;
+  anchor: EmberAnchor | null;
+  readyAtMs?: number;
 }
 
 /** Validate data from disk before gameplay trusts it. Unknown versions start a fresh run. */
@@ -18,12 +23,17 @@ export function parseSave(text: string | null): SavedProgress | null {
     if (typeof value !== 'object' || value === null) return null;
     const saved = value as Record<string, unknown>;
     const isId = (id: unknown): id is string => typeof id === 'string' && id.trim().length > 0;
-    if (saved.v !== 1 || typeof saved.emberAvailable !== 'boolean') return null;
-    if (saved.refugeId !== null && !isId(saved.refugeId)) return null;
-    if (!Array.isArray(saved.visitedRefugeIds) || !saved.visitedRefugeIds.every(isId)) return null;
-    const visited = [...new Set(saved.visitedRefugeIds as string[])];
-    if (saved.refugeId !== null && !visited.includes(saved.refugeId as string)) return null;
-    return { v: 1, refugeId: saved.refugeId as string | null, emberAvailable: saved.emberAvailable, visitedRefugeIds: visited };
+    if (saved.v !== 2) return null;
+    let anchor: EmberAnchor | null = null;
+    if (saved.anchor !== null) {
+      if (typeof saved.anchor !== 'object' || !saved.anchor) return null;
+      const candidate = saved.anchor as Record<string, unknown>;
+      if (!isId(candidate.platformId) || typeof candidate.x !== 'number' || !Number.isFinite(candidate.x) ||
+        typeof candidate.y !== 'number' || !Number.isFinite(candidate.y)) return null;
+      anchor = { platformId: candidate.platformId, x: candidate.x, y: candidate.y };
+    }
+    if (saved.readyAtMs !== undefined && (typeof saved.readyAtMs !== 'number' || !Number.isFinite(saved.readyAtMs) || saved.readyAtMs < 0)) return null;
+    return { v: 2, anchor, ...(saved.readyAtMs === undefined ? {} : { readyAtMs: saved.readyAtMs as number }) };
   } catch {
     return null;
   }

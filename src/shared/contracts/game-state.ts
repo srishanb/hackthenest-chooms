@@ -10,6 +10,8 @@
 export type GamePhase = 'menu' | 'calibrating' | 'playing' | 'paused' | 'ember' | 'finished';
 
 export interface EmberSnapshot {
+  /** Remaining return cooldown; zero when ready. */
+  cooldownRemainingMs?: number;
   /** The player owns an ember. */
   available: boolean;
   /** Recovery is in progress (gameplay frozen). */

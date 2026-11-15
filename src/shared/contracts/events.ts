@@ -17,6 +17,10 @@ export type GameEvent =
   | { type: 'checkpoint_saved'; refugeId: string }
   | { type: 'ember_gained' }
   | { type: 'ember_requested' }
+  /** UI requests; the game owns the resulting state transitions. */
+  | { type: 'ember_assist_requested' }
+  | { type: 'ember_cancel_request' }
+  | { type: 'run_restart' }
   | { type: 'ember_returned'; via: 'eeg' | 'assist' }
   | { type: 'ember_cancelled' }
   /** While active, the narrator must not start a new line. */

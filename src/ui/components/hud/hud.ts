@@ -36,7 +36,8 @@ export const hud: UiComponent = {
       const view = hudState(snapshot, signalState, SIGNAL_CONFIG.staleAfterMs);
       text(status, t(view.statusKey));
       text(quality, `${t('hud.quality')} ${view.qualityPercent}%`);
-      text(ember, t(view.emberKey));
+      const cooldownSeconds = Math.ceil((snapshot.ember.cooldownRemainingMs ?? 0) / 1000);
+      text(ember, cooldownSeconds > 0 ? `${t('ember.cooldownLabel')} ${cooldownSeconds}s` : t(view.emberKey));
       text(composure, `${t('hud.composure')} ${view.intensityKey === null ? t('hud.unavailable') : t(view.intensityKey)}`);
       text(prompt, view.prompt ?? '');
       progress.value = view.progressPercent;

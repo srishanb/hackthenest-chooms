@@ -59,6 +59,8 @@ export interface GameConfig {
 }
 
 export interface EmberConfig {
+  /** Minimum delay between completed returns; placement and pickup remain available. */
+  cooldownMs?: number;
   /** Valid resting-active time needed to activate the ember, in ms. */
   targetValidMs: number;
   /** A fall at least this high counts as "big" for events and narration. */
