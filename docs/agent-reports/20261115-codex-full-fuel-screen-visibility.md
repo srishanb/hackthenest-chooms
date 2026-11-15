@@ -15,3 +15,5 @@ Faint candle-light follow-up requested by Neil: added two bounded canvas-gradien
 Fuel falloff follow-up: user reported decreasing fuel without visible shadow shrink. Diagnosed oversized full-diagonal light buffer plus1x–2x soft fade. Use actual farthest camera-corner distances from candle, exponent3 normal/4.5 corrupted, and fade1x–1.25x. Full fuel still clears actual viewport;90% fuel now brings fully dark corners into view in centred regression. New texture key regenerates cached texture. Regression initially exposed too-wide fade at1.333x; tightened to1.25x. Manual visual check outstanding.
 
 Final falloff validation:496 tests/76 files, TypeScript and production build pass.
+
+Neil explicitly requested merge now. Synced latest main e454d45 without conflicts; combined restoration and final lighting pass499 tests/77 files, TypeScript and production build. This supersedes the earlier draft hold. Manual visual/headset verification remains outstanding.
