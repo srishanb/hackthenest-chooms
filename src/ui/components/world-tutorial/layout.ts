@@ -12,7 +12,8 @@ export function worldTransform(view: WorldViewSnapshot, canvasWidth: number): st
 }
 export function reminderPosition(view: WorldViewSnapshot): { x: number; y: number } {
   // Cancel camera scrolling in the projection. Jump motion never enters this calculation.
-  return { x: view.scrollX + 24, y: view.scrollY + 120 };
+  // Aligned to the HUD grid: 2u edge, below the 3u Controls button plus a 1u gap (1u = 10 game px).
+  return { x: view.scrollX + 20, y: view.scrollY + 60 };
 }
 export function keyLabel(code: string): string {
   const labels: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', Space: 'Space', Escape: 'Esc' };

@@ -30,6 +30,6 @@
 }
 /* The reference compass owns the bottom-right corner during play. */
 #ui[data-phase='playing'] .tutorial-replay,
-#ui[data-phase='ember'] .tutorial-replay { top: 112px; left: var(--hud-corner); right: auto; bottom: auto; font-size: var(--text-xs); }
+#ui[data-phase='ember'] .tutorial-replay { top: var(--hud-corner); left: var(--hud-corner); right: auto; bottom: auto; height: calc(3 * var(--hud-u)); padding: 0 calc(1.2 * var(--hud-u)); display: inline-flex; align-items: center; font-size: var(--hud-text-s); }
 #ui[data-phase='paused'] .tutorial-replay { display: none; }
 .tutorial-panel { transform: scale(var(--ui-tutorial-scale, 1)); transform-origin: center; max-width: calc((100cqw - 40px) / var(--ui-tutorial-scale, 1)); max-height: calc((100cqh - 40px) / var(--ui-tutorial-scale, 1)); }

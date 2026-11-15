@@ -49,3 +49,8 @@
 .ui-slot[data-slot='top-right']:has(.ui-size-tuner[open]) { z-index: 3; }
 /* The shared preview now belongs to the settings dialog, which remains keyboard accessible. */
 #ui [data-component='settings-panel'] .forest-preview { display: grid; max-width: none; }
+
+/* During play the badge sits on the HUD's shared top line, 3u tall like the Controls button. */
+#ui[data-phase='playing'] .ui-slot[data-slot='top-right']:has([data-component='source-badge']),
+#ui[data-phase='ember'] .ui-slot[data-slot='top-right']:has([data-component='source-badge']) { top: var(--hud-corner); }
+#ui[data-phase='playing'] .source-badge, #ui[data-phase='ember'] .source-badge { box-sizing: border-box; height: calc(3 * var(--hud-u)); display: inline-flex; align-items: center; padding: 0 calc(1.2 * var(--hud-u)); font-size: var(--hud-text-s); }
