@@ -35,7 +35,7 @@ export function createAtmosphere(scene: Scene) {
         const frame = Math.floor(clock / (i === 2 ? 120 : 80)) % 32;
         if (overlay.frame.name !== String(frame)) overlay.setFrame(frame);
         overlay.tilePositionX = Math.round(drift * (i + 1) * 0.5);
-        overlay.setTint(mixColor(i === 0 ? 0xe9f6ff : 0xb4cea0, i === 0 ? 0xb5768f : 0x96506d, c));
+        overlay.setTint(mixColor(i === 0 ? 0xe9f6ff : mixColor(0xb4cea0, 0xc4d7e8, snow), i === 0 ? 0xb5768f : 0x96506d, c));
         overlay.setAlpha(i === 0 ? snow * C.snowOpacity : i === 1 ? wind * C.leavesOpacity : Math.max(snow, wind) * C.fogOpacity);
       }
       for (const [i, swirl] of swirls.entries()) {

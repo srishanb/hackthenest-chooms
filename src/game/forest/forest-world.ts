@@ -24,6 +24,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
   const background = createVerticalForest(scene);
   const atmosphere = createAtmosphere(scene);
   const gardens = createBackdropGardens(scene);
+  let snowMix = 0;
   const screen = createCorruptionScreen(scene);
   const mist = scene.add.tileSprite(0, 0, width, height, 'forest-mist').setOrigin(0).setScrollFactor(0)
     .setTileScale(C.pixelScale).setDepth(-8);
@@ -108,6 +109,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
   }
   return {
     setEnvironment(value) {
+      snowMix = value.snowEnabled && Number.isFinite(value.snow01) ? Math.max(0, Math.min(1, value.snow01!)) : 0;
       atmosphere.setEnvironment(value);
       background.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
       gardens.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
@@ -128,7 +130,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
         scene.game.canvas.dataset.forestFps = scene.game.loop.actualFps.toFixed(1);
       }
       if (!reducedMotion && !paused) clock += Math.min(deltaMs, 100);
-      sky.setFillStyle(mixColor(C.sky.calm, C.sky.corrupted, c));
+      sky.setFillStyle(mixColor(mixColor(C.sky.calm, 0x263a4d, snowMix), C.sky.corrupted, c));
       background.update(c);
       gardens.update(c);
       atmosphere.update(c, deltaMs, reducedMotion, paused, strength);
@@ -137,7 +139,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       mist.setSize(camera.width, camera.height);
       mist.tilePositionX = reducedMotion ? 0 : clock / 160;
       mist.tilePositionY = camera.scrollY * 0.08 / C.pixelScale;
-      mist.setTint(mixColor(0xa9d4c0, 0xbf8aa9, c)).setAlpha(0.04 + C.mistMaxAlpha * c);
+      mist.setTint(mixColor(mixColor(0xa9d4c0, 0xbed5e6, snowMix), 0xbf8aa9, c)).setAlpha(0.04 + C.mistMaxAlpha * c);
       const tint = mixColor(C.terrain.calm, C.terrain.corrupted, c);
       for (const tile of terrain) tile.setTint(tint);
       for (const pair of redTerrain) {
@@ -154,7 +156,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
         const phase = clock / C.sporePeriodMs * Math.PI * 2 + spore.seed * Math.PI * 2;
         const drift = reducedMotion ? 0 : Math.sin(phase) * C.sporeDriftPx;
         spore.image.setPosition(spore.x + drift, spore.y + (reducedMotion ? 0 : Math.cos(phase) * C.sporeDriftPx));
-        spore.image.setFillStyle(mixColor(0xd5f2a6, 0xf6a17e, c)).setAlpha(0.08 + c * 0.3);
+        spore.image.setFillStyle(mixColor(mixColor(0xd5f2a6, 0xd9efff, snowMix), 0xf6a17e, c)).setAlpha(0.08 + c * 0.3);
       }
     },
   };

@@ -29,6 +29,18 @@ function setup(storage: SaveStorage = createMemorySaveStorage(), random = () => 
 }
 
 describe('replenishing wax', () => {
+  it('keeps suppressed wax available without rewards', () => {
+    const { wax, active, snapshot, events } = setup();
+    const drop = active();
+    wax.update(drop, 0, 0);
+    expect(snapshot.get().wax?.collected).toBe(0);
+    expect(wax.isActive(drop.id)).toBe(true);
+    expect(events).toHaveLength(0);
+    expect(snapshot.get().wax?.boostRemainingMs).toBe(0);
+    expect(wax.lightRadius(110, false, 0)).toBe(110);
+    wax.update(drop, 0, 1);
+    expect(snapshot.get().wax?.collected).toBe(1);
+  });
   it('collects well beyond both the old cap and the number of ledges, always with at most one active', () => {
     const { wax, snapshot, events, active, storage } = setup();
     for (let count = 1; count <= 100; count++) {
