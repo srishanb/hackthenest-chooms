@@ -37,7 +37,7 @@ const FAST = flags.has('fast');
 
 /** Facts gathered along the way and written to build-info.json. */
 const info = {
-  name: 'lighten',
+  name: 'Lighten Up',
   version: '',
   commit: 'unknown',
   uncommittedChanges: false,
