@@ -11,6 +11,7 @@
 .hud__checkpoint { position: absolute; bottom: var(--hud-corner); right: var(--hud-corner); display: flex; align-items: center; gap: var(--space-3); color: var(--color-accent); }
 .hud__checkpoint > div:first-child { display: grid; gap: var(--space-2); padding: var(--space-3); background: var(--color-panel); border: 2px solid var(--color-accent); border-radius: var(--radius); box-shadow: var(--gold-glow); max-width: 190px; }
 .hud__checkpoint strong { font-size: var(--text-md); }
+.hud__checkpoint .hud__recover-hint { font-size: var(--text-xs); }
 .hud__compass { width: 90px; height: 90px; position: relative; border: 2px solid var(--color-accent); border-radius: 50%; background: var(--color-panel); box-shadow: var(--gold-glow); }
 .hud__needle { position: absolute; inset: 13px 34px; background: linear-gradient(90deg, var(--color-accent) 50%, var(--hud-needle) 50%); clip-path: polygon(50% 0, 100% 65%, 50% 50%, 0 65%); transform-origin: center; }
 .hud__compass i { position: absolute; font: inherit; font-size: var(--text-xs); }

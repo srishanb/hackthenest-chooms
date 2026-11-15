@@ -61,6 +61,7 @@ export const STRINGS = {
   'hud.checkpoint': 'Ember checkpoint',
   'hud.noCheckpoint': 'No Ember placed',
   'hud.placeCheckpoint': 'E · Place on a safe ledge',
+  'hud.recoverCheckpoint': 'R · Recover to your ember',
   'hud.metres': 'm',
   'hud.pause': 'Pause game',
   'menu.checkpointRestart': 'Restart from Checkpoint',
