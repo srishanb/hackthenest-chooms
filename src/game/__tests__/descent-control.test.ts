@@ -9,7 +9,48 @@ const { falling: _falling, ...original } = GAME_CONFIG;
 const right = { left: false, right: true, jump: false };
 const dt = 1000 / GAME_CONFIG.stepHz;
 
-it.each([['KeyA', -1], ['KeyD', 1]] as const)('%s reaches a nearby ledge during a short, fast fall', (code, direction) => {
+it('retains original steering until the descent delay has elapsed', () => {
+  const threshold = GAME_CONFIG.gravityY * GAME_CONFIG.falling!.activationDelayMs / 1000;
+  for (const vy of [0, 1, threshold - 0.01]) {
+    const player = { ...createPlayer(480, -100), vy, vx: 52.8 };
+    expect(stepPlayer(player, right, [], 960, GAME_CONFIG, dt)).toEqual(stepPlayer(player, right, [], 960, original, dt));
+  }
+  const player = { ...createPlayer(480, -100), vy: threshold, vx: 52.8 };
+  const active = stepPlayer(player, right, [], 960, GAME_CONFIG, dt).state;
+  const before = stepPlayer(player, right, [], 960, original, dt).state;
+  expect(active.vx).toBeGreaterThan(before.vx);
+  expect(active.vy).toBe(before.vy);
+  expect(active.y).toBe(before.y);
+});
+
+it.each([false, true])('an uncharged short hop keeps the entire original trajectory (diagonal: %s)', (diagonal) => {
+  const floor = { id: 'floor', x: 480, y: 500, width: 960, height: 24 };
+  let player = { ...createPlayer(300, 470), grounded: true, platformId: 'floor' as string | null,
+    charging: true, chargeMs: 0, jumpLatch: false };
+  let baseline = { ...player };
+  const launch = { ...right, right: diagonal };
+  player = stepPlayer(player, launch, [floor], 960, GAME_CONFIG, dt).state;
+  baseline = stepPlayer(baseline, launch, [floor], 960, original, dt).state;
+  for (let frame = 0; frame < 120 && !player.grounded; frame++) {
+    player = stepPlayer(player, right, [floor], 960, GAME_CONFIG, dt).state;
+    baseline = stepPlayer(baseline, right, [floor], 960, original, dt).state;
+    expect(player).toEqual(baseline);
+  }
+  expect(player.grounded).toBe(true);
+});
+
+it('landing, teleport and a fresh ascent cannot retain unlocked fast steering', () => {
+  const floor = { id: 'floor', x: 480, y: 500, width: 960, height: 24 };
+  const falling = { ...createPlayer(480, 460), vy: 700, vx: 420 };
+  const landed = stepPlayer(falling, right, [floor], 960, GAME_CONFIG, 20).state;
+  expect(landed.grounded).toBe(true);
+  const freshStates = [landed, createPlayer(480, 0), { ...falling, vy: -300 }, { ...falling, vy: 1 }];
+  for (const player of freshStates) {
+    expect(stepPlayer(player, right, [], 960, GAME_CONFIG, dt)).toEqual(stepPlayer(player, right, [], 960, original, dt));
+  }
+});
+
+it.each([['KeyA', -1], ['KeyD', 1]] as const)('%s reaches a nearby ledge late in an established fast fall', (code, direction) => {
   const keyboard = createKeyboardInput(() => DEFAULT_SETTINGS.keys);
   keyboard.keyDown(code);
   const platforms = [{ id: 'nearby', x: 480 + direction * 120, y: 200, width: 160, height: 16 }];
@@ -27,7 +68,7 @@ it.each([['KeyA', -1], ['KeyD', 1]] as const)('%s reaches a nearby ledge during 
   expect((player.x - 480) * direction).toBeGreaterThan(35);
 });
 
-it.each([['KeyA', -1], ['KeyD', 1]] as const)('%s reverses opposing launch momentum within 100 ms of descent', (code, direction) => {
+it.each([['KeyA', -1], ['KeyD', 1]] as const)('%s reverses opposing momentum within 100 ms once falling control is active', (code, direction) => {
   const keyboard = createKeyboardInput(() => DEFAULT_SETTINGS.keys);
   keyboard.keyDown(code);
   let player = { ...createPlayer(480, -1000), vx: -direction * 366, launchVx: -direction * 366, vy: 600 };
@@ -52,7 +93,7 @@ it('preserves all ascent/apex state and grounded walking/launch behavior', () =>
 it('accelerates symmetrically only during descent, independently of bounded wind', () => {
   for (const direction of [-1, 1]) for (const windAccelerationX of [0, 120]) {
     const input = { ...right, left: direction < 0, right: direction > 0 };
-    const player = { ...createPlayer(480, -100), vx: 20, vy: 250, launchVx: 0, windVx: 20 };
+    const player = { ...createPlayer(480, -100), vx: 20, vy: 400, launchVx: 0, windVx: 20 };
     const next = stepPlayer(player, input, [], 960, GAME_CONFIG, dt, { windAccelerationX }).state;
     const before = stepPlayer(player, input, [], 960, original, dt, { windAccelerationX }).state;
     expect(next.vx - next.windVx!).toBeCloseTo(direction * GAME_CONFIG.falling!.accelerationX * dt / 1000);

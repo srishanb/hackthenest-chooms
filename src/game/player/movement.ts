@@ -77,7 +77,9 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
     const maxWind = config.surfaces?.maxWindSpeed ?? 0;
     windVx = Math.max(-maxWind, Math.min(maxWind,
       (windVx + (environment.windAccelerationX ?? 0) * dt) * Math.exp(-(config.surfaces?.windDecay ?? 0) * dt)));
-    if (vy > 0 && config.falling) {
+    // Under constant gravity, downward speed / gravity is time since the apex.
+    // This also resets naturally on landing/ascent/teleport, without a second timer.
+    if (vy > 0 && config.falling && vy >= config.gravityY * config.falling.activationDelayMs / 1000) {
       // Accelerate the player's momentum independently of wind. Reversals take time,
       // but are no longer trapped near the original launch direction. No input coasts.
       const controlVx = vx - previousWindVx;

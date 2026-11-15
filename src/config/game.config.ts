@@ -21,6 +21,6 @@ export const GAME_CONFIG: GameConfig = {
   },
   airSteer01: 0.15,
   fallSteer01: 0.24, // +19.8 px/s of correction only after vertical velocity becomes positive
-  // Reach full steering speed in 0.1 s; reverse a fast launch in under 0.2 s.
-  falling: { accelerationX: 4200, speedX: 420, ledgeReachPx: 4 }, // strict descent only
+  // Wait 0.2 s after the apex, then reach full steering speed in another 0.1 s.
+  falling: { accelerationX: 4200, speedX: 420, ledgeReachPx: 4, activationDelayMs: 200 },
 };
