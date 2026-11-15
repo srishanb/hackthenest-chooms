@@ -26,8 +26,15 @@ Build tools (Vite, TypeScript, Vitest, tsx) are listed in `package.json`.
 
 ## Music and sound effects
 
+The five SFX selections below are selected for use; download and game integration are pending. CC0 was checked on each original item page. Record final repository filenames and any edits when importing. Cure Magic and fire crackling are excluded.
+
 | File | Author | Licence | Source |
 |---|---|---|---|
+| `Footsteps_Stone.wav` — stone walking | Galbenshire | CC0 | [Freesound item](https://freesound.org/people/Galbenshire/sounds/464520/) |
+| Footsteps (`01-footstep.ogg` through `06-footstep.ogg`) — corridor walking | GboxMikeFozzy | CC0 | [OpenGameArt item](https://opengameart.org/content/footsteps-0) |
+| GUI Sound Effects (`GUI_Sound_Effects_by_Lokif.7z`) — menu selection and confirmation; individual files TBD | Lokif (LokiF) | CC0 | [OpenGameArt item](https://opengameart.org/content/gui-sound-effects) |
+| Interface Sounds (`kenney_interfaceSounds.zip`) — additional menu clicks; individual files TBD | Kenney | CC0 | [OpenGameArt item](https://opengameart.org/content/interface-sounds) |
+| `fantasy_magic_button_1.mp3` — recovery ember activation candidate | Almitory | CC0 | [OpenGameArt item](https://opengameart.org/content/fantasy-magic-spell) |
 | `top-down-fantasy-1.ogg` (downloaded candidate; not integrated) | Distributed by ansimuz; composer not verified | **Unverified: do not integrate or redistribute until explicit music terms are confirmed.** The art ZIP license does not explicitly cover this separate download. | [Download page](https://ansimuz.itch.io/gothicvania-cold-corridors) |
 
 ## Narrator voice
