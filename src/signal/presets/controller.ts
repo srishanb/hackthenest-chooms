@@ -13,8 +13,7 @@ import type { KeyValueStorage } from '../../shared/safe-storage';
 import { compactFrames, durationMs, parsePreset, serializePreset, shiftFrames, type PresetData } from './preset-file';
 import { cleanLabel, createPresetStore } from './preset-store';
 
-/** Relative on purpose: the build is served from a sub-path on GitHub Pages (vite base './'). */
-export const PRESET_BASE_URL = 'recordings/presets';
+export const PRESET_BASE_URL = '/recordings/presets';
 /** Saved presets keep the newest minute of signal. */
 export const SAVE_KEEP_MS = 60_000;
 const ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,40}$/;

@@ -23,7 +23,7 @@ describe('createSignal', () => {
     const fetchText = vi.fn(async () => recordingText());
     const signal = createSignal(createEventBus(), SIGNAL_CONFIG, { search: '?source=replay&replay=run.jsonl&algo=passthrough-v0', fetchText });
     await vi.advanceTimersByTimeAsync(1500);
-    expect(fetchText).toHaveBeenCalledWith('recordings/run.jsonl');
+    expect(fetchText).toHaveBeenCalledWith('/recordings/run.jsonl');
     const state = signal.reader.getState();
     expect(state.source).toBe('REPLAY');
     expect(state.algo).toBe('passthrough-v0');
