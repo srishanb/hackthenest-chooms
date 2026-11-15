@@ -59,5 +59,6 @@ channels; borrowed hardware goes back; only public, synthetic or our own data.
 |---|---|---|---|---|---|
 | [ ] | H-16 | Devpost draft (attend the 9:00 PM workshop in Student Center 310AB) | Amrit | **Sun 12:00 AM** | Event deadline missed. |
 | [ ] | H-23 | Make the GitHub repo **public** and check that no key was ever committed (`git log -p -S "API_KEY"`) | Srishan | Sun 11:00 AM | The submission needs a public repo. |
+| [ ] | H-25 | Turn on a GitHub ruleset for all branches that blocks force pushes and deletions (GitHub refuses rulesets on a private free repo) | Srishan | when the repo is made public (H-23), Sun 11:00 AM | History is protected only on machines that ran `npm ci`; a web-interface deletion or a clone without the hook can still remove a branch. |
 | [ ] | H-17 | Demo video, 3 minutes or less (workshop 10:00 AM, Halle Library) | Amrit + one | Sun 11:00 AM | MLH prizes need it. |
 | [ ] | H-24 | Final Devpost submission: repo link, README with one line on what worked and what did not, video, all four teammates, tracks and prizes, AI tools used (Claude, Antigravity, Gemini, Codex, ChatGPT) | Amrit, checked by Srishan | **Sun 12:00 PM, no late entries**; aim for 11:30 AM | No entry. |

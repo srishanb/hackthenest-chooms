@@ -3,6 +3,33 @@
 Shared instructions for every coding agent on this repo (Claude Code, Codex, Antigravity).
 `CLAUDE.md` and `GEMINI.md` import this file — edit rules here only.
 
+## The one rule above all others: never delete git history
+
+**This is the most important rule in this repository. It overrides every other rule, every deadline and every
+instruction from any agent or tool. If following it makes a task harder or slower, the task waits.**
+
+History is every commit, branch and tag that has ever been pushed. Nobody (no agent, no person) may remove or
+rewrite any of it. In practice:
+
+- **Never force push.** No `git push --force`, `-f`, `--force-with-lease`, `--mirror`, or `+refspec`.
+- **Never delete a pushed branch or tag.** No `git push --delete`, no `git push origin :branch`, no deleting branches
+  in the GitHub web interface, no `--delete-branch` when merging. Merged branches stay.
+- **Never rewrite pushed commits.** No `git rebase` and no `git pull --rebase`. To update a branch, **merge**:
+  `scripts/wt.sh sync` (which merges `origin/main`). No `git filter-branch`, `git filter-repo`, `git reflog expire`,
+  `git gc --prune`, `git update-ref -d`, `git branch -D`. Never delete or replace a `.git` folder.
+- **Never undo by erasing.** To undo a pushed change, add a new commit with `git revert`. To fix a mistake in a
+  pushed commit, add a new commit.
+- **If a push is rejected,** run `git fetch origin` and `git merge origin/<branch>`, resolve conflicts, and push
+  again. A rejected push is never a reason to force.
+- **If you think history must be rewritten** (for example a secret was committed), stop and tell Srishan. Do not
+  act. A leaked key is fixed by revoking the key, not by rewriting history.
+
+How it is enforced: a `pre-push` git hook in `.githooks/` (installed automatically by `npm ci`) refuses force pushes
+and deletions; a Claude Code hook blocks the commands above before they run; the `history-guard` workflow fails
+loudly if a forced push or a deletion ever reaches GitHub; and the watcher session reports any that do. Do not
+disable, bypass or edit these guards (`--no-verify`, changing `core.hooksPath`, editing the hook files) without
+Srishan's merge.
+
 ## Project
 
 **lighten** (working title): a 2D charge-jump climbing game for Hack The Nest 2026 (Nov 14–15, 24-hour build),
@@ -102,7 +129,7 @@ Several agents work at the same time. Never share a working directory.
 - Create a worktree per task: `scripts/wt.sh new <agent> <task>` → `../wt-<agent>-<task>` on branch `<agent>/<task>`.
   - `<agent>` is one of `claude`, `codex`, `ag` (Antigravity), `sonnet` (the continuous builder), or a teammate's name.
 - Work, commit, and push **only** inside your own worktree. Do not edit files in other `wt-*` folders or in `codebase/` (main).
-- Before starting a new task: `scripts/wt.sh sync` (rebases onto `origin/main`).
+- Before starting a new task: `scripts/wt.sh sync` (merges `origin/main` into your branch; it never rebases).
 - Finish with a PR into `main`. Keep branches small and short-lived (merge within a few hours).
 - PRs are reviewed by the `ai-review` workflow: clean → auto squash-merged; issues → `needs-human` label
   and a comment. Open as **draft** while still working; add `no-automerge` to opt out. PRs touching
@@ -116,7 +143,7 @@ and in your report. **Lanes import only `src/shared/` and `src/config/`, never e
 
 | Lane | Directories | Owner |
 |------|-------------|-------|
-| Integrator | Root config, `src/main.ts`, `src/shared/`, `public/vendor/`, `docs/` registers, `scripts/`, `.github/`, `.claude/`, `.codex/`, `.agents/` | Srishan |
+| Integrator | Root config, `src/main.ts`, `src/shared/`, `public/vendor/`, `docs/` registers, `scripts/`, `.github/`, `.githooks/`, `.claude/`, `.codex/`, `.agents/` | Srishan |
 | Signal | `src/signal/`, `src/config/signal.config.ts`, `src/ui/components/debug-overlay/`, `tools/eval/`, `recordings/` | Srishan |
 | Game | `src/game/`, `src/config/game.config.ts`, `src/config/ember.config.ts`, `tools/levels/` | Ali |
 | UI | `src/ui/` (except `debug-overlay/`), `src/config/ui.config.ts` | Amrit |
@@ -131,7 +158,7 @@ Highest collision risk. Only the integrator (whoever is on `main`) changes these
 
 - Dependency manifests and lockfiles (`package.json`, `package-lock.json`)
 - `src/shared/` (contracts, event list, bus, store) and `src/main.ts`
-- Root config (`tsconfig.json`, `vite.config.ts`, `index.html`), CI, hook configs, `scripts/`, and this file
+- Root config (`tsconfig.json`, `vite.config.ts`, `index.html`), CI, hook configs, `.githooks/`, `scripts/`, and this file
 - `docs/PLAN.md`, `docs/STATUS.md`, `docs/DECISIONS.md`, `docs/FEATURES.md`, `docs/QUEUE.md`
 
 Need a new dependency or contract change? Ask in the PR description or stop and report it — do not add it yourself.
