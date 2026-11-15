@@ -9,12 +9,12 @@
  */
 import * as Phaser from 'phaser';
 
-const TEXTURE_KEY = 'darkness';
+const TEXTURE_KEY = 'darkness-tight-fuel';
 const TEXTURE_SIZE = 512;
 /** Radius of the fully clear centre in the texture, in texture pixels. */
 const CLEAR_RADIUS = 12;
 /** Where full darkness is reached. Between the two the light fades out. */
-const DARK_RADIUS = 24;
+const DARK_RADIUS = 15;
 const DARK_ALPHA = 1;
 
 /** Create the image once per scene. `depth` must sit above the world and below "always readable" marks. */

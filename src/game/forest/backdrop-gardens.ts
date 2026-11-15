@@ -1,3 +1,4 @@
+import { sceneryCorruption } from '../../config/fuel-visibility.config';
 /** Seeded distant garden ledges. Decorative only: no physics bodies, bright rims or landing events. */
 import type { Scene } from 'phaser';
 import { ATMOSPHERE_CONFIG as C, unit } from '../../config/atmosphere.config';
@@ -22,6 +23,7 @@ export function createBackdropGardens(scene: Scene) {
   return {
     setSnow(value: number) { snow = unit(value); },
     update(c: number) {
+      c = sceneryCorruption(c);
       const camera = scene.cameras.main;
       const scroll = camera.scrollY * 0.55;
       const first = Math.floor(scroll / C.gardenSpacingPx) - 1;
