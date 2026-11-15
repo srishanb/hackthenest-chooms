@@ -1,9 +1,9 @@
 # After-job report: corruption screen effects, actual fuel and planting variety
 
 - Agent: codex for Neil Pawar
-- Branch/PR: codex/visual-atmosphere-plan; follow-up committed locally, not pushed into existing PR76 yet
+- Branch/PR: codex/visual-atmosphere-plan; follow-up to merged PR76; synchronized with origin/main7b01e09 before publication
 - Phase/plan: docs/plans/corruption-screen-fuel.md; user explicitly chose actual fuel, then KEEP PHYSICS/stronger visuals and fuel
-- Date/time: 2026-11-15 Eastern, approximately04:00–04:18
+- Date/time: 2026-11-15 Eastern, from approximately04:00 through final verification
 
 ## 1. What I believe is complete
 
@@ -47,10 +47,12 @@ Shared contract: optional lanternFuel01 only, separate commit. Dependencies: non
 ## 6. Follow-ups and questions for humans
 
 - Neil: test localhost3017, Pause→Settings→Preview corruption. Reduced motion disables shader/shake. Actual fuel requires playing, wax replenishes it; manual preview remains visual-only.
-- Review local follow-up before pushing; existing PR76 does not yet include these new mechanics.
+- Follow-up is published separately from merged PR76 under the user's earlier explicit request to push completed work to a PR; reviewer handles merging.
 - Team: full live-input/demo-GPU playtest and resource tuning. No fuel persistence currently; reload begins full. Original shader notice says credit game use, no standalone redistribution.
 
 ## 7. Can a teammate explain this?
 
 High corruption now distorts the scene and briefly shakes it, while movement stays predictable. The candle also has a real fuel reserve: valid high intensity burns it faster, and wax pickups refill it, so the light shrinks as fuel falls. The manual appearance preview and accessibility settings do not secretly change physics or the resource rules.
 Additional live request: green grass becomes crimson under corruption. Added four selective red palettes from existing CC0 crops; paired matching surfaces share movement coordinates and crossfade without a hard threshold. Background island grass also fades to red. Dirt colors and snowy stage identity stay intact. PR76 merged while this follow-up was in progress; final sync includes its merged baseline and PR75 falling-control/wax-spawn fix before handoff.
+
+Final sync: origin/main7b01e09 includes merged PR76 and PR75. Resolved duplicate-add/squash merge conflicts by preserving the new renderer work and upstream falling/menu documentation. Final check:415 tests/62 files and build pass. No diff versus origin/main in player physics or world/environment.ts. Browser full-corruption1.000 shows crimson real/background grass with no console errors. Observed WebGL loop FPS120.2. Current Effect strength was0 in test settings; raised to100% for final visual verification. Pause/Reduced motion controls inspected and restored motion setting afterward. Manual wax pickup/live calibrated-input test still not performed.
