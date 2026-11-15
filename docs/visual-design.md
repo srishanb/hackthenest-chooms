@@ -29,7 +29,7 @@ Lukya Forge: https://lukyaforge.itch.io/ancientforest . Ancient Forest 1.7 and D
 
 ## Cached source inventory
 
-The source PNG inventory was inspected once. Counts: Ancient 82, Dark 79. Selected mappings above are authoritative for this implementation; full source inventory is in the task scratch folder, not shipped.
+The source PNG inventory was inspected once. Counts: Ancient 82, Dark 79. Selected mappings above are authoritative for this implementation; the complete filename/dimension inventory is cached in docs/forest-source-inventory.json (metadata only; source packs are not shipped).
 
 ## Rendering, animation and policy
 
@@ -50,4 +50,20 @@ The normal source badge continues to identify simulator/live/replay/ordinary ass
 
 ## Integration overlaps
 
-Protected-visibility PR #51 merged during implementation; merged it normally and preserved its module/create/update hooks. Calibration-screen PR #52 merged and is preserved. Wax PR #50 is owned elsewhere: do not duplicate or alter its gameplay. Final sync/check details are recorded in the task report. No level data, physics modules, saves, ember logic or signal algorithms are edited.
+Protected-visibility PR #51 merged during implementation; merged it normally and preserved its module/create/update hooks. Calibration-screen PR #52 merged and is preserved. Wax/tutorial PR #50 also merged during final QA. Its authored motion, wind, ice, lesson copy, wax rewards and collision code are preserved. Forest tile/cap/prop positions now follow the existing simulated platform boxes; moving/ice rims and wind cues remain authoritative. Final sync/check details are recorded in the task report. No level data, physics modules, saves, ember logic or signal algorithms are edited.
+
+## Validation and screenshots
+
+- Final integration baseline: origin/main 2b275c8, including protected visibility (#51), calibration (#52), replay clock (#54), and tutorial/wax rewards (#50). No changes relative to that baseline in movement, collisions, section data, saves, recovery or signal processing.
+- `npm run check`: 42 test files / 277 tests pass, including five focused forest policy/determinism/frame-rate tests. `npm run build` passes. Existing vendor/pieeg.js non-module warning remains. `npm run check:levels`: all five current tutorial sections reachable.
+- SHA-256 inventory audit passes for all 18 imported PNGs (155,235 bytes). Resources load from local assets; no new runtime network integration or dependencies.
+- Browser QA at 1280x720: real keyboard walk/charge/jump/fall/land, E placement/pickup, R return to an ember on a ledge, and reload restoring its saved position. Controls tutorial, pause/resume, settings focus and sliders work. At 390x844 the settings fit with keyboard controls intact; the dev panel hides behind menus/dialogs to avoid overlap.
+- Effect-strength zero returns the visual row to neutral 0.2. Reduced motion stops atmospheric drift and preserves smooth color interpolation. Restoring normal input visibly removes the override. Unit checks cover invalid/fixed/zero-strength policy, independent preview behavior, 30/60/144 Hz recovery and alternating-target smoothing.
+- Available-machine observed FPS: 119.8–120.3 at calm/full corruption (roughly 8.3 ms frame cadence). This is Phaser's loop FPS, not a GPU timing/profile or target-hardware guarantee. Scenery is bounded at 72 prop pairs and 24 spores; textures load once.
+- Screenshots in `docs/screenshots/forest/`: calm, quarter, half, three-quarter, corrupted share the spawn/camera location; a moving ledge may occupy different points on its authored cycle. Pause, settings, mobile-settings and tutorial document existing UI flows. Ember-return shows the successful ledge recovery/reload before the tutorial/wax integration; those recovery modules are unchanged.
+
+## Known limits
+
+No live PiEEG/headset session, other GPU/browser, full timed climb, audio listening pass, or target demo laptop was tested. The current title/start flow remains the existing one; no new title/death screen was invented. Selected Dark Forest plants use compatible height fitting rather than exact paired animation sheets. Ruby uses one coherent Ancient set. Existing later-level layouts and physics remain the team's responsibility; the level reachability script checks the currently active tutorial set.
+
+Production preview verified locally with ?forestDemo=1: no diagnostic panel, no DEV canvas attributes, no browser errors; the query is ignored. Both temporary 3015 servers were stopped after QA. No deployment performed.
