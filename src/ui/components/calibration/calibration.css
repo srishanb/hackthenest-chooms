@@ -1,0 +1,9 @@
+/* Native modal holds keyboard focus; layout uses the existing UI theme tokens. */
+.calibration-panel {
+  margin: auto; width: var(--panel-max-width); max-width: calc(100% - var(--space-4));
+  max-height: calc(100% - var(--space-4)); overflow: auto;
+}
+.calibration-panel:not([open]) { display: none; }
+.calibration-panel::backdrop { background: var(--color-panel); }
+.calibration-panel progress { width: 100%; accent-color: var(--color-accent); }
+.calibration-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
