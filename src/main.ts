@@ -5,7 +5,8 @@
  * needs. Lanes never import each other, so reading this file top to bottom shows how the
  * whole game is wired: signal -> game -> UI and audio.
  */
-import { readLayouts, writeLayouts, STAGE_LAYOUT_KEY, STAGE_DRAFT_KEY } from './game/editor/layouts';
+import { readLayouts, writeLayouts, validateLayouts, layoutStorageKey, STAGE_LAYOUT_KEY, STAGE_DRAFT_KEY } from './game/editor/layouts';
+import { publishLayout } from './ui/components/stage-editor/publish-layout';
 import { createStageCanvas } from './game/editor/canvas';
 import { mountStageEditor } from './ui/components/stage-editor/stage-editor';
 import { menuButton } from './ui/menu-dom';
@@ -19,6 +20,7 @@ import { SIGNAL_CONFIG } from './config/signal.config';
 import { UI_CONFIG } from './config/ui.config';
 import { NARRATOR_LINES } from './content/narrator/lines';
 import { SECTIONS } from './content/sections/index';
+import { PUBLISHED_LAYOUTS } from './content/sections/published-layouts';
 import { neutralFrame } from './game/effects/effects-engine';
 import { pickCandleSeed } from './game/candle/candle-genome';
 import { mountCandleEmblem } from './game/candle/emblem';
@@ -44,7 +46,8 @@ const browserStorage = getLocalStorage(window);
 const query = new URLSearchParams(location.search);
 const draftStorage = getLocalStorage({ get localStorage() { return window.sessionStorage; } });
 const testing = query.has('editorTest');
-const persistedStages = readLayouts(browserStorage, STAGE_LAYOUT_KEY, SECTIONS);
+const layoutKey = layoutStorageKey(SECTIONS);
+const persistedStages = readLayouts(browserStorage, layoutKey, SECTIONS);
 const runtimeStages = testing ? readLayouts(draftStorage, STAGE_DRAFT_KEY, persistedStages) : persistedStages;
 const testIndex = Math.max(0, Math.min(runtimeStages.length - 1, Number(query.get('editorTest')) || 0));
 function gameBoot(): void {
@@ -88,11 +91,16 @@ createAudio({ bus, stores, config: AUDIO_CONFIG, narratorLines: NARRATOR_LINES }
 const route = (editor: boolean): void => { const url = new URL(location.href); url.searchParams.delete('editorTest'); url.searchParams.delete('editorDraft'); if (editor && testing) url.searchParams.set('editorDraft', '1'); if (editor) url.searchParams.set('editor','1'); else url.searchParams.delete('editor'); location.assign(url.href); };
 if (query.has('editor')) {
   mountStageEditor(requireElement('app'), {
-    stages: query.has('editorDraft') ? readLayouts(draftStorage, STAGE_DRAFT_KEY, persistedStages) : persistedStages, originals: SECTIONS,
+    stages: query.has('editorDraft') ? readLayouts(draftStorage, STAGE_DRAFT_KEY, persistedStages)
+      : readLayouts(browserStorage, layoutKey, PUBLISHED_LAYOUTS ? SECTIONS : readLayouts(browserStorage, STAGE_LAYOUT_KEY, SECTIONS)), originals: SECTIONS,
     render: createStageCanvas,
-    save(stages) {
-      writeLayouts(browserStorage, STAGE_LAYOUT_KEY, stages, SECTIONS);
+    async save(stages) {
+      const snapshot = validateLayouts(stages, SECTIONS);
+      const url = await publishLayout(snapshot);
+      // Browser persistence is a convenience after publication, never a condition for GitHub success.
+      try { writeLayouts(browserStorage, layoutKey, snapshot, SECTIONS); browserStorage?.removeItem(STAGE_LAYOUT_KEY); } catch { /* Publishing already succeeded. */ }
       try { draftStorage?.removeItem(STAGE_DRAFT_KEY); } catch { /* The persistent save already succeeded. */ }
+      return url;
     },
     test(stages, index) { writeLayouts(draftStorage, STAGE_DRAFT_KEY, stages, SECTIONS); const url = new URL(location.href); url.searchParams.delete('editor'); url.searchParams.delete('editorDraft'); url.searchParams.set('editorTest',String(index)); location.assign(url.href); },
     back: () => route(false),
