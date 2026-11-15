@@ -10,10 +10,13 @@ import type { UiComponentId } from '../shared/contracts/config';
 import type { EventBus } from '../shared/contracts/events';
 import type { GamePhase } from '../shared/contracts/game-state';
 import type { SignalHandle } from '../shared/contracts/signal-api';
+import type { SectionData } from '../shared/contracts/content';
 
 import type { UiActions } from './ui-actions';
 
 export interface UiDeps {
+  tutorialSections?: readonly SectionData[];
+  worldCanvas?: HTMLCanvasElement;
   actions?: UiActions;
   bus: EventBus;
   stores: Stores;

@@ -94,7 +94,7 @@ export const hud: UiComponent = {
         `${snapshot.stage.index + 1}/${snapshot.stage.total} · ${t(stageKey as StringKey)}` : '');
       stage.hidden = !flags.showStatus || !snapshot.stage;
       text(lesson, lessonKey && Object.hasOwn(STRINGS, lessonKey) ? t(lessonKey as StringKey) : '');
-      lesson.hidden = !flags.showStatus || !lessonKey;
+      lesson.hidden = !flags.showStatus || !lessonKey || snapshot.sectionId === 'tutorial' && lessonKey.startsWith('lesson.');
       text(status, t(view.statusKey));
       text(quality, `${t('hud.quality')} ${view.qualityPercent}%`);
       const cooldownSeconds = Math.ceil((snapshot.ember.cooldownRemainingMs ?? 0) / 1000);
