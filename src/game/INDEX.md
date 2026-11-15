@@ -15,7 +15,7 @@ Owner: Ali. Search here before adding a function.
 | `findLanding`, `findSupport`, `overlapsX`, `clampToWalls` | `player/collide.ts` | Swept one-way landing and wall clamp. |
 | `sectionAt`, `lowestPlatformY` | `world/bounds.ts` | Which section a height belongs to (derived from platforms). |
 | `landingEvents` | `world/fall-tracker.ts` | A landing becomes `land`, and past `minFallPxToOffer` also `fall { heightPx, big }`. Never resets or kills. |
-| `bodyInArea`, `findFinish`, `altitude01` | `world/finish.ts` | Area tests, the finish zone, and altitude (section 1 spawn 0, finish 1). |
+| `bodyInArea`, `findFinish`, `altitude01` | `world/finish.ts` | Legacy draft area helpers and altitude to the final stage ledge. Runtime completion uses landing events. |
 | `createPhaseController`, `PhaseController` | `world/phase-controller.ts` | Pause/resume (restores the earlier phase) and one-time finish; stepping only while `'playing'`. |
 | `writeSnapshot`, `SnapshotPatch` | `scenes/snapshot-writer.ts` | Publishes `sectionId`, `altitude01` (the refuge controller owns `inRefuge`) only when a field changes. |
 | `PlayerInput`, `PlayerState`, `PlatformBox`, `StepEvents` | `player/types.ts` | Plain data shared with the level checker (P4.2). |
@@ -32,6 +32,8 @@ Owner: Ali. Search here before adding a function.
 | `STATIC_PLATFORM` | `world/platform-types/static.ts` | Stationary-platform capabilities. |
 | `drawWorld` | `world/world-view.ts` | Render validated collision geometry and authored zones. |
 | `platformsAt`, `windAt` | `world/environment.ts` | Deterministic moving-platform positions/deltas and local gusts, shared with the level checker. |
+| `createStageProgress` | `world/stage-progress.ts` | Ordered one-time final-platform landings, resume at a manual ember and reset for a new run. No player movement or scene reloads. |
+| `stageWeatherAt`, `lessonAt` | `world/stage-weather.ts` | Gradual biome presentation by height and original tutorial hints by ledge height. |
 
 `tools/levels/check-levels.ts` runs `checkReachability` from `tools/levels/reach.ts` using the same `stepPlayer` as gameplay.
 Recovery keeps a marker placed after each return. Pickup is required before placing it elsewhere.

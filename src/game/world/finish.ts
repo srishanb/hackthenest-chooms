@@ -1,8 +1,8 @@
 /**
  * Finish and altitude: where the climb ends and how far along the player is.
  *
- * Why pure: the scene only asks "is the body in the finish?" and "how high is it?", so both are
- * unit-testable with plain section data. A body is "in" an area when its centre is inside it.
+ * The runtime wins through stage-progress landing events. Area helpers remain for old draft
+ * fixtures; they cannot complete the live game. Altitude targets the last stage's final ledge.
  */
 import type { AreaData, SectionData } from '../../shared/contracts/content';
 
@@ -19,10 +19,12 @@ export function findFinish(sections: readonly SectionData[]): AreaData | null {
   return null;
 }
 
-/** Height climbed: section 1's spawn is 0, the finish centre is 1. Clamped; 0 when there is no finish. */
+/** Height climbed: first spawn is 0 and final stage ledge is 1. Legacy drafts may supply an area. */
 export function altitude01(sections: readonly SectionData[], y: number): number {
   const start = sections[0]?.spawn.y;
-  const finish = findFinish(sections);
+  const last = sections.at(-1);
+  const finalPlatform = last?.platforms.find((platform) => platform.id === last.stage?.finalPlatformId);
+  const finish = finalPlatform ?? findFinish(sections);
   if (start === undefined || !finish) return 0;
   const span = start - finish.y;
   if (!(span > 0)) return 0;

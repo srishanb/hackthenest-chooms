@@ -2,8 +2,15 @@
 import type { Scene } from 'phaser';
 import type { PlatformBox } from '../player/types';
 import type { LoadedWorld } from './section-loader';
+import { stageWeatherAt } from './stage-weather';
+import { STAGES_CONFIG } from '../../config/stages.config';
 
 export function drawWorld(scene: Scene, world: LoadedWorld) {
+  const flakes = Array.from({ length: STAGES_CONFIG.snowflakeCount }, (_, index) =>
+    scene.add.circle(index * 137 % world.width, index * 83 % 540, 1 + index % 2, 0xe9f6ff, 0)
+      .setScrollFactor(0).setDepth(201));
+  let lastTimeMs = 0;
+  let snowDriftPx = 0;
   const colors: Record<string, number> = { static: 0x8a93a8, moving: 0x80c99d, slippery: 0x8cdef2 };
   const marks = world.platforms.map((platform) => {
     if (platform.motion) {
@@ -23,12 +30,24 @@ export function drawWorld(scene: Scene, world: LoadedWorld) {
       return { x, y: wind.y, sign, head, shaft };
     });
   }));
-  for (const section of world.sections) if (section.finish) {
-    const area = section.finish;
-    scene.add.rectangle(area.x, area.y, area.width, area.height, 0xf2c14e, 0.25).setDepth(1);
-  }
   return {
-    update(platforms: readonly PlatformBox[], timeMs: number, reducedMotion: boolean): void {
+    update(platforms: readonly PlatformBox[], timeMs: number, reducedMotion: boolean, playerY = 500): void {
+      const weather = stageWeatherAt(world.sections, playerY);
+      if (timeMs < lastTimeMs) snowDriftPx = 0;
+      const dtSeconds = Math.max(0, timeMs - lastTimeMs) / 1000;
+      lastTimeMs = timeMs;
+      if (!reducedMotion) snowDriftPx += dtSeconds * STAGES_CONFIG.snowWindPxPerSecond * weather.wind01;
+      // Screen-space flakes avoid a world-sized emitter. Gameplay time freezes on pause/recovery.
+      const seconds = reducedMotion ? 0 : timeMs / 1000;
+      for (const [index, flake] of flakes.entries()) {
+        const x = (index * 137 + (reducedMotion ? 0 : snowDriftPx)) % world.width;
+        const y = (index * 83 + seconds * STAGES_CONFIG.snowFallPxPerSecond) % 540;
+        flake.setPosition(x, y).setAlpha(weather.snow01 * STAGES_CONFIG.snowOpacity);
+      }
+      const r = Math.round(39 + weather.snow01 * 10);
+      const g = Math.round(50 + weather.snow01 * 14 + weather.wind01 * 3);
+      const b = Math.round(74 + weather.snow01 * 16);
+      scene.cameras.main.setBackgroundColor((r << 16) | (g << 8) | b);
       for (const mark of marks) {
         const platform = platforms.find((candidate) => candidate.id === mark.id);
         if (platform) { mark.body.setPosition(platform.x, platform.y); mark.rim.setPosition(platform.x, platform.y - mark.height / 2); }
