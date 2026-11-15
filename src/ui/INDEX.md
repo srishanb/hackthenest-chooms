@@ -47,3 +47,5 @@ HUD Fuel metric reads optional GameSnapshot.lanternFuel01; actual candle resourc
 `mountStageEditor`, `EditorDeps` (`components/stage-editor/stage-editor.ts`) provide authoring controls through injected render/save/test callbacks; no gameplay imports.
 
 Compass (bottom right): no ember box or N/S/E/W; the needle eases toward the nearest ember checkpoint (`stepNeedle`, `shortestTurn` in `components/hud/needle.ts`), and a flaming wax ball drawn by the game lane (`drawWaxBall` in UiDeps, from main.ts) sits over its centre. The distance is in the compass's accessible label.
+
+Caption presentation: `captionCues(text, durationMs, offsetMs?)` in `components/captions/captions-state.ts` produces short timed chunks and resumes at the current chunk. `captions` renders all narrator lines as glass inside the game frame, including the welcome after Play.

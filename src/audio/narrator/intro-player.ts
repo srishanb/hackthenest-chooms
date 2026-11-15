@@ -47,7 +47,7 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
     value.node = source; value.startedAt = context.currentTime;
     source.onended = () => { if (value.node !== source) return; value.node = null; source.disconnect(); gain.disconnect(); value.gain = null; if (speech === value) { speech = null; previewing = false; introducing = false; clearCaption(value.line.id); } };
     source.start(context.currentTime, value.offset);
-    bus.emit({type:'narrator_line',lineId:value.line.id,text:value.line.text,durationMs:remaining*1000});
+    bus.emit({type:'narrator_line',lineId:value.line.id,text:value.line.text,durationMs:remaining*1000,offsetMs:value.offset*1000});
   };
   const tick = (): void => {
     if (disposed) return;

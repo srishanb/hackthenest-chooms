@@ -24,4 +24,4 @@ Narration continues through `precision_window`/jumps and phase `ember`; only act
 
 startWorldSoundtrack / soundtrackPosition / metalPosition (world-soundtrack.ts): three-stage local music submix with Insistent transition underlay. createWorldAmbience (world-ambience.ts): quiet seasonal loops and cooldown cues through existing SFX bus. Audition: /src/audio/__tests__/world-audio-browser.html.
 
-`narrator_intro_requested` lets the launch screen play the selected welcome in menu phase, marks it served, and preserves normal pause/resume if the player begins early. The game stays stopped until Start climbing is chosen.
+The selected welcome now starts after Play on the actual game screen. Narrator events include optional `offsetMs` so caption chunks can resume at the current audio position. The legacy `narrator_intro_requested` helper remains compatible but is no longer requested by the launch screen.

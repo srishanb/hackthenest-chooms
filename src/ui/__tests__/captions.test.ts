@@ -8,7 +8,7 @@ import { createStore } from '../../shared/store';
 import { DEFAULT_SETTINGS, type Settings } from '../../shared/contracts/settings';
 import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state';
 import { captions } from '../components/captions/captions';
-import { CAPTION_MAX_MS, CAPTION_MIN_MS, captionDurationMs, captionText } from '../components/captions/captions-state';
+import { CAPTION_MAX_MS, CAPTION_MIN_MS, captionCues, captionDurationMs, captionText } from '../components/captions/captions-state';
 import { STRINGS, t } from '../strings';
 import type { UiDeps } from '../types';
 
@@ -164,5 +164,25 @@ describe('caption wording', () => {
     for (const key of Object.keys(STRINGS).filter((k) => k.startsWith('captions.'))) {
       expect(STRINGS[key as keyof typeof STRINGS], key).not.toMatch(banned);
     }
+  });
+});
+
+describe('long narration and resume',()=>{
+  const text='Welcome to the climb. Carry your candle carefully and keep an eye out for wax. Take your time and find your next ledge.';
+  it('keeps every word in readable chunks and honours durations beyond twelve seconds',()=>{
+    const cues=captionCues(text,24000);
+    expect(cues.length).toBeGreaterThan(1);expect(cues.map(cue=>cue.text).join(' ')).toBe(text);
+    expect(cues[0]!.atMs).toBe(0);expect(cues.at(-1)!.atMs).toBeLessThan(24000);
+    const {box,bus}=setup();bus.emit(line(text,24000));
+    vi.advanceTimersByTime(13000);expect(box.hidden).toBe(false);
+    vi.advanceTimersByTime(11001);expect(box.hidden).toBe(true);
+  });
+  it('resumes with the current chunk instead of repeating the first caption',()=>{
+    const cues=captionCues(text,24000);const offset=cues[1]!.atMs+10;
+    const resumed=captionCues(text,24000-offset,offset);
+    expect(resumed[0]!.text).toBe(cues[1]!.text);expect(resumed[0]!.atMs).toBe(0);
+    const {box,bus}=setup();bus.emit({...line(text,24000-offset),offsetMs:offset});
+    expect(box.textContent).toBe(cues[1]!.text);
+    bus.emit(line('',0));expect(box.hidden).toBe(true);expect(vi.getTimerCount()).toBe(0);
   });
 });
