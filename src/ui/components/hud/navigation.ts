@@ -2,7 +2,7 @@
 import type { NavigationSnapshot } from '../../../shared/contracts/game-state';
 export function navigationView(navigation: NavigationSnapshot | undefined, pixelsPerMetre: number) {
   if (!navigation || !Number.isFinite(pixelsPerMetre) || pixelsPerMetre <= 0 ||
-    !Number.isFinite(navigation.player.x) || !Number.isFinite(navigation.player.y)) return null;
+    !Number.isFinite(navigation.originY) || !Number.isFinite(navigation.player.x) || !Number.isFinite(navigation.player.y)) return null;
   const checkpoints = navigation.checkpoints.filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
   let nearest: (typeof checkpoints)[number] | undefined;
   let distancePx = Infinity;

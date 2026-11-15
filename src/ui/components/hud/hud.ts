@@ -62,6 +62,13 @@ export const hud: UiComponent = {
     try { const saved = Number(localStorage.getItem('lighten.height-best-px.v1')); if (Number.isFinite(saved) && saved > 0) bestPx = saved; } catch { /* Private mode: session best still works. */ }
     panel.className = 'hud__context';
     const layout = document.createElement('div'); layout.className = 'hud'; layout.append(lantern, metrics, pause, checkpoint, panel); root.append(layout);
+    let savedBestPx = bestPx;
+    const saveBest = (): void => {
+      if (bestPx <= savedBestPx) return;
+      try { localStorage.setItem('lighten.height-best-px.v1', String(bestPx)); savedBestPx = bestPx; } catch { /* Session-only best. */ }
+    };
+    const onPageHide = (): void => saveBest();
+    window.addEventListener('pagehide', onPageHide);
     let signalState = signal.reader.getState();
     const text = (element: HTMLElement, value: string): void => {
       if (element.textContent !== value) element.textContent = value;
@@ -71,10 +78,11 @@ export const hud: UiComponent = {
       const navigation = snapshot.navigation;
       const nav = navigationView(navigation, HUD_WORLD_PIXELS_PER_METRE);
       const heightPx = (nav?.heightMetres ?? 0) * HUD_WORLD_PIXELS_PER_METRE;
-      if (heightPx > bestPx) { bestPx = heightPx; try { localStorage.setItem('lighten.height-best-px.v1', String(bestPx)); } catch { /* Session-only best. */ } }
+      bestPx = Math.max(bestPx, heightPx);
+      if (snapshot.phase !== 'playing') saveBest();
       text(height, nav ? `${nav.heightMetres.toFixed(1)} ${t('hud.metres')}` : '—');
       text(best, `${(bestPx / HUD_WORLD_PIXELS_PER_METRE).toFixed(1)} ${t('hud.metres')}`);
-      text(waxMetric, String(snapshot.wax?.collected ?? 0));
+      text(waxMetric, snapshot.wax?.total ? `${snapshot.wax.collected}/${snapshot.wax.total}` : String(snapshot.wax?.collected ?? 0));
       gauge.value = navigation?.lanternRadiusPx ?? 0;
       gauge.title = `${t('hud.lantern')} · ${Math.round(gauge.value)} px`;
       text(targetTitle, nav?.checkpoint ? t('hud.checkpoint') : t('hud.noCheckpoint'));
@@ -82,6 +90,8 @@ export const hud: UiComponent = {
       compass.classList.toggle('is-empty', !nav?.checkpoint);
       needle.style.transform = `rotate(${nav?.checkpoint?.angleDegrees ?? 0}deg)`;
       const flags = stores.settings.get().hud;
+      lantern.hidden = metrics.hidden = !flags.showStatus;
+      checkpoint.hidden = !flags.showEmber;
       const view = hudState(snapshot, signalState, SIGNAL_CONFIG.staleAfterMs);
       const lessonKey = snapshot.lessonKey;
       text(lesson, lessonKey && Object.hasOwn(STRINGS, lessonKey) ? t(lessonKey as StringKey) : '');
@@ -92,10 +102,8 @@ export const hud: UiComponent = {
       text(ember, cooldownSeconds > 0 ? `${t('ember.cooldownLabel')} ${cooldownSeconds}s` : t(view.emberKey));
       const waxState = snapshot.wax;
       const boostSeconds = Math.ceil((waxState?.boostRemainingMs ?? 0) / 1000);
-      text(wax, waxState ? `${t('wax.label')} ${waxState.collected}/${waxState.total}` +
-        (waxState.total > 0 && waxState.collected === waxState.total ? ` · ${t('wax.complete')}` : '') +
-        (boostSeconds > 0 ? ` · ${t('wax.boost')} ${boostSeconds}s` : '') : '');
-      wax.hidden = !flags.showStatus || !waxState?.total;
+      text(wax, boostSeconds > 0 ? `${t('wax.boost')} ${boostSeconds}s` : '');
+      wax.hidden = !flags.showStatus || boostSeconds <= 0;
       text(composure, `${t('hud.composure')} ${view.intensityKey === null ? t('hud.unavailable') : t(view.intensityKey)}`);
       text(prompt, view.prompt ?? '');
       progress.value = view.progressPercent;
@@ -115,7 +123,8 @@ export const hud: UiComponent = {
       reward.hidden = !stores.settings.get().hud.showStatus;
       rewardTimer = setTimeout(() => { reward.hidden = true; }, WAX_CONFIG.toastMs);
     }));
+    cleanups.push(bus.on('land', saveBest));
     cleanups.push(bus.on('run_restart', () => { clearTimeout(rewardTimer); reward.hidden = true; }));
-    return () => { clearTimeout(rewardTimer); for (const cleanup of cleanups) cleanup(); pause.removeEventListener('click', onPause); layout.remove(); };
+    return () => { clearTimeout(rewardTimer); for (const cleanup of cleanups) cleanup(); saveBest(); window.removeEventListener('pagehide', onPageHide); pause.removeEventListener('click', onPause); layout.remove(); };
   },
 };

@@ -32,8 +32,7 @@
 .hud__prompt, .hud__wax-reward { color: var(--color-accent); }
 .hud__lesson { color: var(--color-text); }
 .hud__context progress { width: 100%; accent-color: var(--color-accent); }
-/* Resource totals remain in the read-only status context for accessibility. */
-.hud__context .hud__wax { display: none; }
+.hud__context .hud__wax { color: var(--color-accent); }
 @media (max-width: 600px) {
   .hud__lantern { grid-template-columns: 38px 80px; }
   .hud__flame { width: 36px; height: 44px; }

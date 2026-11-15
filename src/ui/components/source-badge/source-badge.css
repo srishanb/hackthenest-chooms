@@ -38,3 +38,7 @@
 .source-preview summary { cursor: pointer; padding: var(--space-1) var(--space-2); background: var(--color-panel); border-radius: var(--radius); }
 .source-preview:not([open]) { opacity: .75; }
 #ui[data-phase='paused'] .source-preview, #ui[data-phase='menu'] .source-preview { display: none; }
+@media (max-width: 600px) {
+  #ui[data-phase='paused'] .ui-slot[data-slot='top-right'],
+  #ui[data-phase='menu'] .ui-slot[data-slot='top-right'] { top: var(--space-1); left: 50%; right: auto; transform: translateX(-50%); z-index: 2; }
+}
