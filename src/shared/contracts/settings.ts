@@ -33,7 +33,9 @@ export interface Settings {
   /** Scales every signal-driven effect's swing away from neutral, 0 (none) to 1 (full). */
   effectStrength: number;
   landingShake: boolean;
-  hud: { showSignal: boolean; showEmber: boolean; showStatus: boolean };
+  hud: { showSignal: boolean; showEmber: boolean; showStatus: boolean;
+    /** The stage info card beside the candle emblem; off by default. */
+    showStageDetails: boolean };
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -50,5 +52,5 @@ export const DEFAULT_SETTINGS: Settings = {
   reducedMotion: false,
   effectStrength: 1,
   landingShake: false,
-  hud: { showSignal: false, showEmber: true, showStatus: true },
+  hud: { showSignal: false, showEmber: true, showStatus: true, showStageDetails: false },
 };
