@@ -42,7 +42,7 @@ connection code may still land: treat the live source as untested until a record
 
 ## Open pull requests
 
-All three are drafts.
+These three are drafts. Documentation pull requests (#131 to #136) were also open at 11:30 AM.
 
 | PR | Title | State |
 |---|---|---|
@@ -58,7 +58,7 @@ All three are drafts.
 | H-19 | Midnight checkpoint recordings under `recordings/` | The core claim (eyes-closed rise) is unproven until a real recording exists |
 | H-12, H-13 | Playtest on four heads and a stranger; offline preview test | Thresholds and the offline demo are untested |
 | H-16, H-17, H-24 | Devpost draft, demo video, final submission | Deadlines Sun 12:00 AM (draft) and Sun 12:00 PM (final) |
-| H-25 | Add the branch-protection ruleset | The repo is now public (H-23's visibility step is done: `gh repo view` reports PUBLIC) and the game is live on GitHub Pages. The ruleset is unverified |
+| H-25 | Add the branch-protection ruleset | The repo is now public (H-23's visibility step is done: `gh repo view` reports PUBLIC) and the game is live on GitHub Pages. A ruleset named "dont be dumb" exists and is active, but the GitHub API shows only a `deletion` rule and no branch patterns in its conditions, so force-push blocking is not confirmed |
 
 See [HUMAN_TASKS.md](HUMAN_TASKS.md) for the full list and [agent-reports/](agent-reports/) for every task's
 verification notes.
