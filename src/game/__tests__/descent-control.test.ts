@@ -1,11 +1,41 @@
 /** Extra correction is confined to strict descent; launch, ascent, apex and vertical physics stay identical. */
 import { expect, it } from 'vitest';
 import { GAME_CONFIG } from '../../config/game.config';
+import { DEFAULT_SETTINGS } from '../../shared/contracts/settings';
+import { createKeyboardInput } from '../keyboard-input';
 import { createPlayer, stepPlayer } from '../player/movement';
 
 const { falling: _falling, ...original } = GAME_CONFIG;
 const right = { left: false, right: true, jump: false };
 const dt = 1000 / GAME_CONFIG.stepHz;
+
+it.each([['KeyA', -1], ['KeyD', 1]] as const)('%s reaches a nearby ledge during a short, fast fall', (code, direction) => {
+  const keyboard = createKeyboardInput(() => DEFAULT_SETTINGS.keys);
+  keyboard.keyDown(code);
+  const platforms = [{ id: 'nearby', x: 480 + direction * 120, y: 200, width: 160, height: 16 }];
+  let player = { ...createPlayer(480, 75), vy: 600 };
+  let before = { ...player };
+  const previousTuning = { ...GAME_CONFIG, falling: { ...GAME_CONFIG.falling!, accelerationX: 1600, speedX: 300 } };
+  // Only about 140 ms remains before crossing this ledge: a slow reversal test misses this case.
+  for (let frame = 0; frame < 18; frame++) {
+    const input = keyboard.read();
+    if (!player.grounded) player = stepPlayer(player, input, platforms, 960, GAME_CONFIG, dt).state;
+    if (!before.grounded) before = stepPlayer(before, input, platforms, 960, previousTuning, dt).state;
+  }
+  expect(player.platformId).toBe('nearby');
+  expect(before.grounded).toBe(false);
+  expect((player.x - 480) * direction).toBeGreaterThan(35);
+});
+
+it.each([['KeyA', -1], ['KeyD', 1]] as const)('%s reverses opposing launch momentum within 100 ms of descent', (code, direction) => {
+  const keyboard = createKeyboardInput(() => DEFAULT_SETTINGS.keys);
+  keyboard.keyDown(code);
+  let player = { ...createPlayer(480, -1000), vx: -direction * 366, launchVx: -direction * 366, vy: 600 };
+  for (let frame = 0; frame < 12; frame++) player = stepPlayer(player, keyboard.read(), [], 960, GAME_CONFIG, dt).state;
+  expect(player.vx * direction).toBeGreaterThan(0);
+  for (let frame = 0; frame < 12; frame++) player = stepPlayer(player, keyboard.read(), [], 960, GAME_CONFIG, dt).state;
+  expect(player.vx).toBe(direction * GAME_CONFIG.falling!.speedX);
+});
 
 it('preserves all ascent/apex state and grounded walking/launch behavior', () => {
   for (const vy of [-600, -10, 0]) {
