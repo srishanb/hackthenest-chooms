@@ -44,6 +44,7 @@ import {
   waitForCtrlC,
   yellow,
 } from './run/_lib.mjs';
+import { findExternalReferences, findLocalReferences } from './tools/pipeline/build.mjs';
 
 const COMMANDS = [
   ['doctor', 'check that this computer can run the game'],
@@ -149,6 +150,15 @@ function selfTest(features) {
   expect(parsed.words.join(',') === 'game-movement,?x=1' && parsed.flags.has('tests-only'), 'parseArgs');
   expect(versionAtLeast('26.13.0', [22, 12]) && versionAtLeast('22.12.0', [22, 12]), 'versionAtLeast: new enough');
   expect(!versionAtLeast('22.11.9', [22, 12]) && !versionAtLeast('20.19.0', [22, 12]), 'versionAtLeast: too old');
+
+  // Build audit helpers (tools/pipeline/build.mjs).
+  const html = '<link rel="stylesheet" href="./assets/a.css"><script src="https://cdn.example.com/x.js"></script><script src="//cdn.example.com/y.js"></script><a href="#top">x</a>';
+  expect(findExternalReferences(html, 'html').join(',') === 'https://cdn.example.com/x.js,//cdn.example.com/y.js', 'findExternalReferences: html');
+  expect(findExternalReferences('<script src="./vendor/pieeg.js"></script>', 'html').length === 0, 'findExternalReferences: local html is fine');
+  expect(findExternalReferences('a{background:url("https://x.example/a.png")} @import "https://x.example/b.css";', 'css').length === 2, 'findExternalReferences: css');
+  expect(findExternalReferences('a{background:url(./a.png)} b{background:url(data:image/png;base64,AAAA)}', 'css').length === 0, 'findExternalReferences: local and data urls are fine');
+  expect(findLocalReferences(html).join(',') === './assets/a.css', 'findLocalReferences: only local files, no anchors or remote urls');
+  expect(findLocalReferences('<script type="module" src="./assets/i.js?v=1"></script>').join(',') === './assets/i.js', 'findLocalReferences: drops the query');
 
   // Feature files.
   expect(features.length >= 10, `expected at least 10 feature files, found ${features.length}`);

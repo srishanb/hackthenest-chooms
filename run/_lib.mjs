@@ -133,6 +133,23 @@ export function npmRun(script, args = []) {
   });
 }
 
+/**
+ * Run a Node script from this repo to the end, showing its output. Resolves to its exit code.
+ * @param {string} file repo-relative path
+ * @param {string[]} [args]
+ * @returns {Promise<number>}
+ */
+export function nodeRun(file, args = []) {
+  return new Promise((done) => {
+    const child = spawn(process.execPath, [join(ROOT, file), ...args], { cwd: ROOT, stdio: 'inherit' });
+    child.on('error', (error) => {
+      console.error(red(`could not start "node ${file}": ${error.message}`));
+      done(1);
+    });
+    child.on('exit', (code) => done(code ?? 1));
+  });
+}
+
 /** Stop a child process and everything it started. @param {import('node:child_process').ChildProcess} child */
 function killTree(child) {
   if (!child.pid || child.exitCode !== null) return;
@@ -255,9 +272,10 @@ export function waitForCtrlC() {
 
 /**
  * @typedef {Object} FeatureCommand
- * @property {string} script  an npm script name, for example "eval"
+ * @property {string} [script] an npm script name, for example "eval"
+ * @property {string} [node]   or: a repo-relative Node script to run with this Node, for example a self-test
  * @property {string[]} [args]
- * @property {string} [needs] repo-relative file that must exist, or the command is skipped
+ * @property {string} [needs]  repo-relative file that must exist, or the command is skipped
  *
  * @typedef {Object} Feature
  * @property {string} id       short name used on the command line (matches the file name)
@@ -348,12 +366,14 @@ export async function runAutomated(feature) {
   }
   for (const command of feature.commands) {
     if (!ok) break;
+    const label = command.script ? `npm run ${command.script}` : `node ${command.node}`;
     if (command.needs && !existsSync(join(ROOT, command.needs))) {
-      skipped.push(`npm run ${command.script} (needs ${command.needs})`);
+      skipped.push(`${label} (needs ${command.needs})`);
       continue;
     }
     ran += 1;
-    ok = (await npmRun(command.script, command.args ?? [])) === 0;
+    if (command.script) ok = (await npmRun(command.script, command.args ?? [])) === 0;
+    else if (command.node) ok = (await nodeRun(command.node, command.args ?? [])) === 0;
   }
   return { ok, ran, skipped };
 }
