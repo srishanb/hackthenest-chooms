@@ -1,0 +1,9 @@
+/* Settings > Signal section. Colours and spacing come from tokens.css. */
+.signal-presets__list { display: grid; gap: var(--space-2); width: 100%; }
+.signal-presets__row { display: flex; gap: var(--space-2); align-items: stretch; }
+.signal-presets__row > button:first-child { flex: 1; justify-content: flex-start; }
+.signal-presets__row > button[aria-pressed='true'] { border-color: var(--color-accent); background: var(--color-hover); color: var(--color-accent); }
+.signal-presets__small { min-height: 0; padding: 0 var(--space-3); font-size: var(--text-xs); }
+.signal-presets__import { display: flex; gap: var(--space-2); align-items: center; color: var(--color-text-dim); width: 100%; }
+.signal-presets__status { margin: 0; width: 100%; color: var(--color-accent); min-height: 1.4em; }
+.signal-presets input[type='text'] { flex: 1; min-width: 0; padding: var(--space-2); background: var(--color-inset); color: var(--color-text); border: 1px solid var(--color-panel-border); }

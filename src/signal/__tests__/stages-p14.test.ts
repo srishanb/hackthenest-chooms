@@ -102,12 +102,15 @@ describe('url params', () => {
       algo: 'passthrough-v0',
       mode: 'fixed',
       replay: 'run1.jsonl',
+      preset: null,
     });
   });
   it('ignores anything unrecognised, including path tricks', () => {
-    expect(parseSignalUrlParams('')).toEqual({ source: null, algo: null, mode: null, replay: null });
-    expect(parseSignalUrlParams('?source=usb&mode=wild&algo=../x&replay=../secret.jsonl')).toEqual({ source: null, algo: null, mode: null, replay: null });
+    expect(parseSignalUrlParams('')).toEqual({ source: null, algo: null, mode: null, replay: null, preset: null });
+    expect(parseSignalUrlParams('?source=usb&mode=wild&algo=../x&replay=../secret.jsonl')).toEqual({ source: null, algo: null, mode: null, replay: null, preset: null });
     expect(parseSignalUrlParams('?replay=a/b.jsonl').replay).toBeNull();
+    expect(parseSignalUrlParams('?preset=calm-climb').preset).toBe('calm-climb');
+    expect(parseSignalUrlParams('?preset=../x').preset).toBeNull();
     expect(parseSignalUrlParams('?replay=notes.txt').replay).toBeNull();
   });
 });
