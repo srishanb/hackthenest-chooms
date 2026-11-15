@@ -24,6 +24,8 @@ body {
 }
 
 #ui {
+  /* ui-frame.ts sets left, top, width and height so this layer covers the canvas, not the window. */
+  container-type: size;
   z-index: var(--layer-ui);
   pointer-events: none;
   font-family: var(--font-ui);

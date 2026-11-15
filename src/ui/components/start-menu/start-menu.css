@@ -1,6 +1,6 @@
 /* A separate forest launch screen using existing local assets, fonts and interface tokens. */
 .launch-screen {
-  position: fixed; inset: 0; z-index: 2; box-sizing: border-box; overflow: auto;
+  position: absolute; inset: 0; z-index: 2; box-sizing: border-box; overflow: auto;
   display: flex; flex-direction: column; justify-content: flex-start;
   min-height: 100%; padding: var(--launch-spacing);
   color: var(--color-text); background: var(--launch-floor); isolation: isolate;

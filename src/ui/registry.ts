@@ -27,6 +27,7 @@ import './theme/layout.css';
 import './theme/glass.css';
 import type { UiComponent, UiDeps } from './types';
 import { createUiActions } from './ui-actions';
+import { lockUiToCanvas } from './ui-frame';
 
 export const COMPONENTS: readonly UiComponent[] = [
   startMenu,
@@ -56,7 +57,7 @@ export function mountUi(root: HTMLElement, deps: UiDeps, config: UiConfig): () =
     slots.set(slot, element);
   }
 
-  const cleanups: Array<() => void> = [];
+  const cleanups: Array<() => void> = [lockUiToCanvas(root)];
   const phaseAware: Array<{ wrapper: HTMLElement; visibleIn: readonly GamePhase[] }> = [];
 
   for (const component of COMPONENTS) {

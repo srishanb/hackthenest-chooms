@@ -19,15 +19,15 @@ const deps={stores:{snapshot,settings},signal};
 const remove=hud.mount(root,deps);
 check('initial ember and quality visible',root.textContent.includes('Recovery ember available')&&root.textContent.includes('60%'));
 check('optional composure hidden initially',Array.from(root.querySelectorAll('section > div')).some(e=>e.hidden&&e.textContent.includes('Lower')));
-settings.set({...settings.get(),hud:{showSignal:true,showEmber:false,showStatus:false}});
+settings.set({...settings.get(),hud:{showSignal:true,showEmber:false,showStatus:false,showClimbInfo:true}});
 check('settings update hides quality and shows composure',Array.from(root.querySelectorAll('section > div')).some(e=>!e.hidden&&e.textContent.includes('Lower'))&&root.querySelector('.hud__status').hidden);
 state={...state,valid:false,sampleAgeMs:999};for(const fn of listeners)fn(state);
 check('stale signal shows unavailable composure',root.textContent.includes('unavailable'));
-settings.set({...settings.get(),hud:{showSignal:true,showEmber:true,showStatus:true}});
+settings.set({...settings.get(),hud:{showSignal:true,showEmber:true,showStatus:true,showClimbInfo:true}});
 snapshot.set({...snapshot.get(),ember:{...snapshot.get().ember,active:true,progress01:0.5},promptKey:'private.unknown'});
 check('progress updates without raw unknown prompt',root.querySelector('progress').value===50&&root.querySelector('.hud__prompt').hidden&&!root.textContent.includes('private.unknown'));
 remove();check('unmount removes DOM and signal listener',!root.children.length&&listeners.size===0);
 snapshot.set({...snapshot.get(),promptKey:'hud.emberReady'});
-settings.set({...settings.get(),hud:{showSignal:false,showEmber:false,showStatus:false}});
+settings.set({...settings.get(),hud:{showSignal:false,showEmber:false,showStatus:false,showClimbInfo:true}});
 check('post-unmount store updates do not recreate DOM',root.children.length===0);
 </script></body></html>

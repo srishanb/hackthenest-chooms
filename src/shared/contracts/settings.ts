@@ -33,7 +33,8 @@ export interface Settings {
   /** Scales every signal-driven effect's swing away from neutral, 0 (none) to 1 (full). */
   effectStrength: number;
   landingShake: boolean;
-  hud: { showSignal: boolean; showEmber: boolean; showStatus: boolean };
+  /** `showClimbInfo` is the bottom-left panel: stage, signal status and quality, tips, ember hint. Off by default. */
+  hud: { showSignal: boolean; showEmber: boolean; showStatus: boolean; showClimbInfo: boolean };
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -50,5 +51,5 @@ export const DEFAULT_SETTINGS: Settings = {
   reducedMotion: false,
   effectStrength: 1,
   landingShake: false,
-  hud: { showSignal: false, showEmber: true, showStatus: true },
+  hud: { showSignal: false, showEmber: true, showStatus: true, showClimbInfo: false },
 };

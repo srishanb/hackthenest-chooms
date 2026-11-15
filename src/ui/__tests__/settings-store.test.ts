@@ -51,6 +51,21 @@ describe('settings store', () => {
   });
 });
 
+describe('climb info panel setting', () => {
+  it('is off by default, and an older saved hud without it still loads with it off', () => {
+    expect(DEFAULT_SETTINGS.hud.showClimbInfo).toBe(false);
+    const saved = JSON.stringify({ hud: { showSignal: true, showEmber: false, showStatus: true } });
+    const loaded = loadSettings(fakeStorage(saved));
+    expect(loaded.hud.showClimbInfo).toBe(false);
+    expect(loaded.hud.showSignal).toBe(true);
+    expect(loaded.hud.showEmber).toBe(false);
+  });
+  it('keeps a saved true', () => {
+    const saved = JSON.stringify({ hud: { ...DEFAULT_SETTINGS.hud, showClimbInfo: true } });
+    expect(loadSettings(fakeStorage(saved)).hud.showClimbInfo).toBe(true);
+  });
+});
+
 describe('settings safety and persistence', () => {
   it('rejects out-of-range values while preserving valid siblings', () => {
     const settings = loadSettings(fakeStorage(JSON.stringify({

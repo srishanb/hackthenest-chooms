@@ -54,7 +54,7 @@
   --font-ui: 'Courier New', ui-monospace, monospace;
   --panel-shadow: 0 24px 80px #000b, inset 0 0 54px #182c3c88;
   --gold-glow: 0 0 8px #e6b85d88, 0 0 28px #c7772e44;
-  --hud-corner: clamp(12px, 2vw, 28px);
+  --hud-corner: clamp(12px, 2cqw, 28px); /* cqw: the UI layer's width, which follows the canvas */
   --hud-needle: #ffb63f;
   --overlay-dim: #050914a8;
 }
