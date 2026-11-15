@@ -1,0 +1,38 @@
+name: history-guard
+
+# Fails loudly when a forced push or a branch/tag deletion reaches GitHub (AGENTS.md, rule one:
+# never delete git history). This DETECTS, it cannot PREVENT. Prevention is the pre-push hook
+# in .githooks/ and, once the repo is public, a GitHub ruleset (docs/HUMAN_TASKS.md, H-25).
+
+on:
+  push:
+  delete:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Fail on forced push or deletion
+        env:
+          EVENT: ${{ github.event_name }}
+          FORCED: ${{ github.event.forced }}
+          REF: ${{ github.ref }}
+          ACTOR: ${{ github.actor }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.event.after }}
+          DELETED_REF: ${{ github.event.ref }}
+          DELETED_TYPE: ${{ github.event.ref_type }}
+        run: |
+          if [ "$EVENT" = "delete" ]; then
+            echo "::error::HISTORY DELETED: $DELETED_TYPE '$DELETED_REF' was deleted by $ACTOR"
+            exit 1
+          fi
+          if [ "$EVENT" = "push" ] && [ "$FORCED" = "true" ]; then
+            echo "::error::HISTORY REWRITTEN: forced push to $REF by $ACTOR (before $BEFORE, after $AFTER)"
+            exit 1
+          fi
+          echo "No forced push or deletion."
