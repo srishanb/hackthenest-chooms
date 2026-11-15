@@ -1,7 +1,7 @@
 /** Fuel is an actual resource but never changes jump physics or light radius during a jump. */
 import { expect, it } from 'vitest';
 import { burnFuel, createLanternFuel } from '../forest/lantern-fuel';
-import { waxBenefit01 } from '../../config/lantern-fuel.config';
+import { waxBenefit01, corruptionVisibilityRadius } from '../../config/lantern-fuel.config';
 it('burns faster with actual corruption and integrates at different frame rates', () => {
   expect(burnFuel(1, 1, 10000)).toBeLessThan(burnFuel(1, 0, 10000));
   const simulate = (fps: number) => { let fuel = 1; for (let i = 0; i < fps * 10; i++) fuel = burnFuel(fuel, 0.8, 1000 / fps); return fuel; };
@@ -30,4 +30,14 @@ it('holds light reach in flight despite burn, wax pickup or another base-radius 
   fuel.update(1, 60000); expect(fuel.lightRadius(110, true)).toBe(takeoff);
   expect(fuel.lightRadius(110, false)).toBeLessThan(takeoff);
   const held = fuel.lightRadius(110, true); fuel.refill(); expect(fuel.lightRadius(260, true)).toBe(held);
+});
+
+it('caps maximum corruption sight after any wax boost or airborne held radius, including visual preview', () => {
+  for (const radius of [100, 260, 520, 2000]) expect(corruptionVisibilityRadius(radius, 1)).toBe(80);
+  expect(corruptionVisibilityRadius(60, 1)).toBe(60);
+  expect(corruptionVisibilityRadius(260, 0.2)).toBe(260);
+  expect(corruptionVisibilityRadius(260, 0.8)).toBeLessThan(260);
+  const fuel = createLanternFuel();
+  fuel.lightRadius(520, false); fuel.refill();
+  expect(corruptionVisibilityRadius(fuel.lightRadius(520, true), 1)).toBe(80);
 });
