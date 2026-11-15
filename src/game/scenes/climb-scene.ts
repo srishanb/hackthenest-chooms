@@ -1,4 +1,4 @@
-import { LANTERN_FUEL_CONFIG, corruptionVisibilityRadius } from '../../config/lantern-fuel.config';
+import { LANTERN_LIGHT_CONFIG, corruptionVisibilityRadius } from '../../config/lantern-light.config';
 /**
  * The climb scene: draws the world, runs the fixed-step player physics and feeds the effects.
  *
@@ -26,7 +26,7 @@ import { flameSizeFromRadius } from '../candle/flame';
 import { createPortraitView } from '../candle/portrait-view';
 import { grownMovement, waxGrowth } from '../candle/growth';
 import { createProtectedVisibility, type ProtectedVisibility } from '../effects/protected-visibility';
-import { createLanternFuel } from '../forest/lantern-fuel';
+import { createLanternLight } from '../forest/lantern-light';
 import { createKeyboardInput } from '../keyboard-input';
 import { createWaxRewards } from '../wax/rewards';
 import { createWaxView } from '../wax/view';
@@ -84,7 +84,7 @@ export class ClimbScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Rectangle;
   private darkness!: Phaser.GameObjects.Image;
   private lanternMark!: Phaser.GameObjects.Arc;
-  private fuel = createLanternFuel();
+  private light = createLanternLight();
   private forest!: ForestWorld;
   private candle!: ReturnType<typeof createCandleView>;
   private portrait!: ReturnType<typeof createPortraitView>;
@@ -204,10 +204,8 @@ export class ClimbScene extends Phaser.Scene {
     const offAssist = this.deps.bus.on('ember_assist_requested', () => this.returnToEmber(this.ember.assist()));
     const offCancel = this.deps.bus.on('ember_cancel_request', () => this.ember.cancel());
     const offCheckpoint = this.deps.bus.on('checkpoint_restart_requested', () => this.returnToEmber(this.ember.restartAtAnchor()));
-    const offFuelWax = this.deps.bus.on('wax_collected', () => this.fuel.refill());
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, offFuelWax);
     const offRestart = this.deps.bus.on('run_restart', () => {
-      this.fuel.reset();
+      this.light.reset();
       this.wax.reset();
       this.stages.reset();
       const spawn = this.ember.restart();
@@ -249,7 +247,7 @@ export class ClimbScene extends Phaser.Scene {
   }
 
   private visibleRadius(base: number, airborne: boolean, visualCorruption = this.deps.stores.effects.get().forestCorruption): number {
-    const radius = this.fuel.lightRadius(this.wax.lightRadius(base, airborne, this.fuel.waxBenefit), airborne);
+    const radius = this.light.lightRadius(this.wax.lightRadius(base, airborne, this.light.waxBenefit), airborne);
     const signal = this.deps.composure.getState();
     const actual = signal.valid && signal.mode !== 'fixed' ? signal.intensity : 0.2;
     return corruptionVisibilityRadius(radius, Math.max(actual, visualCorruption), this.wax.lightPulse01());
@@ -286,24 +284,24 @@ export class ClimbScene extends Phaser.Scene {
         { windAccelerationX: windAt(sections, this.state, this.worldTimeMs) });
       this.state = out.state;
       const actualSignal = composure.getState();
-      this.fuel.update(actualSignal.valid && actualSignal.mode !== 'fixed' ? actualSignal.intensity : 0.2, stepMs);
-      this.wax.update(this.state, stepMs, this.fuel.waxBenefit);
+      this.light.update(actualSignal.valid && actualSignal.mode !== 'fixed' ? actualSignal.intensity : 0.2);
+      this.wax.update(this.state, stepMs, this.light.waxBenefit);
       this.refuges.update(this.state);
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).
       if (out.events.landed) {
         for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
-        if (this.stages.land(out.events.landed.platformId, this.fuel.isLit &&
+        if (this.stages.land(out.events.landed.platformId,
           Math.max(actualSignal.valid && actualSignal.mode !== 'fixed' ? actualSignal.intensity : 0.2,
-            stores.effects.get().forestCorruption, this.forestPreview ?? 0) <= LANTERN_FUEL_CONFIG.normalWorldMax01)) {
+            stores.effects.get().forestCorruption, this.forestPreview ?? 0) <= LANTERN_LIGHT_CONFIG.normalWorldMax01)) {
           this.accumulatorMs = 0;
           this.phase.finish();
         }
       }
     }
     const finishSignal = composure.getState();
-    const normalWorld = this.fuel.isLit && Math.max(finishSignal.valid && finishSignal.mode !== 'fixed' ? finishSignal.intensity : 0.2,
-      stores.effects.get().forestCorruption, this.forestPreview ?? 0) <= LANTERN_FUEL_CONFIG.normalWorldMax01;
+    const normalWorld = Math.max(finishSignal.valid && finishSignal.mode !== 'fixed' ? finishSignal.intensity : 0.2,
+      stores.effects.get().forestCorruption, this.forestPreview ?? 0) <= LANTERN_LIGHT_CONFIG.normalWorldMax01;
     if (this.stages.finishIfReady(this.state.grounded ? this.state.platformId : null, normalWorld)) this.phase.finish();
     this.ember.refreshPrompt(this.state);
     const anchor = this.ember.getAnchor();
@@ -318,12 +316,11 @@ export class ClimbScene extends Phaser.Scene {
     this.worldView.update(this.platforms, this.worldTimeMs, settings.reducedMotion, this.state.y);
     const sectionId = sectionAt(sections, this.state.y + gameConfig.player.height / 2);
     const lesson = sectionId === 'tutorial' ? lessonAt(sections, this.state.y) : undefined;
-    const lessonKey = this.stages.isFinishBlocked() ? (this.fuel.isLit ? 'stage.finishBlocked' : 'stage.relightRequired') : lesson ? `lesson.${lesson}` : sectionId ? `stage.tip.${sectionId}` : undefined;
+    const lessonKey = this.stages.isFinishBlocked() ? 'stage.finishBlocked' : lesson ? `lesson.${lesson}` : sectionId ? `stage.tip.${sectionId}` : undefined;
     if (stores.snapshot.get().lessonKey !== lessonKey) {
       stores.snapshot.set({ ...stores.snapshot.get(), lessonKey });
     }
     writeSnapshot(stores.snapshot, {
-      lanternFuel01: Math.round(this.fuel.value * 100) / 100,
       sectionId,
       altitude01: altitude01(sections, this.state.y),
       navigation: {
@@ -371,8 +368,7 @@ export class ClimbScene extends Phaser.Scene {
       paused: !this.phase.isRunning(),
     });
     this.candle.update(this.state, deltaMs, !this.phase.isRunning(), {
-      ember: !this.fuel.isLit && this.wax.lightPulse01() === 0,
-      corruptedEmber: frame.forestCorruption > LANTERN_FUEL_CONFIG.normalWorldMax01,
+      corruptedEmber: frame.forestCorruption > LANTERN_LIGHT_CONFIG.normalWorldMax01,
       radiusPx: radius,
       minRadiusPx: lantern?.min ?? 90,
       maxRadiusPx: lantern?.max ?? 280,

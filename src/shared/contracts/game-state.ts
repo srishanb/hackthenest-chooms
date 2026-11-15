@@ -31,8 +31,6 @@ export interface NavigationSnapshot {
 }
 
 export interface GameSnapshot {
-  /** Actual candle resource, not a composure score. Optional for older snapshot writers. */
-  lanternFuel01?: number;
   navigation?: NavigationSnapshot;
   /** Ordered stage progress is monotonic until an explicit new run. */
   stage?: { id: string; index: number; total: number; completed: number };
