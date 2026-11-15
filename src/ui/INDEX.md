@@ -22,7 +22,7 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 | `createUiActions`, `UiActions` | `ui-actions.ts` | UI-local settings, guide and calibration navigation; hides unavailable menu routes. |
 | `menuButton`, `trapMenuFocus` | `menu-dom.ts` | Shared menu button and focus-trap helpers. |
 | `CHECKPOINT_PLAN`, `summariseCheckpoint` | `components/debug-overlay/checkpoint.ts` | Guided eyes-open / eyes-closed checkpoint (signal lane). |
-| `remapKey` | `components/settings-panel/settings-editor.ts` | Swap existing bindings on a duplicate choice. |
+| `remapKey`, `remapAllowed` | `components/settings-panel/settings-editor.ts` | Swap existing bindings on a duplicate choice; refuse remaps (or swaps) onto the fixed KeyE ember key or the KeyP/Escape pause keys. |
 | `startMenu` | `components/start-menu/start-menu.ts` | Dedicated forest launch screen; existing Play/Continue, Settings and guide routes, Credits, signal-source indicator and keyboard navigation. |
 | `canContinue`, `menuSelection` | `components/start-menu/start-menu-state.ts` | Resume-label detection from existing validated game state and wrapping arrow-key focus selection. |
 | `createCredits` | `components/start-menu/credits.ts` | Menu-only credit card drawn from actual project/asset attribution. |

@@ -9,7 +9,7 @@ import type { UiComponent } from '../../types';
 import { createUiActions } from '../../ui-actions';
 import { mountSignalPresetsControl } from '../signal-presets/signal-presets';
 import { mountNarratorVoiceControl } from './narrator-voice-control';
-import { remapKey } from './settings-editor';
+import { remapAllowed, remapKey } from './settings-editor';
 import { keyLabel } from '../world-tutorial/layout';
 import '../../theme/menus.css';
 export const settingsPanel: UiComponent = {
@@ -80,7 +80,7 @@ export const settingsPanel: UiComponent = {
           const action = listening;
           const current = stores.settings.get();
           const candidate = validateSettings({ ...current, keys: { ...current.keys, [action]: event.code } });
-          if (candidate.keys[action] !== event.code) { hint.textContent = t('settings.unsupportedKey'); return; }
+          if (candidate.keys[action] !== event.code || !remapAllowed(current.keys, action, event.code)) { hint.textContent = t('settings.unsupportedKey'); return; }
           update((s) => ({ ...s, keys: remapKey(s.keys, action, event.code) }));
         }
         listening = null; hint.textContent = ''; return;

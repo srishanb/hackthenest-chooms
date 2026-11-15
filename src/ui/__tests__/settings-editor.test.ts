@@ -1,7 +1,7 @@
 /** Remapping keeps other actions reachable instead of introducing duplicate bindings. */
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS } from '../../shared/contracts/settings';
-import { remapKey } from '../components/settings-panel/settings-editor';
+import { remapAllowed, remapKey } from '../components/settings-panel/settings-editor';
 import { keyLabel } from '../components/world-tutorial/layout';
 import { createUiActions } from '../ui-actions';
 describe('menu settings', () => {
@@ -18,6 +18,20 @@ describe('menu settings', () => {
   it('keeps the same assignment stable and independent', () => {
     const next = remapKey(DEFAULT_SETTINGS.keys, 'jump', 'Space');
     expect(next).toEqual(DEFAULT_SETTINGS.keys); expect(next).not.toBe(DEFAULT_SETTINGS.keys);
+  });
+  it('refuses keys the game or pause menu already handle themselves', () => {
+    const keys = DEFAULT_SETTINGS.keys;
+    for (const code of ['KeyE', 'KeyP', 'Escape']) expect(remapAllowed(keys, 'jump', code)).toBe(false);
+    expect(remapAllowed(keys, 'left', 'KeyP')).toBe(false);
+    expect(remapAllowed(keys, 'pause', 'KeyE')).toBe(false);
+    expect(remapAllowed(keys, 'pause', 'KeyP')).toBe(true);
+    expect(remapAllowed(keys, 'pause', 'Escape')).toBe(true);
+    expect(remapAllowed(keys, 'jump', 'KeyW')).toBe(true);
+    expect(remapAllowed(keys, 'left', 'ArrowRight')).toBe(true);
+  });
+  it('refuses a swap that would move another action onto a reserved key', () => {
+    expect(remapAllowed(DEFAULT_SETTINGS.keys, 'pause', 'Space')).toBe(false);
+    expect(remapAllowed(DEFAULT_SETTINGS.keys, 'pause', 'KeyQ')).toBe(true);
   });
   it('labels bindings for people, not as raw key codes', () => {
     expect(['KeyR', 'Backquote', 'ArrowLeft', 'Escape', 'Digit3', 'Space'].map(keyLabel)).toEqual(['R', '`', '←', 'Esc', '3', 'Space']);
