@@ -78,3 +78,28 @@ Stage authoring: `createStageCanvas` (`editor/canvas.ts`) reuses the forest/plat
 Wax reward update/lightRadius accept optional benefit01 (default 1); real corruption suppresses benefit via waxBenefit01 in config/lantern-fuel.config.ts, while counts/respawns persist.
 
 createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow flecks, paused with game and disabled by Reduced Motion.
+
+## Helpers and types not listed above
+
+| Export | File | What it does |
+|---|---|---|
+| `platformTop(platform)` | `player/collide.ts` | Y of a platform's top surface. |
+| `ClimbSceneDeps` | `scenes/climb-scene.ts` | What `ClimbScene` receives from `createGame`. |
+| `ProtectedVisibility` | `effects/protected-visibility.ts` | Type returned by `createProtectedVisibility`. |
+| `PIECE_PX`, `FadedPiece` | `effects/outline-fade.ts` | Length in px of one faded outline piece, and its type. |
+| `SaveStorage`, `SavedProgress` | `save.ts` | Storage shape used by the save functions, and the saved progress record. |
+| `STAGE_LAYOUT_KEY`, `STAGE_DRAFT_KEY` | `editor/layouts.ts` | Browser storage keys for stage layout overrides and the editor draft. |
+| `createCandleLighting` | `forest/candle-lighting.ts` | Faint candle halo and soft falloff, even at full fuel. Visual only. |
+| `fuelVisibilityRadius` | `forest/fuel-visibility.ts` | Fuel-driven sight radius; only corruption narrows it. |
+| `FOREST_IMAGES`, `RUBY_FRAMES` | `forest/textures.ts` | Texture key to file map and Ruby sheet frame counts for boot loading. |
+| `wrap`, `visibleChunks`, `crownLayout` | `forest/vertical-layout.ts` | Stable background chunk layout that works scrolling either way. |
+| `emblemMoment`, `emblemPixels`, `mountCandleEmblem`, `EMBLEM_W`, `EMBLEM_H`, `EmblemPixel` | `candle/emblem.ts` | Animated menu candle emblem; `main.ts` hands `mountCandleEmblem` to the UI as a callback. |
+| `CandleGenome`, `Drip`, `scaleColor` | `candle/candle-genome.ts` | Genome types and RGB channel scaling. |
+| `Pixel`, `CandleRaster` | `candle/candle-raster.ts` | Art-pixel types for the candle raster. |
+| `CandlePoseName`, `PoseInput`, `PoseTracker`, `INITIAL_POSE`, `BodyShape` | `candle/candle-pose.ts` | Pose types, starting pose and body squash shape. |
+| `Aim` | `candle/direction-cues.ts` | Jump aim direction: -1, 0 or 1. |
+| `FLAME_FPS`, `FLAME_MIN_HEIGHT`, `FLAME_MAX_HEIGHT`, `FlameInput` | `candle/flame.ts` | Flame frame rate, height bounds and input type. |
+| `BallPixel` | `candle/wax-ball.ts` | Pixel type for the wax ball. |
+| `Portrait`, `PortraitPixel`, `PortraitInput`, `SMOKE_BELOW`, `GUTTER_BELOW`, `BLUE_BELOW` | `candle/portrait.ts` | Portrait types and the light-strength thresholds for smoke, guttering and blue flame. |
+| `PortraitLook` | `candle/portrait-view.ts` | Input type of the portrait view. |
+| `CandleLook` | `candle/candle-view.ts` | Light, growth and settings the candle draws from each frame. |
