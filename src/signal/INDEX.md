@@ -18,7 +18,7 @@ Owner: Srishan. Search here before adding a function.
 | `createPresetController` | `presets/controller.ts` | Runtime source switch (simulator, live, replay preset), loop, save/import/export/delete. Returned as `SignalHandle.presets`. |
 | `parsePreset`, `serializePreset`, `compactFrames`, `shiftFrames` | `presets/preset-file.ts` | Recording plus a `baselines` line; moves frames onto the current clock. |
 | `createPresetStore` | `presets/preset-store.ts` | Saved presets in browser storage (`lighten.presets.v1`, at most 4). |
-| `buildPresets`, `presetBaselines` | `tools/presets/presets.ts` | The deterministic built-in presets in `public/recordings/presets/` (`npm run presets:build`). |
+| `buildPresets`, `presetBaselines` | `tools/presets/presets.ts` | The built-in presets in `public/recordings/presets/`: output of PiEEG's own simulator (`connectSimulator` + `triggerSimEvent`) on a virtual clock, deterministic (`npm run presets:build`). `tools/presets/simulate.ts` drives it. |
 | `Pipeline.getBaselines`, `setBaselines` | `pipeline.ts` | A preset brings its own baselines and the old ones return when you leave it. |
 | `smooth` | `stages/smoother.ts` | Time-based exponential smoothing. |
 | `normalise`, `scoreWithBaselines` | `stages/scorer.ts` | Feature to 0..1 against a baseline; neutral defaults before calibration. |

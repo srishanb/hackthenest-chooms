@@ -5,6 +5,6 @@ import { buildPresets } from './presets';
 
 const outDir = resolve(process.cwd(), 'public/recordings/presets');
 mkdirSync(outDir, { recursive: true });
-const { files } = buildPresets();
+const { files } = await buildPresets();
 for (const [name, text] of Object.entries(files)) writeFileSync(resolve(outDir, name), text, 'utf8');
 console.log(`Wrote ${Object.keys(files).length} files to ${outDir}`);

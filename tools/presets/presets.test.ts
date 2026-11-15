@@ -2,8 +2,9 @@
  * Replay presets: the generator, the preset file and store, the runtime source switch, and the
  * pipeline's response to each built-in preset (through the real intensity-v2 pipeline, never around it).
  */
+import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildPresets, presetBaselines } from './presets';
+import { buildPresets, type BuiltPresets } from './presets';
 import { SIGNAL_CONFIG } from '../../src/config/signal.config';
 import { createEventBus } from '../../src/shared/bus';
 import type { SourceChoice } from '../../src/shared/contracts/signal-api';
@@ -17,7 +18,11 @@ import { compactFrames, parsePreset, serializePreset } from '../../src/signal/pr
 import { createPresetStore, MAX_SAVED_PRESETS, PRESET_STORAGE_KEY } from '../../src/signal/presets/preset-store';
 import { makeSequence } from '../../src/signal/__tests__/fixtures/make-fixture';
 
-const built = buildPresets();
+/** The committed files, read the way the build ships them. */
+const presetDir = new URL('../../public/recordings/presets/', import.meta.url);
+const readPreset = (name: string): string => readFileSync(new URL(name, presetDir), 'utf8');
+const manifest = JSON.parse(readPreset('manifest.json')) as BuiltPresets['manifest'];
+const built: BuiltPresets = { manifest, files: { 'manifest.json': readPreset('manifest.json'), ...Object.fromEntries(manifest.presets.map((p) => [`${p.id}.jsonl`, readPreset(`${p.id}.jsonl`)])) } };
 const text = (name: string): string => built.files[`${name}.jsonl`]!;
 
 /** Run a preset's frames through the real pipeline at the recording's own clock; returns intensity and validity per frame. */
@@ -34,11 +39,20 @@ const between = (rows: ReturnType<typeof runThroughPipeline>, fromS: number, toS
 const mean = (values: number[]): number => values.reduce((a, b) => a + b, 0) / values.length;
 
 describe('preset generation', () => {
-  it('is deterministic: two builds are byte-identical', () => {
-    expect(buildPresets()).toEqual(built);
+  it('is deterministic and matches the committed files (run npm run presets:build if this fails)', async () => {
+    const first = await buildPresets();
+    expect(first).toEqual(built);
+    expect(await buildPresets()).toEqual(first);
+  }, 60_000);
+  it('carries only PiEEG simulator output: SIMULATED frames with the SDK contact and spectrum fields', () => {
+    for (const preset of built.manifest.presets) {
+      const { frames } = parsePreset(built.files[`${preset.id}.jsonl`]!);
+      expect(frames.length, preset.id).toBeGreaterThan(600);
+      expect(frames.every((f) => f.source === 'SIMULATED' && f.contactGood01 !== null && f.spectrum !== null), preset.id).toBe(true);
+    }
   });
   it('lists every preset in the manifest with a file, a label, a description and a duration', () => {
-    expect(built.manifest.presets.map((p) => p.id)).toEqual(['calm-climb', 'rising-tension', 'jaw-clench-bursts', 'mixed-climb', 'poor-contact']);
+    expect(built.manifest.presets.map((p) => p.id)).toEqual(['calm-climb', 'rising-tension', 'jaw-clench-bursts', 'mixed-climb', 'noisy-pin']);
     for (const preset of built.manifest.presets) {
       expect(built.files[`${preset.id}.jsonl`], preset.id).toBeDefined();
       expect(preset.label.length).toBeGreaterThan(0);
@@ -79,10 +93,10 @@ describe('each built-in preset through the real pipeline', () => {
     expect(peak).toBeGreaterThan(calm + 0.5);
     expect(end).toBeLessThan(peak - 0.3);
   });
-  it('poor contact goes invalid and the intensity eases to neutral', () => {
-    const rows = between(runThroughPipeline('poor-contact'), 10, 60);
-    expect(rows.every((r) => !r.valid)).toBe(true);
-    expect(Math.abs(mean(rows.map((r) => r.intensity)) - SIGNAL_CONFIG.neutralIntensity)).toBeLessThan(0.1);
+  it('noisy pin: the simulator reports contact as good, so the reading stays valid, and it settles once the pin is reseated', () => {
+    const rows = runThroughPipeline('noisy-pin');
+    expect(between(rows, 5, 60).every((r) => r.valid)).toBe(true);
+    expect(mean(between(rows, 50, 60).map((r) => r.intensity))).toBeLessThan(0.15);
   });
 });
 
@@ -177,7 +191,7 @@ describe('preset controller (source switching)', () => {
     await controller.select({ kind: 'preset', id: 'calm-climb' });
     expect(controller.getSelection()).toEqual({ kind: 'preset', id: 'calm-climb' });
     expect(replays[0]!.frames[0]!.t).toBe(100_000);
-    expect(baselines()).toEqual(presetBaselines());
+    expect(baselines()).toEqual(parsePreset(text('calm-climb')).baselines);
     await controller.select({ kind: 'sim' });
     expect(started).toEqual(['sim']);
     expect(baselines()).toEqual(calibrated);
@@ -276,10 +290,10 @@ describe('createSignal with presets', () => {
     expect(peak).toBeGreaterThan(0.5);
   });
 
-  it('poor contact reaches the reader as invalid', async () => {
-    const signal = createSignal(createEventBus(), SIGNAL_CONFIG, { search: '?preset=poor-contact', fetchText });
-    await vi.advanceTimersByTimeAsync(8000);
-    expect(signal.reader.getState().valid).toBe(false);
+  it('noisy pin reaches the reader as a valid reading', async () => {
+    const signal = createSignal(createEventBus(), SIGNAL_CONFIG, { search: '?preset=noisy-pin', fetchText });
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(signal.reader.getState().valid).toBe(true);
   });
 
   it('plays the preset again from the start when it ends (loop)', async () => {
