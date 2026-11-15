@@ -1,0 +1,19 @@
+# Full fuel screen visibility
+
+Neil clarified full wax means full fuel; full fuel should reveal entire screen in both worlds and lower fuel should scale worse in corruption. Another team change removed fuel; restoration107/109 are in progress. Do not duplicate their resource logic. Implement viewport-diagonal full radius,60px empty radius, exponent1 normal to2.5 corrupted, driven by published lanternFuel01 snapshot. Full fuel defaults only when resource field absent. Keep PR draft pending restoration and integration validation, since current main has no fuel resource. Increase corrupted prop presence through earlier reveal and full opacity. Physics unchanged.
+
+Acceptance: full radius covers every corner for any player position; same full view in both worlds, sharper partial-fuel corruption loss; normal and winter corrupted props appear earlier. Unit tests cover multiple viewports/curve endpoints. Typecheck/tests/build pass before push. No dependencies/assets/shared contracts. Hardware tasks don't block; resource restoration blocks final integration. Manual visual/headset review not performed. Initial tuple test typing corrected with readonly tuples. Files: config/helper/tests, climb scene, forest-world. Confidence high for curve, integration pending dependency. No other abandoned approach.
+
+Final validation:491 tests/76 files, TypeScript and production build pass; existing Vite/pieeg warnings remain. PR107 and109 still draft; main02d1966 still lacks fuel. This PR intentionally remains draft until integration can be verified with restored resource.
+
+Follow-up: Neil noticed decay in normal world. Earlier reveal tuning mistakenly consumed neutral0.2 directly. Added sceneryCorruption mapping0 through normal boundary0.35, then ramp to1; applied to plant reveal and foreground/background red grass. Regression covers neutral/boundary/corrupted values. This fixes own earlier tuning error.
+
+Local integration follow-up: imported origin/claude/restore-lantern-fuel into this branch without merging its draft to main. Resolved climb-scene conflicts to consume actual this.fuel.value directly; removed missing-resource full-fuel fallback. Resource burn/refill/ember/victory wiring restored.495 tests/76 files and build pass; no unmerged paths remain. PR stays draft pending owner coordination with107/109. Manual browser validation still outstanding.
+
+Faint candle-light follow-up requested by Neil: added two bounded canvas-gradient images, warm halo under fuel darkness plus faint transparent-centre shading above it. Normal shade10%, corrupted32%; halo12% normal/4% corrupted scaled by fuel. No flicker/motion, no new assets/dependencies. Full-fuel viewport remains visible with gentle falloff; existing fuel radius still controls darkness. Manual visual tuning not performed.
+
+Fuel falloff follow-up: user reported decreasing fuel without visible shadow shrink. Diagnosed oversized full-diagonal light buffer plus1x–2x soft fade. Use actual farthest camera-corner distances from candle, exponent3 normal/4.5 corrupted, and fade1x–1.25x. Full fuel still clears actual viewport;90% fuel now brings fully dark corners into view in centred regression. New texture key regenerates cached texture. Regression initially exposed too-wide fade at1.333x; tightened to1.25x. Manual visual check outstanding.
+
+Final falloff validation:496 tests/76 files, TypeScript and production build pass.
+
+Neil explicitly requested merge now. Synced latest main e454d45 without conflicts; combined restoration and final lighting pass499 tests/77 files, TypeScript and production build. This supersedes the earlier draft hold. Manual visual/headset verification remains outstanding.
