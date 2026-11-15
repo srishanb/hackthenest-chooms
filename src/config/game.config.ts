@@ -11,9 +11,9 @@ export const GAME_CONFIG: GameConfig = {
   gravityY: 1400, // px/s^2
   player: { width: 24, height: 36 }, // px
   stepHz: 120, // fixed physics steps per second
-  walkSpeed: 180, // px/s
+  walkSpeed: 220, // px/s; quicker ground response without changing jump strength
   jump: {
-    maxChargeMs: 900,
+    maxChargeMs: 600, // full charge in 0.6 s; tap/release still produces a small jump
     minSpeed: 250, // px/s
     maxSpeed: 780, // px/s
     angleDeg: 62,

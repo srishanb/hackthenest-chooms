@@ -15,6 +15,7 @@ import type { EffectRule } from '../../shared/contracts/effects';
 import type { EventBus } from '../../shared/contracts/events';
 import { createDarkness, minCoveringRadius, updateDarkness } from '../effects/darkness';
 import { neutralFrame, stepEffects } from '../effects/effects-engine';
+import { createKeyboardInput } from '../keyboard-input';
 import { createPlayer, stepPlayer } from '../player/movement';
 import type { PlatformBox, PlayerState } from '../player/types';
 import { sectionAt } from '../world/bounds';
@@ -44,7 +45,7 @@ const DEPTH = { player: 10, darkness: 100, alwaysReadable: 200 } as const;
 const MAX_STEPS_PER_FRAME = 8;
 
 export class ClimbScene extends Phaser.Scene {
-  private readonly pressed = new Set<string>();
+  private controls!: ReturnType<typeof createKeyboardInput>;
   private platforms: PlatformBox[] = [];
   private state!: PlayerState;
   private accumulatorMs = 0;
@@ -87,13 +88,29 @@ export class ClimbScene extends Phaser.Scene {
     // Drawn above the darkness: the start of the "always readable" layer P5.2 will build.
     this.lanternMark = this.add.circle(0, 0, 4, 0xfff3c4).setDepth(DEPTH.alwaysReadable);
 
-    // Track keys by KeyboardEvent.code so bindings from settings can change live.
-    this.input.keyboard?.on('keydown', (event: KeyboardEvent) => this.pressed.add(event.code));
-    this.input.keyboard?.on('keyup', (event: KeyboardEvent) => this.pressed.delete(event.code));
-    this.game.events.on(Phaser.Core.Events.BLUR, () => this.pressed.clear());
+    // Native events reach the buffer immediately; do not let Space/arrows scroll the page.
+    this.controls = createKeyboardInput(() => stores.settings.get().keys);
+    const keyDown = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented || event.isComposing || !this.phase.isRunning()) return;
+      if (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, button, [contenteditable="true"]')) return;
+      if (this.controls.keyDown(event.code)) event.preventDefault();
+    };
+    const keyUp = (event: KeyboardEvent): void => this.controls.keyUp(event.code);
+    const clearInput = (): void => {
+      this.controls.clear();
+      this.state = { ...this.state, charging: false, chargeMs: 0, jumpLatch: true };
+    };
+    window.addEventListener('keydown', keyDown);
+    window.addEventListener('keyup', keyUp);
+    window.addEventListener('blur', clearInput);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      window.removeEventListener('keydown', keyDown);
+      window.removeEventListener('keyup', keyUp);
+      window.removeEventListener('blur', clearInput);
+    });
 
     this.phase = createPhaseController(this.deps.bus, stores.snapshot, () => {
-      this.pressed.clear();
+      clearInput();
       // The refuge controller clears the save when it hears the `finish` event this emits.
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.phase.dispose());
@@ -105,17 +122,16 @@ export class ClimbScene extends Phaser.Scene {
     const { stores, composure, gameConfig, effectsTable, bus, emberConfig, sections } = this.deps;
     const settings = stores.settings.get();
     const stepMs = 1000 / gameConfig.stepHz;
-    const input = {
-      left: this.pressed.has(settings.keys.left),
-      right: this.pressed.has(settings.keys.right),
-      jump: this.pressed.has(settings.keys.jump),
-    };
+    if (!this.phase.isRunning()) {
+      this.controls.clear();
+      this.state = { ...this.state, charging: false, chargeMs: 0, jumpLatch: true };
+    }
 
     // Only the 'playing' phase steps; pause, ember and finished freeze the body.
     this.accumulatorMs = this.phase.isRunning() ? Math.min(this.accumulatorMs + deltaMs, stepMs * MAX_STEPS_PER_FRAME) : 0;
     while (this.accumulatorMs >= stepMs) {
       this.accumulatorMs -= stepMs;
-      const out = stepPlayer(this.state, input, this.platforms, gameConfig.view.width, gameConfig, stepMs);
+      const out = stepPlayer(this.state, this.controls.read(), this.platforms, gameConfig.view.width, gameConfig, stepMs);
       this.state = out.state;
       this.refuges.update(this.state);
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
