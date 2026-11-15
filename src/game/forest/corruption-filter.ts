@@ -27,6 +27,7 @@ void main() {
     center.g,texture2D(uMainSampler,mirror(at-vec2(split,0.0))).b);
   float grain = noise(floor(uv * resolution / 2.0) + floor(clock * 3.0));
   color *= 1.0 - grain * corruption * ${C.noiseMax.toFixed(3)};
+  color += vec3(0.65, 0.35, 0.8) * grain * corruption * ${C.darkGrainMax.toFixed(3)};
   gl_FragColor = vec4(color,center.a);
 }`;
 class CorruptionController extends Phaser.Filters.Controller {
