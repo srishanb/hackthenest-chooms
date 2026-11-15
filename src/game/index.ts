@@ -30,8 +30,7 @@ export interface GameDeps {
 }
 
 export function createGame(deps: GameDeps): Phaser.Game {
-  const section = deps.sections[0];
-  if (!section) throw new Error('createGame needs at least one section');
+  if (deps.sections.length === 0) throw new Error('createGame needs at least one section');
 
   return new Phaser.Game({
     type: Phaser.AUTO,
@@ -43,16 +42,13 @@ export function createGame(deps: GameDeps): Phaser.Game {
       width: deps.gameConfig.view.width,
       height: deps.gameConfig.view.height,
     },
-    physics: {
-      default: 'arcade',
-      arcade: { gravity: { x: 0, y: deps.gameConfig.gravityY }, debug: false },
-    },
     scene: [
       new BootScene(),
       new ClimbScene({
+        bus: deps.bus,
         stores: deps.stores,
         composure: deps.composure,
-        section,
+        sections: deps.sections,
         gameConfig: deps.gameConfig,
         effectsTable: deps.effectsTable,
       }),
