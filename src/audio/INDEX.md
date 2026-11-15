@@ -13,3 +13,5 @@ Owner: Amrit. Search here before adding a function.
 | `createSfxPlayer`, `SfxAssets` | `sfx.ts` | Local one-shots, fallback tone, pause/cleanup and bounded voice count. |
 | `sfxForEvent`, `SfxId` | `sfx-map.ts` | Pure event-to-cue mapping; big-fall threshold comes from ember config. |
 | `SFX_ASSETS` | `asset-list.ts` | Existing licensed local cue paths; no new/generated assets. |
+
+`createIntroPlayer` (`narrator/intro-player.ts`) preloads the supplied local intro bank, picks one per new run, enforces cooldowns, parks/resumes speech for phase/precision/mute, and emits matching caption events. Ready/dispose and diagnostics are wired through `createAudio`; music ducks by `INTRO_MUSIC_DUCK`. `tools/narrator/build.mjs` is an offline build-time Gemini/ElevenLabs generator with secret-safe diagnostics and hash-based clip reuse. Runtime never calls these APIs.
