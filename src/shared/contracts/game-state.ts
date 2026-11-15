@@ -10,6 +10,8 @@
 export type GamePhase = 'menu' | 'calibrating' | 'playing' | 'paused' | 'ember' | 'finished';
 
 export interface EmberSnapshot {
+  /** Remaining return cooldown; zero when ready. */
+  cooldownRemainingMs?: number;
   /** The player owns an ember. */
   available: boolean;
   /** Recovery is in progress (gameplay frozen). */
@@ -21,8 +23,14 @@ export interface EmberSnapshot {
 }
 
 export interface GameSnapshot {
+  /** Current tutorial lesson string key; presentation resolves it in the UI lane. */
+  lessonKey?: string;
+  /** Optional exploration goal and temporary wax light bonus; unrelated to the signal. */
+  wax?: { collected: number; total: number; boostRemainingMs: number };
   phase: GamePhase;
   sectionId: string | null;
+  /** True while the player stands inside a refuge (audio quiets, the refuge is lit). */
+  inRefuge: boolean;
   /** Height climbed, 0 (bottom) to 1 (finish). */
   altitude01: number;
   ember: EmberSnapshot;
@@ -33,6 +41,7 @@ export interface GameSnapshot {
 export const INITIAL_GAME_SNAPSHOT: GameSnapshot = {
   phase: 'playing',
   sectionId: null,
+  inRefuge: false,
   altitude01: 0,
   ember: { available: true, active: false, progress01: 0, canAssist: false },
   promptKey: null,

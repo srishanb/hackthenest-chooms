@@ -8,7 +8,7 @@
 import * as Phaser from 'phaser';
 import type { Stores } from '../shared/contracts/app';
 import type { ComposureReader } from '../shared/contracts/composure';
-import type { GameConfig } from '../shared/contracts/config';
+import type { EmberConfig, GameConfig } from '../shared/contracts/config';
 import type { SectionData } from '../shared/contracts/content';
 import type { EffectRule } from '../shared/contracts/effects';
 import type { EventBus } from '../shared/contracts/events';
@@ -24,14 +24,18 @@ export interface GameDeps {
   sections: readonly SectionData[];
   gameConfig: GameConfig;
   effectsTable: readonly EffectRule[];
+  emberConfig: EmberConfig;
+  /** Where the save lives. Optional: P4.4 falls back to memory. */
+  storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 }
 
 export function createGame(deps: GameDeps): Phaser.Game {
-  const section = deps.sections[0];
-  if (!section) throw new Error('createGame needs at least one section');
+  if (deps.sections.length === 0) throw new Error('createGame needs at least one section');
 
   return new Phaser.Game({
     type: Phaser.AUTO,
+    pixelArt: true,
+    roundPixels: true,
     parent: deps.parent,
     backgroundColor: '#05060a',
     scale: {
@@ -40,18 +44,17 @@ export function createGame(deps: GameDeps): Phaser.Game {
       width: deps.gameConfig.view.width,
       height: deps.gameConfig.view.height,
     },
-    physics: {
-      default: 'arcade',
-      arcade: { gravity: { x: 0, y: deps.gameConfig.gravityY }, debug: false },
-    },
     scene: [
       new BootScene(),
       new ClimbScene({
+        bus: deps.bus,
         stores: deps.stores,
         composure: deps.composure,
-        section,
+        sections: deps.sections,
         gameConfig: deps.gameConfig,
         effectsTable: deps.effectsTable,
+        emberConfig: deps.emberConfig,
+        storage: deps.storage,
       }),
     ],
   });

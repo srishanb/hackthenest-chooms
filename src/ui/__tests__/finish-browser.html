@@ -1,0 +1,33 @@
+<!doctype html><html><head><title>Finish screen checks</title></head><body>
+<div id="ui"></div><pre id="results" style="position:fixed;inset:auto 0 0;z-index:100;color:white;background:black"></pre>
+<script type="module">
+import { finishScreen } from '../components/finish-screen/finish-screen.ts';
+import { createStore } from '../../shared/store.ts';
+import { createEventBus } from '../../shared/bus.ts';
+import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state.ts';
+import { DEFAULT_SETTINGS } from '../../shared/contracts/settings.ts';
+import '../theme/tokens.css'; import '../theme/layout.css';
+const root=document.querySelector('#ui'),results=document.querySelector('#results');
+const check=(name,ok)=>{results.textContent+=`${ok?'PASS':'FAIL'} ${name}\n`;if(!ok)throw Error(name);};
+const stores={snapshot:createStore({...structuredClone(INITIAL_GAME_SNAPSHOT),phase:'playing'}),settings:createStore(structuredClone(DEFAULT_SETTINGS))};
+const bus=createEventBus();let restarts=0;
+// Stands in for the game: run_restart returns the phase to 'playing' (ember.restart does this in the scene).
+bus.on('run_restart',()=>{restarts++;stores.snapshot.set({...stores.snapshot.get(),phase:'playing'});});
+const host=document.createElement('div');root.append(host);
+const off=finishScreen.mount(host,{stores,bus});
+const panel=host.querySelector('section'),button=panel.querySelector('button');
+const tick=()=>new Promise(queueMicrotask);
+const key=(code)=>window.dispatchEvent(new KeyboardEvent('keydown',{code,key:code,bubbles:true,cancelable:true}));
+check('hidden while playing',panel.hidden);
+key('Enter');check('Enter mid-climb does nothing',restarts===0);
+stores.snapshot.set({...stores.snapshot.get(),phase:'finished'});await tick();
+check('shows the title and Play again when finished',!panel.hidden&&panel.querySelector('h1').textContent==='You reached the top'&&button.textContent==='Play again');
+check('Play again is focused',document.activeElement===button);
+button.click();await tick();
+check('Play again restarts once and the screen hides',restarts===1&&panel.hidden&&stores.snapshot.get().phase==='playing');
+stores.snapshot.set({...stores.snapshot.get(),phase:'finished'});await tick();
+button.blur();key('Enter');await tick();
+check('Enter restarts once when no control has focus',restarts===2&&panel.hidden);
+off();stores.snapshot.set({...stores.snapshot.get(),phase:'finished'});key('Enter');
+check('unmount removes the screen and its key listener',restarts===2&&!host.children.length);
+</script></body></html>

@@ -23,5 +23,7 @@ jobs:
           node-version: 26
           cache: npm
       - run: npm ci
+      - run: node scripts/hooks/no-history-rewrite.mjs --self-test
+      - run: bash scripts/hooks/test-pre-push.sh
       - run: npm run check
       - run: npm run build

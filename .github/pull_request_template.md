@@ -16,11 +16,13 @@
 ## Checklist
 
 - [ ] The plan file reads `Status: APPROVED by <name>`, written by a human
+- [ ] Pre-code check done: this task was not already on `main` or in another PR (result: <!-- not done / partly done: what existed -->)
 - [ ] After-job report added in this PR and linked above
 - [ ] Stayed in my lane (or explained why not below)
-- [ ] No changes to shared files (deps, lockfiles, `src/shared/`, root config, AGENTS.md, .github, hook configs) — or they're the point of this PR
+- [ ] Any change to a shared file (deps, lockfiles, `src/shared/`, root config, AGENTS.md, .github, hook configs) is small and explained below
+- [ ] No git history deleted or rewritten: no force push, no rebase of pushed commits, no branch or tag deleted
 - [ ] No secrets committed; `.env.example` updated if I added env vars
 - [ ] `npm run check` passes <!-- once P0 is merged -->
 - [ ] Ran it locally / tested: <!-- how -->
 
-> AI review runs automatically and squash-merges if clean. Open as **draft** or add the `no-automerge` label to opt out.
+> The reviewer agent reviews every ready PR and squash-merges it if it passes. No human review is needed. Keep it a draft, title it `[claim] …`, or add `no-automerge` to hold it back.

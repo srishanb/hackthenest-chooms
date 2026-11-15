@@ -1,4 +1,4 @@
-# Master plan: lighten (working title)
+# Master plan: Lighten Up
 
 Written Sat 14 Nov 2026, 7:50 PM Eastern, with 16 h 10 min left before the final Devpost deadline.
 Owner: integrator (Srishan). Agents: read [AGENTS.md](../AGENTS.md) first, then the section for your phase.
@@ -11,7 +11,7 @@ Versions and API names come from sources opened on 14 Nov 2026 and are linked in
 
 ## 1. Summary and pitch
 
-**lighten** is a 2D charge-jump climbing game played in Chrome or Edge with three keys. You carry a lantern up an
+**Lighten Up** is a 2D charge-jump climbing game played in Chrome or Edge with three keys. You carry a lantern up an
 authored tower. You cannot die; a missed jump only costs height. A PiEEG Octopus 16 EEG board on your head feeds a
 per-player calibrated signal that changes the world around you, never your controls: when the active-play
 *intensity* feature rises, the lantern's reach shrinks, fog thickens and the music tightens; when it eases, they
@@ -244,7 +244,7 @@ export type GameEvent =
   | { type: 'signal_lost' } | { type: 'signal_restored' }
   | { type: 'calibration_result'; ok: boolean; reason?: string }
   | { type: 'pause' } | { type: 'resume' }
-  | { type: 'narrator_line'; lineId: string }               // captions subscribe to this
+  | { type: 'narrator_line'; lineId: string; text: string; durationMs: number } // captions subscribe to this
   | { type: 'finish' };
 
 export interface EventBus {
@@ -426,7 +426,7 @@ that prefix. They are read only by `tools/` scripts through `process.env`.
 | Bash | Built in | **Git Bash or WSL, not PowerShell**, for `scripts/wt.sh` | Needed |
 | Bluetooth LE | Built in. Allow Chrome under System Settings → Privacy & Security → Bluetooth | Built in on both Lenovos | Needed for the board |
 | A coding agent | Claude Code, Codex or Antigravity | same | Needed |
-| Python 3.11+ | — | — | Optional: only for PiEEG's own Python scripts or the Unicorn stretch |
+| Python 3.11+ | — | — | Optional: only for PiEEG's own Python scripts |
 | 7-Zip | — | — | Not needed (only for g.tec's dataset archives, which we do not use) |
 
 ### Verify your setup (run in the repo; Git Bash on Windows)
@@ -629,7 +629,7 @@ never shipped even if promoted, because they conflict with the binding framing a
 | Webcam facial model (artifact gate) | Defer | Supplemental only; permission, performance and integration cost. |
 | Live Gemini → ElevenLabs generation during play | Defer | Latency, unreviewed text, network dependency. |
 | Data prize (Tiger Data or MongoDB Atlas) and a backend | Defer (**Decision**, 14 Nov) | Needs a server, an account and network; the Core list is already long. |
-| g.tec Unicorn bridge | Defer | Windows-only APIs and a licence key; the spec names only the Octopus 16. |
+| g.tec Unicorn bridge | Removed (**Decision** D-14, 14 Nov) | The headset is no longer borrowable. Hardware is the Octopus 16 plus test data. |
 | Narrator judging emotions or growing cruel with intensity | Cut, **stays off** | Turns an uncertain inference into personal criticism. |
 | Stress percentage, emotional rankings or a calmness leaderboard | Cut, **stays off** | Implies accuracy and comparability the system does not have. |
 | Therapeutic or mindfulness-training claims | Cut from product claims, **stays off** | Would need evidence beyond a hackathon demo. |
@@ -723,7 +723,7 @@ beyond a master, persistence between sessions, and Gemini-assisted drafting.
 | `@google/genai` and `@elevenlabs/elevenlabs-js` API usage | P7 plan, from official docs |
 | Node 26 being the LTS line everyone installs (read from nodejs.org's index, not release notes) | H-08 |
 | Best Beginner criteria; whether simulated or replayed signal counts if hardware fails; whether device choice matters | H-06 |
-| Availability of the name "lighten" (temporary) as a domain or Devpost title | H-11 |
+| Availability of the name "Lighten Up" as a domain or Devpost title (name decided, D-23) | H-11 |
 | `winget install GitHub.cli` package id on the two Windows laptops | H-08 |
 
 ### Sources opened for this plan

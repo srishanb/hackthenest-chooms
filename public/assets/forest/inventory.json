@@ -1,0 +1,199 @@
+[
+  {
+    "pack": "Ancient Forest 1.7",
+    "sourceFile": "Background/Deep Forest/Background 2.png",
+    "file": "assets/forest/trees-2.png",
+    "width": 416,
+    "height": 256,
+    "crop": null,
+    "sha256": "0f908a431f112655917fb29ca3101d31643d7d0abcdd0259ad84182444373f06"
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "sourceFile": "Background/Deep Forest/Background 4.png",
+    "file": "assets/forest/trees-4.png",
+    "width": 416,
+    "height": 256,
+    "crop": null,
+    "sha256": "04e5c808f1712be1a39797705d0edf229e2f68ad100ac6364dfd5f126aedfc73"
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "sourceFile": "Background/Blind Sky/front_blind.png",
+    "file": "assets/forest/mist.png",
+    "width": 480,
+    "height": 272,
+    "crop": null,
+    "sha256": "fceebd82d4ab3effba73fa92765bec42ead0c8c1ea34e1f92d27d3340701bd4c"
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "sourceFile": "Backgrounds/Tree BG.png",
+    "file": "assets/dark-forest/tree-bg.png",
+    "width": 416,
+    "height": 240,
+    "crop": null,
+    "sha256": "f74000aa9f0bce5930b9b19acacdf3beda27817fe472966ec3331af87ddcb17c"
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "sourceFile": "Backgrounds/Back Forest.png",
+    "file": "assets/dark-forest/back-forest.png",
+    "width": 416,
+    "height": 224,
+    "crop": null,
+    "sha256": "c0b6f893ab8494ebf9cde2135d9d463ed9cff568604d593cd2d7423675818418"
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "sourceFile": "Tiles/Tiles 4.png",
+    "file": "assets/forest/terrain-left.png",
+    "width": 16,
+    "height": 16,
+    "crop": [
+      0,
+      56,
+      16,
+      72
+    ],
+    "sha256": "21f0324f55d2fa41b70b80f1974a53b72172396621cf9aabfd46cedd6c4db1ed"
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "sourceFile": "Tiles/Tiles 4.png",
+    "file": "assets/forest/terrain-middle.png",
+    "width": 16,
+    "height": 16,
+    "crop": [
+      32,
+      56,
+      48,
+      72
+    ],
+    "sha256": "b522f5d8697d955e6f1dfc80a3f5188064c1d3ef618be0da6e4fd7123dfd4b3e"
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "sourceFile": "Tiles/Tiles 4.png",
+    "file": "assets/forest/terrain-right.png",
+    "width": 16,
+    "height": 16,
+    "crop": [
+      64,
+      56,
+      80,
+      72
+    ],
+    "sha256": "c2d4d72f27f00f40fc85b966f9fd4a681988dd431c7b3b6aa96c3d79cfe87b04"
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "sourceFile": "Tiles/Tiles 4.png",
+    "file": "assets/forest/mushrooms.png",
+    "width": 64,
+    "height": 32,
+    "crop": [
+      192,
+      16,
+      256,
+      48
+    ],
+    "sha256": "b27d7932c5a06d0e86924366487c8498c6566f9bfc987aa492396505897ebc32"
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "sourceFile": "Tiles/Tiles 4.png",
+    "file": "assets/forest/fern.png",
+    "width": 32,
+    "height": 32,
+    "crop": [
+      240,
+      48,
+      272,
+      80
+    ],
+    "sha256": "0b2d1d38888be98cb825287017d7976e20adfd0ab37d33b75de05c81bdc1fc38"
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "sourceFile": "Tiles/Dark.png",
+    "file": "assets/dark-forest/mushrooms.png",
+    "width": 64,
+    "height": 92,
+    "crop": [
+      0,
+      252,
+      64,
+      344
+    ],
+    "sha256": "18e3ca0e388fce14527e6893e20785035d95b93b342ac4854b106c982a9f94fa"
+  },
+  {
+    "pack": "Dark Forest 1.0",
+    "sourceFile": "Tiles/Dark.png",
+    "file": "assets/dark-forest/thorns.png",
+    "width": 64,
+    "height": 44,
+    "crop": [
+      32,
+      316,
+      96,
+      360
+    ],
+    "sha256": "c5b568d3588d334f5169dbb3b0e4bbd54cca787159082e5ce76eafa8b9f48462"
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "sourceFile": "Ruby V4 - Demo/Idle/ruby_idle-Sheet.png",
+    "file": "assets/forest/ruby-idle.png",
+    "width": 640,
+    "height": 48,
+    "crop": null,
+    "sha256": "740bb64d661ca5b097729961cd61df12e28c835947caccb255f6a558569e01e6"
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "sourceFile": "Ruby V4 - Demo/Run/run-Sheet.png",
+    "file": "assets/forest/ruby-run.png",
+    "width": 640,
+    "height": 48,
+    "crop": null,
+    "sha256": "2d850a5863db82aa5ff165d47c1799bc273edef3c34a2ed8264f0af86d2792fe"
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "sourceFile": "Ruby V4 - Demo/Jump/Sheet/jump_up-Sheet.png",
+    "file": "assets/forest/ruby-rise.png",
+    "width": 192,
+    "height": 48,
+    "crop": null,
+    "sha256": "fa11875d6b78f170e3e1142c50a14221d0466939db9a9b00453a70d7bbf21255"
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "sourceFile": "Ruby V4 - Demo/Jump/Sheet/fall-Sheet.png",
+    "file": "assets/forest/ruby-fall.png",
+    "width": 192,
+    "height": 48,
+    "crop": null,
+    "sha256": "2f5bb386e7722d059ce2780e909d806d70955f00dd0b7025a29964c80c8534c2"
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "sourceFile": "Ruby V4 - Demo/Jump/Sheet/start_jump-Sheet.png",
+    "file": "assets/forest/ruby-charge.png",
+    "width": 384,
+    "height": 48,
+    "crop": null,
+    "sha256": "34b1797bcda834494f08685463b9d8e74554949e2ac94b8f66749c2e38b61e07"
+  },
+  {
+    "pack": "Ancient Forest 1.7",
+    "sourceFile": "Ruby V4 - Demo/Jump/Sheet/end_jump-Sheet.png",
+    "file": "assets/forest/ruby-land.png",
+    "width": 192,
+    "height": 48,
+    "crop": null,
+    "sha256": "f849836e9b25358a8c6c7004e79b09bafc4210158b53957823615926e196d167"
+  }
+]

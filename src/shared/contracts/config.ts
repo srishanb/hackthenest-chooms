@@ -36,10 +36,16 @@ export interface SignalConfig {
 }
 
 export interface GameConfig {
+  /** Fixed environment rules: acceleration in px/s², drag/decay in 1/s, wind cap in px/s. Never signal-driven. */
+  surfaces?: { iceAcceleration: number; iceDrag: number; maxWindSpeed: number; windDecay: number };
   /** Logical canvas size in pixels; the canvas scales to fit the window. */
   view: { width: number; height: number };
   /** Downward acceleration in px/s^2. EEG never changes this. */
   gravityY: number;
+  /** Player body size in px. Movement and the level checker use the same box. */
+  player: { width: number; height: number };
+  /** Fixed physics steps per second (the same maths runs in the level checker). */
+  stepHz: number;
   walkSpeed: number;
   jump: {
     /** Holding longer than this adds nothing. */
@@ -55,6 +61,8 @@ export interface GameConfig {
 }
 
 export interface EmberConfig {
+  /** Minimum delay between completed returns; placement and pickup remain available. */
+  cooldownMs?: number;
   /** Valid resting-active time needed to activate the ember, in ms. */
   targetValidMs: number;
   /** A fall at least this high counts as "big" for events and narration. */
@@ -65,6 +73,7 @@ export interface EmberConfig {
 
 export type UiComponentId =
   | 'main-menu'
+  | 'start-menu'
   | 'pause-menu'
   | 'settings-panel'
   | 'hud'
@@ -72,6 +81,7 @@ export type UiComponentId =
   | 'captions'
   | 'calibration'
   | 'ember-prompt'
+  | 'finish-screen'
   | 'debug-overlay';
 
 /** Named areas of the UI grid over the canvas. */

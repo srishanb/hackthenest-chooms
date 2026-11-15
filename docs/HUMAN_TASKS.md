@@ -11,7 +11,7 @@ channels; borrowed hardware goes back; only public, synthetic or our own data.
 | Done | ID | Task | Owner | Deadline | If it is not done |
 |---|---|---|---|---|---|
 | [ ] | H-14 | Review the architecture PR and approve `docs/plans/P0.md` by changing its status line to `Status: APPROVED by <name>` | Srishan | Sat 8:45 PM | Nothing can be scaffolded. Every lane waits. |
-| [ ] | H-01 | Give the **finalised feature list** (edit or confirm `docs/FEATURES.md`, change its status to `FINAL`, add a line to `DECISIONS.md`) | Team | Sat 10:15 PM (with the P0 merge) | Only P0 to P3 may be built. The game core (P4) and everything after it wait, and the Core list will not fit before the 9 AM freeze. |
+| [x] | H-01 | Give the **finalised feature list** (edit or confirm `docs/FEATURES.md`, change its status to `FINAL`, add a line to `DECISIONS.md`) | Team | Sat 10:15 PM (with the P0 merge) | Only P0 to P3 may be built. The game core (P4) and everything after it wait, and the Core list will not fit before the 9 AM freeze. |
 | [ ] | H-08 | On your own laptop: install Node 26 LTS, `gh`, Chrome or Edge; Windows users also Git for Windows. Run the "verify your setup" list in the README after P0 merges | Each person | Sat 10:15 PM | That person can only edit docs and content; their agents cannot run tests. |
 
 ## Hardware
@@ -24,7 +24,6 @@ channels; borrowed hardware goes back; only public, synthetic or our own data.
 | [ ] | H-05 | Pair the board over Web Bluetooth from each of the four laptops once (Chrome or Edge) | Each person | Sun 2:00 AM | We may discover on demo day that the demo laptop cannot pair. |
 | [ ] | H-19 | Midnight checkpoint: confirm a clear eyes-closed rise on a real head, twice, and save the recordings under `recordings/` (band powers only, no names in the file) | Srishan, Neil | Sun 12:00 AM | Team rule: everything else pauses until it works. |
 | [ ] | H-18 | Return the borrowed board | Neil | Sun 2:15 PM | Event rule broken. |
-| [ ] | H-20 | Sign the g.tec waiver, **only if** we ever handle a Unicorn (currently deferred) | Whoever handles it | Before touching one | We may not use the headset. |
 
 ## Questions to ask people
 
@@ -41,14 +40,14 @@ channels; borrowed hardware goes back; only public, synthetic or our own data.
 | [ ] | H-09 | Get the ElevenLabs event key and a Gemini API key. Share them privately; put them in `.env.local` only (variable names are in `.env.example`) | Amrit | Sun 12:30 AM | P7.1 falls back to hand-written lines; P7.2 cannot generate clips, so the narrator ships as captions only. |
 | [ ] | H-10 | Pick the narrator voice (an ElevenLabs stock or designed voice; never a clone or imitation of a real person). Write or approve the narrator's personality and ten sample lines. Lines needle the climb and the fall, never the player | Neil, Amrit | Sun 1:00 AM | The narrator is generic, or late. |
 | [ ] | H-07 | Choose free art, music layers and SFX (Kenney and Poly Haven are CC0; check each Freesound and OpenGameArt item). **No AI-generated textures or models.** Log every item in `CREDITS.md` | Neil | Sun 12:00 AM | The game ships with coloured boxes; risk to *Design and usability*. |
-| [ ] | H-11 | Decide the final project name ("lighten" is temporary) and check the domain and Devpost title. Claim the free GoDaddy domain through MLH if we want it | Team | Sun 9:00 AM | The submission uses the working title. |
+| [x] | H-11 | Name decided: **Lighten Up** (D-23). Still to do: check the domain and Devpost title. Claim the free GoDaddy domain through MLH if we want it | Team | Sun 9:00 AM | The submission uses the working title. |
 | [ ] | H-21 | Trust the repo's hooks once per tool: accept the workspace trust dialog in Claude Code; run `/hooks` in Codex and trust the Stop hook; check Settings → Customizations → Hooks in Antigravity | Each person | First session after the merge | The after-job report reminder does not fire for that tool. The `AGENTS.md` rule and the PR check still apply. |
 
 ## Reviewing, testing and explaining
 
 | Done | ID | Task | Owner | Deadline | If it is not done |
 |---|---|---|---|---|---|
-| [ ] | H-15 | Approve each phase plan in your lane; merge `needs-human` PRs promptly | Lane owners; Srishan for shared files | Ongoing | Agents sit idle; branches go stale and conflict. |
+| [ ] | H-15 | Approve each phase plan in your lane. Pull requests are merged by the reviewer agent (D-18); merge by hand only if it is down | Lane owners; Srishan for shared files | Ongoing | Agents sit idle; branches go stale and conflict. |
 | [ ] | H-22a | Walkthrough 1: each owner explains their files to the others; simplify or remove what nobody can explain | All | Sun 12:15 AM | A judge may ask any of us about any file. |
 | [ ] | H-22b | Walkthrough 2 | All | Sun 9:30 AM | Same. |
 | [ ] | H-12 | Playtest the full loop on all four heads and on one stranger | All | Sun 6:00 – 9:00 AM | Thresholds tuned on one head fail on the next; calibration copy is untested. |
@@ -60,5 +59,6 @@ channels; borrowed hardware goes back; only public, synthetic or our own data.
 |---|---|---|---|---|---|
 | [ ] | H-16 | Devpost draft (attend the 9:00 PM workshop in Student Center 310AB) | Amrit | **Sun 12:00 AM** | Event deadline missed. |
 | [ ] | H-23 | Make the GitHub repo **public** and check that no key was ever committed (`git log -p -S "API_KEY"`) | Srishan | Sun 11:00 AM | The submission needs a public repo. |
+| [ ] | H-25 | Turn on a GitHub ruleset for all branches that blocks force pushes and deletions (GitHub refuses rulesets on a private free repo) | Srishan | when the repo is made public (H-23), Sun 11:00 AM | History is protected only on machines that ran `npm ci`; a web-interface deletion or a clone without the hook can still remove a branch. |
 | [ ] | H-17 | Demo video, 3 minutes or less (workshop 10:00 AM, Halle Library) | Amrit + one | Sun 11:00 AM | MLH prizes need it. |
 | [ ] | H-24 | Final Devpost submission: repo link, README with one line on what worked and what did not, video, all four teammates, tracks and prizes, AI tools used (Claude, Antigravity, Gemini, Codex, ChatGPT) | Amrit, checked by Srishan | **Sun 12:00 PM, no late entries**; aim for 11:30 AM | No entry. |

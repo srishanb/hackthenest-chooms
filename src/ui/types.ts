@@ -11,7 +11,10 @@ import type { EventBus } from '../shared/contracts/events';
 import type { GamePhase } from '../shared/contracts/game-state';
 import type { SignalHandle } from '../shared/contracts/signal-api';
 
+import type { UiActions } from './ui-actions';
+
 export interface UiDeps {
+  actions?: UiActions;
   bus: EventBus;
   stores: Stores;
   signal: SignalHandle;

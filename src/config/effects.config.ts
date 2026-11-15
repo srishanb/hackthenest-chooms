@@ -9,6 +9,12 @@ import type { EffectRule } from '../shared/contracts/effects';
 
 export const EFFECTS_TABLE: EffectRule[] = [
   {
+    id: 'forestCorruption', enabled: true,
+    atIntensity0: 0, atIntensity1: 1, min: 0, max: 1, unit: '0..1',
+    tauMs: 2200, neutral: 0.2, holdWhileAirborne: false, reducedMotionScale: 1,
+    never: 'Only forest color and scenery change; collision edges, camera, player and recovery remain readable and unchanged.',
+  },
+  {
     id: 'lanternRadius',
     enabled: true,
     atIntensity0: 260,

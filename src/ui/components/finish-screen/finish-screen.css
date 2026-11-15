@@ -1,0 +1,6 @@
+/* Finish screen: title, a line of text and Play again. Every value comes from tokens.css. */
+.finish-screen { justify-items: center; text-align: center; min-width: min(var(--panel-max-width), 90vw); }
+.finish-screen h1 { margin: 0; font-size: calc(var(--text-lg) * 2); color: var(--color-accent); }
+.finish-screen p { color: var(--color-text-dim); }
+.finish-screen .finish-screen__play { border-color: var(--color-accent); color: var(--color-accent); font-size: var(--text-md); width: 100%; }
+.finish-screen .finish-screen__hint { font-size: var(--text-sm); }

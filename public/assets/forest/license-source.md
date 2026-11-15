@@ -1,0 +1,3 @@
+# Forest source license evidence
+
+Publisher: Lukya Forge / lukyaforge. Source: https://lukyaforge.itch.io/ancientforest, checked 2026-11-15. This page lists Ancient Forest 1.7.zip and Dark Forest 1.0.zip under its LICENSE. Project use in games/apps and modification are permitted; product resale, sublicensing, rental, redistribution and NFT use are prohibited. Attribution optional. Only selected in-game resources are included; no standalone pack or source archives are redistributed. The original local Ancient Forest 1.7 License.txt is preserved verbatim beside this evidence file. Dark Forest has no separate local license file; coverage is established by the common publisher listing, not an inferred CC0 license.

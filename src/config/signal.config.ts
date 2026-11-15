@@ -8,7 +8,7 @@ import type { SignalConfig } from '../shared/contracts/config';
 
 export const SIGNAL_CONFIG: SignalConfig = {
   defaultSource: 'SIMULATED',
-  defaultAlgo: 'stub',
+  defaultAlgo: 'intensity-v2',
   updateHz: 12, // matches the pieeg.js default band-power rate
   filter: {
     bandpassLowHz: 1,

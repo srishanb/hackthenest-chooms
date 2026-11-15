@@ -1,4 +1,4 @@
-# lighten (working title)
+# Lighten Up
 
 Hack The Nest 2026 (Nov 14–15, Eastern Michigan University), Mind and Machine (BCI) track.
 
@@ -28,6 +28,13 @@ detect emotion or stress; muscle activity is part of the signal.
 
 Multiple coding agents (Claude Code, Codex, Antigravity) work on this repo in parallel, each in its own
 git worktree.
+
+## Never delete git history
+
+The most important rule here: no force pushes, no rebasing pushed commits, no deleting branches or tags. Read the
+full rule in [AGENTS.md](AGENTS.md). `npm ci` installs a `pre-push` hook (in `.githooks/`) that refuses force pushes
+and deletions. If a push is rejected, do not force it: `git fetch origin`, then `git merge origin/<branch>`, then
+push again. To undo a pushed change, add a `git revert` commit.
 
 ## Setup
 
@@ -82,12 +89,37 @@ Right move the box; the backtick key (`` ` ``) toggles the signal debug overlay.
 `npm ci` prints a warning that esbuild's install script was not run. That is npm 11's default and is harmless here.
 If `npm ci` fails with a cache permission error, run it once as `npm_config_cache="$TMPDIR/npm-cache" npm ci`.
 
+### Run and test
+
+`run.mjs` is the one file to start from. It works the same in a Mac terminal, Git Bash, PowerShell and cmd.
+
+```bash
+node run.mjs doctor
+```
+
+```bash
+node run.mjs
+```
+
+`doctor` checks your computer. `node run.mjs` lists every command and every feature you can try. The most useful:
+
+| Command | What it does |
+|---|---|
+| `node run.mjs dev` | Start the game and open it |
+| `node run.mjs check` | Type check plus every automated test |
+| `node run.mjs all` | Automated checks of every feature, with a pass/fail table |
+| `node run.mjs <feature>` | One feature: its tests, then a guided hands-on check (for example `game-movement`) |
+| `node run.mjs build` | Full build into `dist/`, with an audit that nothing needs the internet |
+| `node run.mjs preview` | Build, then serve the built game the way the demo will run |
+
+Each feature has its own file under [run/](run/README.md). Add one when you build something new.
+
 ### Working in parallel
 
 ```bash
 scripts/wt.sh new <agent-or-name> <task>   # creates ../wt-<agent>-<task> on branch <agent>/<task>
 scripts/wt.sh ls                           # list worktrees
-scripts/wt.sh sync                         # rebase current branch onto origin/main
+scripts/wt.sh sync                         # merge origin/main into the current branch
 scripts/wt.sh rm <agent-or-name> <task>    # remove a worktree (branch kept)
 ```
 
@@ -105,9 +137,10 @@ hackathon/
 ### How a task flows
 
 1. The agent writes `docs/plans/<phase-id>.md` and opens a draft PR.
-2. A human reads it and changes its status line to `Status: APPROVED by <name>`. Agents never write that line.
+2. The plan's owner reads it and approves it: they change its status line to `Status: APPROVED by <name>`, or tell
+   their own agent to record that approval. No other agent may approve it.
 3. The agent builds, runs `npm run check`, and writes an after-job report in `docs/agent-reports/`.
-4. The PR is marked ready. AI review merges it if it is clean, or labels it `needs-human`.
+4. The PR is marked ready. The reviewer agent (an Opus 5.5 session) reviews it, runs the checks, and squash-merges it or comments with what to fix. No human review is needed.
 
 ### Hooks (once per tool)
 
