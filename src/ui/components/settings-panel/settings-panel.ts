@@ -7,11 +7,12 @@ import { CAPTION_SCALE_RANGE, validateSettings } from '../../settings-store';
 import { t, type StringKey } from '../../strings';
 import type { UiComponent } from '../../types';
 import { createUiActions } from '../../ui-actions';
+import { mountNarratorVoiceControl } from './narrator-voice-control';
 import { remapKey } from './settings-editor';
 import '../../theme/menus.css';
 export const settingsPanel: UiComponent = {
   id: 'settings-panel', visibleIn: ['paused', 'menu'],
-  mount(root, { stores, actions = createUiActions() }) {
+  mount(root, { stores, bus, actions = createUiActions() }) {
     const panel = document.createElement('section'); panel.className = 'menu-panel';
     panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true');
     panel.setAttribute('aria-label', t('menu.settings'));
@@ -32,6 +33,7 @@ export const settingsPanel: UiComponent = {
     for (const key of ['master', 'music', 'sfx', 'narrator'] as const) {
       range(`settings.volume.${key}`, 0, 1, 0.05, (s) => s.volumes[key], (s, value) => ({ ...s, volumes: { ...s.volumes, [key]: value } }));
     }
+    const removeNarratorVoices = mountNarratorVoiceControl(panel, actions.settingsOpen, bus);
     range('settings.captionSize', CAPTION_SCALE_RANGE.min, CAPTION_SCALE_RANGE.max, 0.05,
       (s) => s.captions.scale, (s, scale) => ({ ...s, captions: { ...s.captions, scale } }));
     const removeForestPreview = mountForestPreview(panel);
@@ -90,6 +92,6 @@ export const settingsPanel: UiComponent = {
       if (open) queueMicrotask(() => { if (panel.isConnected && !panel.hidden) panel.querySelector<HTMLElement>('input')?.focus(); });
     });
     render();
-    return () => { removeForestPreview(); window.removeEventListener('keydown', onKey, true); offSettings(); offSnapshot(); offActions(); panel.remove(); };
+    return () => { removeForestPreview(); removeNarratorVoices(); window.removeEventListener('keydown', onKey, true); offSettings(); offSnapshot(); offActions(); panel.remove(); };
   },
 };

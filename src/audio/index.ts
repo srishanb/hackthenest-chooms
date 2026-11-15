@@ -5,7 +5,8 @@ import type { Stores } from '../shared/contracts/app';
 import type { AudioConfig } from '../shared/contracts/config';
 import type { NarratorLine } from '../shared/contracts/content';
 import type { EventBus } from '../shared/contracts/events';
-import { INTRO_MUSIC_DUCK } from '../config/audio.config';
+import { getLocalStorage } from '../shared/safe-storage';
+import { INTRO_MUSIC_DUCK, NARRATOR_VOICES, DEFAULT_NARRATOR_VOICE, NARRATOR_VOICE_STORAGE_KEY, NARRATOR_VOICE_EVENT } from '../config/audio.config';
 import { EMBER_CONFIG } from '../config/ember.config';
 import { MUSIC_ASSETS, SFX_ASSETS, type MusicAssets } from './asset-list';
 import { createAudioEngine } from './engine';
@@ -62,8 +63,24 @@ export function createAudio(deps: AudioDeps, environment?: AudioEnvironment): Au
     engine.apply({ ...mix, quiet: mix.quiet * duck, tense: mix.tense * duck }, force);
     dirty = false;
   };
+  const voiceStorage = typeof window === 'undefined' ? undefined : getLocalStorage(window);
+  let storedVoice: string | null = null;
+  try { storedVoice = voiceStorage?.getItem(NARRATOR_VOICE_STORAGE_KEY) ?? null; } catch { /* Private mode. */ }
+  const chosenVoice = NARRATOR_VOICES.find(voice => voice.id === storedVoice) ?? NARRATOR_VOICES.find(voice => voice.id === DEFAULT_NARRATOR_VOICE)!;
   const narrator = createIntroPlayer(context, engine.nodes.narrator, deps.bus, deps.stores,
-    deps.narratorLines, deps.config.narrator, load);
+    deps.narratorLines, deps.config.narrator, load, Math.random,
+    deps.narratorLines.some(line => line.id.startsWith(chosenVoice.prefix)) ? chosenVoice.prefix : null);
+  const onVoice = (event: Event): void => {
+    const detail: unknown = (event as CustomEvent<unknown>).detail;
+    if (!detail || typeof detail !== 'object') return;
+    const request = detail as { voice?: unknown; preview?: unknown; stop?: unknown };
+    if (request.stop === true) { narrator.stopPreview(); return; }
+    const voice = NARRATOR_VOICES.find(candidate => candidate.id === request.voice);
+    if (!voice) return;
+    narrator.setVoice(voice.prefix);
+    if (request.preview === true) narrator.preview();
+  };
+  env.gestures.addEventListener(NARRATOR_VOICE_EVENT, onVoice);
   let unlocking = false;
   const unlock = (): void => {
     if (disposed || unlocking) return;
@@ -102,6 +119,7 @@ export function createAudio(deps: AudioDeps, environment?: AudioEnvironment): Au
     for (const cleanup of cleanups) cleanup();
     env.gestures.removeEventListener('keydown', unlock); env.gestures.removeEventListener('pointerdown', unlock);
     env.gestures.removeEventListener('pagehide', dispose);
+    env.gestures.removeEventListener(NARRATOR_VOICE_EVENT, onVoice);
     stopMusic(); sfx.dispose(); narrator.dispose(); engine.dispose();
   };
   env.gestures.addEventListener('pagehide', dispose);

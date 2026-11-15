@@ -1,42 +1,148 @@
 {
-  "voiceId": "JBFqnCBsd6RMkjVDRZzb",
-  "model": "eleven_multilingual_v2",
-  "voiceSettings": {
-    "stability": 0.65,
-    "similarity_boost": 0.75,
-    "style": 0.25,
-    "use_speaker_boost": true
-  },
+  "profiles": [
+    {
+      "profileId": "chris",
+      "voiceId": "iP95p4xoKVk53GoZ742B",
+      "model": "eleven_v4",
+      "voiceSettings": {
+        "stability": 0.45,
+        "similarity_boost": 0.7
+      },
+      "lines": [
+        {
+          "id": "intro-chris-01",
+          "text": "Take your time. The mountain isn't going anywhere. Neither am I, apparently.",
+          "clip": "assets/audio/narrator/intro-chris-01-ac2eb950242a.mp3"
+        },
+        {
+          "id": "intro-chris-02",
+          "text": "A small light, a very tall climb. Let's see how far it goes.",
+          "clip": "assets/audio/narrator/intro-chris-02-cd9ea77b518e.mp3"
+        },
+        {
+          "id": "intro-chris-03",
+          "text": "No need for a grand plan. The next ledge will do.",
+          "clip": "assets/audio/narrator/intro-chris-03-f10c3a3db909.mp3"
+        },
+        {
+          "id": "intro-chris-04",
+          "text": "We'll start with one jump. Most regrettable decisions begin just as simply.",
+          "clip": "assets/audio/narrator/intro-chris-04-8c9b22e627e3.mp3"
+        },
+        {
+          "id": "intro-chris-05",
+          "text": "Up we go. The floor has had quite enough of our company.",
+          "clip": "assets/audio/narrator/intro-chris-05-1cb9c2ddbea0.mp3"
+        },
+        {
+          "id": "intro-chris-06",
+          "text": "Welcome back. I kept the mountain exactly where you left it.",
+          "clip": "assets/audio/narrator/intro-chris-06-18ad953bdacd.mp3"
+        }
+      ]
+    },
+    {
+      "profileId": "bill",
+      "voiceId": "pqHfZKP75CvOlQylNhV4",
+      "model": "eleven_v4",
+      "voiceSettings": {
+        "stability": 0.45,
+        "similarity_boost": 0.7
+      },
+      "lines": [
+        {
+          "id": "intro-bill-01",
+          "text": "Take your time. The mountain isn't going anywhere. Neither am I, apparently.",
+          "clip": "assets/audio/narrator/intro-bill-01-15d91878be65.mp3"
+        },
+        {
+          "id": "intro-bill-02",
+          "text": "A small light, a very tall climb. Let's see how far it goes.",
+          "clip": "assets/audio/narrator/intro-bill-02-5842137a66e5.mp3"
+        },
+        {
+          "id": "intro-bill-03",
+          "text": "No need for a grand plan. The next ledge will do.",
+          "clip": "assets/audio/narrator/intro-bill-03-8d970eaa5420.mp3"
+        },
+        {
+          "id": "intro-bill-04",
+          "text": "We'll start with one jump. Most regrettable decisions begin just as simply.",
+          "clip": "assets/audio/narrator/intro-bill-04-bafce19425ca.mp3"
+        },
+        {
+          "id": "intro-bill-05",
+          "text": "Up we go. The floor has had quite enough of our company.",
+          "clip": "assets/audio/narrator/intro-bill-05-9e8544f89e0c.mp3"
+        },
+        {
+          "id": "intro-bill-06",
+          "text": "Welcome back. I kept the mountain exactly where you left it.",
+          "clip": "assets/audio/narrator/intro-bill-06-79027a95a520.mp3"
+        }
+      ]
+    }
+  ],
   "lines": [
     {
-      "id": "intro-01",
-      "text": "Well, here we are again, staring at the ceiling as if it owes us an apology. Remember, gravity isn't personal; it just has a very firm opinion about where wax belongs.",
-      "clip": "assets/audio/narrator/intro-01-3818a54b3bac.mp3"
+      "id": "intro-chris-01",
+      "text": "Take your time. The mountain isn't going anywhere. Neither am I, apparently.",
+      "clip": "assets/audio/narrator/intro-chris-01-ac2eb950242a.mp3"
     },
     {
-      "id": "intro-02",
-      "text": "Upward mobility is an ambitious policy for a candle. Fortunately, every ledge offers a fresh opportunity to describe a very small amount of progress in rather grand terms.",
-      "clip": "assets/audio/narrator/intro-02-2a5729487923.mp3"
+      "id": "intro-chris-02",
+      "text": "A small light, a very tall climb. Let's see how far it goes.",
+      "clip": "assets/audio/narrator/intro-chris-02-cd9ea77b518e.mp3"
     },
     {
-      "id": "intro-03",
-      "text": "It is a curious thing to climb toward the stars when you are essentially a stick of meltable wax. Still, the view is better than the floor, which is mostly just dust.",
-      "clip": "assets/audio/narrator/intro-03-b7beda08d0d0.mp3"
+      "id": "intro-chris-03",
+      "text": "No need for a grand plan. The next ledge will do.",
+      "clip": "assets/audio/narrator/intro-chris-03-f10c3a3db909.mp3"
     },
     {
-      "id": "intro-04",
-      "text": "Every journey begins with a single hop. A candle makes this look ceremonial. Gravity is less impressed, but it has been attending the same ceremony for several billion years.",
-      "clip": "assets/audio/narrator/intro-04-656c31723bf1.mp3"
+      "id": "intro-chris-04",
+      "text": "We'll start with one jump. Most regrettable decisions begin just as simply.",
+      "clip": "assets/audio/narrator/intro-chris-04-8c9b22e627e3.mp3"
     },
     {
-      "id": "intro-05",
-      "text": "Every ledge is a tiny victory over the pull of the earth. Climbing is a slow dance with gravity. Gravity, of course, insists on leading. It has not learned a second step.",
-      "clip": "assets/audio/narrator/intro-05-3dcfc74ff4c9.mp3"
+      "id": "intro-chris-05",
+      "text": "Up we go. The floor has had quite enough of our company.",
+      "clip": "assets/audio/narrator/intro-chris-05-1cb9c2ddbea0.mp3"
     },
     {
-      "id": "intro-06",
-      "text": "You bring your own light to the party, which is remarkably inconvenient for the dark. Let us find a higher vantage point to observe how very far down the bottom has become.",
-      "clip": "assets/audio/narrator/intro-06-fad2d4d747a2.mp3"
+      "id": "intro-chris-06",
+      "text": "Welcome back. I kept the mountain exactly where you left it.",
+      "clip": "assets/audio/narrator/intro-chris-06-18ad953bdacd.mp3"
+    },
+    {
+      "id": "intro-bill-01",
+      "text": "Take your time. The mountain isn't going anywhere. Neither am I, apparently.",
+      "clip": "assets/audio/narrator/intro-bill-01-15d91878be65.mp3"
+    },
+    {
+      "id": "intro-bill-02",
+      "text": "A small light, a very tall climb. Let's see how far it goes.",
+      "clip": "assets/audio/narrator/intro-bill-02-5842137a66e5.mp3"
+    },
+    {
+      "id": "intro-bill-03",
+      "text": "No need for a grand plan. The next ledge will do.",
+      "clip": "assets/audio/narrator/intro-bill-03-8d970eaa5420.mp3"
+    },
+    {
+      "id": "intro-bill-04",
+      "text": "We'll start with one jump. Most regrettable decisions begin just as simply.",
+      "clip": "assets/audio/narrator/intro-bill-04-bafce19425ca.mp3"
+    },
+    {
+      "id": "intro-bill-05",
+      "text": "Up we go. The floor has had quite enough of our company.",
+      "clip": "assets/audio/narrator/intro-bill-05-9e8544f89e0c.mp3"
+    },
+    {
+      "id": "intro-bill-06",
+      "text": "Welcome back. I kept the mountain exactly where you left it.",
+      "clip": "assets/audio/narrator/intro-bill-06-79027a95a520.mp3"
     }
   ]
 }

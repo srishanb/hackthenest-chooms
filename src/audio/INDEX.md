@@ -15,3 +15,5 @@ Owner: Amrit. Search here before adding a function.
 | `SFX_ASSETS` | `asset-list.ts` | Existing licensed local cue paths; no new/generated assets. |
 
 `createIntroPlayer` (`narrator/intro-player.ts`) preloads the supplied local intro bank, picks one per new run, enforces cooldowns, parks/resumes speech for phase/precision/mute, and emits matching caption events. Ready/dispose and diagnostics are wired through `createAudio`; music ducks by `INTRO_MUSIC_DUCK`. `tools/narrator/build.mjs` is an offline build-time Gemini/ElevenLabs generator with secret-safe diagnostics and hash-based clip reuse. Runtime never calls these APIs.
+
+Voice polish: `createIntroPlayer` accepts a bank prefix and exposes `setVoice`, `preview`, `stopPreview`; previews can play in paused/menu Settings without consuming the next game intro. `narrationGain` (`narrator/level.ts`) measures decoded clips once and sets per-clip level with a peak/headroom and amplification cap. Local voice choice/events and two stock profiles live in audio config.

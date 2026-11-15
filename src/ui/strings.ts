@@ -6,6 +6,14 @@
  * state refer to text by key, never by literal string.
  */
 export const STRINGS = {
+  'narrator.voice.title': 'Narrator voice',
+  'narrator.voice.label': 'Voice',
+  'narrator.voice.chris': 'Chris · conversational',
+  'narrator.voice.bill': 'Bill · mature storyteller',
+  'narrator.voice.preview': 'Preview voice',
+  'narrator.voice.stop': 'Stop preview',
+  'narrator.voice.hint': 'Saved on this browser. Preview uses your narrator volume.',
+
   'editor.moving': 'Moving',
   'editor.resetNotice': 'Original stage restored in the draft. Save to apply.',
   'editor.title': 'Stage Editor',
