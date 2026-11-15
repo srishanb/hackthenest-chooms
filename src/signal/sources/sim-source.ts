@@ -66,7 +66,18 @@ export function createSimSource(deps: SimSourceDeps): Source {
         onDisconnect: () => {},
       });
       keyTarget.addEventListener('keydown', onKeyDown);
-      await adapter.connect('simulator');
+      try {
+        await adapter.connect('simulator');
+      } catch (error) {
+        keyTarget.removeEventListener('keydown', onKeyDown);
+        try {
+          adapter?.disconnect();
+        } catch {
+          // the connect error is the one worth reporting
+        }
+        adapter = null;
+        throw error;
+      }
     },
     stop(): void {
       keyTarget.removeEventListener('keydown', onKeyDown);

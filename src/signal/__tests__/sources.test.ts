@@ -133,6 +133,21 @@ describe('SimSource', () => {
     expect(sdk.log).toContain('disconnect');
   });
 
+  it('cleans up after a failed connect, so a retry builds a fresh adapter', async () => {
+    const target = new EventTarget();
+    const disconnect = vi.fn();
+    const triggerSimEvent = vi.fn();
+    const connect = vi.fn().mockRejectedValueOnce(new Error('no simulator')).mockResolvedValue(undefined);
+    const createAdapter = vi.fn(() => ({ connect, disconnect, triggerSimEvent })) as unknown as typeof createPiEEGAdapter;
+    const source = createSimSource({ config: SIGNAL_CONFIG, keyTarget: target, createAdapter });
+    await expect(source.start(() => {})).rejects.toThrow('no simulator');
+    expect(disconnect).toHaveBeenCalledOnce();
+    target.dispatchEvent(Object.assign(new Event('keydown'), { code: SIGNAL_CONFIG.simKeys.alpha, repeat: false }));
+    expect(triggerSimEvent).not.toHaveBeenCalled();
+    await source.start(() => {});
+    expect(createAdapter).toHaveBeenCalledTimes(2);
+  });
+
   it('never binds the game keys', () => {
     const codes = simKeyLegend(SIGNAL_CONFIG).map((entry) => entry.code);
     expect(codes).not.toContain('Space');
