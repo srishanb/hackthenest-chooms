@@ -16,7 +16,7 @@ export function reminderPosition(view: WorldViewSnapshot): { x: number; y: numbe
   return { x: view.scrollX + 20, y: view.scrollY + 60 };
 }
 export function keyLabel(code: string): string {
-  const labels: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', Space: 'Space', Escape: 'Esc' };
+  const labels: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', Space: 'Space', Escape: 'Esc', Backquote: '`' };
   return labels[code] ?? code.replace(/^Key|^Digit/, '');
 }
 export function controlKeys(keys: KeyBindings): string[] {

@@ -10,6 +10,7 @@ import { createUiActions } from '../../ui-actions';
 import { mountSignalPresetsControl } from '../signal-presets/signal-presets';
 import { mountNarratorVoiceControl } from './narrator-voice-control';
 import { remapKey } from './settings-editor';
+import { keyLabel } from '../world-tutorial/layout';
 import '../../theme/menus.css';
 export const settingsPanel: UiComponent = {
   id: 'settings-panel', visibleIn: ['paused', 'menu'],
@@ -59,7 +60,7 @@ export const settingsPanel: UiComponent = {
     for (const key of Object.keys(stores.settings.get().keys) as Array<keyof KeyBindings>) {
       const button = menuButton('', () => { listening = key; hint.textContent = t('settings.pressKey'); });
       bindings.append(button);
-      renders.push((s) => { button.textContent = `${t(`settings.key.${key}`)}: ${s.keys[key]}`; });
+      renders.push((s) => { button.textContent = `${t(`settings.key.${key}`)}: ${keyLabel(s.keys[key])}`; });
     }
     panel.append(bindings, hint);
     const back = menuButton(t('menu.back'), () => actions.settingsOpen.set(false)); panel.append(back); root.append(panel);

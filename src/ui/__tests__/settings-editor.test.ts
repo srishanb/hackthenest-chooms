@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS } from '../../shared/contracts/settings';
 import { remapKey } from '../components/settings-panel/settings-editor';
+import { keyLabel } from '../components/world-tutorial/layout';
 import { createUiActions } from '../ui-actions';
 describe('menu settings', () => {
   it('changes one unused binding without mutating input', () => {
@@ -17,6 +18,9 @@ describe('menu settings', () => {
   it('keeps the same assignment stable and independent', () => {
     const next = remapKey(DEFAULT_SETTINGS.keys, 'jump', 'Space');
     expect(next).toEqual(DEFAULT_SETTINGS.keys); expect(next).not.toBe(DEFAULT_SETTINGS.keys);
+  });
+  it('labels bindings for people, not as raw key codes', () => {
+    expect(['KeyR', 'Backquote', 'ArrowLeft', 'Escape', 'Digit3', 'Space'].map(keyLabel)).toEqual(['R', '`', '←', 'Esc', '3', 'Space']);
   });
   it('isolates navigation between mounted UI instances', () => {
     const a = createUiActions(), b = createUiActions(false);
