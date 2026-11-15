@@ -6,6 +6,18 @@
  * state refer to text by key, never by literal string.
  */
 export const STRINGS = {
+  'editor.moving': 'Moving',
+  'editor.resetNotice': 'Original stage restored in the draft. Save to apply.',
+  'editor.title': 'Stage Editor',
+  'editor.save': 'Save', 'editor.test': 'Test', 'editor.reset': 'Reset stage', 'editor.back': 'Back to Main Menu',
+  'editor.saved': 'Saved. Normal gameplay now uses this layout.', 'editor.stage': 'Stage to edit',
+  'editor.add': 'Add Platform', 'editor.delete': 'Delete Platform', 'editor.spawn': 'Select player spawn',
+  'editor.x': 'X', 'editor.y': 'Y', 'editor.width': 'Width', 'editor.surface': 'Surface',
+  'editor.normal': 'Normal', 'editor.ice': 'Slippery / snow', 'editor.final': 'Use as final platform',
+  'editor.snow': 'Snow', 'editor.wind': 'Wind', 'editor.windStrength': 'Wind px/s² (negative = left)',
+  'editor.hint': 'Drag a ledge or its white edge handle. Green is spawn; gold is final. Save validates geometry, not difficulty.',
+  'editor.protected': 'Keep the floor and final platform. Select another final platform before deleting this one.',
+  'editor.return': 'Back to Editor',
   'uiSize.title': 'UI size',
   'uiSize.tutorial': 'Tutorial / hints size',
   'uiSize.stats': 'Height / wax / highscore size',

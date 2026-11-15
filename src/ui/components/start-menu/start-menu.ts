@@ -50,7 +50,11 @@ export const startMenu: UiComponent = {
       if (pending) return; focusReturn = creditsButton; credits.hidden = false; render();
       credits.querySelector<HTMLButtonElement>('button')?.focus();
     });
-    const buttons = [play, settings, how, creditsButton];
+    const editor = menuButton(t('editor.title'), () => {
+      if (pending) return; pending = true;
+      const url = new URL(location.href); url.searchParams.delete('editorTest'); url.searchParams.delete('editorDraft'); url.searchParams.set('editor', '1'); location.assign(url.href);
+    });
+    const buttons = [play, settings, how, creditsButton, editor];
     nav.append(...buttons);
     const hint = document.createElement('p'); hint.className = 'launch-key-hint'; hint.textContent = t('start.keyHint'); nav.append(hint);
     hero.append(copy, nav);

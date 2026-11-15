@@ -49,6 +49,7 @@ import { platformsAt, windAt } from '../world/environment';
 import { CLIMB_SCENE_KEY } from './boot-scene';
 
 export interface ClimbSceneDeps {
+  startAt?: { x: number; y: number; platformId: string };
   bus: EventBus;
   stores: Stores;
   composure: ComposureReader;
@@ -120,8 +121,9 @@ export class ClimbScene extends Phaser.Scene {
       sections, gameConfig, config: this.deps.emberConfig,
       snapshot: stores.snapshot, bus: this.deps.bus, storage: this.deps.storage,
     });
-    this.state = createPlayer(this.ember.spawn.x, this.ember.spawn.y);
-    this.stages = createStageProgress(sections, stores.snapshot, this.deps.bus, this.ember.getAnchor()?.platformId);
+    const initial = this.deps.startAt ?? this.ember.spawn;
+    this.state = createPlayer(initial.x, initial.y);
+    this.stages = createStageProgress(sections, stores.snapshot, this.deps.bus, this.deps.startAt?.platformId ?? this.ember.getAnchor()?.platformId);
     const offFinish = this.deps.bus.on('finish', () => { this.ember.clear(); this.wax.finish(); });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       offFinish();
