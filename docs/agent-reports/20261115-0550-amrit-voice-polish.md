@@ -18,13 +18,13 @@
 
 ## 2. How I verified it
 
-- npm run check: 439 tests across 67 files pass; final build passes, with pre-existing pieeg.js non-module warning.
+- npm run check: 441 tests across 68 files pass; final build passes, with pre-existing pieeg.js non-module warning.
 - Public ElevenLabs voice endpoint confirmed current stock Chris (conversational/down-to-earth), Bill (mature storyteller) and their IDs. Official model/settings docs confirmed v4 uses stability and similarity_boost; unsupported v2 style/speed controls are omitted.
 - Actual API generation: twelve v4 MP3s, with initial audition clips reused during full generation. No new Gemini drafting call was required; shorter lines were manually rewritten by the agent. Existing Gemini authoring integration remains available.
 - afinfo validated all twelve MP3s. Chris: 4.99, 4.83, 3.00, 4.91, 3.71, 3.71 seconds. Bill: 5.33, 5.49, 3.55, 5.56, 4.13, 4.21 seconds.
 - Existing cooldown/pause/precision/dispose tests retained; additional tests cover voice-bank filtering, parked Settings preview, not consuming the next intro, gain balancing/caps, silence/nonfinite data and peak headroom.
 - Real main game at port 3072: Settings → Preview voice produced matching text; selected Bill and previewed same sentence; Stop worked; switched to Chris and reloaded, then reopened Settings and confirmed Chris persisted. User-facing preview remains available.
-- Latest GitHub checked before implementation and again before publication. Main merged original #82 as 558b385 during this revision. Duplicate add/add squash conflicts resolved only after byte-comparing incoming files with original intro branch; new revision retained and no upstream edits lost. No force push/rebase/history deletion.
+- Latest GitHub checked before implementation and again before publication. Main merged original #82 as 558b385 during this revision. Duplicate add/add squash conflicts resolved only after byte-comparing incoming files with original intro branch; new revision retained and no upstream edits lost. Also merged latest main 3a3ccad (dedicated menu, stage editor and stats styling); retained both narrator and stage-editor strings/INDEX entries. No force push/rebase/history deletion.
 - Secret-value scans cover source/generated assets and client bundle without printing values; private env remains ignored. git diff --check passes.
 
 **Not verified:** subjective listening approval on Amrit's headphones, all browsers/device sizes, a full five-stage run or physical Wi-Fi disconnect. Measured level balancing is not a mastering/loudness certification or a promise of subjective sound quality. No voice cloning or real-person imitation was used.
