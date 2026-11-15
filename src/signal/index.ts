@@ -61,6 +61,8 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
   let replayAnchor = { frameT: 0, wall: 0 };
   const clock = (): number => (activeKind === 'REPLAY' ? replayAnchor.frameT + (now() - replayAnchor.wall) : now());
 
+  // What readers see. During replay the pipeline's own `t` is on the recording's clock, but the contract says performance.now().
+  let published: ComposureState = pipeline.getState();
   let hadValid = false;
   let calibrating = false;
   let lost = false;
@@ -75,7 +77,8 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
       bus.emit({ type: 'signal_lost' });
     }
     recorder.recordState(state);
-    for (const listener of listeners) listener(state);
+    published = activeKind === 'REPLAY' ? { ...state, t: now() } : state;
+    for (const listener of listeners) listener(published);
   }
 
   function onFrame(frame: BandFrame): void {
@@ -134,7 +137,7 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
 
   return {
     reader: {
-      getState: () => pipeline.getState(),
+      getState: () => published,
       subscribe(listener) {
         listeners.add(listener);
         return () => listeners.delete(listener);
