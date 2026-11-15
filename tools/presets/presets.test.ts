@@ -3,19 +3,19 @@
  * pipeline's response to each built-in preset (through the real intensity-v2 pipeline, never around it).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildPresets, presetBaselines } from '../../../tools/presets/presets';
-import { SIGNAL_CONFIG } from '../../config/signal.config';
-import { createEventBus } from '../../shared/bus';
-import type { SourceChoice } from '../../shared/contracts/signal-api';
-import type { BandFrame, Baselines } from '../../shared/contracts/signal-internal';
-import { createMemoryStorage } from '../../shared/safe-storage';
-import { resolveAlgorithm } from '../algorithms/registry';
-import { createSignal } from '../index';
-import { createPipeline } from '../pipeline';
-import { createPresetController, type PresetControllerDeps } from '../presets/controller';
-import { compactFrames, parsePreset, serializePreset } from '../presets/preset-file';
-import { createPresetStore, MAX_SAVED_PRESETS, PRESET_STORAGE_KEY } from '../presets/preset-store';
-import { makeSequence } from './fixtures/make-fixture';
+import { buildPresets, presetBaselines } from './presets';
+import { SIGNAL_CONFIG } from '../../src/config/signal.config';
+import { createEventBus } from '../../src/shared/bus';
+import type { SourceChoice } from '../../src/shared/contracts/signal-api';
+import type { BandFrame, Baselines } from '../../src/shared/contracts/signal-internal';
+import { createMemoryStorage } from '../../src/shared/safe-storage';
+import { resolveAlgorithm } from '../../src/signal/algorithms/registry';
+import { createSignal } from '../../src/signal/index';
+import { createPipeline } from '../../src/signal/pipeline';
+import { createPresetController, type PresetControllerDeps } from '../../src/signal/presets/controller';
+import { compactFrames, parsePreset, serializePreset } from '../../src/signal/presets/preset-file';
+import { createPresetStore, MAX_SAVED_PRESETS, PRESET_STORAGE_KEY } from '../../src/signal/presets/preset-store';
+import { makeSequence } from '../../src/signal/__tests__/fixtures/make-fixture';
 
 const built = buildPresets();
 const text = (name: string): string => built.files[`${name}.jsonl`]!;
