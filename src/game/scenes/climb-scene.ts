@@ -1,3 +1,4 @@
+import { FUEL_VISIBILITY_CONFIG as FUEL_VIEW, sceneryCorruption } from '../../config/fuel-visibility.config';
 import { createCandleLighting } from '../forest/candle-lighting';
 import { fuelVisibilityRadius } from '../forest/fuel-visibility';
 import { LANTERN_FUEL_CONFIG } from '../../config/lantern-fuel.config';
@@ -370,7 +371,8 @@ export class ClimbScene extends Phaser.Scene {
     );
     stores.effects.set(frame);
     this.forest.update(frame.forestCorruption, deltaMs, settings.reducedMotion, !this.phase.isRunning(), settings.effectStrength);
-    this.darkness.setAlpha(1);
+    this.darkness.setAlpha(FUEL_VIEW.normalShadowAlpha +
+      (FUEL_VIEW.corruptedShadowAlpha - FUEL_VIEW.normalShadowAlpha) * sceneryCorruption(frame.forestCorruption));
 
     // Never let the sheet shrink so far that its edge shows on screen.
     const baseRadius = Math.max(frame.lanternRadius, minCoveringRadius(gameConfig.view.width, gameConfig.view.height));
