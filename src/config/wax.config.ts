@@ -1,6 +1,8 @@
 /** Optional wax rewards. Game-owned constants; collecting never changes movement physics. */
 export const WAX_CONFIG = {
   maxPerRun: 3,
+  /** Each collected wax makes the candle this much bigger and moves it this much further (+2%). */
+  growthPerWax: 0.02,
   boostMs: 10000,
   lightMultiplier: 1.5,
   maxLightRadiusPx: 420,
