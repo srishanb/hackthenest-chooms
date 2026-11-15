@@ -37,7 +37,7 @@ export const hud: UiComponent = {
       text(status, t(view.statusKey));
       text(quality, `${t('hud.quality')} ${view.qualityPercent}%`);
       text(ember, t(view.emberKey));
-      text(composure, `${t('hud.composure')} ${view.composurePercent === null ? t('hud.unavailable') : `${view.composurePercent}%`}`);
+      text(composure, `${t('hud.composure')} ${view.intensityKey === null ? t('hud.unavailable') : t(view.intensityKey)}`);
       text(prompt, view.prompt ?? '');
       progress.value = view.progressPercent;
       status.hidden = quality.hidden = !flags.showStatus;

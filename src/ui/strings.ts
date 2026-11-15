@@ -93,7 +93,7 @@ export const STRINGS = {
   "hud.signalCheck": "Check signal quality",
   "hud.signalReady": "Signal ready",
   "hud.quality": "Signal quality:",
-  "hud.composure": "Composure (experimental):",
+  "hud.composure": "Experimental signal intensity:",
   "hud.unavailable": "unavailable",
   "hud.emberReady": "Recovery ember available",
   "hud.emberEmpty": "No recovery ember",
@@ -111,7 +111,7 @@ export const STRINGS = {
   "settings.effects": "Effect strength",
   "settings.captions": "Captions enabled",
   "settings.reducedMotion": "Reduced motion",
-  "settings.showSignal": "Show composure",
+  "settings.showSignal": "Show signal intensity",
   "settings.showEmber": "Show recovery ember",
   "settings.showStatus": "Show signal status",
   "settings.keys": "Key bindings",
@@ -123,6 +123,9 @@ export const STRINGS = {
   "settings.key.pause": "Pause",
   "settings.key.debugOverlay": "Debug overlay",
   "settings.unsupportedKey": "That key is unavailable. Choose another key or Escape to cancel.",
+  "hud.intensityLower": "Lower",
+  "hud.intensityMidrange": "Midrange",
+  "hud.intensityHigher": "Higher",
 } as const;
 
 export type StringKey = keyof typeof STRINGS;

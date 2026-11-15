@@ -7,6 +7,13 @@ export function percent(value: number): number {
   return Number.isFinite(value) ? Math.round(Math.max(0, Math.min(1, value)) * 100) : 0;
 }
 
+/** Display bands describe feature magnitude, never a percentage of a player's composure. */
+export function intensityLabel(value: number): StringKey {
+  if (value < 1 / 3) return 'hud.intensityLower';
+  if (value < 2 / 3) return 'hud.intensityMidrange';
+  return 'hud.intensityHigher';
+}
+
 export function hudState(snapshot: GameSnapshot, signal: ComposureState, staleAfterMs: number) {
   const fresh = Number.isFinite(signal.sampleAgeMs) && signal.sampleAgeMs <= staleAfterMs;
   const statusKey: StringKey = !fresh ? 'hud.signalWaiting'
@@ -17,7 +24,7 @@ export function hudState(snapshot: GameSnapshot, signal: ComposureState, staleAf
   return {
     statusKey,
     qualityPercent: percent(signal.quality),
-    composurePercent: signal.valid && fresh && Number.isFinite(signal.intensity) ? percent(1 - signal.intensity) : null,
+    intensityKey: signal.valid && fresh && Number.isFinite(signal.intensity) ? intensityLabel(signal.intensity) : null,
     emberKey: (snapshot.ember.active ? 'hud.emberRecovering' : snapshot.ember.available
       ? 'hud.emberReady' : 'hud.emberEmpty') as StringKey,
     progressPercent: percent(snapshot.ember.progress01),
