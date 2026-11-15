@@ -92,9 +92,12 @@ describe('refuges', () => {
   });
 
   it('clears progress for the next run on finish', () => {
-    const { controller, storage } = setup();
+    const { controller, storage, snapshot } = setup();
     controller.update(sections[1]!.spawn);
     controller.clear();
+    controller.update({ x: 500, y: 100 });
+    controller.update(sections[0]!.spawn);
+    snapshot.set({ ...snapshot.get(), ember: { ...snapshot.get().ember, available: false } });
     expect(loadSave(storage)).toBeNull();
   });
 });

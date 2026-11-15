@@ -26,6 +26,7 @@ export function createRefugeController({ sections, snapshot, bus, storage = crea
     v: 1, refugeId: null, emberAvailable: true, visitedRefugeIds: [],
   };
   let activeRefugeId: string | null = null;
+  let finished = false;
   const resumeSection = sections.find((section) => section.refuge?.id === progress.refugeId) ?? first;
   const initial = snapshot.get();
   snapshot.set({ ...initial, sectionId: resumeSection.id, inRefuge: false,
@@ -42,6 +43,7 @@ export function createRefugeController({ sections, snapshot, bus, storage = crea
     spawn: { ...resumeSection.spawn },
     getProgress: (): SavedProgress => ({ ...progress, visitedRefugeIds: [...progress.visitedRefugeIds] }),
     update(position: { x: number; y: number }): void {
+      if (finished) return;
       const section = sections.find(({ refuge }) => refuge &&
         Math.abs(position.x - refuge.x) <= refuge.width / 2 &&
         Math.abs(position.y - refuge.y) <= refuge.height / 2);
@@ -67,7 +69,11 @@ export function createRefugeController({ sections, snapshot, bus, storage = crea
       if (gained) bus.emit({ type: 'ember_gained' });
     },
     /** P4.5 calls this on finish, so the next player starts fresh. */
-    clear(): void { clearSave(storage); },
+    clear(): void {
+      finished = true;
+      unsubscribe();
+      clearSave(storage);
+    },
     destroy(): void { unsubscribe(); },
   };
 }
