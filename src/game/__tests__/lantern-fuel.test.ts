@@ -41,3 +41,9 @@ it('caps maximum corruption sight after any wax boost or airborne held radius, i
   fuel.lightRadius(520, false); fuel.refill();
   expect(corruptionVisibilityRadius(fuel.lightRadius(520, true), 1)).toBe(80);
 });
+
+it('brief wax pulse widens corrupted sight then returns to its exact cap', () => {
+  expect(corruptionVisibilityRadius(520, 1, 1)).toBe(160);
+  expect(corruptionVisibilityRadius(520, 1, 0.5)).toBe(120);
+  expect(corruptionVisibilityRadius(520, 1, 0)).toBe(80);
+});

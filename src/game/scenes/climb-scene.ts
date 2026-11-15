@@ -249,7 +249,7 @@ export class ClimbScene extends Phaser.Scene {
     const radius = this.fuel.lightRadius(this.wax.lightRadius(base, airborne, this.fuel.waxBenefit), airborne);
     const signal = this.deps.composure.getState();
     const actual = signal.valid && signal.mode !== 'fixed' ? signal.intensity : 0.2;
-    return corruptionVisibilityRadius(radius, Math.max(actual, visualCorruption));
+    return corruptionVisibilityRadius(radius, Math.max(actual, visualCorruption), this.wax.lightPulse01());
   }
 
   private returnToEmber(anchor: EmberAnchor | null): void {
