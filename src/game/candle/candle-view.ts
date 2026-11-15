@@ -14,7 +14,7 @@ import { createCandleGenome, type CandleGenome } from './candle-genome';
 import { bodyShape, INITIAL_POSE, poseFrame, stepPose, type PoseTracker } from './candle-pose';
 import { rasterCandle } from './candle-raster';
 import { type Aim, flameLean, flightSparks, wickLean } from './direction-cues';
-import { FLAME_FPS, flameSizeFromRadius, rasterFlame } from './flame';
+import { fallIntensity, FLAME_FPS, flameSizeFromRadius, flickerRate, rasterFlame } from './flame';
 
 /** The light, the wax growth and the settings the candle draws from this frame. */
 export interface CandleLook {
@@ -53,7 +53,9 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
     seed: (): number => genome.seed,
     update(state: PlayerState, deltaMs: number, paused: boolean, look: CandleLook): void {
       tracker = stepPose(tracker, { ...state, aim: look.aim }, deltaMs, paused);
-      if (!paused) clockMs += Math.max(0, deltaMs);
+      // Falling feeds the flame air: its flicker clock runs up to 2.5x faster (flame.ts).
+      const fall01 = Math.round(fallIntensity(state.grounded, state.vy) * 10) / 10;
+      if (!paused) clockMs += Math.max(0, deltaMs) * flickerRate(fall01);
       graphics.setPosition(state.x, state.y + bodyHeight / 2);
 
       const size01 = Math.round(flameSizeFromRadius(look.radiusPx, look.minRadiusPx, look.maxRadiusPx) * SIZE_STEPS) / SIZE_STEPS;
@@ -63,13 +65,13 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       const shape = { ...bodyShape(tracker, look.charge01), lean: wickLean(cue) };
       const lean = flameLean(cue);
       const sparks = flightSparks(genome, cue, flameFrame, look.reducedMotion);
-      const key = `${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${JSON.stringify(sparks)}`;
+      const key = `${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}`;
       if (key === drawnKey) return;
       drawnKey = key;
 
       const body = rasterCandle(genome, shape, look.growth, tracker.facingLeft);
       // The flame is drawn from the frame's own time so it matches the frame index above.
-      const flame = rasterFlame(genome, { size01, timeMs: (flameFrame * 1000) / FLAME_FPS, reducedMotion: look.reducedMotion, lean });
+      const flame = rasterFlame(genome, { size01, timeMs: (flameFrame * 1000) / FLAME_FPS, reducedMotion: look.reducedMotion, lean, fall01 });
       graphics.clear();
       for (const p of body.pixels) {
         graphics.fillStyle(p.color, 1);

@@ -25,7 +25,7 @@ Owner: Ali. Search here before adding a function.
 | `createCandleGenome`, `seededRandom`, `pickCandleSeed` | `candle/candle-genome.ts` | Seeded candle shape, colours, drips and flame rhythm; new seed each run, `?candleSeed=` in dev. |
 | `stepPose`, `poseFrame`, `bodyShape`, `POSE_TIMING` | `candle/candle-pose.ts` | Ruby-matched pose choice and frame timing, plus how the body squashes and stretches. |
 | `rasterCandle`, `grownSize` | `candle/candle-raster.ts` | Candle body, outline, drips and wick as art pixels. |
-| `rasterFlame`, `flameHeight`, `flameSizeFromRadius` | `candle/flame.ts` | Procedural pixel flame sized by the light radius, flickering at 12 fps (none under reduced motion). |
+| `rasterFlame`, `flameHeight`, `flameSizeFromRadius`, `fallIntensity`, `flickerRate`, `OXIDISED` | `candle/flame.ts` | Procedural pixel flame sized by the light radius, flickering at 12 fps (none under reduced motion); while falling it flickers faster, stretches, turns blue at the base and sheds licks. |
 | `waxGrowth`, `grownMovement` | `candle/growth.ts` | +2% size per wax; walk x growth, launch speeds x sqrt(growth). Wax count only, never the signal. |
 | `flameLean`, `wickLean`, `flightSparks`, `CueInput` | `candle/direction-cues.ts` | Jump-direction cues: aim lean while charging, trailing flame and sparks in flight; never bends the body. |
 | `createCandleView` | `candle/candle-view.ts` | Draws the candle in the scene (replaces the Ruby sprite view). |
