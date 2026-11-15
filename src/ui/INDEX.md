@@ -17,7 +17,7 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 | `pauseMenu`, `settingsPanel` | `components/pause-menu/`, `components/settings-panel/` | Pause/resume bus controls and live settings; main-menu start route remains pending. |
 | `createUiActions`, `UiActions` | `ui-actions.ts` | UI-local settings visibility shared by menu components. |
 | `remapKey` | `components/settings-panel/settings-editor.ts` | Swap existing bindings on a duplicate choice. |
-| `hud` | `components/hud/hud.ts` | Read-only ember availability/progress, signal quality, safe prompts and optional qualitative signal intensity. |
+| `hud` | `components/hud/hud.ts` | Ember status, optional wax collection goal/boost timer/pickup feedback, signal quality and qualitative signal intensity. |
 | `hudState`, `percent`, `intensityLabel` | `components/hud/hud-state.ts` | Presentation mapping and bounded percentage formatting. |
 | `createCalibrationFlow`, `stepFlow`, `messageKey`, `preferCalibrationFallback`, flow types | `components/calibration/calibration-flow.ts` | Pure calibration navigation, timed halfway instructions, ordered commands and reviewed failure wording. Screens are P6.1.2. |
 

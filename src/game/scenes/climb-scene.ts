@@ -16,6 +16,8 @@ import type { EventBus } from '../../shared/contracts/events';
 import { createDarkness, minCoveringRadius, updateDarkness } from '../effects/darkness';
 import { neutralFrame, stepEffects } from '../effects/effects-engine';
 import { createKeyboardInput } from '../keyboard-input';
+import { createWaxRewards } from '../wax/rewards';
+import { createWaxView } from '../wax/view';
 import { createPlayer, stepPlayer, teleportPlayer } from '../player/movement';
 import { createRecoveryEmber } from '../ember/recovery';
 import type { EmberAnchor } from '../save';
@@ -56,6 +58,8 @@ export class ClimbScene extends Phaser.Scene {
   private refuges!: ReturnType<typeof createRefugeController>;
   private ember!: ReturnType<typeof createRecoveryEmber>;
   private emberMark!: Phaser.GameObjects.Arc;
+  private wax!: ReturnType<typeof createWaxRewards>;
+  private waxView!: ReturnType<typeof createWaxView>;
   private player!: Phaser.GameObjects.Rectangle;
   private darkness!: Phaser.GameObjects.Image;
   private lanternMark!: Phaser.GameObjects.Arc;
@@ -73,6 +77,10 @@ export class ClimbScene extends Phaser.Scene {
     const world = loadSections(sections, gameConfig.view.width);
     this.platforms = world.platforms;
     drawWorld(this, world);
+    this.wax = createWaxRewards({ platforms: world.platforms, gameConfig,
+      bus: this.deps.bus, snapshot: stores.snapshot, storage: this.deps.storage });
+    this.waxView = createWaxView(this, this.wax, this.deps.bus);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.waxView.destroy());
 
     this.refuges = createRefugeController({
       sections, snapshot: stores.snapshot, bus: this.deps.bus,
@@ -82,7 +90,7 @@ export class ClimbScene extends Phaser.Scene {
       snapshot: stores.snapshot, bus: this.deps.bus, storage: this.deps.storage,
     });
     this.state = createPlayer(this.ember.spawn.x, this.ember.spawn.y);
-    const offFinish = this.deps.bus.on('finish', () => this.ember.clear());
+    const offFinish = this.deps.bus.on('finish', () => { this.ember.clear(); this.wax.finish(); });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       offFinish();
     });
@@ -138,6 +146,7 @@ export class ClimbScene extends Phaser.Scene {
     const offAssist = this.deps.bus.on('ember_assist_requested', () => this.returnToEmber(this.ember.assist()));
     const offCancel = this.deps.bus.on('ember_cancel_request', () => this.ember.cancel());
     const offRestart = this.deps.bus.on('run_restart', () => {
+      this.wax.reset();
       const spawn = this.ember.restart();
       this.state = teleportPlayer(spawn.x, spawn.y); clearInput(); this.accumulatorMs = 0;
     });
@@ -169,6 +178,7 @@ export class ClimbScene extends Phaser.Scene {
       this.accumulatorMs -= stepMs;
       const out = stepPlayer(this.state, this.controls.read(), this.platforms, gameConfig.view.width, gameConfig, stepMs);
       this.state = out.state;
+      this.wax.update(this.state, stepMs);
       this.refuges.update(this.state);
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).
@@ -185,6 +195,7 @@ export class ClimbScene extends Phaser.Scene {
       bus.emit({ type: 'precision_window', active: this.precisionActive });
     }
     this.player.setPosition(this.state.x, this.state.y);
+    this.waxView.update(deltaMs, this.phase.isRunning(), settings.reducedMotion);
     writeSnapshot(stores.snapshot, {
       sectionId: sectionAt(sections, this.state.y + gameConfig.player.height / 2),
       altitude01: altitude01(sections, this.state.y),
@@ -207,7 +218,8 @@ export class ClimbScene extends Phaser.Scene {
     stores.effects.set(frame);
 
     // Never let the sheet shrink so far that its edge shows on screen.
-    const radius = Math.max(frame.lanternRadius, minCoveringRadius(gameConfig.view.width, gameConfig.view.height));
+    const baseRadius = Math.max(frame.lanternRadius, minCoveringRadius(gameConfig.view.width, gameConfig.view.height));
+    const radius = this.wax.lightRadius(baseRadius, !this.state.grounded);
     updateDarkness(this.darkness, this.state.x, this.state.y, radius);
     this.lanternMark.setPosition(this.state.x, this.state.y - gameConfig.player.height / 2 - 6);
   }

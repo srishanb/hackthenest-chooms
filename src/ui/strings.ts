@@ -6,6 +6,10 @@
  * state refer to text by key, never by literal string.
  */
 export const STRINGS = {
+  'wax.label': 'Wax',
+  'wax.complete': 'Set complete ★',
+  'wax.boost': 'Warm glow',
+  'wax.pickup': '+1 wax · Lantern boosted',
   'tutorial.label': 'Quick start',
   'tutorial.controls': 'Controls',
   'tutorial.next': 'Next',
@@ -23,7 +27,7 @@ export const STRINGS = {
   'tutorial.climb.title': 'Place. Return. Reuse.',
   'tutorial.climb.keys': 'E = place / pick up  ·  R = recover',
   'tutorial.climb.body': 'E places your ember on a ledge or picks it up nearby. After a fall, land and press R to return.',
-  'tutorial.climb.tip': 'Unlimited uses. 5-second cooldown. No automatic checkpoints.',
+  'tutorial.climb.tip': 'Ember: unlimited uses, 5-second cooldown. Collect gold wax for a 10-second lantern boost.',
   'source.LIVE_EEG': 'LIVE EEG',
   'source.SIMULATED': 'SIMULATED INPUT',
   'source.REPLAY': 'RECORDED REPLAY',
