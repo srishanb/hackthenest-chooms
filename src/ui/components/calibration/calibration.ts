@@ -95,11 +95,11 @@ export const calibration: UiComponent = {
         case 'activeResult': case 'restingResult': {
           const step: CalibrationStep = state.screen === 'activeResult' ? 'active' : 'resting';
           if (state.result?.ok) {
-            instruction.textContent = t('calib.active.ok'); add('calib.next', () => send('start')); add('calib.close', close);
+            instruction.textContent = t('calib.active.ok'); add('calib.next', () => send('start')); add('calib.activeOnly', () => dispatch({ type: 'continueWithout' })); add('calib.close', close);
           } else {
             instruction.textContent = t(messageKey(step, state.result?.reasonKey)); hint.textContent = `${step === 'resting' ? t('calib.openEyes') + ' ' : ''}${t('calib.failureNote')}`;
             const retry = (): void => { add('calib.retry', () => send('retry')); };
-            const fallback = (): void => { add(step === 'active' ? 'calib.steadyLight' : 'calib.continueWithout', () => {
+            const fallback = (): void => { add(step === 'active' ? 'calib.steadyLight' : state.activeCalibrated ? 'calib.activeOnly' : 'calib.continueWithout', () => {
               if (step === 'active') send('useSteadyLight'); else dispatch({ type: 'continueWithout' });
             }); };
             if (preferCalibrationFallback(state)) { fallback(); retry(); } else { retry(); fallback(); }
@@ -107,7 +107,7 @@ export const calibration: UiComponent = {
           break;
         }
         case 'done':
-          instruction.textContent = t(state.restingCalibrated ? 'calib.done' : 'calib.withoutResting');
+          instruction.textContent = t(state.restingCalibrated ? 'calib.done' : state.activeCalibrated ? 'calib.activeOnlyReady' : 'calib.withoutResting');
           hint.textContent = t('calib.openEyes'); add('calib.returnToPause', close); break;
         case 'closed': close(); return;
       }

@@ -209,3 +209,19 @@ describe('pipeline: non-finite times', () => {
     expectHealthy(p);
   });
 });
+
+it('active calibration alone drives tension while missing resting calibration never activates recovery', () => {
+  const p = make();
+  const active = calibrate(p, 'active', 0, [1,1], [1,4]);
+  expect(active.ok).toBe(true);
+  let state = p.getState();
+  feed(p, active.endMs, 15000, () => frameAt(0,1,5)); state = p.getState();
+  expect(state.valid).toBe(true); expect(state.calibrated).toBe(true);
+  expect(state.intensity).toBeGreaterThan(0.9);
+  expect(state.resting).toBe(0); expect(state.restingActive).toBe(false);
+  const resting = calibrate(p, 'resting', active.endMs+16000, [1,1], [1,1]);
+  expect(resting.ok).toBe(false);
+  state = p.process(frameAt(resting.endMs,1,5), resting.endMs);
+  expect(state.valid).toBe(true); expect(state.restingActive).toBe(false);
+  state = p.step(resting.endMs + 1000); expect(state.valid).toBe(false);
+});

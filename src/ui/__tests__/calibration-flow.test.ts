@@ -49,13 +49,13 @@ describe('calibration flow', () => {
     expect(fallback.state.activeCalibrated).toBe(false);
   });
 
-  it('continues honestly after resting failure and requests steady light', () => {
+  it('keeps active mode after resting failure without claiming recovery works', () => {
     const resting = advance(activeResult(true).state, { type: 'start', nowMs: 13000 }).state;
     const failed = advance(resting, { type: 'result', result: { step: 'resting', ok: false } }).state;
     const done = advance(failed, { type: 'continueWithout' });
     expect(done.state.screen).toBe('done');
     expect(done.state.restingCalibrated).toBe(false);
-    expect(done.commands).toEqual([{ type: 'setMode', mode: 'fixed' }]);
+    expect(done.commands).toEqual([]);
   });
 
   it('prefers fallback after two failures and retries only the failed step', () => {
@@ -82,7 +82,7 @@ describe('calibration flow', () => {
   });
 
   it('does not allow fallbacks in unrelated or successful screens', () => {
-    for (const state of [createCalibrationFlow(), activeResult(true).state]) {
+    for (const state of [createCalibrationFlow(), advance(activeResult(true).state, { type: 'continueWithout' }).state]) {
       expect(advance(state, { type: 'useSteadyLight', nowMs: 100 }).commands).toEqual([]);
       expect(advance(state, { type: 'continueWithout' }).state).toBe(state);
     }
@@ -110,4 +110,10 @@ describe('calibration flow', () => {
     expect(STRINGS['calib.intro']).toContain('Muscle activity');
     expect(STRINGS['calib.withoutResting']).toContain('ordinary-input rescue');
   });
+});
+
+it('lets a successful active baseline skip eye-closure calibration without switching to fixed mode', () => {
+ const done=advance(activeResult(true).state,{type:'continueWithout'});
+ expect(done.state.screen).toBe('done'); expect(done.state.activeCalibrated).toBe(true);
+ expect(done.state.restingCalibrated).toBe(false); expect(done.commands).toEqual([]);
 });

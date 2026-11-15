@@ -200,6 +200,8 @@ export const STRINGS = {
   "calib.retry": "Retry",
   "calib.close": "Close",
   "calib.steadyLight": "Use steady light",
+  "calib.activeOnly": "Play with active input; skip eye-closure recovery",
+  "calib.activeOnlyReady": "Active input is ready and can change the world. Eye-closure recovery is unavailable until resting calibration passes.",
   "calib.continueWithout": "Continue without it",
   "calib.active.low": "Relax your jaw and keep still for the first half.",
   "calib.active.high": "Gently clench your jaw now for the second half.",
