@@ -7,3 +7,5 @@ Acceptance: full radius covers every corner for any player position; same full v
 Final validation:491 tests/76 files, TypeScript and production build pass; existing Vite/pieeg warnings remain. PR107 and109 still draft; main02d1966 still lacks fuel. This PR intentionally remains draft until integration can be verified with restored resource.
 
 Follow-up: Neil noticed decay in normal world. Earlier reveal tuning mistakenly consumed neutral0.2 directly. Added sceneryCorruption mapping0 through normal boundary0.35, then ramp to1; applied to plant reveal and foreground/background red grass. Regression covers neutral/boundary/corrupted values. This fixes own earlier tuning error.
+
+Local integration follow-up: imported origin/claude/restore-lantern-fuel into this branch without merging its draft to main. Resolved climb-scene conflicts to consume actual this.fuel.value directly; removed missing-resource full-fuel fallback. Resource burn/refill/ember/victory wiring restored.495 tests/76 files and build pass; no unmerged paths remain. PR stays draft pending owner coordination with107/109. Manual browser validation still outstanding.
