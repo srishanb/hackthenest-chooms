@@ -30,6 +30,7 @@ The torch is decorative artwork, not a complete player character. Character anim
 - `audio/interface/back_001.ogg`: back/cancel.
 - `audio/ember/fantasy-magic-button-1.mp3`: recovery activation candidate. MP3 duration has not been measured.
 - `audio/music/cathedral-in-the-forest.ogg`: 136.974-second ambient loop by congusbongus, a license-verified replacement candidate for the unverified standalone fantasy track.
+- `audio/music/insistent.ogg`: 128.693-second dark loop by yd (CC0), the tense layer the music crossfades to as the signal rises. Level-matched in code (`MUSIC_LEVEL_TRIM`); the two loops are different lengths and are not tempo-synchronised, which is fine for an equal-power crossfade of ambient beds.
 
 All audio files are original bytes, with descriptive renaming only. The ambient loop is one mixed track, **not synchronized calm/tense stems**. Adaptive layered music remains an audio-lane follow-up; do not represent this pack as completing it. Loop seams, subjective volume balance, MP3 decoding and in-game playback still need a listening pass. Do not turn footsteps/UI sounds into looping tracks.
 
