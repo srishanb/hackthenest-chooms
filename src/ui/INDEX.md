@@ -13,7 +13,8 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 | `mainMenu` | `components/main-menu/` | First-launch controls tutorial, persistent completion and replay button; publishes pause/resume through the bus. |
 | `hasSeenTutorial`, `rememberTutorial`, `TUTORIAL_STORAGE_KEY` | `components/main-menu/tutorial-storage.ts` | Safely remember the completed/skipped guide independently of checkpoint saves. |
 | `captions` | `components/captions/` | Shows `narrator_line` text for `durationMs`; follows Settings (on/off, size). Dev: `?captionDemo`, `window.lightenCaption(text)`. Helpers `captionDurationMs`, `captionText` in `captions-state.ts`. |
-| `emberPrompt` | `components/ember-prompt/` | New-run button after finish; no recovery popup. Progress and cooldown live in the HUD. |
+| `emberPrompt` | `components/ember-prompt/` | Registered, renders nothing: recovery uses the HUD; Play again moved to the finish screen. |
+| `finishScreen`, `finishScreenVisible`, `restartsOnKey` | `components/finish-screen/` | Shown in phase 'finished': Play again (button or Enter) emits `run_restart`. |
 | `pauseMenu`, `settingsPanel` | `components/pause-menu/`, `components/settings-panel/` | Pause/resume bus controls and live settings; main-menu start route remains pending. |
 | `createUiActions`, `UiActions` | `ui-actions.ts` | UI-local settings/calibration navigation and enabled-component capabilities. |
 | `remapKey` | `components/settings-panel/settings-editor.ts` | Swap existing bindings on a duplicate choice. |
