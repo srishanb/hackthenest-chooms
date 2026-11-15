@@ -7,16 +7,18 @@
  * caps (flameSizeFromRadius), so wax bonuses brighten it too. From strong to weak:
  *   - the flame shrinks and its glow fades; the wax dims as the light leaves it;
  *   - the flame staggers sideways more and more;
- *   - below 60% thin smoke starts curling off the wick, thicker the weaker it gets;
+ *   - below 45% thin smoke starts curling off the wick, thicker the weaker it gets (the
+ *     neutral light is about 53%, so a calm candle never smokes);
  *   - below 30% the flame gutters: in some frames it goes out, leaving a red ember on the
- *     wick and more smoke, the way a candle looks just before it dies.
+ *     wick and more smoke, the way a candle looks just before it dies;
+ *   - below 25% what is left of the flame burns a dim blue, starved and about to go out.
  * With reduced motion there is no guttering, stagger or drifting smoke; size, dimming and
  * glow still show the strength. Pure and visual only; same genome as the hero candle.
  */
 import { scaleColor, type CandleGenome } from './candle-genome';
 import { bodyShape, INITIAL_POSE } from './candle-pose';
 import { rasterCandle } from './candle-raster';
-import { FLAME_FPS, rasterFlame } from './flame';
+import { FLAME_FPS, OXIDISED, rasterFlame } from './flame';
 
 /** Circle radius in art pixels. */
 export const PORTRAIT_RADIUS = 20;
@@ -26,8 +28,9 @@ const SMOKE_COLOR = 0x8a8f99;
 const EMBER_COLOR = 0xff4a1f;
 const EMBER_DARK = 0x9a2414;
 /** Below this strength smoke appears; below GUTTER_BELOW the flame can go out for a frame. */
-export const SMOKE_BELOW = 0.6;
+export const SMOKE_BELOW = 0.45;
 export const GUTTER_BELOW = 0.3;
+export const BLUE_BELOW = 0.25;
 
 export interface PortraitPixel {
   /** Art pixels from the circle's centre; y grows downward. */
@@ -94,7 +97,14 @@ export function rasterPortrait(genome: CandleGenome, input: PortraitInput): Port
     // A weak flame staggers: its lean jumps around more the closer it is to going out.
     const stagger = motion * (1 - s) * (hash01(genome.seed, frame, 2) * 4 - 2);
     const flame = rasterFlame(genome, { size01: Math.pow(s, 0.8), timeMs: input.timeMs, reducedMotion: input.reducedMotion, lean: stagger });
-    for (const p of flame) push(tipX + p.x, tipY + p.y, p.color);
+    // A starving flame loses its yellow: the last of it burns a dim blue.
+    const starving = s < BLUE_BELOW ? (BLUE_BELOW - s) / BLUE_BELOW : 0;
+    const starved = new Map<number, number>([[genome.flame.colors.core, OXIDISED.core], [genome.flame.colors.inner, OXIDISED.inner],
+      [genome.flame.colors.outer, OXIDISED.outer], [genome.flame.colors.edge, OXIDISED.outer]]);
+    for (const p of flame) {
+      const blue = starving > 0 && p.y > -1 - Math.ceil(starving * 4);
+      push(tipX + p.x, tipY + p.y, blue ? starved.get(p.color) ?? p.color : p.color, 1 - 0.35 * starving);
+    }
   }
 
   // Smoke: wisps rise from the wick and fade, more and thicker as the candle weakens.
@@ -106,9 +116,11 @@ export function rasterPortrait(genome: CandleGenome, input: PortraitInput): Port
       const age = (t * 0.55 + i / wisps + (genome.flame.phaseA / (Math.PI * 2))) % 1;
       const y = tipY - 2 - Math.round(age * 15);
       const x = tipX + Math.round(Math.sin(age * 7 + i * 2.1 + genome.flame.phaseB) * 2 * age);
-      const alpha = (1 - age) * (0.25 + 0.5 * weakness);
+      const alpha = (1 - age) * (0.35 + 0.55 * weakness);
       push(x, y, SMOKE_COLOR, alpha);
-      if (weakness > 0.5) push(x + 1, y - 1, SMOKE_COLOR, alpha * 0.6);
+      // Thicker smoke as the candle weakens: the wisp widens as it rises.
+      if (weakness > 0.35) push(x + 1, y - 1, SMOKE_COLOR, alpha * 0.7);
+      if (weakness > 0.7 && age > 0.3) push(x - 1, y - 1, SMOKE_COLOR, alpha * 0.5);
     }
   }
 

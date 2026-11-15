@@ -31,8 +31,9 @@ describe('candle portrait', () => {
 
   it('a weak candle smokes, more as it weakens', () => {
     const wisps = (s: number) => Math.max(...Array.from({ length: 20 }, (_, i) => smoke(portrait(s, i * 137)).length));
-    expect(wisps(0.5)).toBeGreaterThan(0);
-    expect(wisps(0.05)).toBeGreaterThan(wisps(0.5));
+    expect(wisps(0.4)).toBeGreaterThan(0);
+    expect(wisps(0.53)).toBe(0);
+    expect(wisps(0.05)).toBeGreaterThan(wisps(0.4));
   });
 
   it('near death the flame gutters out in some frames, never above the threshold', () => {
@@ -50,4 +51,11 @@ describe('candle portrait', () => {
     expect(portrait(0.05, 0, true)).toEqual(portrait(0.05, 5000, true));
     expect(portrait(1, 0, true).glow01).toBeGreaterThan(portrait(0.05, 0, true).glow01);
   });
+});
+
+it('the last of a dying flame burns blue; a healthy one does not', () => {
+  const blue = new Set<number>([0xe6f1ff, 0x9cc4ff, 0x5a8ae8]);
+  const lit = (s: number) => Array.from({ length: 40 }, (_, f) => portrait(s, (f * 1000) / 12)).find((p) => !p.guttered)!;
+  expect(lit(0.1).pixels.some((p) => blue.has(p.color))).toBe(true);
+  expect(lit(0.8).pixels.some((p) => blue.has(p.color))).toBe(false);
 });
