@@ -35,7 +35,7 @@ describe('HUD state', () => {
     expect(view.progressPercent).toBe(100);
   });
   it('resolves known prompts and hides unknown/prototype keys', () => {
-    expect(hudState({ ...snapshot, promptKey: 'hud.emberReady' }, signal, 500).prompt).toBe('Recovery ember available');
+    expect(hudState({ ...snapshot, promptKey: 'hud.emberReady' }, signal, 500).prompt).toBe('Reusable recovery ember');
     for (const promptKey of [null, 'unknown.internal.key', 'toString', '__proto__']) {
       expect(hudState({ ...snapshot, promptKey }, signal, 500).prompt).toBeNull();
     }

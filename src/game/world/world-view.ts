@@ -7,7 +7,7 @@ export function drawWorld(scene: Scene, world: LoadedWorld): void {
     scene.add.rectangle(platform.x, platform.y, platform.width, platform.height, 0x8a93a8).setDepth(0);
   }
   for (const section of world.sections) {
-    for (const [area, color] of [[section.refuge, 0x4e8f6a], [section.finish, 0xf2c14e]] as const) {
+    for (const [area, color] of [[section.finish, 0xf2c14e]] as const) {
       if (area) scene.add.rectangle(area.x, area.y, area.width, area.height, color, 0.25).setDepth(1);
     }
   }

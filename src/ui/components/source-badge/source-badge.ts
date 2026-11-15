@@ -18,7 +18,8 @@ const LABEL: Record<InputSourceKind, StringKey> = {
 export const sourceBadge: UiComponent = {
   id: 'source-badge',
   visibleIn: 'always',
-  mount(root, { signal }) {
+  mount(root, { signal, bus }) {
+    let assisted = false;
     const badge = document.createElement('div');
     badge.className = 'source-badge';
     badge.setAttribute('role', 'status');
@@ -26,14 +27,19 @@ export const sourceBadge: UiComponent = {
 
     const render = (source: InputSourceKind): void => {
       badge.dataset.source = source;
-      badge.textContent = t(LABEL[source]);
+      badge.textContent = t(LABEL[source]) + (assisted ? ` · ${t('source.assisted')}` : '');
     };
     render(signal.reader.getState().source);
     const unsubscribe = signal.reader.subscribe((state) => {
       if (badge.dataset.source !== state.source) render(state.source);
     });
+    const offReturn = bus.on('ember_returned', (event) => {
+      if (event.via === 'assist') { assisted = true; render(signal.reader.getState().source); }
+    });
+    const offRestart = bus.on('run_restart', () => { assisted = false; render(signal.reader.getState().source); });
     return () => {
       unsubscribe();
+      offReturn(); offRestart();
       badge.remove();
     };
   },
