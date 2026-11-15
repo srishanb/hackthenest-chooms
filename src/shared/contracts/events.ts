@@ -38,7 +38,7 @@ export type GameEvent =
   | { type: 'pause' }
   | { type: 'resume' }
   /** The narrator started a line. Captions subscribe to this and show `text` for `durationMs`, so they need no content lookup. */
-  | { type: 'narrator_line'; lineId: string; text: string; durationMs: number }
+  | { type: 'narrator_line'; lineId: string; text: string; durationMs: number; offsetMs?: number }
   | { type: 'stage_completed'; stageId: string; index: number }
   | { type: 'finish' };
 
