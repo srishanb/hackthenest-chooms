@@ -30,6 +30,7 @@ One line per decision. Only the integrator edits this file. A **Decision** was c
 | D-21 | 15 Nov 2026 | Srishan | Owner override on P2 ("change the plan and force approve p2.3"): one approval of `docs/plans/P2.md` now covers P2.1 to P2.4, and `docs/plans/P2.3.md` is approved by Srishan. Amrit still owns the UI lane. Srishan may approve any plan as repo owner; each override gets a row here. |
 | D-22 | 15 Nov 2026 | Srishan | "let people commit whatever they want provided its not breaking or goes against the ethos of the game." The reviewer holds a pull request for only two reasons: it breaks something (check, build, or a bug that breaks the game or another person's work), or it goes against the ethos (the binding rules and never deleting git history). Lanes, plans and approvals, the feature list, claims, pre-code checks and after-job reports are advice, not gates. |
 | D-23 | 15 Nov 2026 | Srishan | The game is named **Lighten Up** ("rename the game to lighten up"). Player-facing text and docs use it; storage keys, the recording format id and the npm package name keep `lighten` so saves and recordings still load. Closes H-11 for the name. |
+| D-24 | 15 Nov 2026 | Srishan | Owner decision: the feature freeze moves from Sun 9:00 AM to a strict Sun 10:00 AM so all features can be finished. Wrap-up starts now: full builds and smoke tests of the built game run alongside feature work. After 10:00 AM only fixes, build and smoke-test work, and submission material. |
 
 ## Recommendations in force (overrule by adding a Decision row)
 

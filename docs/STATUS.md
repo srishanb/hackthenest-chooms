@@ -5,7 +5,7 @@ Cut. **Built** means merged to `main` and covered by tests, but not yet checked 
 playing on the demo laptop. **Done** is used only where nothing more is needed.
 
 Last updated: Sun 15 Nov 2026, 8:30 AM Eastern, from `origin/main` at commit `ff068bb` (PR #73) and the merged-PR list.
-Feature freeze is 9:00 AM; final submission is 12:00 PM.
+Strict feature freeze is 10:00 AM (D-24): features may still be developed and merged until then, and wrap-up (full builds and smoke tests of the built game) starts now. After 10:00 AM only fixes, build and smoke-test work, and submission material. Final submission is 12:00 PM.
 
 Rows were rebuilt from `git log origin/main`, merged PRs and `docs/agent-reports/`. Phase boundaries are approximate:
 several PRs (forest, wax, corruption, candle) were added outside the original phase plan under Decision D-22.

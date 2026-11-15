@@ -653,8 +653,8 @@ never shipped even if promoted, because they conflict with the binding framing a
 | Sun 5:00 – 6:00 AM | First full run on a real board: calibrate → climb → fall → ember → finish | all |
 | Sun 6:00 AM | Decision point: start P10 to P12 only if every Core item passes its tests | Srishan |
 | Sun 6:00 – 9:00 AM | Playtest on all four heads and one stranger (H-12); tune `effects.config.ts` and `ember.config.ts`; offline test (H-13) | all |
-| **Sun 9:00 AM** | **Feature freeze.** Bug fixes, tuning and docs only | all |
 | Sun 9:30 – 9:45 AM | **Walkthrough 2** (moved from 10 AM so it does not collide with the video workshop) | all |
+| **Sun 10:00 AM** | **Strict feature freeze (D-24).** Until then features may still be developed and merged, and wrap-up starts now: full builds and smoke tests of the built game. After 10:00 AM only fixes, build and smoke-test work, and submission material | all |
 | Sun 10:00 – 10:45 AM | Demo-video workshop, Halle Library (one person); record the video | Amrit + one |
 | Sun 11:30 AM | Final Devpost submission (**hard deadline 12:00 PM**) | Amrit, checked by Srishan |
 | Sun 12:00 – 1:15 PM | Rehearse the demo twice with Wi-Fi off; charge the power bank | all |
