@@ -15,7 +15,7 @@ export const STRINGS = {
   'tutorial.terrain.title': 'Read the world',
   'tutorial.terrain.keys': 'Moving ledges · ice · wind · wax',
   'tutorial.terrain.body': 'Moving ledges follow a steady rhythm. Ice has less grip; leave room to stop. Wind nudges you in the air: watch the drifting particles and aim against the gust.',
-  'tutorial.terrain.tip': 'Gold wax refills your candle and briefly boosts its light. Keep the flame lit and the world restored to finish each stage.',
+  'tutorial.terrain.tip': 'Gold wax briefly boosts your light. Restore the world before landing on each stage’s final ledge to keep climbing.',
   'narrator.voice.title': 'Narrator voice',
   'narrator.voice.label': 'Voice',
   'narrator.voice.chris': 'Chris · conversational',
