@@ -220,5 +220,17 @@
     "bytes": 2947211,
     "sha256": "b9e05a1fcd5869b63193515e2a9c1bd578906a78e628e307f19527d387262593",
     "durationSeconds": 136.974
+  },
+  {
+    "path": "audio/music/insistent.ogg",
+    "author": "yd",
+    "license": "CC0-1.0",
+    "source": "https://opengameart.org/content/insistent-background-loop",
+    "licenseEvidence": "licenses/source-evidence.md",
+    "integrationOwner": "Amrit",
+    "status": "wired-tense-layer",
+    "bytes": 1767874,
+    "sha256": "c5e0eccb09379301c56e95c6b6586e842be0ef363938b8d1062518280da99cfb",
+    "durationSeconds": 128.693
   }
 ]

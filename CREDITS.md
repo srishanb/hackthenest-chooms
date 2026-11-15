@@ -61,6 +61,7 @@ These files were prepared in P8.1. The listed music and selected SFX are now use
 | `public/assets/audio/interface/click_001.ogg`, `confirmation_001.ogg`, `back_001.ogg` | Kenney (www.kenney.nl) | [Original archive notice](public/assets/licenses/kenney-interface-License.txt) | https://opengameart.org/content/interface-sounds |
 | `public/assets/audio/ember/fantasy-magic-button-1.mp3` | Almitory | [Item-page CC0 evidence](public/assets/licenses/source-evidence.md) | https://opengameart.org/content/fantasy-magic-spell — renamed from `fantasy_magic_button_1.mp3` |
 | `public/assets/audio/music/cathedral-in-the-forest.ogg` | congusbongus | [Item-page CC0 evidence](public/assets/licenses/source-evidence.md) | https://opengameart.org/content/cathedral-in-the-forest-ambient-loop — renamed from `forest_2_0.ogg` |
+| `public/assets/audio/music/insistent.ogg` — the tense layer | yd | [Item-page CC0 evidence](public/assets/licenses/source-evidence.md) | https://opengameart.org/content/insistent-background-loop — renamed from `Insistent.ogg`; original bytes |
 
 The ambient loop is a single mixed bed, not calm/tense stems. Original `top-down-fantasy-1.ogg` remains excluded pending explicit terms. This section complements the independent license-review work in PR #10 and does not supersede its restrictions.
 
