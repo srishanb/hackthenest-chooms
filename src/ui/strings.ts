@@ -18,6 +18,8 @@ export const STRINGS = {
   'editor.hint': 'Drag a ledge or its white edge handle. Green is spawn; gold is final. Save validates geometry, not difficulty.',
   'editor.protected': 'Keep the floor and final platform. Select another final platform before deleting this one.',
   'editor.return': 'Back to Editor',
+  'stage.finishBlocked': 'Return to the normal world on the final ledge to finish.',
+  'wax.suppressed': 'Wax collected · corruption blocks its light',
   'hud.fuel': 'Fuel',
   'hud.lantern': 'Lantern strength',
   'hud.height': 'Height',

@@ -30,6 +30,20 @@ function setup(resume?: string) {
 }
 
 describe('stage progression', () => {
+  it('requires normal world and final support after a blocked final landing', () => {
+    const game = setup('snow-windy-last');
+    expect(game.progress.land('snow-windy-last', false)).toBe(false);
+    expect(game.snapshot.get().stage?.completed).toBe(4);
+    expect(game.progress.finishIfReady(null, true)).toBe(false);
+    expect(game.progress.finishIfReady('snow-last', true)).toBe(false);
+    expect(game.progress.finishIfReady('snow-windy-last', false)).toBe(false);
+    game.snapshot.set({ ...game.snapshot.get(), phase: 'paused' });
+    expect(game.progress.finishIfReady('snow-windy-last', true)).toBe(false);
+    game.snapshot.set({ ...game.snapshot.get(), phase: 'playing' });
+    expect(game.progress.finishIfReady('snow-windy-last', true)).toBe(true);
+    expect(game.progress.finishIfReady('snow-windy-last', true)).toBe(false);
+    game.progress.reset(); expect(game.progress.isFinishBlocked()).toBe(false);
+  });
   it('requires the active final platform and ignores ordinary or future ledges', () => {
     const game = setup(); game.land('normal-last'); game.land('ordinary');
     expect(game.completed).toEqual([]);

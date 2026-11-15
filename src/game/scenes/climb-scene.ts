@@ -1,3 +1,4 @@
+import { LANTERN_FUEL_CONFIG } from '../../config/lantern-fuel.config';
 /**
  * The climb scene: draws the world, runs the fixed-step player physics and feeds the effects.
  *
@@ -247,7 +248,7 @@ export class ClimbScene extends Phaser.Scene {
   }
 
   private visibleRadius(base: number, airborne: boolean): number {
-    return this.fuel.lightRadius(this.wax.lightRadius(base, airborne), airborne);
+    return this.fuel.lightRadius(this.wax.lightRadius(base, airborne, this.fuel.waxBenefit), airborne);
   }
 
   private returnToEmber(anchor: EmberAnchor | null): void {
@@ -280,20 +281,26 @@ export class ClimbScene extends Phaser.Scene {
       const out = stepPlayer(this.state, input, this.platforms, gameConfig.view.width, movement, stepMs,
         { windAccelerationX: windAt(sections, this.state, this.worldTimeMs) });
       this.state = out.state;
-      this.wax.update(this.state, stepMs);
       const actualSignal = composure.getState();
       this.fuel.update(actualSignal.valid && actualSignal.mode !== 'fixed' ? actualSignal.intensity : 0.2, stepMs);
+      this.wax.update(this.state, stepMs, this.fuel.waxBenefit);
       this.refuges.update(this.state);
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).
       if (out.events.landed) {
         for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
-        if (this.stages.land(out.events.landed.platformId)) {
+        if (this.stages.land(out.events.landed.platformId,
+          Math.max(actualSignal.valid && actualSignal.mode !== 'fixed' ? actualSignal.intensity : 0.2,
+            stores.effects.get().forestCorruption, this.forestPreview ?? 0) <= LANTERN_FUEL_CONFIG.normalWorldMax01)) {
           this.accumulatorMs = 0;
           this.phase.finish();
         }
       }
     }
+    const finishSignal = composure.getState();
+    const normalWorld = Math.max(finishSignal.valid && finishSignal.mode !== 'fixed' ? finishSignal.intensity : 0.2,
+      stores.effects.get().forestCorruption, this.forestPreview ?? 0) <= LANTERN_FUEL_CONFIG.normalWorldMax01;
+    if (this.stages.finishIfReady(this.state.grounded ? this.state.platformId : null, normalWorld)) this.phase.finish();
     this.ember.refreshPrompt(this.state);
     const anchor = this.ember.getAnchor();
     this.emberMark.setVisible(anchor !== null);
@@ -307,7 +314,7 @@ export class ClimbScene extends Phaser.Scene {
     this.worldView.update(this.platforms, this.worldTimeMs, settings.reducedMotion, this.state.y);
     const sectionId = sectionAt(sections, this.state.y + gameConfig.player.height / 2);
     const lesson = sectionId === 'tutorial' ? lessonAt(sections, this.state.y) : undefined;
-    const lessonKey = lesson ? `lesson.${lesson}` : sectionId ? `stage.tip.${sectionId}` : undefined;
+    const lessonKey = this.stages.isFinishBlocked() ? 'stage.finishBlocked' : lesson ? `lesson.${lesson}` : sectionId ? `stage.tip.${sectionId}` : undefined;
     if (stores.snapshot.get().lessonKey !== lessonKey) {
       stores.snapshot.set({ ...stores.snapshot.get(), lessonKey });
     }
@@ -346,7 +353,7 @@ export class ClimbScene extends Phaser.Scene {
 
     // Never let the sheet shrink so far that its edge shows on screen.
     const baseRadius = Math.max(frame.lanternRadius, minCoveringRadius(gameConfig.view.width, gameConfig.view.height));
-    const radius = this.wax.lightRadius(baseRadius, !this.state.grounded);
+    const radius = this.visibleRadius(baseRadius, !this.state.grounded);
     updateDarkness(this.darkness, this.state.x, this.state.y, radius);
     this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius, this.platforms);
     this.lanternMark.setPosition(this.state.x, this.state.y - gameConfig.player.height / 2 - 6);
