@@ -21,9 +21,10 @@ export function launchVelocity(charge: number, direction: -1 | 0 | 1, config: Ga
 }
 
 /**
- * Air steering (MOV-3): held direction moves horizontal speed at most `airSteer01 x walkSpeed`
- * away from the launch value, so a launch can never be reversed.
+ * Held direction adds a capped correction to launch speed. Only strict descent uses the
+ * optional falling cap; ascent and the apex retain the original air-steering rule.
  */
-export function steeredVx(launchVx: number, direction: -1 | 0 | 1, config: GameConfig): number {
-  return launchVx + direction * config.airSteer01 * config.walkSpeed;
+export function steeredVx(launchVx: number, direction: -1 | 0 | 1, config: GameConfig, descending = false): number {
+  const steer = descending ? config.fallSteer01 ?? config.airSteer01 : config.airSteer01;
+  return launchVx + direction * steer * config.walkSpeed;
 }

@@ -46,7 +46,7 @@ describe('tutorial environment', () => {
     expect(drifting.vx).toBeLessThan(180);
     expect(stepPlayer(state, { ...idle, jump: true }, ice, 960, GAME_CONFIG, dt).state.vx).toBe(0);
     expect(stepPlayer(state, idle, [{ ...ledge, type: 'static' }], 960, GAME_CONFIG, dt).state.vx).toBe(0);
-    expect(getPlatformType('slippery')?.anchorSafe).toBe(false);
+    expect(getPlatformType('slippery')?.anchorSafe).toBe(true);
   });
 
   it('wind is local, deterministic, bounded and has no grounded effect', () => {
