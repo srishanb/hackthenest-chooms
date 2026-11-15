@@ -84,3 +84,14 @@
 }
 /* Preview-only statistics size defaults; user-selected values stay local. */
 :root { --hud-stats-background: #101b2b99; --hud-stats-font: 15px; --hud-stats-font-small: 12px; }
+
+/* Local preview: narrator captions sit inside the canvas as translucent glass. */
+:root {
+  --caption-glass: rgba(10, 20, 30, 0.52);
+  --caption-border: rgba(212, 232, 249, 0.24);
+  --caption-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 28px rgba(0,0,0,0.22);
+  --caption-blur: 14px;
+  --caption-radius: 18px;
+  --caption-max-width: 720px;
+  --caption-text-shadow: 0 2px 4px rgba(0,0,0,0.65);
+}

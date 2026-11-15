@@ -9,7 +9,7 @@
  */
 import { t } from '../../strings';
 import type { UiComponent } from '../../types';
-import { captionDurationMs, captionText } from './captions-state';
+import { captionCues, captionDurationMs, captionText } from './captions-state';
 import './captions.css';
 
 const DEMO_KEYS = ['captions.demo.1', 'captions.demo.2', 'captions.demo.3'] as const;
@@ -47,9 +47,16 @@ export const captions: UiComponent = {
       const text = captionText(event.text);
       clearTimeout(timer);
       if (text === null) return clear();
-      current = text;
-      render();
-      timer = setTimeout(clear, captionDurationMs(event.durationMs, text));
+      const cues = captionCues(text, event.durationMs, event.offsetMs);
+      let index = 0;
+      const show = (): void => {
+        current = cues[index]?.text ?? null; render();
+        const next = cues[index + 1];
+        const at = cues[index]?.atMs ?? 0;
+        if (next) { index++; timer = setTimeout(show, next.atMs - at); }
+        else timer = setTimeout(clear, Math.max(0, captionDurationMs(event.durationMs, text) - at));
+      };
+      show();
     });
     // A finished or restarted run should not leave a stale caption behind.
     const offFinish = bus.on('finish', clear);

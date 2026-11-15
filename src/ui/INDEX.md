@@ -22,13 +22,13 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 | `createUiActions`, `UiActions` | `ui-actions.ts` | UI-local settings, guide and calibration navigation; hides unavailable menu routes. |
 | `menuButton`, `trapMenuFocus` | `menu-dom.ts` | Shared menu button and focus-trap helpers. |
 | `CHECKPOINT_PLAN`, `summariseCheckpoint` | `components/debug-overlay/checkpoint.ts` | Guided eyes-open / eyes-closed checkpoint (signal lane). |
-| `remapKey` | `components/settings-panel/settings-editor.ts` | Swap existing bindings on a duplicate choice. |
+| `remapKey`, `remapAllowed` | `components/settings-panel/settings-editor.ts` | Swap existing bindings on a duplicate choice; refuse remaps (or swaps) onto the fixed KeyE ember key or the KeyP/Escape pause keys. |
 | `startMenu` | `components/start-menu/start-menu.ts` | Dedicated forest launch screen; existing Play/Continue, Settings and guide routes, Credits, signal-source indicator and keyboard navigation. |
 | `canContinue`, `menuSelection` | `components/start-menu/start-menu-state.ts` | Resume-label detection from existing validated game state and wrapping arrow-key focus selection. |
 | `createCredits` | `components/start-menu/credits.ts` | Menu-only credit card drawn from actual project/asset attribution. |
 | `startMenuVisible`, `startsOnKey` | `components/start-menu/start-menu-state.ts` | Pure show/hide and Enter-to-play rules. |
 | `hud` | `components/hud/hud.ts` | Ember status, running wax count/boost timer/pickup feedback, stage progress, signal quality and qualitative signal intensity. |
-| `hudState`, `percent`, `intensityLabel` | `components/hud/hud-state.ts` | Presentation mapping and bounded percentage formatting. |
+| `hudState`, `hudEssentials`, `persistsBest`, `waxToastKey`, `percent`, `intensityLabel` | `components/hud/hud-state.ts` | Presentation mapping and bounded percentage formatting; `hudEssentials` keeps recovery progress, ember cooldown and finish-blocking lessons visible with stage details off; `persistsBest` skips saving the best height on `?editorTest` runs; `waxToastKey` picks the suppressed wax toast with the fuel refill's own threshold. |
 | `calibration`, `createCueTone` | `components/calibration/` | Pause-entry modal, timed instructions, source connect, safe fallback and local sound cues. |
 | `createCalibrationFlow`, `stepFlow`, `messageKey`, `preferCalibrationFallback`, flow types | `components/calibration/calibration-flow.ts` | Pure calibration navigation, timed halfway instructions, ordered commands and reviewed failure wording. Screens are P6.1.2. |
 
@@ -47,3 +47,5 @@ HUD Fuel metric reads optional GameSnapshot.lanternFuel01; actual candle resourc
 `mountStageEditor`, `EditorDeps` (`components/stage-editor/stage-editor.ts`) provide authoring controls through injected render/save/test callbacks; no gameplay imports.
 
 Compass (bottom right): no ember box or N/S/E/W; the needle eases toward the nearest ember checkpoint (`stepNeedle`, `shortestTurn` in `components/hud/needle.ts`), and a flaming wax ball drawn by the game lane (`drawWaxBall` in UiDeps, from main.ts) sits over its centre. The distance is in the compass's accessible label.
+
+Caption presentation: `captionCues(text, durationMs, offsetMs?)` in `components/captions/captions-state.ts` produces short timed chunks and resumes at the current chunk. `captions` renders all narrator lines as glass inside the game frame, including the welcome after Play.

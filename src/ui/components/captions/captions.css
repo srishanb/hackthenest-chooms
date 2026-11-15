@@ -1,16 +1,22 @@
-/* Captions for narrator lines. Colours, sizes and spacing come from tokens.css only. */
+/* All narration uses the same readable glass caption inside the game canvas. */
 .captions {
   box-sizing: border-box;
-  max-width: min(var(--panel-max-width), 100%);
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--color-panel-border);
-  border-radius: var(--radius);
-  background: var(--color-panel);
-  box-shadow: var(--panel-shadow);
+  width: max-content;
+  max-width: min(var(--caption-max-width), 88cqw);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--caption-border);
+  border-radius: var(--caption-radius);
+  background: var(--caption-glass);
+  box-shadow: var(--caption-shadow);
+  backdrop-filter: blur(var(--caption-blur)) saturate(130%);
+  -webkit-backdrop-filter: blur(var(--caption-blur)) saturate(130%);
   color: var(--color-text);
-  font-size: calc(var(--text-md) * var(--caption-scale, 1));
-  line-height: 1.4;
+  font-family: var(--font-ui);
+  font-size: calc(clamp(var(--text-md), 2cqw, var(--text-lg)) * var(--caption-scale, 1));
+  line-height: 1.45;
   text-align: center;
+  text-wrap: pretty;
+  text-shadow: var(--caption-text-shadow);
   pointer-events: none;
 }
 .captions[hidden] { display: none; }

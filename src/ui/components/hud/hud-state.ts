@@ -2,6 +2,8 @@
 import type { ComposureState } from '../../../shared/contracts/composure';
 import type { GameSnapshot } from '../../../shared/contracts/game-state';
 import { STRINGS, type StringKey } from '../../strings';
+import { unit } from '../../../config/atmosphere.config';
+import { LANTERN_FUEL_CONFIG } from '../../../config/lantern-fuel.config';
 
 export function percent(value: number): number {
   return Number.isFinite(value) ? Math.round(Math.max(0, Math.min(1, value)) * 100) : 0;
@@ -20,6 +22,27 @@ const RECOVERY_PROMPT_KEYS: readonly string[] = ['ember.placedHint', 'ember.retu
 /** The R hint lives in the always-visible ember panel and shows whenever an ember is placed to recover to. */
 export function recoveryHintKey(hasCheckpoint: boolean): StringKey | null {
   return hasCheckpoint ? 'hud.recoverCheckpoint' : null;
+}
+
+/** Lessons that explain why the final ledge does not finish the stage. */
+const ESSENTIAL_LESSON_KEYS: readonly string[] = ['stage.relightRequired', 'stage.finishBlocked'];
+
+/** Context rows shown even with stage details off (PR #108 default), because nothing else shows them. */
+export function hudEssentials(snapshot: Pick<GameSnapshot, 'phase' | 'ember' | 'lessonKey'>) {
+  const progress = snapshot.phase === 'ember';
+  const ember = progress || (snapshot.ember.cooldownRemainingMs ?? 0) > 0;
+  const lesson = !!snapshot.lessonKey && ESSENTIAL_LESSON_KEYS.includes(snapshot.lessonKey);
+  return { any: progress || ember || lesson, progress, ember, lesson };
+}
+
+/** Stage-editor test runs (`?editorTest`) start from later spawns, so their heights are not real bests. */
+export function persistsBest(search: string): boolean {
+  return !new URLSearchParams(search).has('editorTest');
+}
+
+/** Matches the lantern fuel refill: wax adds nothing above the normal-world corruption limit. */
+export function waxToastKey(corruption: number): StringKey {
+  return unit(corruption, 0.2) > LANTERN_FUEL_CONFIG.normalWorldMax01 ? 'wax.suppressed' : 'wax.pickup';
 }
 
 export function hudState(snapshot: GameSnapshot, signal: ComposureState, staleAfterMs: number) {
