@@ -19,6 +19,8 @@ import { createPlayer, stepPlayer } from '../player/movement';
 import type { PlatformBox, PlayerState } from '../player/types';
 import type { SaveStorage } from '../save';
 import { createRefugeController } from '../world/refuge';
+import { loadSections } from '../world/section-loader';
+import { drawWorld } from '../world/world-view';
 import { CLIMB_SCENE_KEY } from './boot-scene';
 
 export interface ClimbSceneDeps {
@@ -31,11 +33,9 @@ export interface ClimbSceneDeps {
   storage?: SaveStorage;
 }
 
-const DEPTH = { world: 0, zone: 1, player: 10, darkness: 100, alwaysReadable: 200 } as const;
+const DEPTH = { player: 10, darkness: 100, alwaysReadable: 200 } as const;
 /** Never simulate more than this many steps in one frame (a long pause must not spiral). */
 const MAX_STEPS_PER_FRAME = 8;
-/** Room above the highest platform so the camera can show the sky. */
-const TOP_MARGIN_PX = 240;
 
 export class ClimbScene extends Phaser.Scene {
   private readonly pressed = new Set<string>();
@@ -58,19 +58,9 @@ export class ClimbScene extends Phaser.Scene {
     if (!first) throw new Error('ClimbScene needs at least one section');
     this.cameras.main.setBackgroundColor('#27324a');
 
-    // One world: every section's platforms, shared ledges counted once.
-    const seen = new Set<string>();
-    for (const section of sections) {
-      for (const p of section.platforms) {
-        if (seen.has(p.id)) continue;
-        seen.add(p.id);
-        this.platforms.push({ id: p.id, x: p.x, y: p.y, width: p.width, height: p.height });
-        this.add.rectangle(p.x, p.y, p.width, p.height, 0x8a93a8).setDepth(DEPTH.world);
-      }
-      for (const [area, color] of [[section.refuge, 0x4e8f6a], [section.finish, 0xf2c14e]] as const) {
-        if (area) this.add.rectangle(area.x, area.y, area.width, area.height, color, 0.25).setDepth(DEPTH.zone);
-      }
-    }
+    const world = loadSections(sections, gameConfig.view.width);
+    this.platforms = world.platforms;
+    drawWorld(this, world);
 
     this.refuges = createRefugeController({
       sections, snapshot: stores.snapshot, bus: this.deps.bus, storage: this.deps.storage,
@@ -83,9 +73,7 @@ export class ClimbScene extends Phaser.Scene {
     });
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
 
-    const top = Math.min(...this.platforms.map((p) => p.y - p.height / 2)) - TOP_MARGIN_PX;
-    const bottom = Math.max(...this.platforms.map((p) => p.y + p.height / 2));
-    this.cameras.main.setBounds(0, top, gameConfig.view.width, bottom - top);
+    this.cameras.main.setBounds(0, world.top, world.width, world.bottom - world.top);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
 
     this.darkness = createDarkness(this, DEPTH.darkness);
