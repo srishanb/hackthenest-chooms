@@ -9,6 +9,7 @@ export function watchNarratorMoments(bus: EventBus, snapshot: Store<GameSnapshot
   request: (moment: NarratorMoment) => void, initialBestPx = 0) {
   let bestPx = Math.max(0, initialBestPx), nextHeightPx = bestPx + NARRATOR_MOMENTS.heightStepPx;
   const cleanups = [
+    bus.on('finish', () => request('finish')),
     bus.on('fall', event => { if (event.big && snapshot.get().phase === 'playing') request('fall'); }),
     bus.on('stage_completed', event => {
       // Stage 0 is the actual playable tutorial, not the skippable controls guide.

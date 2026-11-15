@@ -58,25 +58,32 @@ node --env-file=.env.local tools/narrator/build.mjs build bill
 
 The current default is Eleven v4 using only stability/similarity_boost parameters supported by that model. Short auditions reuse the exact first final clip. Full builds combine completed profile manifests into the active content bank. `custom` uses the private ELEVENLABS_VOICE_ID if a different approved stock voice is desired. Default build profile is Chris; the old George id need not be changed in the private env file. Old generated files are preserved rather than removed. There are no generation credits spent during gameplay or Preview.
 
-## Approved game moments (baseline)
+## Selected game moments (baseline)
 
-`tools/narrator/moment-pack.json` contains Amrit's five approved lines. Run
-`node --env-file=.env.local tools/narrator/build.mjs moments chris` to download only
-that bank and combine it with existing banks. Identical content/settings reuse files.
-No regeneration occurs in gameplay. The separate calmer voice auditions in the chat's
-outputs folder are review samples, not the selected production bank.
+Amrit selected six excerpts from a transcript he supplied and stated was authorized
+for reuse. They are not original Gemini text. The current selected voice ID is
+`zwn3aE3GYziMwjvo74dv`, supplied by Amrit; we do not infer the speaker's identity
+from an opaque voice ID. No voice clone was created by this tool.
 
-Chris's welcome replaces random Chris opening selection. Existing Bill openings remain
-available. The playable tutorial's actual stage-completion event triggers congratulations;
-skipping/closing the control guide does not. Large falls use the game's existing `big`
-flag. Intermediate stages trigger the next-stage line; the final stage does not. Height
-commentary requires beating the saved HUD personal best by 256 pixels (8 displayed metres),
-then another 256 pixels before requesting it again. It never writes game state.
+`tools/narrator/moment-pack.json` is the reviewed script. Generate the six local clips:
 
-Event banks have a 30-second global cooldown and the existing 120-second same-line
-cooldown. Duplicate pending moments are collapsed; stale falls/heights/stage remarks
-expire after 15 seconds. Tutorial completion may wait through pause. Existing speech
-parks during pause, precision and mute, and resumes from the exact offset. Welcome
-plays after Play and any first-launch controls guide has closed.
+```
+node --env-file=.env.local tools/narrator/build.mjs moments baseline
+```
 
-Jump precision and Ember recovery no longer interrupt narration (Amrit request). Actual pause still parks the exact audio offset; unpausing resumes it. Explicit mute, leaving the run, restarting, changing/previewing a voice and disposal retain their normal lifecycle behavior.
+The baseline voice is the default and appears as Selected narrator · baseline in
+Settings. A new voice preference key applies this explicitly selected default;
+Chris and Bill remain optional legacy banks. Old files and history are preserved.
+Welcome replaces random opening selection for baseline. Tutorial means completion
+of the actual playable tutorial stage, not skipping/closing the control guide.
+Large falls use the game's `big` flag; intermediate stages play the later milestone
+line. Height requires 256 pixels beyond the saved personal best and another 256
+pixels before requesting again. Finish queues the closing line, which may play on
+the finished screen with captions, without cutting a currently playing line.
+
+There is a 30-second global and 120-second same-line cooldown. Duplicate pending
+moments collapse; stale incidental events expire after 15 seconds. Tutorial/finish
+may wait through pause. Jump precision and Ember recovery never interrupt speech.
+Actual pause or mute parks the exact audio offset; resume continues it. Session
+restart, voice switching and explicit preview controls keep normal lifecycle behavior.
+The game only uses downloaded local files; keys and runtime API calls are absent.

@@ -24,7 +24,7 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
     if (!lines.some(line => line.moment === moment && matchesVoice(line))) return;
     if (queue.some(item => item.moment === moment)) return;
     // Completion guidance wins over a simultaneous height milestone.
-    if (moment === 'stage' || moment === 'tutorial') queue.splice(0, queue.length);
+    if (moment === 'stage' || moment === 'tutorial' || moment === 'finish') queue.splice(0, queue.length);
     if (queue.length < 3) queue.push({moment,at:context.currentTime*1000});
   };
   const clearCaption = (lineId: string): void => bus.emit({type:'narrator_line',lineId,text:'',durationMs:0});
@@ -36,7 +36,7 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
     node.disconnect(); value.gain?.disconnect(); value.gain = null; clearCaption(value.line.id);
   };
   const cancel = (): void => { if (speech) detach(speech); speech = null; previewLine = null; previewing = false; };
-  const blocked = (): boolean => (!previewing && !['playing', 'ember'].includes(stores.snapshot.get().phase)) ||
+  const blocked = (): boolean => (!previewing && !['playing', 'ember', 'finished'].includes(stores.snapshot.get().phase)) ||
     stores.settings.get().volumes.master <= 0 || stores.settings.get().volumes.narrator <= 0;
   const startSpeech = (value: Speech): void => {
     const remaining = value.buffer.duration - value.offset;
@@ -62,7 +62,7 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
     }
     if (speech) { if (!speech.node) startSpeech(speech); return; }
     const now = context.currentTime * 1000;
-    while (queue.length && now - queue[0]!.at > NARRATOR_MOMENTS.eventExpiryMs && queue[0]!.moment !== 'tutorial') queue.shift();
+    while (queue.length && now - queue[0]!.at > NARRATOR_MOMENTS.eventExpiryMs && !['tutorial','finish'].includes(queue[0]!.moment)) queue.shift();
     const opening = pending && !served;
     const moment = opening ? 'welcome' : queue[0]?.moment;
     if (!moment || now - lastStart < (hasMoments ? NARRATOR_MOMENTS.cooldownMs : config.cooldownMs)) return;
@@ -81,7 +81,7 @@ export function createIntroPlayer(context: AudioContext, output: GainNode, bus: 
   };
   const cleanups = [bus.on('start', () => { if (!served) pending = true; tick(); }),
     bus.on('run_restart', () => { cancel(); queue.length = 0; served = false; pending = true; tick(); }),
-    bus.on('finish', () => { pending = false; queue.length = 0; cancel(); }),
+    bus.on('finish', () => { pending = false; queue.length = 0; }),
     watchNarratorMoments(bus, stores.snapshot, request, initialBestPx),
     stores.snapshot.subscribe(tick), stores.settings.subscribe(tick)];
   const ready = Promise.all(lines.map(async (line) => { const buffer = await load(line.clip); if (!disposed) { buffers.set(line.id, buffer); if (buffer) levels.set(line.id,narrationGain(buffer)); } }))

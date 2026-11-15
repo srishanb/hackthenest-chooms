@@ -2,26 +2,31 @@
   {
     "id": "intro-welcome",
     "moment": "welcome",
-    "text": "Hey, welcome to Lighten Up! Let's get you started."
+    "text": "Alright, thanks for coming with me on this trip. I'll understand if you have to take a break at any point."
   },
   {
     "id": "intro-tutorial",
     "moment": "tutorial",
-    "text": "Hey, congrats on finishing the tutorial! Good luck up there."
-  },
-  {
-    "id": "intro-height",
-    "moment": "height",
-    "text": "Hey, a new personal best! Look at you go."
+    "text": "You've learned to hike. There's no way left to go but up."
   },
   {
     "id": "intro-fall",
     "moment": "fall",
-    "text": "Ah, that was a long way down. You're good\u2014take your time."
+    "text": "Starting over is harder than starting up. Feel free to go away and come back. I'll be here."
+  },
+  {
+    "id": "intro-height",
+    "moment": "height",
+    "text": "You could have refused, but you didn't. There was something in you that was hidden, that chose to continue."
   },
   {
     "id": "intro-stage",
     "moment": "stage",
-    "text": "Nice, you made it! On to the next one."
+    "text": "Imaginary mountains build themselves from our efforts to climb them, and it's our repeated attempts to reach the summit that turns those mountains into something real."
+  },
+  {
+    "id": "intro-finish",
+    "moment": "finish",
+    "text": "In a moment I'll shut up, but let me say: I'm glad you came. I dedicate this game to you, the one who came this far."
   }
 ]

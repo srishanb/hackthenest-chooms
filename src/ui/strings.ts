@@ -6,6 +6,7 @@
  * state refer to text by key, never by literal string.
  */
 export const STRINGS = {
+  'narrator.voice.baseline': 'Selected narrator · baseline',
   'narrator.voice.title': 'Narrator voice',
   'narrator.voice.label': 'Voice',
   'narrator.voice.chris': 'Chris · conversational',

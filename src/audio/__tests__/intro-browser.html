@@ -1,6 +1,7 @@
 <!doctype html><html><head><base href="/"><title>Local narrator check</title></head><body>
 <h1>Local intro narrator check</h1>
-<button id="start">Play intro</button><button id="pause">Pause</button><button id="resume">Resume</button><button id="precision">Toggle precision silence</button><button id="mute">Toggle narrator mute</button><button id="restart">New run</button>
+<button id="start">Play intro</button><button id="pause">Pause</button><button id="resume">Resume</button><button id="precision">Toggle jump precision</button><button id="mute">Toggle narrator mute</button><button id="restart">New run</button>
+<button id="tutorial">Tutorial completed</button><button id="fall">Big fall</button><button id="stage">Stage completed</button><button id="finish">Finish</button>
 <pre id="report"></pre><p id="caption" aria-live="polite"></p>
 <script type="module">
 import {createAudio} from '/src/audio/index.ts';
@@ -23,5 +24,9 @@ document.querySelector('#resume').onclick=()=>{stores.snapshot.set({...stores.sn
 document.querySelector('#precision').onclick=()=>{precise=!precise;bus.emit({type:'precision_window',active:precise});report();};
 document.querySelector('#mute').onclick=()=>{const current=stores.settings.get();stores.settings.set({...current,volumes:{...current.volumes,narrator:current.volumes.narrator?0:1}});report();};
 document.querySelector('#restart').onclick=()=>{stores.snapshot.set({...stores.snapshot.get(),phase:'playing'});bus.emit({type:'run_restart'});setTimeout(report,200);};
+document.querySelector('#tutorial').onclick=()=>{bus.emit({type:'stage_completed',stageId:'tutorial',index:0});report();};
+document.querySelector('#fall').onclick=()=>{bus.emit({type:'fall',heightPx:400,big:true});report();};
+document.querySelector('#stage').onclick=()=>{bus.emit({type:'stage_completed',stageId:'normal',index:1});report();};
+document.querySelector('#finish').onclick=()=>{stores.snapshot.set({...stores.snapshot.get(),phase:'finished'});bus.emit({type:'finish'});report();};
 report();
 </script></body></html>

@@ -8,7 +8,7 @@ import type { EffectsFrame } from '../../shared/contracts/effects';
 import type { NarratorLine, NarratorMoment } from '../../shared/contracts/content';
 import { createIntroPlayer } from '../narrator/intro-player';
 import { watchNarratorMoments } from '../narrator/moments';
-const moments: NarratorMoment[] = ['welcome','tutorial','height','fall','stage'];
+const moments: NarratorMoment[] = ['welcome','tutorial','height','fall','stage','finish'];
 function setup() {
   const sources: Array<{onended: (()=>void)|null; start: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn>}> = [];
   const raw = {currentTime:0,state:'running',createGain:()=>({gain:{setValueAtTime:vi.fn()},connect:vi.fn(),disconnect:vi.fn()}),createBufferSource:()=>{
@@ -49,8 +49,20 @@ it('holds tutorial completion through pause, gives it priority, and does not pro
   s.raw.currentTime=40;s.player.tick();expect(s.sources).toHaveLength(1);s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'playing'});expect(s.player.getActiveLine()).toBe('intro-chris-tutorial');s.end();
   s.raw.currentTime=80;s.bus.emit({type:'stage_completed',stageId:'final',index:4});s.player.tick();expect(s.sources).toHaveLength(2);s.player.dispose();
 });
-it('finish and dispose clear event requests; preview uses the approved welcome',async()=>{
+it('finish replaces stale events with its closing line; dispose removes listeners',async()=>{
   const s=setup();await s.player.ready;s.player.preview();expect(s.player.getActiveLine()).toBe('intro-chris-welcome');s.player.stopPreview();s.start();s.end();
-  s.bus.emit({type:'stage_completed',stageId:'tutorial',index:0});s.bus.emit({type:'finish'});s.raw.currentTime=60;s.player.tick();expect(s.player.getActiveLine()).toBeNull();s.player.dispose();
+  s.bus.emit({type:'stage_completed',stageId:'tutorial',index:0});s.bus.emit({type:'finish'});s.raw.currentTime=60;s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'finished'});s.player.tick();expect(s.player.getActiveLine()).toBe('intro-chris-finish');s.player.dispose();
   s.bus.emit({type:'fall',heightPx:500,big:true});s.player.tick();expect(s.player.getActiveLine()).toBeNull();
+});
+
+it('does not cut an ongoing line on finish, jump or recovery, and pauses the closing speech',async()=>{
+  const s=setup();await s.player.ready;s.start();s.raw.currentTime=1;
+  s.bus.emit({type:'precision_window',active:true});
+  s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'ember'});
+  expect(s.sources[0]!.stop).not.toHaveBeenCalled();
+  s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'finished'});s.bus.emit({type:'finish'});
+  expect(s.sources[0]!.stop).not.toHaveBeenCalled();expect(s.player.getActiveLine()).toBe('intro-chris-welcome');
+  s.end();s.raw.currentTime=31;s.player.tick();expect(s.player.getActiveLine()).toBe('intro-chris-finish');
+  s.raw.currentTime=32;s.stores.snapshot.set({...s.stores.snapshot.get(),phase:'paused'});
+  expect(s.sources[1]!.stop).toHaveBeenCalledTimes(1);s.player.dispose();
 });
