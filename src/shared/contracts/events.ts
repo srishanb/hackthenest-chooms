@@ -35,6 +35,7 @@ export type GameEvent =
   | { type: 'resume' }
   /** The narrator started a line. Captions subscribe to this. */
   | { type: 'narrator_line'; lineId: string }
+  | { type: 'stage_completed'; stageId: string; index: number }
   | { type: 'finish' };
 
 export type GameEventType = GameEvent['type'];

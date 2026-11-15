@@ -23,6 +23,8 @@ export interface EmberSnapshot {
 }
 
 export interface GameSnapshot {
+  /** Ordered stage progress is monotonic until an explicit new run. */
+  stage?: { id: string; index: number; total: number; completed: number };
   /** Current tutorial lesson string key; presentation resolves it in the UI lane. */
   lessonKey?: string;
   /** Optional exploration goal and temporary wax light bonus; unrelated to the signal. */
