@@ -33,20 +33,12 @@ export const startMenu: UiComponent = {
     const subtitle = document.createElement('p'); subtitle.className = 'launch-subtitle'; subtitle.textContent = t('start.journey');
     copy.append(emblem, title, subtitle);
     const nav = document.createElement('nav'); nav.className = 'menu-panel launch-actions'; nav.setAttribute('aria-label', t('start.navigation'));
-    let introShown = false;
-    const introduction = document.createElement('p'); introduction.className = 'launch-introduction';
-    introduction.textContent = t('start.intro.body'); introduction.hidden = true;
-    introduction.setAttribute('role', 'status');
     let pending = false; let timer: ReturnType<typeof setTimeout> | undefined; let played = false;
     let listening = false; let alive = true; let focusReturn: HTMLButtonElement | null = null;
     let offSignal = () => {};
     const status = document.createElement('p'); status.className = 'launch-source'; status.setAttribute('role', 'status');
     const start = (): void => {
       if (pending || stores.snapshot.get().phase !== 'menu' || actions.settingsOpen.get() || actions.tutorialOpen.get() || !credits.hidden) return;
-      if (!introShown && !canContinue(stores.snapshot.get(), played)) {
-        introShown = true; introduction.hidden = false;
-        bus.emit({ type: 'narrator_intro_requested' }); render(); return;
-      }
       pending = true; screen.dataset.leaving = 'true';
       for (const button of buttons) button.disabled = true;
       timer = setTimeout(() => {
@@ -68,7 +60,7 @@ export const startMenu: UiComponent = {
     });
     const buttons = [play, settings, how, creditsButton, editor];
     nav.append(...buttons);
-    const hint = document.createElement('p'); hint.className = 'launch-key-hint'; hint.textContent = t('start.keyHint'); nav.append(hint, introduction);
+    const hint = document.createElement('p'); hint.className = 'launch-key-hint'; hint.textContent = t('start.keyHint'); nav.append(hint);
     hero.append(copy, nav);
     const credits = createCredits(() => { credits.hidden = true; render(); creditsButton.focus(); });
     const footer = document.createElement('footer'); footer.className = 'launch-footer';
@@ -101,7 +93,7 @@ export const startMenu: UiComponent = {
         queueMicrotask(() => { if (alive && !hero.hidden && !screen.hidden) play.focus({ preventScroll: true }); });
       }
       const iconElement = play.querySelector('svg');
-      const label = t(canContinue(snapshot, played) ? 'start.continue' : introShown ? 'start.begin' : 'start.play');
+      const label = t(canContinue(snapshot, played) ? 'start.continue' : 'start.play');
       if (play.dataset.label !== label) { play.replaceChildren(...(iconElement ? [iconElement] : []), document.createTextNode(label)); play.dataset.label = label; }
       for (const button of buttons) button.disabled = pending;
       hero.hidden = actions.settingsOpen.get() || actions.tutorialOpen.get() || actions.calibrationFrom.get() !== null || !credits.hidden;
