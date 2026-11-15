@@ -13,8 +13,9 @@ import type { SignalConfig } from '../shared/contracts/config';
 import type { EventBus } from '../shared/contracts/events';
 import type { SignalHandle } from '../shared/contracts/signal-api';
 import type { BandFrame, Source } from '../shared/contracts/signal-internal';
-import { resolveAlgorithm } from './algorithms/registry';
+import { ALGORITHMS, resolveAlgorithm } from './algorithms/registry';
 import { createPipeline } from './pipeline';
+import { createRecorder } from './recorder';
 import { parseRecording } from './sources/recording-format';
 import { createReplaySource } from './sources/replay-source';
 import { createSimSource } from './sources/sim-source';
@@ -45,6 +46,11 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
   const pipeline = createPipeline({ config, entry, initialMode: params.mode ?? 'adaptive', initialSource: config.defaultSource });
   const listeners = new Set<(state: ComposureState) => void>();
 
+  // The recorder buffers frames, states and bus events in memory; exportRecording() returns them as JSONL.
+  const startKind: InputSourceKind = params.source === 'replay' ? 'REPLAY' : params.source === 'live' ? 'LIVE_EEG' : config.defaultSource;
+  const recorder = createRecorder({ source: startKind, algo: params.algo !== null && params.algo in ALGORITHMS ? params.algo : config.defaultAlgo });
+  bus.onAny((event, tMs) => recorder.recordEvent(event, tMs));
+
   let source: Source | null = null;
   let activeKind: InputSourceKind = config.defaultSource;
   // Replay frames keep their recorded times, so "now" for replay is the newest frame's time plus real time since it arrived.
@@ -64,11 +70,13 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
       lost = true;
       bus.emit({ type: 'signal_lost' });
     }
+    recorder.recordState(state);
     for (const listener of listeners) listener(state);
   }
 
   function onFrame(frame: BandFrame): void {
     if (activeKind === 'REPLAY') replayAnchor = { frameT: frame.t, wall: now() };
+    recorder.recordFrame(frame);
     pipeline.ingest(frame, clock());
   }
 
@@ -131,5 +139,6 @@ export function createSignal(bus: EventBus, config: SignalConfig, deps: SignalDe
       },
     },
     getDiagnostics: () => pipeline.getDiagnostics(),
+    exportRecording: () => recorder.toJSONL(),
   };
 }
