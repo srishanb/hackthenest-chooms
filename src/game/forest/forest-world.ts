@@ -1,3 +1,8 @@
+/**
+ * Builds the forest scenery and platform skins around the climb.
+ * It layers sky, background forest, atmosphere, gardens and the corruption screen,
+ * and reskins each platform. Everything is decorative; no collision bodies are made here.
+ */
 import { FUEL_VISIBILITY_CONFIG as V, sceneryCorruption } from '../../config/fuel-visibility.config';
 /** Bounded forest scenery and platform skins. All positions are decorative, never collision bodies. */
 import { ENVIRONMENT_ASSETS } from '../../config/environment-assets.config';

@@ -1,3 +1,8 @@
+/**
+ * Climb scene entry point: wires keyboard input, player stepping, scenery, candle and wax views.
+ * The longer description of the per-frame flow is in the comment further down.
+ * The signal never drives movement; it only feeds visual effects.
+ */
 import { createLandingPuff } from '../forest/landing-puff';
 import { FUEL_VISIBILITY_CONFIG as FUEL_VIEW, sceneryCorruption } from '../../config/fuel-visibility.config';
 import { createCandleLighting } from '../forest/candle-lighting';

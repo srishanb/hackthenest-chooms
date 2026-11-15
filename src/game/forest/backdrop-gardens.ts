@@ -1,3 +1,9 @@
+/**
+ * Distant garden ledges drawn behind the climb.
+ * They are placed from a stable hash so they stay put, scroll slower than the camera,
+ * and shift toward a snowy or dimmer look from the scenery values passed in.
+ * Decorative only: nothing here touches physics or the player.
+ */
 import { sceneryCorruption } from '../../config/fuel-visibility.config';
 /** Seeded distant garden ledges. Decorative only: no physics bodies, bright rims or landing events. */
 import type { Scene } from 'phaser';
