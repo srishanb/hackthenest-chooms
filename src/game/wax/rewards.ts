@@ -13,14 +13,14 @@ export const WAX_STORAGE_KEY = 'lighten.wax.v3';
 const LEGACY_KEY = 'lighten.wax.v2';
 export interface WaxDrop { id: string; x: number; y: number }
 
-/** Ordinary stationary ledges hold wax. This bounded list is reused rather than growing each pickup. */
+/** Safe stationary ledges, including ice, hold wax. Reuse this bounded list each pickup. */
 export function makeWaxDrops(platforms: readonly PlatformData[], gameConfig: GameConfig): WaxDrop[] {
   const lowestY = Math.max(...platforms.map((platform) => platform.y));
   const seen = new Set<string>();
   return platforms.flatMap((platform) => {
     const type = getPlatformType(platform.type);
     const key = `${platform.x}:${platform.y}:${platform.width}:${platform.height}`;
-    if (!type?.anchorSafe || platform.type === 'slippery' || seen.has(key) || platform.width < gameConfig.player.width ||
+    if (!type?.anchorSafe || seen.has(key) || platform.width < gameConfig.player.width ||
       (platform.y === lowestY && platform.width >= gameConfig.view.width)) return [];
     seen.add(key);
     return [{ id: `wax:${platform.id}`, x: platform.x,
@@ -71,6 +71,9 @@ export function createWaxRewards({ platforms, gameConfig, bus, snapshot, storage
   const overlaps = (player: { x: number; y: number }, drop: WaxDrop): boolean =>
     Math.abs(player.x - drop.x) <= gameConfig.player.width / 2 + config.pickupRadiusPx &&
     Math.abs(player.y - drop.y) <= gameConfig.player.height / 2 + config.pickupRadiusPx;
+  // World y grows downward. Use collision feet, not the animated/growing candle art.
+  const atOrAboveFeet = (player: { y: number }, drop: WaxDrop): boolean => drop.y <= player.y + gameConfig.player.height / 2;
+  let validateRestoredDrop = true;
   save(); publish();
   return {
     drops,
@@ -79,6 +82,11 @@ export function createWaxRewards({ platforms, gameConfig, bus, snapshot, storage
       if (snapshot.get().phase !== 'playing') return;
       const dt = Number.isFinite(dtMs) ? Math.max(0, dtMs) : 0;
       boostMs = Math.max(0, boostMs - dt);
+      if (validateRestoredDrop) {
+        const restored = drops.find((drop) => drop.id === activeId);
+        if (restored && !atOrAboveFeet(player, restored)) { activeId = null; save(); }
+        validateRestoredDrop = false;
+      }
       const active = drops.find((drop) => drop.id === activeId);
       if (active && overlaps(player, active)) {
         collected++; activeId = null; waitMs = delay(); boostMs = config.boostMs;
@@ -90,8 +98,9 @@ export function createWaxRewards({ platforms, gameConfig, bus, snapshot, storage
       } else if (!active) {
         waitMs = Math.max(0, waitMs - dt);
         if (waitMs === 0) {
-          const nearby = drops.filter((drop) => Math.abs(drop.y - player.y) <= config.spawnRangePx && !overlaps(player, drop));
-          activeId = nearby[Math.floor(unit() * nearby.length)]?.id ?? null;
+          const nearby = drops.filter((drop) => atOrAboveFeet(player, drop) &&
+            Math.abs(drop.y - player.y) <= config.spawnRangePx && !overlaps(player, drop));
+          activeId = nearby.length ? nearby[Math.floor(unit() * nearby.length)]!.id : null;
           if (activeId) save();
         }
       }

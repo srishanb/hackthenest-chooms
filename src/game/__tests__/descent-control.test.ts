@@ -3,7 +3,7 @@ import { expect, it } from 'vitest';
 import { GAME_CONFIG } from '../../config/game.config';
 import { createPlayer, stepPlayer } from '../player/movement';
 
-const original = { ...GAME_CONFIG, fallSteer01: GAME_CONFIG.airSteer01 };
+const { falling: _falling, ...original } = GAME_CONFIG;
 const right = { left: false, right: true, jump: false };
 const dt = 1000 / GAME_CONFIG.stepHz;
 
@@ -19,16 +19,42 @@ it('preserves all ascent/apex state and grounded walking/launch behavior', () =>
   }
 });
 
-it('adds a modest symmetric correction only during descent, including alongside wind', () => {
+it('accelerates symmetrically only during descent, independently of bounded wind', () => {
   for (const direction of [-1, 1]) for (const windAccelerationX of [0, 120]) {
     const input = { ...right, left: direction < 0, right: direction > 0 };
-    const player = { ...createPlayer(480, -100), vy: 250, launchVx: 100, windVx: 20 };
+    const player = { ...createPlayer(480, -100), vx: 20, vy: 250, launchVx: 0, windVx: 20 };
     const next = stepPlayer(player, input, [], 960, GAME_CONFIG, dt, { windAccelerationX }).state;
     const before = stepPlayer(player, input, [], 960, original, dt, { windAccelerationX }).state;
-    expect(next.vx - before.vx).toBeCloseTo(direction * 19.8);
+    expect(next.vx - next.windVx!).toBeCloseTo(direction * GAME_CONFIG.falling!.accelerationX * dt / 1000);
     expect(next.vy).toBe(before.vy); expect(next.y).toBe(before.y);
     expect(next.windVx).toBe(before.windVx);
   }
+});
+
+it('reverses a full-speed launch during descent, coasts on release and caps held steering speed', () => {
+  let player = { ...createPlayer(480, -2000), vx: 366, launchVx: 366, vy: 1 };
+  const left = { ...right, left: true, right: false };
+  for (let i = 0; i < 36; i++) player = stepPlayer(player, left, [], 960, GAME_CONFIG, dt).state;
+  expect(player.vx).toBeLessThan(0);
+  const coast = stepPlayer(player, { ...right, right: false }, [], 960, GAME_CONFIG, dt).state;
+  expect(coast.vx).toBe(player.vx);
+  for (let i = 0; i < 24; i++) player = stepPlayer(player, left, [], 960, GAME_CONFIG, dt).state;
+  expect(player.vx).toBe(-GAME_CONFIG.falling!.speedX);
+});
+
+it('steers a fall onto a nearby lower platform that the previous correction misses', () => {
+  const ledges = [
+    { id: 'lower', x: 390, y: 200, width: 90, height: 16 },
+    { id: 'floor', x: 480, y: 600, width: 960, height: 24 },
+  ];
+  let player = { ...createPlayer(270, 0), vy: 50 };
+  let baseline = { ...player };
+  for (let i = 0; i < 120; i++) {
+    if (!player.grounded) player = stepPlayer(player, right, ledges, 960, GAME_CONFIG, dt).state;
+    if (!baseline.grounded) baseline = stepPlayer(baseline, right, ledges, 960, original, dt).state;
+  }
+  expect(player.platformId).toBe('lower');
+  expect(baseline.platformId).toBe('floor');
 });
 
 it('leaves an entire jump vertical trajectory unchanged and only diverges horizontally after the apex', () => {

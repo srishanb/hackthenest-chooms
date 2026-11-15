@@ -73,10 +73,18 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
       } else vx = dir * config.walkSpeed;
     }
   } else {
+    const previousWindVx = windVx;
     const maxWind = config.surfaces?.maxWindSpeed ?? 0;
     windVx = Math.max(-maxWind, Math.min(maxWind,
       (windVx + (environment.windAccelerationX ?? 0) * dt) * Math.exp(-(config.surfaces?.windDecay ?? 0) * dt)));
-    vx = steeredVx(launchVx, dir, config, vy > 0) + windVx;
+    if (vy > 0 && config.falling) {
+      // Accelerate the player's momentum independently of wind. Reversals take time,
+      // but are no longer trapped near the original launch direction. No input coasts.
+      const controlVx = vx - previousWindVx;
+      const target = dir === 0 ? controlVx : dir * config.falling.speedX;
+      const change = config.falling.accelerationX * dt;
+      vx = controlVx + Math.max(-change, Math.min(change, target - controlVx)) + windVx;
+    } else vx = steeredVx(launchVx, dir, config, vy > 0) + windVx;
   }
 
   const prevBottom = y + height / 2;
@@ -99,7 +107,17 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
   if (!grounded) {
     vy += config.gravityY * dt;
     const newBottom = prevBottom + vy * dt;
-    const platform = vy >= 0 ? findLanding(platforms, x, width, prevBottom, newBottom) : null;
+    let platform = vy >= 0 ? findLanding(platforms, x, width, prevBottom, newBottom) : null;
+    if (!platform && state.vy > 0 && config.falling) {
+      // A tiny reach at the instant the feet cross a top edge. Never catch a ledge
+      // already passed, never pull back a walk-off, and always prefer a normal landing.
+      const crossing = platforms.filter((ledge) => ledge.y - ledge.height / 2 - (ledge.dy ?? 0) > prevBottom);
+      platform = findLanding(crossing, x, width + 2 * config.falling.ledgeReachPx, prevBottom, newBottom);
+      if (platform) {
+        const edge = (width + platform.width) / 2 - 1;
+        x = clampToWalls(Math.max(platform.x - edge, Math.min(platform.x + edge, x)), width, worldWidth).x;
+      }
+    }
     if (platform) {
       const top = platform.y - platform.height / 2;
       y = top - height / 2;

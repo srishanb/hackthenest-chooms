@@ -21,4 +21,5 @@ export const GAME_CONFIG: GameConfig = {
   },
   airSteer01: 0.15,
   fallSteer01: 0.24, // +19.8 px/s of correction only after vertical velocity becomes positive
+  falling: { accelerationX: 1600, speedX: 300, ledgeReachPx: 4 }, // strict descent only
 };
