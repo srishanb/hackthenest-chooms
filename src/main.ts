@@ -24,6 +24,7 @@ import { PUBLISHED_LAYOUTS } from './content/sections/published-layouts';
 import { neutralFrame } from './game/effects/effects-engine';
 import { pickCandleSeed } from './game/candle/candle-genome';
 import { mountCandleEmblem } from './game/candle/emblem';
+import { mountWaxBall } from './game/candle/wax-ball';
 import { createGame } from './game/index';
 import { createEventBus } from './shared/bus';
 import type { Stores } from './shared/contracts/app';
@@ -91,6 +92,8 @@ mountUi(requireElement('ui'), {
   worldCanvas: game.canvas,
   bus, stores, signal,
   drawEmblem: (canvas) => mountCandleEmblem(canvas, candleSeed, () => stores.settings.get().reducedMotion),
+  drawWaxBall: (canvas) => mountWaxBall(canvas, candleSeed,
+    () => (stores.snapshot.get().navigation?.checkpoints.length ?? 0) > 0, () => stores.settings.get().reducedMotion),
 }, UI_CONFIG);
 
 createAudio({ bus, stores, config: AUDIO_CONFIG, narratorLines: NARRATOR_LINES });

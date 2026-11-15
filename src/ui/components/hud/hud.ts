@@ -2,7 +2,8 @@
 import { SIGNAL_CONFIG } from '../../../config/signal.config';
 import { t, STRINGS, type StringKey } from '../../strings';
 import type { UiComponent } from '../../types';
-import { hudState, recoveryHintKey } from './hud-state';
+import { hudState } from './hud-state';
+import { stepNeedle } from './needle';
 import './hud.css';
 import { HUD_WORLD_PIXELS_PER_METRE } from '../../../config/ui.config';
 import { icon } from '../../icons';
@@ -10,10 +11,13 @@ import { navigationView } from './navigation';
 import { WAX_CONFIG } from '../../../config/wax.config';
 import { waxBenefit01 } from '../../../config/lantern-fuel.config';
 
+/** How quickly the compass needle turns toward its target (time constant, ms). */
+const NEEDLE_TAU_MS = 350;
+
 export const hud: UiComponent = {
   id: 'hud',
   visibleIn: ['playing', 'ember', 'finished'],
-  mount(root, { stores, signal, bus }) {
+  mount(root, { stores, signal, bus, drawWaxBall }) {
     const panel = document.createElement('section');
     panel.className = 'hud';
     panel.setAttribute('aria-label', t('hud.title'));
@@ -48,16 +52,27 @@ export const hud: UiComponent = {
     pause.setAttribute('aria-label', t('hud.pause')); pause.append(icon('pause'));
     const onPause = (): void => { if (['playing', 'ember'].includes(stores.snapshot.get().phase)) bus.emit({ type: 'pause' }); };
     pause.addEventListener('click', onPause);
+    // Bottom right: the compass alone. Its needle eases toward the nearest ember checkpoint and a
+    // ball of flaming wax sits over its centre (burning tall while an ember is placed).
     const checkpoint = document.createElement('div'); checkpoint.className = 'hud__checkpoint';
-    const target = document.createElement('div'); const targetTitle = document.createElement('span'); targetTitle.textContent = t('hud.checkpoint');
-    const distance = document.createElement('strong');
-    const recoverHint = document.createElement('strong'); recoverHint.className = 'hud__recover-hint';
-    target.append(targetTitle, distance, recoverHint);
-    const compass = document.createElement('div'); compass.className = 'hud__compass'; compass.setAttribute('aria-hidden', 'true');
+    const compass = document.createElement('div'); compass.className = 'hud__compass';
+    compass.setAttribute('role', 'img');
     const needle = document.createElement('span'); needle.className = 'hud__needle';
     compass.append(needle);
-    for (const direction of ['N', 'E', 'S', 'W']) { const letter = document.createElement('i'); letter.textContent = direction; letter.dataset.direction = direction; compass.append(letter); }
-    checkpoint.append(target, compass);
+    let stopBall = (): void => {};
+    if (drawWaxBall) {
+      const ball = document.createElement('canvas'); ball.className = 'hud__wax-ball'; ball.setAttribute('aria-hidden', 'true');
+      compass.append(ball); stopBall = drawWaxBall(ball);
+    }
+    checkpoint.append(compass);
+    let needleAngle = 0; let needleTarget = 0; let needleFrame = 0; let needleLast = performance.now();
+    const turnNeedle = (now: number): void => {
+      needleAngle = stepNeedle(needleAngle, needleTarget, now - needleLast, NEEDLE_TAU_MS, stores.settings.get().reducedMotion);
+      needleLast = now;
+      needle.style.transform = `rotate(${needleAngle}deg)`;
+      needleFrame = requestAnimationFrame(turnNeedle);
+    };
+    needleFrame = requestAnimationFrame(turnNeedle);
     let bestPx = 0;
     try { const saved = Number(localStorage.getItem('lighten.height-best-px.v1')); if (Number.isFinite(saved) && saved > 0) bestPx = saved; } catch { /* Private mode: session best still works. */ }
     panel.className = 'hud__context';
@@ -84,13 +99,10 @@ export const hud: UiComponent = {
       text(height, nav ? `${nav.heightMetres.toFixed(1)} ${t('hud.metres')}` : '—');
       text(best, `${(bestPx / HUD_WORLD_PIXELS_PER_METRE).toFixed(1)} ${t('hud.metres')}`);
       text(waxMetric, snapshot.wax?.total ? `${snapshot.wax.collected}/${snapshot.wax.total}` : String(snapshot.wax?.collected ?? 0));
-      text(targetTitle, nav?.checkpoint ? t('hud.checkpoint') : t('hud.noCheckpoint'));
-      text(distance, nav?.checkpoint ? `${nav.checkpoint.distanceMetres.toFixed(1)} ${t('hud.metres')}` : t('hud.placeCheckpoint'));
-      const recoverKey = recoveryHintKey(nav?.checkpoint != null);
-      text(recoverHint, recoverKey ? t(recoverKey) : '');
-      recoverHint.hidden = !recoverKey;
       compass.classList.toggle('is-empty', !nav?.checkpoint);
-      needle.style.transform = `rotate(${nav?.checkpoint?.angleDegrees ?? 0}deg)`;
+      if (nav?.checkpoint) needleTarget = nav.checkpoint.angleDegrees;
+      compass.setAttribute('aria-label', nav?.checkpoint
+        ? `${t('hud.checkpoint')} ${nav.checkpoint.distanceMetres.toFixed(1)} ${t('hud.metres')}` : t('hud.noCheckpoint'));
       const flags = stores.settings.get().hud;
       metrics.hidden = !flags.showStatus;
       checkpoint.hidden = !flags.showEmber;
@@ -132,6 +144,6 @@ export const hud: UiComponent = {
     }));
     cleanups.push(bus.on('land', saveBest));
     cleanups.push(bus.on('run_restart', () => { clearTimeout(rewardTimer); reward.hidden = true; }));
-    return () => { clearTimeout(rewardTimer); for (const cleanup of cleanups) cleanup(); saveBest(); window.removeEventListener('pagehide', onPageHide); pause.removeEventListener('click', onPause); layout.remove(); };
+    return () => { cancelAnimationFrame(needleFrame); stopBall(); clearTimeout(rewardTimer); for (const cleanup of cleanups) cleanup(); saveBest(); window.removeEventListener('pagehide', onPageHide); pause.removeEventListener('click', onPause); layout.remove(); };
   },
 };

@@ -8,12 +8,14 @@
  */
 import type * as Phaser from 'phaser';
 import type { CandleGenome } from './candle-genome';
+import type { BodyShape } from './candle-pose';
 import { FLAME_FPS } from './flame';
 import { PORTRAIT_RADIUS, rasterPortrait } from './portrait';
 
 /** World pixels per art pixel in the portrait (larger than the hero, so it reads as a close-up). */
 const PX = 3;
-const MARGIN = 14;
+/** 2u from the frame edges (1u = 10 game px), matching the HUD's --hud-corner. 120 px across = 12u. */
+const MARGIN = 20;
 const DEPTH = 300;
 /** Match the HUD's panel and gold accent (src/ui/theme/tokens.css). */
 const PANEL = 0x101b2b;
@@ -28,6 +30,8 @@ export interface PortraitLook {
   /** Hidden before Play and when the HUD status is switched off in settings. */
   visible: boolean;
   paused: boolean;
+  /** The hero candle's current body shape (see candle-view.ts). */
+  shape?: BodyShape;
 }
 
 export function createPortraitView(scene: Phaser.Scene, viewHeight: number) {
@@ -46,11 +50,11 @@ export function createPortraitView(scene: Phaser.Scene, viewHeight: number) {
       const strength = Math.round(Math.min(Math.max(look.strength01, 0), 1) * STEPS) / STEPS;
       // The smoke drifts smoothly, so redraw at the flame's frame rate rather than every frame.
       const frame = look.reducedMotion ? 0 : Math.floor((clockMs / 1000) * FLAME_FPS);
-      const key = `${genome.seed}|${strength}|${frame}|${look.growth}|${look.reducedMotion}`;
+      const key = `${genome.seed}|${strength}|${frame}|${look.growth}|${look.reducedMotion}|${JSON.stringify(look.shape ?? null)}`;
       if (key === drawnKey) return;
       drawnKey = key;
 
-      const portrait = rasterPortrait(genome, { strength01: strength, timeMs: (frame * 1000) / FLAME_FPS, reducedMotion: look.reducedMotion, growth: look.growth });
+      const portrait = rasterPortrait(genome, { strength01: strength, timeMs: (frame * 1000) / FLAME_FPS, reducedMotion: look.reducedMotion, growth: look.growth, shape: look.shape });
       graphics.clear();
       graphics.fillStyle(PANEL, 0.94);
       graphics.fillCircle(cx, cy, radius);
