@@ -2,7 +2,10 @@
 import { LANTERN_FUEL_CONFIG as C, waxBenefit01 } from '../../config/lantern-fuel.config';
 import { unit } from '../../config/atmosphere.config';
 export function burnFuel(fuel: number, corruption: number, dtMs: number): number {
-  const rate = 1 / C.calmBurnSeconds + unit(corruption, 0.2) * (1 / C.corruptedBurnSeconds - 1 / C.calmBurnSeconds);
+  const c = unit(corruption, 0.2);
+  const extra = Math.max(0, (c - C.normalWorldMax01) / (1 - C.normalWorldMax01));
+  const rate = 1 / C.calmBurnSeconds + c * (1 / C.baselineCorruptedBurnSeconds - 1 / C.calmBurnSeconds)
+    + extra * (1 / C.corruptedBurnSeconds - 1 / C.baselineCorruptedBurnSeconds);
   return Math.max(0, unit(fuel) - rate * (Number.isFinite(dtMs) ? Math.max(0, dtMs) : 0) / 1000);
 }
 export function createLanternFuel() {
