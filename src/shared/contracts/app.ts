@@ -10,8 +10,11 @@ import type { Store } from '../store';
 import type { EffectsFrame } from './effects';
 import type { GameSnapshot } from './game-state';
 import type { Settings } from './settings';
+import type { WorldViewSnapshot } from './world-view';
 
 export interface Stores {
+  /** Optional camera presentation stream. Gameplay never depends on a subscriber. */
+  worldView?: Store<WorldViewSnapshot | null>;
   /** Written by the game. Read by UI and audio. */
   snapshot: Store<GameSnapshot>;
   /** Written by the game's effects engine. Read by renderers, audio and the debug overlay. */

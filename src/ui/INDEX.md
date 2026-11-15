@@ -6,13 +6,14 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 
 | Export | File | What it does |
 |---|---|---|
+| `worldTutorial`, `controlKeys`, `reminderPosition`, `showWorldTutorial`, `worldTransform` | `components/world-tutorial/` | One transparent, camera-stable control reminder shows current key mappings and hides outside the tutorial. |
 | `mountUi(root, deps, config)`, `COMPONENTS` | `registry.ts` | Registers and mounts every component into its slot; shows and hides by game phase. |
 | `UiComponent`, `UiDeps` | `types.ts` | The shape of a component and what it is given. |
 | `STRINGS`, `t(key)`, `StringKey` | `strings.ts` | All player-facing text. |
 | `createSettingsStore`, `loadSettings`, `validateSettings`, `mergeWithDefaults`, `SETTINGS_STORAGE_KEY`, `CAPTION_SCALE_RANGE` | `settings-store.ts` | Load, validate types/ranges/key codes, apply live and save settings; caption scale 0.75–2. |
 | `sourceBadge` | `components/source-badge/` | Always-visible input source label. |
 | `debugOverlay` | `components/debug-overlay/` | Backtick-toggled signal numbers. |
-| `mainMenu` | `components/main-menu/` | Reused four-step controls/journey/BCI guide, menu How to Play route and in-game replay; publishes pause/resume through the bus. |
+| `mainMenu` | `components/main-menu/` | On-demand five-step controls/mechanics/journey guide, menu How to Play route and in-game replay; publishes pause/resume through the bus. |
 | `hasSeenTutorial`, `rememberTutorial`, `TUTORIAL_STORAGE_KEY` | `components/main-menu/tutorial-storage.ts` | Safely remember the completed/skipped guide independently of checkpoint saves. |
 | `captions` | `components/captions/` | Shows `narrator_line` text for `durationMs`; follows Settings (on/off, size). Dev: `?captionDemo`, `window.lightenCaption(text)`. Helpers `captionDurationMs`, `captionText` in `components/captions/captions-state.ts`. |
 | `emberPrompt` | `components/ember-prompt/` | Registered, renders nothing: recovery uses the HUD; Play again moved to the finish screen. |

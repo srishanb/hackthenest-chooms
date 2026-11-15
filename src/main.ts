@@ -27,6 +27,7 @@ import { mountCandleEmblem } from './game/candle/emblem';
 import { createGame } from './game/index';
 import { createEventBus } from './shared/bus';
 import type { Stores } from './shared/contracts/app';
+import type { WorldViewSnapshot } from './shared/contracts/world-view';
 import { INITIAL_GAME_SNAPSHOT } from './shared/contracts/game-state';
 import { createMemoryStorage, getLocalStorage } from './shared/safe-storage';
 import { createStore } from './shared/store';
@@ -54,6 +55,7 @@ function gameBoot(): void {
 const bus = createEventBus();
 
 const stores: Stores = {
+  worldView: createStore<WorldViewSnapshot | null>(null),
   // With the start menu on, the game waits in 'menu' until Play; with it off, the climb starts at once.
   snapshot: createStore({ ...INITIAL_GAME_SNAPSHOT, phase: testing ? 'playing' : UI_CONFIG.components['start-menu'].enabled ? 'menu' : 'playing' }),
   effects: createStore(neutralFrame(EFFECTS_TABLE)),
@@ -67,7 +69,7 @@ const signal = createSignal(bus, SIGNAL_CONFIG, { storage: browserStorage });
 const candleSeed = pickCandleSeed(window.location.search, import.meta.env.DEV);
 
 // The game gets the read-only signal, never the control surface or a device.
-createGame({
+const game = createGame({
   parent: requireElement('game'),
   bus,
   stores,
@@ -82,6 +84,8 @@ createGame({
 });
 
 mountUi(requireElement('ui'), {
+  tutorialSections: runtimeStages,
+  worldCanvas: game.canvas,
   bus, stores, signal,
   drawEmblem: (canvas) => mountCandleEmblem(canvas, candleSeed, () => stores.settings.get().reducedMotion),
 }, UI_CONFIG);
