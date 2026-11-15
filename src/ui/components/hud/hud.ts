@@ -2,7 +2,7 @@
 import { SIGNAL_CONFIG } from '../../../config/signal.config';
 import { t, STRINGS, type StringKey } from '../../strings';
 import type { UiComponent } from '../../types';
-import { hudState } from './hud-state';
+import { hudState, recoveryHintKey } from './hud-state';
 import './hud.css';
 import { HUD_WORLD_PIXELS_PER_METRE } from '../../../config/ui.config';
 import { icon } from '../../icons';
@@ -50,7 +50,9 @@ export const hud: UiComponent = {
     pause.addEventListener('click', onPause);
     const checkpoint = document.createElement('div'); checkpoint.className = 'hud__checkpoint';
     const target = document.createElement('div'); const targetTitle = document.createElement('span'); targetTitle.textContent = t('hud.checkpoint');
-    const distance = document.createElement('strong'); target.append(targetTitle, distance);
+    const distance = document.createElement('strong');
+    const recoverHint = document.createElement('strong'); recoverHint.className = 'hud__recover-hint';
+    target.append(targetTitle, distance, recoverHint);
     const compass = document.createElement('div'); compass.className = 'hud__compass'; compass.setAttribute('aria-hidden', 'true');
     const needle = document.createElement('span'); needle.className = 'hud__needle';
     compass.append(needle);
@@ -84,6 +86,9 @@ export const hud: UiComponent = {
       text(waxMetric, snapshot.wax?.total ? `${snapshot.wax.collected}/${snapshot.wax.total}` : String(snapshot.wax?.collected ?? 0));
       text(targetTitle, nav?.checkpoint ? t('hud.checkpoint') : t('hud.noCheckpoint'));
       text(distance, nav?.checkpoint ? `${nav.checkpoint.distanceMetres.toFixed(1)} ${t('hud.metres')}` : t('hud.placeCheckpoint'));
+      const recoverKey = recoveryHintKey(nav?.checkpoint != null);
+      text(recoverHint, recoverKey ? t(recoverKey) : '');
+      recoverHint.hidden = !recoverKey;
       compass.classList.toggle('is-empty', !nav?.checkpoint);
       needle.style.transform = `rotate(${nav?.checkpoint?.angleDegrees ?? 0}deg)`;
       const flags = stores.settings.get().hud;
@@ -113,7 +118,7 @@ export const hud: UiComponent = {
       progress.hidden = !flags.showEmber || !snapshot.ember.active;
       composure.hidden = !flags.showSignal;
       prompt.hidden = !view.prompt;
-      panel.hidden = !flags.showStatus && !flags.showEmber && !flags.showSignal && !view.prompt;
+      panel.hidden = !flags.showStageDetails || (!flags.showStatus && !flags.showEmber && !flags.showSignal && !view.prompt);
     };
     render();
     const cleanups = [stores.snapshot.subscribe(render), stores.settings.subscribe(render),

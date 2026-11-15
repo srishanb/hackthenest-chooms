@@ -23,7 +23,7 @@
 .tutorial-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: flex-end; }
 .tutorial-panel .tutorial-primary { border-color: var(--color-accent); color: var(--color-accent); background: linear-gradient(105deg, #795629, #30261c 70%); }
 .tutorial-replay {
-  position: fixed; right: var(--space-3); bottom: var(--space-3);
+  position: absolute; right: var(--space-3); bottom: var(--space-3);
   padding: var(--space-2) var(--space-3); border: 1px solid var(--color-panel-border);
   border-radius: var(--radius); color: var(--color-text); background: linear-gradient(110deg, #152130, #0c121d 68%);
   font-family: var(--font-ui); font-size: var(--text-sm); cursor: pointer;
@@ -32,4 +32,4 @@
 #ui[data-phase='playing'] .tutorial-replay,
 #ui[data-phase='ember'] .tutorial-replay { top: 112px; left: var(--hud-corner); right: auto; bottom: auto; font-size: var(--text-xs); }
 #ui[data-phase='paused'] .tutorial-replay { display: none; }
-.tutorial-panel { transform: scale(var(--ui-tutorial-scale, 1)); transform-origin: center; max-width: calc((100vw - 40px) / var(--ui-tutorial-scale, 1)); max-height: calc((100vh - 40px) / var(--ui-tutorial-scale, 1)); }
+.tutorial-panel { transform: scale(var(--ui-tutorial-scale, 1)); transform-origin: center; max-width: calc((100cqw - 40px) / var(--ui-tutorial-scale, 1)); max-height: calc((100cqh - 40px) / var(--ui-tutorial-scale, 1)); }
