@@ -13,7 +13,7 @@ Owner: Srishan. Search here before adding a function.
 | `createHeader`, `serializeRecording`, `parseRecording`, `Recording`, `RecordingHeader` | `sources/recording-format.ts` | JSONL recording format (`header` + `frame` lines; unknown types skipped). |
 | `createPipeline(deps)`, `Pipeline`, `PipelineDeps` | `pipeline.ts` | Wires preprocess, features, quality, scorer, gates and smoother into `ingest(frame, now)` / `step(now)`; also calibration and mode control. |
 | `ALGORITHMS`, `resolveAlgorithm`, `listAlgorithmIds`, `AlgorithmEntry` | `algorithms/registry.ts` | Algorithm id to entry map. Unknown id falls back to the default with a console warning. `needsCalibration` lets an algorithm be valid uncalibrated. |
-| `intensityV1`, `passthroughV0` | `algorithms/intensity-v1.ts`, `algorithms/passthrough-v0.ts` | The two algorithms: baseline-normalised intensity, and a raw passthrough for demos without calibration. |
+| `intensityV1`, `intensityV2`, `passthroughV0` | `algorithms/intensity-v1.ts`, `algorithms/intensity-v2.ts`, `algorithms/passthrough-v0.ts` | v1: beta share (cannot separate clench on the simulator). v2 (default): log absolute 13-30 Hz power, mostly muscle. passthrough: raw, no calibration. |
 | `parseSignalUrlParams` | `url-params.ts` | Reads `?source`, `?algo`, `?mode=fixed`, `?replay`. |
 | `smooth` | `stages/smoother.ts` | Time-based exponential smoothing. |
 | `normalise`, `scoreWithBaselines` | `stages/scorer.ts` | Feature to 0..1 against a baseline; neutral defaults before calibration. |

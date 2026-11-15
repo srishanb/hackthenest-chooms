@@ -7,6 +7,7 @@
  */
 import type { Algorithm } from '../../shared/contracts/signal-internal';
 import { intensityV1 } from './intensity-v1';
+import { intensityV2 } from './intensity-v2';
 import { passthroughV0 } from './passthrough-v0';
 
 export interface AlgorithmEntry {
@@ -17,6 +18,7 @@ export interface AlgorithmEntry {
 
 export const ALGORITHMS: Readonly<Record<string, AlgorithmEntry>> = {
   'intensity-v1': { algorithm: intensityV1, needsCalibration: true },
+  'intensity-v2': { algorithm: intensityV2, needsCalibration: true },
   'passthrough-v0': { algorithm: passthroughV0, needsCalibration: false },
 };
 
