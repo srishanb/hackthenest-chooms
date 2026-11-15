@@ -58,6 +58,8 @@ export interface GameConfig {
   };
   /** Horizontal air control as a fraction of walk speed, 0 (none) to 1. */
   airSteer01: number;
+  /** Optional steering cap while strictly descending; ascent/apex retain airSteer01. */
+  fallSteer01?: number;
 }
 
 export interface EmberConfig {
