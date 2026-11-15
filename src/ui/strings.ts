@@ -11,6 +11,8 @@ export const STRINGS = {
   'uiSize.stats': 'Height / wax / highscore size',
   'uiSize.hint': 'Live preview · saved on this browser. Choose sizes, then tell me to set them.',
   'uiSize.reset': 'Reset sizes',
+  'stage.finishBlocked': 'Return to the normal world on the final ledge to finish.',
+  'wax.suppressed': 'Wax collected · corruption blocks its light',
   'hud.fuel': 'Fuel',
   'hud.lantern': 'Lantern strength',
   'hud.height': 'Height',

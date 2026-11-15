@@ -35,6 +35,7 @@ export function createWaxRewards({ platforms, gameConfig, bus, snapshot, storage
   const drops = makeWaxDrops(platforms, gameConfig);
   const known = new Set(drops.map((drop) => drop.id));
   let collected = 0;
+  let suppressed = false;
   let activeId: string | null = null;
   let waitMs = 0;
   let boostMs = 0;
@@ -77,11 +78,15 @@ export function createWaxRewards({ platforms, gameConfig, bus, snapshot, storage
   save(); publish();
   return {
     drops,
+    isSuppressed: (): boolean => suppressed,
     isActive: (id: string): boolean => id === activeId,
-    update(player: { x: number; y: number }, dtMs: number): void {
+    update(player: { x: number; y: number }, dtMs: number, benefit01 = 1): void {
       if (snapshot.get().phase !== 'playing') return;
       const dt = Number.isFinite(dtMs) ? Math.max(0, dtMs) : 0;
       boostMs = Math.max(0, boostMs - dt);
+      const benefit = Number.isFinite(benefit01) ? Math.max(0, Math.min(1, benefit01)) : 1;
+      suppressed = benefit === 0;
+      if (suppressed) boostMs = 0;
       if (validateRestoredDrop) {
         const restored = drops.find((drop) => drop.id === activeId);
         if (restored && !atOrAboveFeet(player, restored)) { activeId = null; save(); }
@@ -89,7 +94,8 @@ export function createWaxRewards({ platforms, gameConfig, bus, snapshot, storage
       }
       const active = drops.find((drop) => drop.id === activeId);
       if (active && overlaps(player, active)) {
-        collected++; activeId = null; waitMs = delay(); boostMs = config.boostMs;
+        if (suppressed) { publish(); return; }
+        collected++; activeId = null; waitMs = delay(); boostMs = config.boostMs * benefit;
         save();
         bus.emit({ type: 'wax_collected', id: `${active.id}:${collected}`, x: active.x, y: active.y, collected, total: null });
       } else if (active && Math.abs(active.y - player.y) > config.retireRangePx) {
@@ -107,8 +113,9 @@ export function createWaxRewards({ platforms, gameConfig, bus, snapshot, storage
       publish();
     },
     /** Collecting/expiring wax in flight cannot change the held lantern radius. */
-    lightRadius(base: number, airborne: boolean): number {
-      const desired = boostMs > 0 ? Math.max(base, Math.min(config.maxLightRadiusPx, base * config.lightMultiplier)) : base;
+    lightRadius(base: number, airborne: boolean, benefit01 = 1): number {
+      const boost = boostMs > 0 ? Math.max(base, Math.min(config.maxLightRadiusPx, base * config.lightMultiplier)) : base;
+      const desired = base + (boost - base) * Math.max(0, Math.min(1, benefit01));
       if (!airborne || heldRadius === null) heldRadius = desired;
       return heldRadius;
     },

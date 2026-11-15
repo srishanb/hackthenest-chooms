@@ -4,8 +4,6 @@ import { ATMOSPHERE_CONFIG as C, unit } from '../../config/atmosphere.config';
 import { mixColor, stableUnit } from './presentation';
 export function createBackdropGardens(scene: Scene) {
   let snow = 0;
-  const raw = import.meta.env.DEV ? Number(new URLSearchParams(window.location.search).get('forestHeight') ?? 0) : 0;
-  const offset = Number.isFinite(raw) ? raw : 0;
   const gardens = Array.from({ length: C.gardenSlots }, () => {
     const soil = scene.add.tileSprite(0, 0, 180, 48, 'grass-soil').setOrigin(0.5, 0).setTileScale(2).setDepth(-6);
     const skirt = scene.add.tileSprite(0, 0, 130, 24, 'grass-soil').setOrigin(0.5, 0).setTileScale(2).setDepth(-6);
@@ -24,7 +22,7 @@ export function createBackdropGardens(scene: Scene) {
     setSnow(value: number) { snow = unit(value); },
     update(c: number) {
       const camera = scene.cameras.main;
-      const scroll = (camera.scrollY - offset) * 0.55;
+      const scroll = camera.scrollY * 0.55;
       const first = Math.floor(scroll / C.gardenSpacingPx) - 1;
       for (const [i, garden] of gardens.entries()) {
         const id = first + i;
