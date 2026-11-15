@@ -34,7 +34,8 @@ cmd_new() {
   if git -C "$ROOT" fetch -q origin "$BASE_BRANCH" 2>/dev/null; then
     start="origin/$BASE_BRANCH"
   fi
-  git -C "$ROOT" worktree add -b "$branch" "$dir" "$start"
+  # --no-track: the branch must not track origin/main, or a bare `git push` would push to main.
+  git -C "$ROOT" worktree add --no-track -b "$branch" "$dir" "$start"
   git -C "$ROOT" config core.hooksPath .githooks
 
   # Untracked env files are not carried into new worktrees; copy them over.
