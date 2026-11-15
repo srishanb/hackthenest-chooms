@@ -108,6 +108,27 @@ describe('createSignal', () => {
     expect(signal.reader.getState().source).toBe('REPLAY');
   });
 
+  it('keeps ComposureState.t on the now() clock during replay (the contract says performance.now())', async () => {
+    let wall = 600_000; // the page has been open a long time; the recording was made early (frames at 20_000)
+    const text = serializeRecording({
+      header: createHeader('SIMULATED', 'passthrough-v0'),
+      frames: makeSequence({ durationMs: 3000, startMs: 20_000, frame: () => ({ spectrum: null, bands: { theta: 1, alpha: 1, beta: 2 } }) }),
+    });
+    const signal = createSignal(createEventBus(), SIGNAL_CONFIG, {
+      search: '?source=replay&replay=run.jsonl&algo=passthrough-v0',
+      fetchText: async () => text,
+      now: () => wall,
+    });
+    for (let i = 0; i < 10; i += 1) {
+      wall += 100;
+      await vi.advanceTimersByTimeAsync(100);
+    }
+    const state = signal.reader.getState();
+    expect(state.source).toBe('REPLAY');
+    expect(state.valid).toBe(true);
+    expect(Math.abs(wall - state.t)).toBeLessThanOrEqual(150);
+  });
+
   it('calibrate() runs for the configured time and emits calibration_result', async () => {
     const bus = createEventBus();
     const results: boolean[] = [];
