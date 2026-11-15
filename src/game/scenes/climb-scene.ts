@@ -10,13 +10,15 @@ import * as Phaser from 'phaser';
 import type { Stores } from '../../shared/contracts/app';
 import type { ComposureReader } from '../../shared/contracts/composure';
 import type { EmberConfig, GameConfig } from '../../shared/contracts/config';
-import type { SectionData } from '../../shared/contracts/content';
+import type { PlatformData, SectionData } from '../../shared/contracts/content';
 import type { EffectRule } from '../../shared/contracts/effects';
 import type { EventBus } from '../../shared/contracts/events';
 import { createDarkness, minCoveringRadius, updateDarkness } from '../effects/darkness';
 import { neutralFrame, stepEffects } from '../effects/effects-engine';
 import { createProtectedVisibility, type ProtectedVisibility } from '../effects/protected-visibility';
 import { createKeyboardInput } from '../keyboard-input';
+import { createWaxRewards } from '../wax/rewards';
+import { createWaxView } from '../wax/view';
 import { createPlayer, stepPlayer, teleportPlayer } from '../player/movement';
 import { createRecoveryEmber } from '../ember/recovery';
 import type { EmberAnchor } from '../save';
@@ -30,6 +32,7 @@ import type { SaveStorage } from '../save';
 import { createRefugeController } from '../world/refuge';
 import { loadSections } from '../world/section-loader';
 import { drawWorld } from '../world/world-view';
+import { platformsAt, windAt } from '../world/environment';
 import { CLIMB_SCENE_KEY } from './boot-scene';
 
 export interface ClimbSceneDeps {
@@ -50,6 +53,9 @@ const MAX_STEPS_PER_FRAME = 8;
 export class ClimbScene extends Phaser.Scene {
   private controls!: ReturnType<typeof createKeyboardInput>;
   private platforms: PlatformBox[] = [];
+  private authoredPlatforms: PlatformData[] = [];
+  private worldView!: ReturnType<typeof drawWorld>;
+  private worldTimeMs = 0;
   private state!: PlayerState;
   private accumulatorMs = 0;
   private precisionActive = false;
@@ -57,6 +63,8 @@ export class ClimbScene extends Phaser.Scene {
   private refuges!: ReturnType<typeof createRefugeController>;
   private ember!: ReturnType<typeof createRecoveryEmber>;
   private emberMark!: Phaser.GameObjects.Arc;
+  private wax!: ReturnType<typeof createWaxRewards>;
+  private waxView!: ReturnType<typeof createWaxView>;
   private player!: Phaser.GameObjects.Rectangle;
   private darkness!: Phaser.GameObjects.Image;
   private lanternMark!: Phaser.GameObjects.Arc;
@@ -73,8 +81,13 @@ export class ClimbScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#27324a');
 
     const world = loadSections(sections, gameConfig.view.width);
-    this.platforms = world.platforms;
-    drawWorld(this, world);
+    this.authoredPlatforms = world.platforms;
+    this.platforms = platformsAt(world.platforms, 0);
+    this.worldView = drawWorld(this, world);
+    this.wax = createWaxRewards({ platforms: world.platforms, gameConfig,
+      bus: this.deps.bus, snapshot: stores.snapshot, storage: this.deps.storage });
+    this.waxView = createWaxView(this, this.wax, this.deps.bus);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.waxView.destroy());
 
     this.refuges = createRefugeController({
       sections, snapshot: stores.snapshot, bus: this.deps.bus,
@@ -84,7 +97,7 @@ export class ClimbScene extends Phaser.Scene {
       snapshot: stores.snapshot, bus: this.deps.bus, storage: this.deps.storage,
     });
     this.state = createPlayer(this.ember.spawn.x, this.ember.spawn.y);
-    const offFinish = this.deps.bus.on('finish', () => this.ember.clear());
+    const offFinish = this.deps.bus.on('finish', () => { this.ember.clear(); this.wax.finish(); });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       offFinish();
     });
@@ -141,7 +154,9 @@ export class ClimbScene extends Phaser.Scene {
     const offAssist = this.deps.bus.on('ember_assist_requested', () => this.returnToEmber(this.ember.assist()));
     const offCancel = this.deps.bus.on('ember_cancel_request', () => this.ember.cancel());
     const offRestart = this.deps.bus.on('run_restart', () => {
+      this.wax.reset();
       const spawn = this.ember.restart();
+      this.worldTimeMs = 0;
       this.state = teleportPlayer(spawn.x, spawn.y); clearInput(); this.accumulatorMs = 0;
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { offAssist(); offCancel(); offRestart(); });
@@ -170,8 +185,12 @@ export class ClimbScene extends Phaser.Scene {
     this.accumulatorMs = this.phase.isRunning() ? Math.min(this.accumulatorMs + deltaMs, stepMs * MAX_STEPS_PER_FRAME) : 0;
     while (this.accumulatorMs >= stepMs) {
       this.accumulatorMs -= stepMs;
-      const out = stepPlayer(this.state, this.controls.read(), this.platforms, gameConfig.view.width, gameConfig, stepMs);
+      this.worldTimeMs += stepMs;
+      this.platforms = platformsAt(this.authoredPlatforms, this.worldTimeMs, stepMs);
+      const out = stepPlayer(this.state, this.controls.read(), this.platforms, gameConfig.view.width, gameConfig, stepMs,
+        { windAccelerationX: windAt(sections, this.state, this.worldTimeMs) });
       this.state = out.state;
+      this.wax.update(this.state, stepMs);
       this.refuges.update(this.state);
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
       // A fall just ends on whatever catches you; no reset, no death (FAL-1).
@@ -188,8 +207,15 @@ export class ClimbScene extends Phaser.Scene {
       bus.emit({ type: 'precision_window', active: this.precisionActive });
     }
     this.player.setPosition(this.state.x, this.state.y);
+    this.waxView.update(deltaMs, this.phase.isRunning(), settings.reducedMotion);
+    this.worldView.update(this.platforms, this.worldTimeMs, settings.reducedMotion);
+    const sectionId = sectionAt(sections, this.state.y + gameConfig.player.height / 2);
+    const lesson = sections.find((section) => section.id === sectionId)?.lesson;
+    if (lesson && stores.snapshot.get().lessonKey !== `lesson.${lesson}`) {
+      stores.snapshot.set({ ...stores.snapshot.get(), lessonKey: `lesson.${lesson}` });
+    }
     writeSnapshot(stores.snapshot, {
-      sectionId: sectionAt(sections, this.state.y + gameConfig.player.height / 2),
+      sectionId,
       altitude01: altitude01(sections, this.state.y),
     });
 
@@ -210,9 +236,10 @@ export class ClimbScene extends Phaser.Scene {
     stores.effects.set(frame);
 
     // Never let the sheet shrink so far that its edge shows on screen.
-    const radius = Math.max(frame.lanternRadius, minCoveringRadius(gameConfig.view.width, gameConfig.view.height));
+    const baseRadius = Math.max(frame.lanternRadius, minCoveringRadius(gameConfig.view.width, gameConfig.view.height));
+    const radius = this.wax.lightRadius(baseRadius, !this.state.grounded);
     updateDarkness(this.darkness, this.state.x, this.state.y, radius);
-    this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius);
+    this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius, this.platforms);
     this.lanternMark.setPosition(this.state.x, this.state.y - gameConfig.player.height / 2 - 6);
   }
 }

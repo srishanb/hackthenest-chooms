@@ -4,6 +4,7 @@ import type { AreaData, PlatformData, SectionData } from '../../src/shared/contr
 import { createPlayer, stepPlayer } from '../../src/game/player/movement';
 import type { PlayerState } from '../../src/game/player/types';
 import { loadSections } from '../../src/game/world/section-loader';
+import { platformsAt, windAt } from '../../src/game/world/environment';
 
 const IDLE = { left: false, right: false, jump: false };
 const CHARGE_LEVELS = 12;
@@ -21,6 +22,9 @@ export function checkReachability(sections: readonly SectionData[], config: Game
   }
   const world = loadSections(sections, config.view.width);
   const stepMs = 1000 / config.stepHz;
+  const simulate = (state: PlayerState, input: typeof IDLE, time: number) => stepPlayer(state, input,
+    platformsAt(world.platforms, time, stepMs), world.width, config, stepMs,
+    { windAccelerationX: windAt(sections, state, time) });
   // Long enough to rise and then fall to the world floor, even from the top ledge.
   const flightMs = 2 * config.jump.maxSpeed / config.gravityY * 1000 +
     Math.sqrt(2 * (world.bottom - world.top) / config.gravityY) * 1000 + 1000;
@@ -49,11 +53,14 @@ export function checkReachability(sections: readonly SectionData[], config: Game
   let initial = createPlayer(sections[0]!.spawn.x, sections[0]!.spawn.y);
   for (let step = 0; step < maxSteps && !initial.grounded; step++) {
     visitZones(initial);
-    initial = stepPlayer(initial, IDLE, world.platforms, world.width, config, stepMs).state;
+    initial = simulate(initial, IDLE, (step + 1) * stepMs).state;
   }
   if (initial.platformId) reachPlatform(initial.platformId);
   for (let index = 0; index < pending.length; index++) {
-    const source = pending[index]!;
+    const authored = pending[index]!;
+    // Sample waiting at several cycle phases, using the same moving geometry as play.
+    for (const startTime of world.platforms.some((platform) => platform.motion) ? [0, 1000, 2000, 3000] : [0]) {
+    const source = platformsAt([authored], startTime)[0]!;
     const minX = Math.max(config.player.width / 2, source.x - source.width / 2 + config.player.width / 2);
     const maxX = Math.min(world.width - config.player.width / 2, source.x + source.width / 2 - config.player.width / 2);
     if (minX > maxX) continue;
@@ -64,14 +71,17 @@ export function checkReachability(sections: readonly SectionData[], config: Game
         for (let level = 1; level <= CHARGE_LEVELS; level++) {
           let state: PlayerState = { ...createPlayer(x, y), grounded: true, platformId: source.id, jumpLatch: false };
           const chargeSteps = Math.ceil(config.jump.maxChargeMs * level / CHARGE_LEVELS / stepMs);
+          let time = startTime;
           for (let step = 0; step < chargeSteps; step++) {
-            state = stepPlayer(state, { ...IDLE, jump: true }, world.platforms, world.width, config, stepMs).state;
+            time += stepMs;
+            state = simulate(state, { ...IDLE, jump: true }, time).state;
           }
-          state = stepPlayer(state, { left: direction < 0, right: direction > 0, jump: false },
-            world.platforms, world.width, config, stepMs).state;
+          time += stepMs;
+          state = simulate(state, { left: direction < 0, right: direction > 0, jump: false }, time).state;
           for (let step = 0; step < maxSteps; step++) {
             visitZones(state);
-            const result = stepPlayer(state, IDLE, world.platforms, world.width, config, stepMs);
+            time += stepMs;
+            const result = simulate(state, IDLE, time);
             state = result.state;
             if (result.events.landed) {
               const id = result.events.landed.platformId;
@@ -83,6 +93,7 @@ export function checkReachability(sections: readonly SectionData[], config: Game
           }
         }
       }
+    }
     }
   }
   return sections.map((section) => ({

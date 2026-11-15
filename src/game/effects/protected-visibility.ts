@@ -7,13 +7,14 @@
  * dark (outline-fade.ts). Nothing here reads the signal; the light radius it fades with is the
  * same capped, smoothed value the darkness uses.
  *
- * Cost: one reach search per platform the first time you stand on it (cached). Each frame only
- * the short pieces inside the light are redrawn.
+ * Cost: one reach search per platform the first time you stand on it (cached). The selected set
+ * stays while airborne; moving outlines follow their platforms. Each frame only the short pieces
+ * inside the light are redrawn.
  */
 import type * as Phaser from 'phaser';
 import type { GameConfig } from '../../shared/contracts/config';
 import type { PlatformBox } from '../player/types';
-import { outlineSegments, reachableLedges, type Segment, type WorldBounds } from '../world/reachable-ledges';
+import { outlineSegments, reachableLedges, type WorldBounds } from '../world/reachable-ledges';
 import { fadeSegments } from './outline-fade';
 
 const LINE_WIDTH_PX = 2;
@@ -23,10 +24,10 @@ const LINE_ALPHA = 0.85;
 
 export interface ProtectedVisibility {
   /**
-   * Call every frame. `platformId` is the platform under the feet (null in the air: the last
-   * outlines stay). The lantern position and radius set where the outlines fade out.
+   * Call every frame with the platform under the feet (null in the air keeps the last set), the
+   * lantern position and radius (where outlines fade out), and the current platform geometry.
    */
-  update(platformId: string | null, lanternX: number, lanternY: number, radiusPx: number): void;
+  update(platformId: string | null, lanternX: number, lanternY: number, radiusPx: number, livePlatforms?: readonly PlatformBox[]): void;
 }
 
 export function createProtectedVisibility(
@@ -38,25 +39,22 @@ export function createProtectedVisibility(
 ): ProtectedVisibility {
   const graphics = scene.add.graphics().setDepth(depth);
   const cache = new Map<string, string[]>();
-  let segments: Segment[] = [];
-  let segmentsFor: string | null = null;
+  let drawnFor: string | null = null;
 
   return {
-    update(platformId, lanternX, lanternY, radiusPx) {
-      if (platformId !== null && platformId !== segmentsFor) {
-        const source = platforms.find((p) => p.id === platformId);
-        if (source) {
-          let reachable = cache.get(platformId);
-          if (!reachable) {
-            reachable = reachableLedges(source, platforms, world, config);
-            cache.set(platformId, reachable);
-          }
-          segments = outlineSegments(platforms, platformId, reachable);
-          segmentsFor = platformId;
-        }
-      }
+    update(platformId, lanternX, lanternY, radiusPx, livePlatforms = platforms) {
       graphics.clear();
-      for (const piece of fadeSegments(segments, lanternX, lanternY, radiusPx)) {
+      platformId ??= drawnFor;
+      if (platformId === null) return;
+      const source = platforms.find((p) => p.id === platformId);
+      if (!source) return;
+      drawnFor = platformId;
+      let reachable = cache.get(platformId);
+      if (!reachable) {
+        reachable = reachableLedges(source, platforms, world, config);
+        cache.set(platformId, reachable);
+      }
+      for (const piece of fadeSegments(outlineSegments(livePlatforms, platformId, reachable), lanternX, lanternY, radiusPx)) {
         // Style is set before each stroke (Phaser styles are not retroactive).
         graphics.lineStyle(LINE_WIDTH_PX, piece.current ? CURRENT_COLOR : REACHABLE_COLOR, LINE_ALPHA * piece.alpha);
         graphics.lineBetween(piece.x1, piece.y1, piece.x2, piece.y2);
