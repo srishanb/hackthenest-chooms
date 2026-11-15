@@ -1,9 +1,34 @@
-/**
- * Every narrator line, reviewed by a human before it ships. Owner: content (Neil).
- *
- * Rules (AGENTS.md): lines comment on the climb and the fall, never on the player's
- * emotions, worth or health. Empty until P7.
- */
+/** Original intro bank. Gemini drafts reviewed before local ElevenLabs generation. No runtime API calls. */
 import type { NarratorLine } from '../../shared/contracts/content';
-
-export const NARRATOR_LINES: readonly NarratorLine[] = [];
+export const NARRATOR_LINES: readonly NarratorLine[] = [
+  {
+    "id": "intro-01",
+    "text": "Well, here we are again, staring at the ceiling as if it owes us an apology. Remember, gravity isn't personal; it just has a very firm opinion about where wax belongs.",
+    "clip": "assets/audio/narrator/intro-01-3818a54b3bac.mp3"
+  },
+  {
+    "id": "intro-02",
+    "text": "Upward mobility is an ambitious policy for a candle. Fortunately, every ledge offers a fresh opportunity to describe a very small amount of progress in rather grand terms.",
+    "clip": "assets/audio/narrator/intro-02-2a5729487923.mp3"
+  },
+  {
+    "id": "intro-03",
+    "text": "It is a curious thing to climb toward the stars when you are essentially a stick of meltable wax. Still, the view is better than the floor, which is mostly just dust.",
+    "clip": "assets/audio/narrator/intro-03-b7beda08d0d0.mp3"
+  },
+  {
+    "id": "intro-04",
+    "text": "Every journey begins with a single hop. A candle makes this look ceremonial. Gravity is less impressed, but it has been attending the same ceremony for several billion years.",
+    "clip": "assets/audio/narrator/intro-04-656c31723bf1.mp3"
+  },
+  {
+    "id": "intro-05",
+    "text": "Every ledge is a tiny victory over the pull of the earth. Climbing is a slow dance with gravity. Gravity, of course, insists on leading. It has not learned a second step.",
+    "clip": "assets/audio/narrator/intro-05-3dcfc74ff4c9.mp3"
+  },
+  {
+    "id": "intro-06",
+    "text": "You bring your own light to the party, which is remarkably inconvenient for the dark. Let us find a higher vantage point to observe how very far down the bottom has become.",
+    "clip": "assets/audio/narrator/intro-06-fad2d4d747a2.mp3"
+  }
+];
