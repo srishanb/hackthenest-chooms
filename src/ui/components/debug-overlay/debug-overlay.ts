@@ -12,10 +12,19 @@ import type { ComposureState } from '../../../shared/contracts/composure';
 import type { CalibrationStep } from '../../../shared/contracts/signal-api';
 import { t } from '../../strings';
 import type { UiComponent } from '../../types';
+import { appendLabels, CHECKPOINT_PASS_RATIO, CHECKPOINT_PLAN, CHECKPOINT_SETTLE_MS, summariseCheckpoint, type CheckpointMark, type CheckpointSample } from './checkpoint';
 import './debug-overlay.css';
 
 /** A live board with no frame for this long is shown as not connected. */
 const LIVE_STALE_MS = 2000;
+
+/** Plain-language hints about the board connection, from the contact share and packet loss. */
+function linkWarnings(diagnostics: { contactGood01: number | null; packetLoss01: number | null }): string[] {
+  const warnings: string[] = [];
+  if (diagnostics.contactGood01 !== null && diagnostics.contactGood01 < 0.5) warnings.push(t('debug.contactLow'));
+  if (diagnostics.packetLoss01 !== null && diagnostics.packetLoss01 > 0.1) warnings.push(t('debug.lossHigh'));
+  return warnings;
+}
 
 const fixed = (value: number, digits = 2): string => value.toFixed(digits);
 const optionalFixed = (value: number | null, digits = 2): string => (value === null ? 'n/a' : fixed(value, digits));
@@ -78,7 +87,12 @@ export const debugOverlay: UiComponent = {
     disconnectBtn.className = 'debug-overlay__btn';
     disconnectBtn.textContent = t('debug.disconnectBoard');
 
-    actions.append(connectBtn, disconnectBtn, calibrateActiveBtn, calibrateRestingBtn, downloadBtn);
+    const checkpointBtn = document.createElement('button');
+    checkpointBtn.type = 'button';
+    checkpointBtn.className = 'debug-overlay__btn';
+    checkpointBtn.textContent = t('debug.checkpointRun');
+
+    actions.append(connectBtn, disconnectBtn, calibrateActiveBtn, calibrateRestingBtn, checkpointBtn, downloadBtn);
 
     const status = document.createElement('div');
     status.className = 'debug-overlay__status';
@@ -138,6 +152,46 @@ export const debugOverlay: UiComponent = {
     });
     downloadBtn.addEventListener('click', downloadCurrentRecording);
 
+    // Guided checkpoint: eyes open / closed, twice. Compares the raw resting feature and saves a labelled recording.
+    const runCheckpoint = async (): Promise<void> => {
+      checkpointBtn.disabled = true;
+      const samples: CheckpointSample[] = [];
+      const marks: CheckpointMark[] = [];
+      let current: { label: CheckpointMark['label'] & ('eyes_open' | 'eyes_closed'); startedAt: number } | null = null;
+      const stopListening = signal.reader.subscribe(() => {
+        if (!current || performance.now() - current.startedAt < CHECKPOINT_SETTLE_MS) return;
+        const value = signal.getDiagnostics().features['resting'];
+        if (value !== undefined && Number.isFinite(value)) samples.push({ label: current.label, value });
+      });
+      try {
+        for (const [index, segment] of CHECKPOINT_PLAN.entries()) {
+          const startedAt = performance.now();
+          marks.push({ t: startedAt, label: segment.label });
+          current = { label: segment.label, startedAt };
+          const sim = signal.reader.getState().source === 'SIMULATED' ? ` (${t('debug.checkpointSimHint')})` : '';
+          const prompt = `${t('debug.checkpointSegment')} ${index + 1}/${CHECKPOINT_PLAN.length}: ${t(segment.label === 'eyes_open' ? 'debug.checkpointOpen' : 'debug.checkpointClosed')}${sim}`;
+          while (performance.now() - startedAt < segment.ms) {
+            status.dataset.tone = 'ok';
+            status.textContent = `${prompt} ${Math.ceil((segment.ms - (performance.now() - startedAt)) / 1000)} s`;
+            await new Promise((resolve) => setTimeout(resolve, 250));
+          }
+        }
+        marks.push({ t: performance.now(), label: 'end' });
+        current = null;
+        const result = summariseCheckpoint(samples);
+        triggerJsonlDownload(appendLabels(signal.exportRecording(), marks));
+        status.dataset.tone = result.pass ? 'ok' : 'bad';
+        status.textContent =
+          result.ratio === null
+            ? t('debug.checkpointNoData')
+            : `${t('debug.checkpointRatio')} ${fixed(result.ratio)} (> ${CHECKPOINT_PASS_RATIO}): ${t(result.pass ? 'debug.checkpointClear' : 'debug.checkpointWeak')}. ${t('debug.checkpointDone')}`;
+      } finally {
+        stopListening();
+        checkpointBtn.disabled = false;
+      }
+    };
+    checkpointBtn.addEventListener('click', () => void runCheckpoint());
+
     // connect() must be called straight from the click: Web Bluetooth refuses without a user gesture.
     connectBtn.addEventListener('click', () => {
       status.dataset.tone = 'ok';
@@ -178,6 +232,7 @@ export const debugOverlay: UiComponent = {
         `${'intensity'.padEnd(labelWidth)} ${fixed(state.intensity)}`,
         `${'resting'.padEnd(labelWidth)} ${fixed(state.resting)}  active=${state.restingActive}`,
         `${'quality'.padEnd(labelWidth)} ${fixed(state.quality)}  contact=${optionalFixed(diagnostics.contactGood01)}  loss=${optionalFixed(diagnostics.packetLoss01)}`,
+        ...linkWarnings(diagnostics).map((warning) => `${'link'.padEnd(labelWidth)} ${warning}`),
         `${'validity'.padEnd(labelWidth)} valid=${state.valid}  held=${state.held}`,
         `${'sample age'.padEnd(labelWidth)} ${fixed(state.sampleAgeMs, 0)} ms${state.source === 'LIVE_EEG' && state.sampleAgeMs > LIVE_STALE_MS ? `  (${t('debug.boardNotConnected')})` : ''}`,
         `${'calibrated'.padEnd(labelWidth)} ${state.calibrated}`,

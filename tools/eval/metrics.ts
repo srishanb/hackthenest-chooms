@@ -5,6 +5,7 @@
  * a CLI process.
  */
 import type { ComposureState } from '../../src/shared/contracts/composure';
+import { formatSeparation, type RestingSeparation } from './segments';
 
 export interface CalibrationOutcomeSummary {
   t: number;
@@ -23,6 +24,8 @@ export interface EvalMetrics {
   restingActiveSec: number;
   restingFlipsPerMin: number;
   calibrationOutcomes: CalibrationOutcomeSummary[];
+  /** Set only when the recording has eyes_open / eyes_closed labels (the guided checkpoint). */
+  restingSeparation?: RestingSeparation | null;
 }
 
 export function computeEvalMetrics(
@@ -128,5 +131,6 @@ export function formatEvalTable(metrics: EvalMetrics): string {
   }
 
   const labelWidth = Math.max(...rows.map(([label]) => label.length));
-  return rows.map(([label, value]) => `${label.padEnd(labelWidth)}  ${value}`).join('\n');
+  const table = rows.map(([label, value]) => `${label.padEnd(labelWidth)}  ${value}`).join('\n');
+  return metrics.restingSeparation ? `${table}\n${formatSeparation(metrics.restingSeparation)}` : table;
 }
