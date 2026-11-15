@@ -184,3 +184,28 @@ describe('pipeline: replay clocks', () => {
     expect(state.sampleAgeMs).toBe(0);
   });
 });
+
+describe('pipeline: non-finite times', () => {
+  const expectHealthy = (p: Pipeline): void => {
+    const end = feed(p, 10_000, 1000, () => frameAt(0, 1, 1));
+    const state = p.step(end + STEP_MS);
+    expect(Number.isFinite(state.intensity)).toBe(true);
+    expect(state.intensity).toBeGreaterThanOrEqual(0);
+    expect(state.intensity).toBeLessThanOrEqual(1);
+  };
+
+  it('recovers after one step(NaN)', () => {
+    const p = make();
+    feed(p, 0, 500, () => frameAt(0, 1, 1));
+    p.step(Number.NaN);
+    expectHealthy(p);
+  });
+
+  it('recovers after two step(Infinity)', () => {
+    const p = make();
+    feed(p, 0, 500, () => frameAt(0, 1, 1));
+    p.step(Number.POSITIVE_INFINITY);
+    p.step(Number.POSITIVE_INFINITY);
+    expectHealthy(p);
+  });
+});
