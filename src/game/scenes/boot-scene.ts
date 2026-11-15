@@ -1,6 +1,6 @@
 /**
- * First scene. P0: nothing to load, so it starts the climb straight away.
- * P8 loads art and audio here so the climb scene never waits on a file.
+ * First scene. Its preload step loads the forest textures (preloadForest) so the climb scene
+ * never waits on a file, then create() starts the climb scene straight away.
  */
 import * as Phaser from 'phaser';
 import { preloadForest } from '../forest/textures';

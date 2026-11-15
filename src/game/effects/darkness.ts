@@ -5,7 +5,8 @@
  * outside) is drawn as a single image centred on the lantern and scaled so the clear part
  * matches the light radius. One image, no shaders, so it is cheap and easy to explain.
  *
- * P0 SPIKE of the Phaser 4 rendering path. P5.2 builds the real lantern on top of this.
+ * The climb scene moves it with the lantern and sets the radius from the capped, smoothed
+ * light value. Visual only: it never touches movement.
  */
 import * as Phaser from 'phaser';
 
