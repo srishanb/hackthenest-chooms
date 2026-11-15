@@ -1,4 +1,4 @@
-/** Reuse the existing engine. An explicit dev preview overrides only the forest's visual row. */
+/** Reuse the existing engine. An explicit scenery preview overrides only the forest's visual row. */
 import type { EffectRule, EffectsFrame } from '../../shared/contracts/effects';
 import { stepEffect, stepEffects, type EffectInput } from '../effects/effects-engine';
 
