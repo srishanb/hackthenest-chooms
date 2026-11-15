@@ -25,9 +25,9 @@
       "durationMs": 59926
     },
     {
-      "id": "poor-contact",
-      "label": "Poor contact",
-      "description": "Poor electrode contact: signal quality is low for the whole run, so the effects ease back to neutral instead of reacting.",
+      "id": "noisy-pin",
+      "label": "Noisy pin",
+      "description": "A relaxed signal while one pin picks up interference for a stretch, then the pin is reseated. The simulator still reports good contact, so the reading stays usable.",
       "durationMs": 59926
     }
   ]
