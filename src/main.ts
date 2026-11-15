@@ -20,6 +20,8 @@ import { UI_CONFIG } from './config/ui.config';
 import { NARRATOR_LINES } from './content/narrator/lines';
 import { SECTIONS } from './content/sections/index';
 import { neutralFrame } from './game/effects/effects-engine';
+import { pickCandleSeed } from './game/candle/candle-genome';
+import { mountCandleEmblem } from './game/candle/emblem';
 import { createGame } from './game/index';
 import { createEventBus } from './shared/bus';
 import type { Stores } from './shared/contracts/app';
@@ -58,6 +60,9 @@ const stores: Stores = {
 // The signal lane is the only one that will ever touch a device.
 const signal = createSignal(bus, SIGNAL_CONFIG);
 
+// One candle seed for the first run: the menu emblem and the player are the same candle.
+const candleSeed = pickCandleSeed(window.location.search, import.meta.env.DEV);
+
 // The game gets the read-only signal, never the control surface or a device.
 createGame({
   parent: requireElement('game'),
@@ -69,10 +74,14 @@ createGame({
   effectsTable: EFFECTS_TABLE,
   emberConfig: EMBER_CONFIG,
   storage: testing ? createMemoryStorage() : browserStorage,
+  candleSeed,
   startAt: testing ? { ...runtimeStages[testIndex]!.spawn, platformId: runtimeStages[testIndex]!.platforms[0]!.id } : undefined,
 });
 
-mountUi(requireElement('ui'), { bus, stores, signal }, UI_CONFIG);
+mountUi(requireElement('ui'), {
+  bus, stores, signal,
+  drawEmblem: (canvas) => mountCandleEmblem(canvas, candleSeed, () => stores.settings.get().reducedMotion),
+}, UI_CONFIG);
 
 createAudio({ bus, stores, config: AUDIO_CONFIG, narratorLines: NARRATOR_LINES });
 }

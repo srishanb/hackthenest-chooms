@@ -11,7 +11,7 @@ import './start-menu.css';
 
 export const startMenu: UiComponent = {
   id: 'start-menu', visibleIn: ['menu'],
-  mount(root, { stores, signal, bus, actions = createUiActions() }) {
+  mount(root, { stores, signal, bus, drawEmblem, actions = createUiActions() }) {
     const screen = document.createElement('section'); screen.className = 'launch-screen';
     screen.hidden = stores.snapshot.get().phase !== 'menu';
     screen.setAttribute('aria-label', t('start.label'));
@@ -22,12 +22,16 @@ export const startMenu: UiComponent = {
     }
     const hero = document.createElement('div'); hero.className = 'launch-hero';
     const copy = document.createElement('div'); copy.className = 'launch-copy';
-    const emblem = document.createElement('div'); emblem.className = 'launch-emblem'; emblem.setAttribute('aria-hidden', 'true'); emblem.append(icon('flame'));
-    const eyebrow = document.createElement('p'); eyebrow.className = 'launch-eyebrow'; eyebrow.textContent = t('start.eyebrow');
+    const emblem = document.createElement('div'); emblem.className = 'launch-emblem'; emblem.setAttribute('aria-hidden', 'true');
+    // The game's own candle, animated, when main.ts provides a drawer; otherwise the flame icon.
+    let stopEmblem = (): void => {};
+    if (drawEmblem) {
+      const canvas = document.createElement('canvas'); canvas.className = 'launch-emblem__candle'; emblem.append(canvas);
+      stopEmblem = drawEmblem(canvas);
+    } else emblem.append(icon('flame'));
     const title = document.createElement('h1'); title.textContent = t('start.title');
     const subtitle = document.createElement('p'); subtitle.className = 'launch-subtitle'; subtitle.textContent = t('start.journey');
-    const stages = document.createElement('p'); stages.className = 'launch-stages'; stages.textContent = t('start.stages');
-    copy.append(emblem, eyebrow, title, subtitle, stages);
+    copy.append(emblem, title, subtitle);
     const nav = document.createElement('nav'); nav.className = 'menu-panel launch-actions'; nav.setAttribute('aria-label', t('start.navigation'));
     let pending = false; let timer: ReturnType<typeof setTimeout> | undefined; let played = false;
     let listening = false; let alive = true; let focusReturn: HTMLButtonElement | null = null;
@@ -124,7 +128,7 @@ export const startMenu: UiComponent = {
       actions.tutorialOpen.subscribe(render), actions.calibrationFrom.subscribe(render)];
     render();
     return () => {
-      alive = false; clearTimeout(timer); offSignal(); window.removeEventListener('keydown', onKey);
+      alive = false; clearTimeout(timer); offSignal(); stopEmblem(); window.removeEventListener('keydown', onKey);
       for (const cleanup of cleanups) cleanup(); screen.remove();
     };
   },

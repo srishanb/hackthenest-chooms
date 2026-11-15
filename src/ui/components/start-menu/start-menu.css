@@ -95,3 +95,8 @@
 .launch-actions .menu-primary:hover, .launch-actions .menu-primary:focus-visible { color: #ffdc91; background: linear-gradient(105deg, #9b7136, #57412a 55%, #1a2027); }
 .launch-key-hint { color: #9da9a5; font-size: var(--text-xs); letter-spacing: .12em; text-transform: uppercase; }
 @media (max-width: 720px) { .launch-emblem { width: 64px; height: 64px; margin-inline: auto; } }
+
+/* Title spacing, the soft orange line, and the animated candle inside the emblem ring. */
+.launch-copy h1 { letter-spacing: .06em; }
+.launch-subtitle { color: #e0975a; opacity: .82; }
+.launch-emblem__candle { width: 92%; height: 92%; image-rendering: pixelated; }
