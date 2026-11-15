@@ -9,7 +9,6 @@ import { t, type StringKey } from '../../strings';
 import type { UiComponent } from '../../types';
 import './source-badge.css';
 import { mountUiSizeTuner } from './ui-size-tuner';
-import { mountForestPreview } from './forest-preview';
 
 const LABEL: Record<InputSourceKind, StringKey> = {
   LIVE_EEG: 'source.LIVE_EEG',
@@ -26,10 +25,6 @@ export const sourceBadge: UiComponent = {
     badge.className = 'source-badge';
     badge.setAttribute('role', 'status');
     root.append(badge);
-    const preview = document.createElement('details'); preview.className = 'source-preview';
-    const summary = document.createElement('summary'); summary.textContent = t('forest.preview.title');
-    preview.append(summary); root.append(preview);
-    const removePreview = mountForestPreview(preview);
     const removeSizeTuner = mountUiSizeTuner(root);
 
     const render = (source: InputSourceKind): void => {
@@ -48,7 +43,7 @@ export const sourceBadge: UiComponent = {
       unsubscribe();
       offReturn(); offRestart();
       badge.remove();
-      removePreview(); preview.remove(); removeSizeTuner();
+      removeSizeTuner();
     };
   },
 };

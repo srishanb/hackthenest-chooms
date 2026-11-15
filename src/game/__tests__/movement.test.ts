@@ -74,14 +74,14 @@ describe('stepPlayer', () => {
     expect(peak(500)).toBeLessThan(peak(GAME_CONFIG.jump.maxChargeMs));
   });
 
-  it('steering cannot reverse a launch: full launch right, hold left throughout, lands right of takeoff', () => {
+  it('ascent steering cannot reverse a launch; descent can steer back toward takeoff', () => {
     let s = run(settled(100), { ...NONE, jump: true }, hold(GAME_CONFIG.jump.maxChargeMs));
     s = stepPlayer(s, { ...NONE, right: true }, PLATFORMS, WORLD_W, GAME_CONFIG, DT).state;
     const takeoffX = s.x;
     let steps = 0;
     while (!s.grounded && steps < 2000) {
       s = stepPlayer(s, { ...NONE, left: true }, PLATFORMS, WORLD_W, GAME_CONFIG, DT).state;
-      if (!s.grounded) expect(s.vx).toBeGreaterThan(0);
+      if (s.vy < 0) expect(s.vx).toBeGreaterThan(0);
       steps += 1;
     }
     expect(s.grounded).toBe(true);

@@ -26,6 +26,8 @@ export interface PoseInput {
   vy: number;
   grounded: boolean;
   charging: boolean;
+  /** Held direction while charging (-1, 0, 1): the candle turns to face where it will jump. */
+  aim?: -1 | 0 | 1;
 }
 
 export interface PoseTracker {
@@ -42,7 +44,8 @@ export const INITIAL_POSE: PoseTracker = { pose: 'idle', elapsedMs: 0, landedMs:
 export function stepPose(prev: PoseTracker, state: PoseInput, deltaMs: number, paused: boolean): PoseTracker {
   const dt = paused ? 0 : Math.max(0, deltaMs);
   let { landedMs, facingLeft } = prev;
-  if (state.vx < -1) facingLeft = true;
+  if (state.charging && state.aim) facingLeft = state.aim < 0;
+  else if (state.vx < -1) facingLeft = true;
   else if (state.vx > 1) facingLeft = false;
   if (!prev.wasGrounded && state.grounded) landedMs = LAND_MS;
   landedMs = Math.max(0, landedMs - dt);

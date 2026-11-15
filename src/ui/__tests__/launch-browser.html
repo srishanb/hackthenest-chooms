@@ -1,0 +1,50 @@
+<!doctype html><html><head><meta charset="utf-8"><base href="/"><title>Launch menu integration checks</title></head><body>
+<div id="app"><div id="game"></div><div id="ui"></div></div>
+<button id="run" style="position:fixed;left:12px;top:12px;z-index:100">Run menu checks</button>
+<output id="results" style="position:fixed;left:12px;bottom:12px;z-index:100;background:#07121f;color:#fff;white-space:pre-wrap;padding:12px;max-width:90vw"></output>
+<script type="module">
+// Dev-only fixture: production UI components with memory game state; never imported by the app.
+import {mountUi} from '/src/ui/registry.ts';
+import {createUiActions} from '/src/ui/ui-actions.ts';
+import {createStore} from '/src/shared/store.ts';
+import {createEventBus} from '/src/shared/bus.ts';
+import {INITIAL_GAME_SNAPSHOT} from '/src/shared/contracts/game-state.ts';
+import {DEFAULT_SETTINGS} from '/src/shared/contracts/settings.ts';
+import {UI_CONFIG} from '/src/config/ui.config.ts';
+import {EFFECTS_TABLE} from '/src/config/effects.config.ts';
+import {neutralFrame} from '/src/game/effects/effects-engine.ts';
+const initial={...INITIAL_GAME_SNAPSHOT,phase:'menu',stage:{id:'snow',index:2,total:5,completed:2},navigation:{player:{x:400,y:-1700},originY:460,lanternRadiusPx:200,checkpoints:[{id:'ice',x:400,y:-1700}]}};
+const stores={snapshot:createStore(initial),settings:createStore(structuredClone(DEFAULT_SETTINGS)),effects:createStore(neutralFrame(EFFECTS_TABLE))};
+const state=createStore({intensity:0,resting:0,restingActive:false,quality:0,valid:false,sampleAgeMs:0,held:false,mode:'fixed',calibrated:false,source:'SIMULATED',algo:'fixture',t:0});
+const signal={reader:{getState:()=>state.get(),subscribe:fn=>state.subscribe(fn)},control:{setMode(){},connect:async()=>{},disconnect(){},calibrate:async step=>({step,ok:false})},getDiagnostics:()=>({features:{},thresholds:{},contactGood01:null,packetLoss01:null}),exportRecording:()=>''};
+const bus=createEventBus();const actions=createUiActions();let starts=0;
+bus.on('start',()=>{starts++;stores.snapshot.set({...stores.snapshot.get(),phase:'playing'});});
+const dispose=mountUi(document.querySelector('#ui'),{stores,signal,bus,actions},UI_CONFIG);
+const frame=()=>new Promise(requestAnimationFrame);
+const key=code=>{const event=new KeyboardEvent('keydown',{code,key:code==='Escape'?'Escape':code,bubbles:true,cancelable:true});window.dispatchEvent(event);return event;};
+const find=text=>[...document.querySelectorAll('.launch-actions button')].find(button=>button.textContent.trim()===text);
+let checks=[];const check=(name,result)=>{checks.push(`${result?'PASS':'FAIL'} ${name}`);if(!result)throw Error(name);};
+document.querySelector('#run').onclick=async()=>{
+ try{
+  check('dedicated launch screen and Continue for game-validated resume',!document.querySelector('.launch-screen').hidden&&!!find('Continue'));
+  find('Settings').click();await frame();check('existing Settings opens',actions.settingsOpen.get()&&document.querySelector('[aria-label="Settings"]').getClientRects().length>0);
+  key('Escape');await frame();check('Escape returns focus to Settings',!actions.settingsOpen.get()&&document.activeElement===find('Settings'));
+  key('ArrowDown');check('arrow navigation selects How to Play',document.activeElement===find('How to Play'));
+  find('How to Play').click();check('existing guide opens without starting gameplay',document.querySelector('.tutorial-panel').open&&starts===0&&stores.snapshot.get().phase==='menu');
+  document.querySelector('.tutorial-panel .tutorial-primary').click();document.querySelector('.tutorial-panel .tutorial-primary').click();document.querySelector('.tutorial-panel .tutorial-primary').click();
+  check('guide includes real journey and BCI information',document.querySelector('.tutorial-panel').textContent.includes('Muscle activity')&&document.querySelector('.tutorial-panel').textContent.includes('final ledge'));
+  document.querySelector('.tutorial-panel .tutorial-primary').click();await frame();check('guide returns to same menu',!document.querySelector('.tutorial-panel').open&&document.activeElement===find('How to Play'));
+  find('Credits').click();check('credits open with actual contributor information',!document.querySelector('.launch-credits').hidden&&document.querySelector('.launch-credits').textContent.includes('Lukya Forge'));
+  key('Escape');await frame();check('credits close and restore focus',document.querySelector('.launch-credits').hidden&&document.activeElement===find('Credits'));
+  stores.settings.set({...stores.settings.get(),reducedMotion:true});check('reduced motion applies immediately',document.querySelector('.launch-screen').dataset.reducedMotion==='true');
+  find('Continue').click();find('Continue').click();await new Promise(resolve=>setTimeout(resolve,220));
+  check('double activation starts only once and hides launch UI',starts===1&&stores.snapshot.get().phase==='playing'&&document.querySelector('.launch-screen').hidden);
+  check('existing resume position and stage preserved',JSON.stringify(stores.snapshot.get().navigation)===JSON.stringify(initial.navigation)&&JSON.stringify(stores.snapshot.get().stage)===JSON.stringify(initial.stage));
+  check('menu arrows do not intercept gameplay',!key('ArrowDown').defaultPrevented);
+  stores.snapshot.set({...stores.snapshot.get(),phase:'menu'});await frame();check('existing return-to-menu can continue',!!find('Continue')&&!document.querySelector('.launch-screen').hidden);
+  dispose();check('unmount cleans menu handlers',!key('ArrowDown').defaultPrevented);
+ }catch(error){checks.push(`ERROR ${error.message}`);}
+ document.querySelector('#results').textContent=checks.join('\n');document.querySelector('#run').disabled=true;
+};
+</script></body></html>
+
