@@ -1,3 +1,4 @@
+import { fuelVisibilityRadius } from '../forest/fuel-visibility';
 import { LANTERN_LIGHT_CONFIG } from '../../config/lantern-light.config';
 /**
  * The climb scene: draws the world, runs the fixed-step player physics and feeds the effects.
@@ -346,7 +347,11 @@ export class ClimbScene extends Phaser.Scene {
 
     // Never let the sheet shrink so far that its edge shows on screen.
     const baseRadius = Math.max(frame.lanternRadius, minCoveringRadius(gameConfig.view.width, gameConfig.view.height));
-    const radius = baseRadius; // the signal-driven lanternRadius effect, held in flight by the effects engine
+    const fuelSnapshot = stores.snapshot.get();
+    const fuel01 = 'lanternFuel01' in fuelSnapshot && typeof fuelSnapshot.lanternFuel01 === 'number' ? fuelSnapshot.lanternFuel01 : 1;
+    const radius = fuelVisibilityRadius(fuel01, frame.forestCorruption, gameConfig.view.width, gameConfig.view.height);
+    const navigation = stores.snapshot.get().navigation;
+    if (navigation) stores.snapshot.set({ ...stores.snapshot.get(), navigation: { ...navigation, lanternRadiusPx: Math.round(radius) } });
     updateDarkness(this.darkness, this.state.x, this.state.y, radius);
     this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius, this.platforms);
     this.lanternMark.setPosition(this.state.x, this.state.y - gameConfig.player.height / 2 - 6);

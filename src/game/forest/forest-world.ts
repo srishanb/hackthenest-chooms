@@ -1,3 +1,4 @@
+import { FUEL_VISIBILITY_CONFIG as V } from '../../config/fuel-visibility.config';
 /** Bounded forest scenery and platform skins. All positions are decorative, never collision bodies. */
 import { ENVIRONMENT_ASSETS } from '../../config/environment-assets.config';
 import type { GameObjects, Scene } from 'phaser';
@@ -153,9 +154,9 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       }
       for (const rim of rims) rim.setFillStyle(mixColor(C.rim.calm, C.rim.corrupted, c));
       for (const prop of props) {
-        const blend = reveal(c, prop.threshold);
+        const blend = reveal(Math.min(1, c * (0.3 / V.decayFadeWidth)), prop.threshold * V.decayThresholdScale);
         prop.healthy.setAlpha(0.85 * (1 - blend)).setTint(mixColor(0xd7ebcb, 0xb88da3, c));
-        prop.decayed.setAlpha(blend * 0.8);
+        prop.decayed.setAlpha(blend * V.decayOpacity);
       }
       for (const spore of spores) {
         const phase = clock / C.sporePeriodMs * Math.PI * 2 + spore.seed * Math.PI * 2;
