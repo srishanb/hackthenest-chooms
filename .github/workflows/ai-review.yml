@@ -98,7 +98,7 @@ jobs:
             Then do exactly one of:
             A) No blocking issues AND auto-merge allowed:
                `gh pr comment <n> --body "✅ AI review: no blocking issues, merging."` then
-               `gh pr merge <n> --squash --delete-branch`.
+               `gh pr merge <n> --squash`. Never delete the branch: the repository keeps all history.
                If the merge fails (e.g. conflicts), fall through to B and say why.
             B) Otherwise: `gh pr edit <n> --add-label needs-human`, then post ONE comment that starts with
                "@${{ github.event.pull_request.user.login }} ⚠️ AI review needs a human:" followed by a short
