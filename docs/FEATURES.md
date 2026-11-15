@@ -2,7 +2,7 @@
 
 Status: FINAL (10:31 PM)
 
-Gameplay revision requested by Ali, 15 Nov 2026: one reusable, player-placed recovery ember with unlimited returns. Press E to place it on a safe ledge or pick it up when beside it; press R to request recovery after a fall. All automatic checkpoints and refuge-based saves/refills are removed. The placed ember is the only saved return point.
+Gameplay revision requested by Ali, 15 Nov 2026: one reusable, player-placed recovery ember with unlimited returns and a five-second cooldown after each return. E places it on a safe ledge or picks it up nearby. R recovers after a fall without a popup; fixed-light or uncalibrated play uses a labelled ordinary-input return, while calibrated adaptive recovery shows valid-time progress in the HUD. All automatic checkpoints and refuge-based saves/refills are removed. The placed ember is the only saved return point.
 
 <!-- A human changes the line above to "Status: FINAL (<name>, <date>)" when the list is finalised (H-01),
      and the integrator adds a line to DECISIONS.md. Until then only P0 to P3 may be built. -->
@@ -42,11 +42,11 @@ affected phases. Removing a row never requires code outside one lane (see PLAN.m
 | EMB-2 | Recovery ember | Request after a fall | After landing below the placed ember, press R to begin recovery. Without a placed ember, there is no recovery destination. | Core | P6.2 |
 | EMB-3 | Recovery ember | Player placement and pickup | Press E while grounded on a safe stationary ledge to place the carried ember. Stand beside the placed ember and press E to pick it up before placing it elsewhere. Only one marker exists; airborne, moving, disappearing and unsafe platforms are ineligible. | Core | P6.2 |
 | EMB-4 | Recovery ember | Safe activation state | Freeze gameplay and hazards; stabilise the view, improve visibility, simplify audio. | Core | P6.3 |
-| EMB-5 | Recovery ember | EEG-gated activation | Accumulate about four valid target seconds against a personalised resting calibration; duration adjustable. | Core | P6.3 |
+| EMB-5 | Recovery ember | EEG-gated activation | In calibrated adaptive play, accumulate about four valid target seconds against a personalised resting calibration; show progress in the HUD, with no popup. Fixed-light or uncalibrated play returns directly through labelled ordinary-input assistance. | Core | P6.3 |
 | EMB-6 | Recovery ember | Forgiving accumulation | Brief fluctuations pause progress, never reset it. Invalid or stale data never advances it. | Core | P6.3 |
 | EMB-7 | Recovery ember | Optional eye closure | Offer an eyes-closed interaction with audio cues where suitable; explain that eye closure is not proof of calmness. | BCI option | P10 |
-| EMB-8 | Recovery ember | Successful return | Teleport to the player-placed ember, zero velocity and clear held jump input. The ember stays placed and remains reusable; it can be picked up after returning. | Core | P6.5 |
-| EMB-9 | Recovery ember | Cancel or assistance | Press R again or use Cancel to stop recovery without moving the ember. A clearly labelled ordinary-input rescue uses the same placed destination without consuming it; the source badge records assistance use. | Core | P6.4 |
+| EMB-8 | Recovery ember | Successful return | Teleport to the player-placed ember, zero velocity and clear held jump input. The ember stays reusable. Each return starts a five-second cooldown shown in the HUD; picking up, replacing or reloading the marker cannot bypass it. | Core | P6.5 |
+| EMB-9 | Recovery ember | Cancel or assistance | Press R again to cancel an in-progress calibrated recovery. Direct returns in fixed-light or uncalibrated play use the same destination and are labelled as ordinary-input rescue in the source badge. No confirmation/recovery screen appears. | Core | P6.4 |
 | BCI-1 | BCI | Octopus 16 integration | Hardware acquisition isolated from gameplay behind a common input interface. | Core | P1.1, P3.1 |
 | BCI-2 | BCI | Personalised calibration | Active-play feedback and resting activation calibrated separately; check usable, repeatable responses. | Core | P1.3, P6.1 |
 | BCI-3 | BCI | Signal quality handling | Check contact where available, artifacts, missing data and freshness. Quality is separate from feature magnitude. | Core | P1.2, P3.2 |
