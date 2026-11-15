@@ -2,6 +2,8 @@
 
 Status: FINAL (10:31 PM)
 
+Gameplay revision requested by Ali, 15 Nov 2026: one reusable, player-placed recovery ember with unlimited returns. Press E to place it on a safe ledge or pick it up when beside it; press R to request recovery after a fall. All automatic checkpoints and refuge-based saves/refills are removed. The placed ember is the only saved return point.
+
 <!-- A human changes the line above to "Status: FINAL (<name>, <date>)" when the list is finalised (H-01),
      and the integrator adds a line to DECISIONS.md. Until then only P0 to P3 may be built. -->
 
@@ -14,8 +16,8 @@ affected phases. Removing a row never requires code outside one lane (see PLAN.m
 
 | ID | Category | Mechanic | Final behaviour | Priority | Phase |
 |---|---|---|---|---|---|
-| MOV-1 | Movement | Walking | Left and Right move the character on platforms. | Core | P4.1 |
-| MOV-2 | Movement | Charge jump | Hold Space to charge up to a fixed maximum; release to launch. Directional input sets the launch direction. | Core | P4.1 |
+| MOV-1 | Movement | Walking | A/D or Left/Right move the character on platforms. | Core | P4.1 |
+| MOV-2 | Movement | Charge jump | Hold Space or Up to charge up to a fixed maximum; release to launch. Directional input sets the launch direction. Full charge takes 0.6 seconds. | Core | P4.1 |
 | MOV-3 | Movement | Limited air steering | Small airborne corrections that cannot fully reverse a poor launch. | Core | P4.1 |
 | MOV-4 | Movement | Consistent physics | EEG never changes gravity, friction, jump strength, speed or steering. Environmental effects follow fixed rules. | Core | P4.1, lane-boundary test |
 | PLT-1 | Platforming | Vertical climb | Ascend an authored sequence of increasingly difficult sections. | Core | P4.2, P8.2 |
@@ -33,18 +35,18 @@ affected phases. Removing a row never requires code outside one lane (see PLAN.m
 | ATM-2 | Atmosphere | Reversible EEG effects | Signal-driven fog, shadows and background motion ease during recovery; penalties never accumulate. | Core | P5.3 |
 | ATM-3 | Atmosphere | Progression-based world changes | Scenery grows darker and stranger with altitude; authored, independent of EEG. | Core presentation | P8.3 |
 | ATM-4 | Atmosphere | Visual instability | Lantern flicker, swaying scenery, restrained distant distortion. The gameplay camera stays stable. | Core polish | P8.4 |
-| CHK-1 | Checkpoints | Automatic saving | Entering a refuge saves immediately, with no EEG requirement. | Core | P4.4 |
-| CHK-2 | Checkpoints | Safe refuges | Full local visibility, quieter audio, a place to pause. | Core | P4.4, P5 |
-| CHK-3 | Checkpoints | Local persistence | Checkpoint and ember ownership persist between sessions. | Core | P4.4 |
-| EMB-1 | Recovery ember | Earn through progress | Start with one ember. First arrival at a new checkpoint refills capacity to one; revisits do not. | Core | P4.4 |
-| EMB-2 | Recovery ember | Request after a fall | After landing lower down, press R to begin recovery if an ember and a useful destination exist. | Core | P6.2 |
-| EMB-3 | Recovery ember | Safe return anchor | Return to the last eligible stationary ledge before the fall; never moving, disappearing or unsafe platforms. | Core | P6.2 |
+| CHK-1 | Checkpoints | Manual recovery point only | No automatic checkpoints. Only a deliberately placed ember creates a saved return point. Walking into a refuge or a new section never saves. | Core | P4.4, P6.2 |
+| CHK-2 | Checkpoints | Safe rest areas | Refuges are rest areas for visibility and quieter audio only; they never save, set a return point, or grant/refill an ember. No automatic-checkpoint markers are shown. | Core | P4.4, P5 |
+| CHK-3 | Checkpoints | Manual-anchor persistence | The placed ember's validated ledge and position persist between sessions. Reload resumes there; with the ember carried or no valid marker, restart at the beginning. Legacy automatic-refuge saves are ignored. | Core | P4.4, P6.2 |
+| EMB-1 | Recovery ember | One reusable ember | Start each run carrying exactly one ember. Returns are unlimited and never consume it. No progress-based refills or extra embers. | Core | P6.2 |
+| EMB-2 | Recovery ember | Request after a fall | After landing below the placed ember, press R to begin recovery. Without a placed ember, there is no recovery destination. | Core | P6.2 |
+| EMB-3 | Recovery ember | Player placement and pickup | Press E while grounded on a safe stationary ledge to place the carried ember. Stand beside the placed ember and press E to pick it up before placing it elsewhere. Only one marker exists; airborne, moving, disappearing and unsafe platforms are ineligible. | Core | P6.2 |
 | EMB-4 | Recovery ember | Safe activation state | Freeze gameplay and hazards; stabilise the view, improve visibility, simplify audio. | Core | P6.3 |
 | EMB-5 | Recovery ember | EEG-gated activation | Accumulate about four valid target seconds against a personalised resting calibration; duration adjustable. | Core | P6.3 |
 | EMB-6 | Recovery ember | Forgiving accumulation | Brief fluctuations pause progress, never reset it. Invalid or stale data never advances it. | Core | P6.3 |
 | EMB-7 | Recovery ember | Optional eye closure | Offer an eyes-closed interaction with audio cues where suitable; explain that eye closure is not proof of calmness. | BCI option | P10 |
-| EMB-8 | Recovery ember | Successful return | Teleport safely, clear velocity and held jump input, then consume the ember. | Core | P6.5 |
-| EMB-9 | Recovery ember | Cancel or assistance | Cancel without consuming it, recalibrate, or use a labelled ordinary-input rescue that consumes the same ember. | Core | P6.4 |
+| EMB-8 | Recovery ember | Successful return | Teleport to the player-placed ember, zero velocity and clear held jump input. The ember stays placed and remains reusable; it can be picked up after returning. | Core | P6.5 |
+| EMB-9 | Recovery ember | Cancel or assistance | Press R again or use Cancel to stop recovery without moving the ember. A clearly labelled ordinary-input rescue uses the same placed destination without consuming it; the source badge records assistance use. | Core | P6.4 |
 | BCI-1 | BCI | Octopus 16 integration | Hardware acquisition isolated from gameplay behind a common input interface. | Core | P1.1, P3.1 |
 | BCI-2 | BCI | Personalised calibration | Active-play feedback and resting activation calibrated separately; check usable, repeatable responses. | Core | P1.3, P6.1 |
 | BCI-3 | BCI | Signal quality handling | Check contact where available, artifacts, missing data and freshness. Quality is separate from feature magnitude. | Core | P1.2, P3.2 |
