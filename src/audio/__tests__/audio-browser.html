@@ -1,0 +1,22 @@
+<!doctype html><html><head><title>Local audio playback check</title></head><body>
+<h1>Local audio playback check</h1>
+<p>Uses the licensed local ambient loop. No tense stem is supplied.</p>
+<button id="unlock">Unlock audio</button><button id="mute">Mute music</button><button id="dispose">Dispose audio</button>
+<pre id="result"></pre>
+<script type="module">
+import { createAudio } from '../index.ts';
+import { AUDIO_CONFIG } from '../../config/audio.config.ts';
+import { createStore } from '../../shared/store.ts';
+import { createEventBus } from '../../shared/bus.ts';
+import { DEFAULT_SETTINGS } from '../../shared/contracts/settings.ts';
+import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state.ts';
+const stores={settings:createStore(structuredClone(DEFAULT_SETTINGS)),snapshot:createStore(structuredClone(INITIAL_GAME_SNAPSHOT)),effects:createStore({musicTenseMix:0.3})};
+const audio=createAudio({stores,bus:createEventBus(),config:AUDIO_CONFIG,narratorLines:[]},
+ {createContext:()=>new AudioContext(),gestures:window,baseURL:new URL('/',location.href)});
+const output=document.querySelector('#result');
+const report=()=>output.textContent=JSON.stringify(audio.getDiagnostics(),null,2);
+report();audio.ready.then(report);
+document.querySelector('#unlock').onclick=()=>setTimeout(report,0);
+document.querySelector('#mute').onclick=()=>{stores.settings.set({...stores.settings.get(),volumes:{...stores.settings.get().volumes,music:0}});report();};
+document.querySelector('#dispose').onclick=()=>{audio.dispose();setTimeout(report,0);};
+</script></body></html>
