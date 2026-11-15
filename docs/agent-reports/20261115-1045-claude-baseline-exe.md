@@ -14,7 +14,7 @@
 | Web Bluetooth: `select-bluetooth-device` handler (4 s scan; one board picked, several -> chooser, none or Cancel -> cancel), pairing handler, permission check limited to the app's own origin; the request still starts from the in-game click | Built; APIs checked in electron@45.3.2 electron.d.ts | Medium (no board) |
 | Offline: replay presets, narrator MP3, fonts load; any http(s) request is blocked | Pass (smoke run) | High |
 | NSIS x64 installer built on macOS (unsigned, `signAndEditExecutable: false`) | Pass: Lighten-Up-Setup-0.1.0-x64.exe, 145 MB, SHA-256 7a9a2712...0a94 | High |
-| Installer attached to release baseline-2026-11-15 | **Not done:** the upload was blocked by the permission check; needs Srishan's go-ahead | n/a |
+| Installer attached to release baseline-2026-11-15, with install and connect steps in the notes | Done after Srishan approved (asset size 144,928,525 bytes, same as the local build) | High |
 
 ## 2. How I verified it
 
