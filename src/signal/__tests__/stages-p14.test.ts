@@ -77,8 +77,8 @@ describe('gates', () => {
 });
 
 describe('algorithm registry', () => {
-  it('lists both algorithms and resolves by id', () => {
-    expect(listAlgorithmIds().sort()).toEqual(['intensity-v1', 'passthrough-v0']);
+  it('lists the algorithms and resolves by id', () => {
+    expect(listAlgorithmIds().sort()).toEqual(['intensity-v1', 'intensity-v2', 'passthrough-v0']);
     expect(resolveAlgorithm('passthrough-v0', 'intensity-v1').algorithm.id).toBe('passthrough-v0');
     expect(ALGORITHMS['intensity-v1']?.needsCalibration).toBe(true);
     expect(ALGORITHMS['passthrough-v0']?.needsCalibration).toBe(false);

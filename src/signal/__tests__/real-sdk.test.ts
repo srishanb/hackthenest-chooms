@@ -9,6 +9,9 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { SIGNAL_CONFIG } from '../../config/signal.config';
 import type { BandFrame } from '../../shared/contracts/signal-internal';
+import { intensityV1 } from '../algorithms/intensity-v1';
+import { intensityV2 } from '../algorithms/intensity-v2';
+import { calibrateBaseline } from '../stages/calibration';
 import { createPiEEGAdapter } from '../sources/pieeg-adapter';
 import type { PiEEGConstructor } from '../vendor/pieeg-types';
 
@@ -50,4 +53,36 @@ describe('real PiEEG simulator through our adapter', () => {
       adapter.disconnect();
     }
   }, 15_000);
+
+  it('active calibration separates relaxed from jaw clench with intensity-v2 but not intensity-v1', async () => {
+    const frames: BandFrame[] = [];
+    const adapter = createPiEEGAdapter(SIGNAL_CONFIG, { onFrame: (f) => frames.push(f), onError: (e) => { throw e; }, onDisconnect: () => {} }, PiEEG);
+    await adapter.connect('simulator');
+    try {
+      await sleep(2000);
+      frames.length = 0;
+      await sleep(4000);
+      const relaxed = frames.slice();
+      frames.length = 0;
+      adapter.triggerSimEvent('clench', 6000); // the SDK clench is a timed burst; this one lasts the whole window
+      await sleep(4000);
+      const clench = frames.slice();
+      const activeFeature = (algo: typeof intensityV1) => (list: BandFrame[]) => list.map((f) => algo.extract(f, SIGNAL_CONFIG).active);
+      const v1 = calibrateBaseline(activeFeature(intensityV1)(relaxed), activeFeature(intensityV1)(clench), 'active');
+      const v2 = calibrateBaseline(activeFeature(intensityV2)(relaxed), activeFeature(intensityV2)(clench), 'active');
+      expect(v1.ok).toBe(false);
+      expect(v1.reasonKey).toBe('calibration.noSeparation');
+      expect(v2.ok).toBe(true);
+      // The alpha boost (eyes-closed stand-in) must not raise the active feature by more than 20 %.
+      adapter.triggerSimEvent('alpha', true);
+      await sleep(2500);
+      frames.length = 0;
+      await sleep(3000);
+      const boosted = mean(activeFeature(intensityV2)(frames));
+      expect(boosted).toBeLessThan(mean(activeFeature(intensityV2)(relaxed)) * 1.2);
+      expect(v2.baseline!.high).toBeGreaterThan(v2.baseline!.low * 1.3);
+    } finally {
+      adapter.disconnect();
+    }
+  }, 30_000);
 });
