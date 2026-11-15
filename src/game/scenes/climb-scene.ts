@@ -1,3 +1,4 @@
+import { createCandleLighting } from '../forest/candle-lighting';
 import { fuelVisibilityRadius } from '../forest/fuel-visibility';
 import { LANTERN_FUEL_CONFIG } from '../../config/lantern-fuel.config';
 /**
@@ -83,6 +84,7 @@ export class ClimbScene extends Phaser.Scene {
   private wax!: ReturnType<typeof createWaxRewards>;
   private waxView!: ReturnType<typeof createWaxView>;
   private player!: Phaser.GameObjects.Rectangle;
+  private candleLighting!: ReturnType<typeof createCandleLighting>;
   private darkness!: Phaser.GameObjects.Image;
   private lanternMark!: Phaser.GameObjects.Arc;
   private fuel = createLanternFuel();
@@ -148,6 +150,7 @@ export class ClimbScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
 
     this.darkness = createDarkness(this, DEPTH.darkness);
+    this.candleLighting = createCandleLighting(this);
     // Above the darkness (LAN-3): the ledge underfoot and reachable ledges stay readable.
     this.visibility = createProtectedVisibility(this, DEPTH.alwaysReadable, world.platforms, world, gameConfig);
     this.lanternMark = this.add.circle(0, 0, 4, 0xfff3c4).setDepth(DEPTH.alwaysReadable).setVisible(false);
@@ -357,6 +360,7 @@ export class ClimbScene extends Phaser.Scene {
     const baseRadius = Math.max(frame.lanternRadius, minCoveringRadius(gameConfig.view.width, gameConfig.view.height));
     const radius = this.visibleRadius(baseRadius, !this.state.grounded, frame.forestCorruption);
     updateDarkness(this.darkness, this.state.x, this.state.y, radius);
+    this.candleLighting.update(this.state.x, this.state.y, this.fuel.value, frame.forestCorruption);
     this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius, this.platforms);
     this.lanternMark.setPosition(this.state.x, this.state.y - gameConfig.player.height / 2 - 6);
     const lantern = effectsTable.find((rule) => rule.id === 'lanternRadius');
