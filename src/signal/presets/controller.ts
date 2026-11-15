@@ -56,7 +56,7 @@ export function createPresetController(deps: PresetControllerDeps): SignalPreset
   let selection: SourceChoice = deps.initial;
   let loop = true;
   let manifest: ManifestEntry[] | null = null;
-  /** Bumped on every switch so an old replay's end callback can tell it is out of date. */
+  /** Bumped on every successful switch so an old replay's end callback can tell it is out of date. */
   let generation = 0;
   /** Bumped on every select() call, before any await, so a superseded choice can bail out. */
   let requested = 0;
@@ -96,7 +96,8 @@ export function createPresetController(deps: PresetControllerDeps): SignalPreset
   async function playPreset(id: string, isStale: () => boolean): Promise<void> {
     const preset = await load(id);
     if (isStale()) return;
-    const mine = ++generation;
+    // Set only once this preset is playing: a failed switch must leave the current preset's loop alive.
+    let mine = -1;
     const first = preset.frames[0]!;
     const span = durationMs(preset.frames) + (preset.frames.length > 1 ? durationMs(preset.frames) / (preset.frames.length - 1) : 0);
     const startAt = deps.now();
@@ -117,6 +118,7 @@ export function createPresetController(deps: PresetControllerDeps): SignalPreset
       deps.setBaselines(before);
       throw error;
     }
+    mine = ++generation;
     savedBaselines ??= before;
   }
 

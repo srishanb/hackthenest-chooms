@@ -61,4 +61,32 @@ describe('preset controller', () => {
     expect(deps.setBaselines).not.toHaveBeenCalled();
     expect(controller.getSelection()).toEqual({ kind: 'sim' });
   });
+
+  it('a failed switch leaves the playing preset looping', async () => {
+    let failNext = false;
+    const ends: Array<() => void> = [];
+    const startFrames = vi.fn(async (_frames: BandFrame[], onEnd: () => void) => {
+      if (failNext) {
+        failNext = false;
+        throw new Error('could not start');
+      }
+      ends.push(onEnd);
+    });
+    const startLive = vi.fn(async () => {
+      throw new Error('picker cancelled');
+    });
+    const { controller } = harness({ startFrames, startLive });
+    await controller.select({ kind: 'preset', id: 'a' });
+    expect(startFrames).toHaveBeenCalledTimes(1);
+
+    failNext = true;
+    await expect(controller.select({ kind: 'preset', id: 'b' })).rejects.toThrow('could not start');
+    ends[0]!();
+    expect(startFrames).toHaveBeenCalledTimes(3); // the failed b, then a's next pass
+
+    await expect(controller.select({ kind: 'live' })).rejects.toThrow('picker cancelled');
+    ends[1]!();
+    expect(startFrames).toHaveBeenCalledTimes(4);
+    expect(controller.getSelection()).toEqual({ kind: 'preset', id: 'a' });
+  });
 });
