@@ -4,7 +4,7 @@ import { t, STRINGS, type StringKey } from '../../strings';
 import type { UiComponent } from '../../types';
 import { hudState } from './hud-state';
 import './hud.css';
-import { HUD_WORLD_PIXELS_PER_METRE, HUD_LANTERN_FULL_RADIUS_PX } from '../../../config/ui.config';
+import { HUD_WORLD_PIXELS_PER_METRE } from '../../../config/ui.config';
 import { icon } from '../../icons';
 import { navigationView } from './navigation';
 import { WAX_CONFIG } from '../../../config/wax.config';
@@ -35,18 +35,14 @@ export const hud: UiComponent = {
     prompt.className = 'hud__prompt';
     prompt.setAttribute('role', 'status');
     panel.append(stage, status, quality, lesson, ember, progress, wax, reward, composure, prompt);
-    const lantern = document.createElement('div'); lantern.className = 'hud__lantern';
-    const flame = document.createElement('span'); flame.className = 'hud__flame'; flame.append(icon('flame'));
-    const gauge = document.createElement('meter'); gauge.min = 0; gauge.max = HUD_LANTERN_FULL_RADIUS_PX;
-    gauge.setAttribute('aria-label', t('hud.lantern'));
-    const lanternLabel = document.createElement('span'); lanternLabel.textContent = t('hud.lantern');
-    lantern.append(flame, gauge, lanternLabel);
+    // The lantern strength bar was replaced by the game's candle portrait (bottom left, in the canvas).
     const metrics = document.createElement('div'); metrics.className = 'hud__metrics';
-    const metric = (key: 'hud.height' | 'wax.label' | 'hud.best', symbol: 'height' | 'wax' | 'trophy') => {
+    const metric = (key: 'hud.height' | 'wax.label' | 'hud.best' | 'hud.fuel', symbol: 'height' | 'wax' | 'trophy') => {
       const row = document.createElement('div'); const label = document.createElement('span'); label.textContent = t(key);
       const value = document.createElement('strong'); row.append(icon(symbol), label, value); metrics.append(row); return value;
     };
     const height = metric('hud.height', 'height'); const waxMetric = metric('wax.label', 'wax'); const best = metric('hud.best', 'trophy');
+    const fuelMetric = metric('hud.fuel', 'wax');
     const pause = document.createElement('button'); pause.type = 'button'; pause.className = 'hud__pause';
     pause.setAttribute('aria-label', t('hud.pause')); pause.append(icon('pause'));
     const onPause = (): void => { if (['playing', 'ember'].includes(stores.snapshot.get().phase)) bus.emit({ type: 'pause' }); };
@@ -62,7 +58,7 @@ export const hud: UiComponent = {
     let bestPx = 0;
     try { const saved = Number(localStorage.getItem('lighten.height-best-px.v1')); if (Number.isFinite(saved) && saved > 0) bestPx = saved; } catch { /* Private mode: session best still works. */ }
     panel.className = 'hud__context';
-    const layout = document.createElement('div'); layout.className = 'hud'; layout.append(lantern, metrics, pause, checkpoint, panel); root.append(layout);
+    const layout = document.createElement('div'); layout.className = 'hud'; layout.append(metrics, pause, checkpoint, panel); root.append(layout);
     let savedBestPx = bestPx;
     const saveBest = (): void => {
       if (bestPx <= savedBestPx) return;
@@ -76,6 +72,7 @@ export const hud: UiComponent = {
     };
     const render = (): void => {
       const snapshot = stores.snapshot.get();
+      text(fuelMetric, `${Math.round((snapshot.lanternFuel01 ?? 1) * 100)}%`);
       const navigation = snapshot.navigation;
       const nav = navigationView(navigation, HUD_WORLD_PIXELS_PER_METRE);
       const heightPx = (nav?.heightMetres ?? 0) * HUD_WORLD_PIXELS_PER_METRE;
@@ -84,14 +81,12 @@ export const hud: UiComponent = {
       text(height, nav ? `${nav.heightMetres.toFixed(1)} ${t('hud.metres')}` : '—');
       text(best, `${(bestPx / HUD_WORLD_PIXELS_PER_METRE).toFixed(1)} ${t('hud.metres')}`);
       text(waxMetric, snapshot.wax?.total ? `${snapshot.wax.collected}/${snapshot.wax.total}` : String(snapshot.wax?.collected ?? 0));
-      gauge.value = navigation?.lanternRadiusPx ?? 0;
-      gauge.title = `${t('hud.lantern')} · ${Math.round(gauge.value)} px`;
       text(targetTitle, nav?.checkpoint ? t('hud.checkpoint') : t('hud.noCheckpoint'));
       text(distance, nav?.checkpoint ? `${nav.checkpoint.distanceMetres.toFixed(1)} ${t('hud.metres')}` : t('hud.placeCheckpoint'));
       compass.classList.toggle('is-empty', !nav?.checkpoint);
       needle.style.transform = `rotate(${nav?.checkpoint?.angleDegrees ?? 0}deg)`;
       const flags = stores.settings.get().hud;
-      lantern.hidden = metrics.hidden = !flags.showStatus;
+      metrics.hidden = !flags.showStatus;
       checkpoint.hidden = !flags.showEmber;
       const view = hudState(snapshot, signalState, SIGNAL_CONFIG.staleAfterMs);
       const lessonKey = snapshot.lessonKey;
