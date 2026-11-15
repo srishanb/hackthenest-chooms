@@ -47,7 +47,7 @@ export interface SectionData {
   finish: AreaData | null;
 }
 
-export type NarratorMoment = 'welcome' | 'tutorial' | 'height' | 'fall' | 'stage' | 'finish';
+export type NarratorMoment = 'welcome' | 'tutorial' | 'height' | 'fall' | 'stage' | 'finish' | 'low-fuel';
 
 export interface NarratorLine {
   /** Optional event category; older banks remain opening lines. */
