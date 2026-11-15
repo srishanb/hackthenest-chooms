@@ -31,6 +31,10 @@ One line per decision. Only the integrator edits this file. A **Decision** was c
 | D-22 | 15 Nov 2026 | Srishan | "let people commit whatever they want provided its not breaking or goes against the ethos of the game." The reviewer holds a pull request for only two reasons: it breaks something (check, build, or a bug that breaks the game or another person's work), or it goes against the ethos (the binding rules and never deleting git history). Lanes, plans and approvals, the feature list, claims, pre-code checks and after-job reports are advice, not gates. |
 | D-23 | 15 Nov 2026 | Srishan | The game is named **Lighten Up** ("rename the game to lighten up"). Player-facing text and docs use it; storage keys, the recording format id and the npm package name keep `lighten` so saves and recordings still load. Closes H-11 for the name. |
 | D-24 | 15 Nov 2026 | Srishan | Owner decision: the feature freeze moves from Sun 9:00 AM to a strict Sun 10:00 AM so all features can be finished. Wrap-up starts now: full builds and smoke tests of the built game run alongside feature work. After 10:00 AM only fixes, build and smoke-test work, and submission material. |
+| D-25 | 15 Nov 2026 | Srishan | Lantern fuel stays in the game. The FEATURES.md row LAN-2 ("No fuel depletion") is out of date and is recorded as Changed in "As built at submission". |
+| D-26 | 15 Nov 2026 | Srishan | The stage details card is hidden by default and shown by a Settings toggle (`showStageDetails`), and the HUD is locked inside the game frame. |
+| D-27 | 15 Nov 2026 | Srishan | The project's own code and docs are released under the MIT licence (`LICENSE`). Third-party assets keep their own licences, listed in `CREDITS.md`. |
+| D-28 | 15 Nov 2026 | Srishan | The game is hosted for free on GitHub Pages, built from `main` by the `.github/workflows/pages.yml` workflow, instead of being packaged with Electron. |
 
 ## Recommendations in force (overrule by adding a Decision row)
 
