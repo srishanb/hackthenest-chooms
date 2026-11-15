@@ -1,5 +1,7 @@
 # Master plan: Lighten Up
 
+> This file is the plan as approved. The game as built is described in [STATUS.md](STATUS.md), [FEATURES.md](FEATURES.md) ("As built at submission") and [ARCHITECTURE.md](ARCHITECTURE.md). The feature freeze moved from Sun 9:00 AM to a strict Sun 10:00 AM (Decision D-24 in [DECISIONS.md](DECISIONS.md)).
+
 Written Sat 14 Nov 2026, 7:50 PM Eastern, with 16 h 10 min left before the final Devpost deadline.
 Owner: integrator (Srishan). Agents: read [AGENTS.md](../AGENTS.md) first, then the section for your phase.
 
