@@ -21,7 +21,16 @@ it('brings the shadow into view early instead of consuming an offscreen radius b
   const farX = 480, farY = 270;
   const corner = Math.hypot(farX, farY);
   expect(radius(1, 0, farX, farY)).toBe(corner);
-  expect(radius(0.9, 0, farX, farY) * (15 / 12)).toBeLessThan(corner);
-  expect(radius(0.5, 0, farX, farY)).toBeLessThan(130);
+  expect(radius(0.9, 1, farX, farY) * (15 / 12)).toBeLessThan(corner);
+  expect(radius(0.5, 1, farX, farY)).toBeLessThan(130);
   expect(radius(0.5, 1, farX, farY)).toBeLessThan(radius(0.5, 0, farX, farY));
+});
+
+it('keeps normal-world sight constant through all fuel levels and transitions back smoothly', () => {
+  const full = Math.hypot(480,270);
+  for (const fuel of [1,0.75,0.5,0.1,0]) {
+    for (const c of [0,0.2,0.35]) expect(radius(fuel,c,480,270)).toBe(full);
+  }
+  expect(radius(0.5,0.6,480,270)).toBeLessThan(full);
+  expect(radius(0.5,0.6,480,270)).toBeGreaterThan(radius(0.5,1,480,270));
 });
