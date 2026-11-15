@@ -1,7 +1,6 @@
 /** Actual candle resource, requested by Neil. Never alters movement or recovery requirements. */
 export const LANTERN_FUEL_CONFIG = {
-  corruptedWaxRadiusPx: 160,
-  corruptedVisibilityRadiusPx: 80,
+  fullRadiusPx: 280,
   normalWorldMax01: 0.35,
   calmBurnSeconds: 240, corruptedBurnSeconds: 45, waxRefill01: 0.35,
   emptyRadiusScale: 0.3, minimumRadiusPx: 60,
@@ -13,11 +12,3 @@ export function waxBenefit01(corruption: number): number {
   return 1 - t * t * (3 - 2 * t);
 }
 
-/** Final visual ceiling: only the timed wax pulse briefly lifts corrupted visibility. */
-export function corruptionVisibilityRadius(radius: number, corruption: number, waxPulse01 = 0): number {
-  const benefit = waxBenefit01(corruption);
-  const baseline = Math.min(radius, LANTERN_FUEL_CONFIG.corruptedVisibilityRadiusPx);
-  const pulse = Math.max(0, Math.min(1, waxPulse01));
-  const bonus = (LANTERN_FUEL_CONFIG.corruptedWaxRadiusPx - LANTERN_FUEL_CONFIG.corruptedVisibilityRadiusPx) * pulse;
-  return radius * benefit + (baseline + bonus) * (1 - benefit);
-}
