@@ -1,3 +1,7 @@
+# Public preview update
+
+The normal game now includes a **Preview forest visuals** checkbox during gameplay in development and production. Enable it to reveal the visual-only slider; disable it or choose Restore normal input to resume normal signal-driven scenery. It is off by default, does not persist across reload, and does not change sensor readings, recovery or movement. Source labels remain visible. Legacy URL forestDemo remains development-only. This supersedes the development-only control descriptions below.
+
 # Forest visual design
 
 ## Source and license
