@@ -29,7 +29,7 @@ export function listAlgorithmIds(): string[] {
 /** The entry for `id`; an unknown or missing id falls back to `fallbackId` with a console warning. */
 export function resolveAlgorithm(id: string | null | undefined, fallbackId: string, warn: (message: string) => void = console.warn): AlgorithmEntry {
   const wanted = id ?? fallbackId;
-  const entry = ALGORITHMS[wanted];
+  const entry = Object.hasOwn(ALGORITHMS, wanted) ? ALGORITHMS[wanted] : undefined;
   if (entry) return entry;
   warn(`[signal] unknown algorithm "${wanted}", using "${fallbackId}". Known: ${listAlgorithmIds().join(', ')}`);
   const fallback = ALGORITHMS[fallbackId];

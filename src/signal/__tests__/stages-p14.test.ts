@@ -90,6 +90,10 @@ describe('algorithm registry', () => {
     expect(resolveAlgorithm(null, 'intensity-v1', warn).algorithm.id).toBe('intensity-v1');
     expect(warn).toHaveBeenCalledOnce();
   });
+  it('treats Object.prototype names as unknown ids', () => {
+    expect(resolveAlgorithm('constructor', 'intensity-v2', () => {}).algorithm).toBeDefined();
+    expect(resolveAlgorithm('toString', 'intensity-v2', () => {}).algorithm.id).toBe('intensity-v2');
+  });
   it('the configured default algorithm exists', () => {
     expect(ALGORITHMS[SIGNAL_CONFIG.defaultAlgo]).toBeDefined();
   });
