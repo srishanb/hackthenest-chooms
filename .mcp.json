@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["scripts/mcp/chrome-devtools.mjs"]
+    },
+    "spector": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["scripts/mcp/spector.mjs"]
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@4.7.1"]
+    }
+  }
+}
