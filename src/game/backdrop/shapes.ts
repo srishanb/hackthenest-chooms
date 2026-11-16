@@ -6,6 +6,7 @@
  * knows which rows it covers, so a tree that straddles two chunks is painted into both and lines
  * up. Light comes from the upper left throughout. Pure: slots into a grid, no canvas, no Phaser.
  */
+import { BACKDROP_CONFIG } from '../../config/backdrop.config';
 import { hash, noise1, put, subSeed, TONE, type PixelGrid } from './pixel-grid';
 
 /** A grid and the forest row its first row stands for. */
@@ -73,9 +74,9 @@ export function paintLimb(surface: Surface, x0: number, y0: number, x1: number, 
 
 /** A leafy tree standing at (`x`, `baseY`): a leaning trunk, one fork and three clumps for a crown. */
 export function paintBroadleaf(surface: Surface, x: number, baseY: number, height: number, seed: number, snow01: number): void {
-  const crown = height * (0.22 + 0.12 * hash(seed, 1));
+  const crown = height * (0.22 + 0.12 * hash(seed, 1)) * BACKDROP_CONFIG.broadleafCrownScale;
   if (misses(surface, baseY - height - crown * 1.6, baseY + 2)) return;
-  const lean = (hash(seed, 2) - 0.5) * height * 0.35, girth = Math.max(2, height * 0.07);
+  const lean = (hash(seed, 2) - 0.5) * height * 0.35, girth = Math.max(2, height * BACKDROP_CONFIG.treeGirth01.broadleaf);
   const topX = x + lean, topY = baseY - height;
   const midX = x + lean * 0.35 + (hash(seed, 3) - 0.5) * 4, midY = baseY - height * 0.5;
   const side = hash(seed, 4) < 0.5 ? -1 : 1;
@@ -91,7 +92,7 @@ export function paintBroadleaf(surface: Surface, x: number, baseY: number, heigh
 /** A pine standing at (`x`, `baseY`): a short trunk and tiers of needles that narrow to a point. `snow01` loads the tiers with snow. */
 export function paintPine(surface: Surface, x: number, baseY: number, height: number, seed: number, snow01: number): void {
   if (misses(surface, baseY - height - 2, baseY + 2)) return;
-  paintLimb(surface, x, baseY, x, baseY - height * 0.3, Math.max(2, height * 0.05), 1);
+  paintLimb(surface, x, baseY, x, baseY - height * 0.3, Math.max(2, height * BACKDROP_CONFIG.treeGirth01.pine), 1);
   const tiers = Math.max(3, Math.floor(height / 13)), widest = height * (0.2 + 0.08 * hash(seed, 1));
   const step = height * 0.82 / tiers, tierHeight = Math.ceil(step * 1.7);
   for (let tier = 0; tier < tiers; tier++) {
@@ -116,7 +117,7 @@ export function paintMushroom(surface: Surface, x: number, baseY: number, height
   const half = height * (0.28 + 0.2 * hash(seed, 1)), dome = Math.max(3, Math.round(half * (0.55 + 0.3 * hash(seed, 2))));
   if (misses(surface, baseY - height - dome - 2, baseY + 2)) return;
   const topX = Math.round(x + (hash(seed, 3) - 0.5) * height * 0.3), topY = Math.round(baseY - height);
-  paintLimb(surface, x, baseY, topX, topY, Math.max(2, height * 0.09), Math.max(2, height * 0.06), true);
+  paintLimb(surface, x, baseY, topX, topY, Math.max(2, height * BACKDROP_CONFIG.treeGirth01.mushroom), Math.max(2, height * BACKDROP_CONFIG.treeGirth01.mushroom * 0.67), true);
   // Gills: a darker underside one row below the dome's rim.
   for (let dx = -Math.floor(half * 0.8); dx <= half * 0.8; dx++) plot(surface, topX + dx, topY + 1, dx % 2 === 0 ? TONE.stem1 : TONE.cap0);
   for (let row = 0; row < dome; row++) {

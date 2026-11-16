@@ -40,9 +40,12 @@ export function trunkLanes(seed: number, layerIndex: number, groundY: number, co
     const laneSeed = subSeed(layerSeed, i);
     const left = i % 2 === 0;
     const baseX = layer.trunksAtEdges
-      ? config.chunkWidth * (left ? 0.01 + 0.05 * hash(laneSeed, 1) : 0.99 - 0.05 * hash(laneSeed, 1))
+      ? config.chunkWidth * (left ? 0.005 + 0.03 * hash(laneSeed, 1) : 0.995 - 0.03 * hash(laneSeed, 1))
       : config.chunkWidth * (i + 0.2 + 0.6 * hash(laneSeed, 1)) / layer.trunks;
-    const width = layer.trunkMinWidth + hash(laneSeed, 2) * (layer.trunkMaxWidth - layer.trunkMinWidth);
+    // Most trunks are thick (the upper 60% of the range); now and then one is slender, for variety.
+    const slender = hash(laneSeed, 3) < config.slenderTrunkChance01;
+    const width = slender ? layer.trunkMinWidth * config.slenderTrunkWidth01
+      : layer.trunkMinWidth + (0.4 + 0.6 * hash(laneSeed, 2)) * (layer.trunkMaxWidth - layer.trunkMinWidth);
     const flareFrom = groundY - 60 * layer.scale;
     return {
       seed: laneSeed,
@@ -91,7 +94,7 @@ function paintBranches(surface: Surface, lane: TrunkLane, request: ChunkRequest,
     const side = lane.inward !== 0 ? lane.inward : hash(seed, 3) < 0.5 ? -1 : 1;
     const length = (28 + 60 * hash(seed, 4)) * layer.scale * (lane.inward !== 0 ? 1.5 : 1);
     const rise = length * (0.25 + 0.5 * hash(seed, 5));
-    const startX = lane.centre(y) + side * lane.half(y) * 0.8, girth = Math.max(2, lane.half(y) * 0.5);
+    const startX = lane.centre(y) + side * lane.half(y) * 0.8, girth = Math.min(config.branchMaxGirth * layer.scale, Math.max(2, lane.half(y) * 0.35));
     const elbowX = startX + side * length * 0.55, elbowY = y - rise * 0.35, tipX = startX + side * length, tipY = y - rise;
     const cold01 = request.biomeAt(y).cold01, leaves = (12 + 16 * hash(seed, 6)) * layer.scale;
     paintLimb(surface, startX, y, elbowX, elbowY, girth, Math.max(1.5, girth * 0.6));
