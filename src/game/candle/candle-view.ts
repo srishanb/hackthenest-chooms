@@ -18,7 +18,7 @@ import { bodyShape, INITIAL_POSE, poseFrame, slumpShape, stepPose, type BodyShap
 import { rasterCandle } from './candle-raster';
 import { type Aim, flameLean, flightSparks, fullChargeTremble, wickLean } from './direction-cues';
 import type { Surroundings } from './awareness';
-import { DROPLET_MS, emotePixels, landingDroplets } from './emotes';
+import { coldBreath, DROPLET_MS, emotePixels, landingDroplets } from './emotes';
 import { faceFor, INITIAL_EXPRESSION, stepExpression, type CandleFace, type ExpressionEvents, type ExpressionTracker } from './expression';
 import { fallIntensity, FLAME_FPS, flameSizeFromRadius, flickerRate, rasterFlame, wickSmoke } from './flame';
 
@@ -45,6 +45,8 @@ export interface CandleLook {
   around?: Surroundings;
   /** 0..1 how much the candle has melted over the run (its drips grow). Optional: not melted by default. */
   melt01?: number;
+  /** True in the cold (a snow band): the candle's breath shows. */
+  cold?: boolean;
 }
 
 /** A bead of wax runs down a drip for `BEAD_RUN_MS` once every `BEAD_EVERY_MS`, in `BEAD_STEPS` steps. */
@@ -177,9 +179,12 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       const beadAt = clockMs % BEAD_EVERY_MS;
       const bead01 = lit && !look.reducedMotion && beadAt < BEAD_RUN_MS ? Math.floor((beadAt / BEAD_RUN_MS) * BEAD_STEPS) / (BEAD_STEPS - 1) : undefined;
       if (lastMelting.melt01 !== melt01 || lastMelting.bead01 !== bead01) lastMelting = { melt01, bead01 };
+      // Breath in the cold, only while standing or walking with the flame lit (drawn with the droplets, from the feet).
+      const breath = look.cold && lit && state.grounded && !state.charging
+        ? coldBreath(Math.floor(clockMs / 100) * 100, tracker.facingLeft, size.halfWidth, size.height, look.reducedMotion) : [];
       const lean = flameLean(cue);
       const sparks = flightSparks(genome, cue, flameFrame, look.reducedMotion);
-      const key = `${look.ember}|${look.corruptedEmber}|${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}|${JSON.stringify(face)}|${flare01}|${duck01}|${gather01}|${warmth01}|${JSON.stringify(emotes)}|${JSON.stringify(droplets)}|${spent01}|${melt01}|${bead01}`;
+      const key = `${look.ember}|${look.corruptedEmber}|${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}|${JSON.stringify(face)}|${flare01}|${duck01}|${gather01}|${warmth01}|${JSON.stringify(emotes)}|${JSON.stringify(droplets)}|${spent01}|${melt01}|${bead01}|${JSON.stringify(breath)}`;
       if (key === drawnKey) return;
       drawnKey = key;
 
@@ -202,7 +207,7 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
         graphics.fillRect((body.wickTip.x + p.x) * px, (body.wickTip.y + p.y) * px, px, px);
       }
       // Wax knocked off by a landing, relative to the feet.
-      for (const p of droplets) {
+      for (const p of [...droplets, ...breath]) {
         graphics.fillStyle(p.color, 1);
         graphics.fillRect(p.x * px, p.y * px, px, px);
       }

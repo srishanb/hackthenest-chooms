@@ -2,6 +2,8 @@
 <style>body{margin:0;background:#1b2a2a;color:#cfd6e4;font:12px monospace}canvas{image-rendering:pixelated;display:block}</style></head><body>
 <p style="padding:6px 10px">Rows: ten seeds (plain, banded, dipped and tufted candles; the last two are the rare swirl). Columns: content, glance, run (turned), blink, focused (charging), soaring, alarmed, ouch, delighted, proud, worried, sleepy, yawn, fading; then facing left. Dev-only visual check.</p>
 <canvas id="c"></canvas>
+<p style="padding:6px 10px">Menu emblem: waiting, then eager (Play has the focus), for four candles.</p>
+<canvas id="e"></canvas>
 <script type="module">
 // Dev-only visual check of every candle expression; draws the pure rasters with a plain 2D canvas.
 import { createCandleGenome } from './../candle/candle-genome.ts';
@@ -11,6 +13,7 @@ import { rasterFlame } from './../candle/flame.ts';
 import { faceFor, INITIAL_EXPRESSION } from './../candle/expression.ts';
 import { emotePixels } from './../candle/emotes.ts';
 import { wickSmoke } from './../candle/flame.ts';
+import { EMBLEM_H, EMBLEM_W, emblemPixels } from './../candle/emblem.ts';
 const SEEDS=[1,2,3,40,500,6006,7,23,146,179];
 // Each column: a mood, the pose that goes with it, and overrides for the input.
 const base={pose:'idle',charge01:0,fall01:0,aim:0,facingLeft:false,fuel01:1,lit:true,reducedMotion:true};
@@ -24,6 +27,7 @@ const COLS=[
   {label:'soaring',mood:'soaring',pose:'rise'},
   {label:'alarmed',mood:'alarmed',pose:'fall',input:{fall01:0.9}},
   {label:'ouch',mood:'ouch',pose:'land',flame:{duck01:1},impact:1},
+  {label:'daze',mood:'ouch',moodMs:900},
   {label:'delighted',mood:'delighted',flame:{flare01:1}},
   {label:'relief (breath)',mood:'relieved'},
   {label:'relief',mood:'relieved',moodMs:600},
@@ -58,5 +62,13 @@ SEEDS.forEach((seed,row)=>{
 });
 ctx.fillStyle='#cfd6e4';ctx.font='11px monospace';
 COLS.forEach((col,i)=>ctx.fillText(col.label,i*CW*P+6,canvas.height-4));
+{
+  const E=4,seeds=[2,7,40,146];
+  const c2=document.querySelector('#e');c2.width=seeds.length*2*EMBLEM_W*E;c2.height=EMBLEM_H*E;
+  const x2=c2.getContext('2d');x2.fillStyle='#101a26';x2.fillRect(0,0,c2.width,c2.height);
+  seeds.forEach((seed,i)=>[false,true].forEach((eager,j)=>{
+    for(const p of emblemPixels(createCandleGenome(seed),600,true,eager)){x2.fillStyle=hex(p.color);x2.fillRect(((i*2+j)*EMBLEM_W+p.x)*E,p.y*E,E,E);}
+  }));
+}
 window.galleryReady=true;
 </script></body></html>

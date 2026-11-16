@@ -29,6 +29,25 @@ function zed(x: number, y: number, color: number): Pixel[] {
   return [[0, 0], [1, 0], [2, 0], [1, 1], [0, 2], [1, 2], [2, 2]].map(([dx, dy]) => ({ x: x + dx!, y: y + dy!, color }));
 }
 
+/** In the cold the candle's breath shows: a puff every `BREATH_EVERY_MS`, lasting `BREATH_MS`. */
+export const BREATH_EVERY_MS = 3200;
+export const BREATH_MS = 800;
+
+/**
+ * A puff of breath in the cold, relative to the candle's feet (y grows downward). It leaves from
+ * mouth height on the side the candle faces, drifts out and up, and thins. Nothing under reduced motion.
+ */
+export function coldBreath(clockMs: number, facingLeft: boolean, halfWidth: number, height: number, reducedMotion: boolean): Pixel[] {
+  const t = clockMs % BREATH_EVERY_MS;
+  if (reducedMotion || t >= BREATH_MS) return [];
+  const step = Math.floor(t / 100);
+  const side = facingLeft ? -1 : 1;
+  const x = side * (halfWidth + 2 + step);
+  const y = -Math.round(height * 0.55) - Math.floor(step / 2);
+  const puff: Pixel[] = [{ x, y, color: PALE }, { x: x + side, y: y - 1, color: PALE }];
+  return step < 5 ? [...puff, { x: x + side, y, color: DREAM }] : puff;
+}
+
 /** How long droplets from a hard landing stay in the air (ms). */
 export const DROPLET_MS = 420;
 

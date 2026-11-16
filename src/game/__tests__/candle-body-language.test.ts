@@ -166,3 +166,40 @@ describe('melting over a run', () => {
     expect(cells(low.pixels)).toBe(cells(none.pixels));
   });
 });
+
+describe('ground shadow', () => {
+  const ledge = { id: 'a', x: 300, y: 410, width: 160, height: 20 };
+  const lower = { id: 'b', x: 300, y: 610, width: 400, height: 20 };
+
+  it('sits on the ledge straight below, largest and darkest when standing on it', async () => {
+    const { groundShadow, SHADOW_REACH_PX } = await import('../candle/ground-shadow');
+    const standing = groundShadow({ x: 300, y: 400 }, 24, [ledge, lower])!;
+    const jumping = groundShadow({ x: 300, y: 300 }, 24, [ledge, lower])!;
+    expect(standing.y).toBe(402);
+    expect(jumping.y).toBe(402);
+    expect(standing.widthPx).toBeGreaterThan(jumping.widthPx);
+    expect(standing.alpha).toBeGreaterThan(jumping.alpha);
+    // Past the ledge's edge the shadow falls on the one below; too far up, or over nothing, there is none.
+    expect(groundShadow({ x: 420, y: 400 }, 24, [ledge, lower])!.y).toBe(602);
+    expect(groundShadow({ x: 300, y: 400 - SHADOW_REACH_PX - 10 }, 24, [ledge])).toBeNull();
+    expect(groundShadow({ x: 900, y: 400 }, 24, [ledge, lower])).toBeNull();
+    // A ledge above the feet never takes the shadow.
+    expect(groundShadow({ x: 300, y: 500 }, 24, [ledge, lower])!.y).toBe(602);
+  });
+});
+
+describe('breath in the cold', () => {
+  it('a short puff on the side the candle faces, then nothing until the next breath', async () => {
+    const { BREATH_EVERY_MS, BREATH_MS, coldBreath } = await import('../candle/emotes');
+    const right = coldBreath(200, false, 5, 15, false);
+    const left = coldBreath(200, true, 5, 15, false);
+    expect(right.length).toBeGreaterThan(0);
+    expect(right.every((p) => p.x > 5)).toBe(true);
+    expect(left.every((p) => p.x < -5)).toBe(true);
+    expect(coldBreath(BREATH_MS + 10, false, 5, 15, false)).toEqual([]);
+    expect(coldBreath(BREATH_EVERY_MS + 200, false, 5, 15, false)).toEqual(right);
+    expect(coldBreath(200, false, 5, 15, true)).toEqual([]);
+    // It drifts away from the face.
+    expect(Math.max(...coldBreath(700, false, 5, 15, false).map((p) => p.x))).toBeGreaterThan(Math.max(...right.map((p) => p.x)));
+  });
+});

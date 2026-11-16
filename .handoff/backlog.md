@@ -70,5 +70,9 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #54 The menu candle is eager (grins toward the menu) while Play has the pointer or the focus
 - [x] #55 The menu footer says which climb is selected (endless, today's, a numbered climb, or classic)
 - [x] #56 A climb picked by its seed (today's climb or `?seed=`) keeps its own best height
-- [ ] #57 A screenshot of the eager menu face and of the daze: both are covered by tests only so far
+- [x] #57 The eager menu face is in the faces gallery (seen: grin, eyes toward the menu); the daze has a gallery column
 - [ ] #58 Old per-seed best heights pile up in local storage, one small entry a day: prune entries older than a month
+- [x] #59 A soft shadow under the candle on the ledge below; it stays on that ledge and shrinks while the candle is in the air
+- [x] #60 In the snow the candle's breath shows: a small puff every few seconds while it stands or walks
+- [ ] #61 The classic climb gets the ground shadow too
+- [ ] #62 Rare flame colours (a blue, green or violet flame) as another per-candle feature

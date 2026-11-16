@@ -64,14 +64,24 @@ numbers are in `src/config/endless.config.ts`.
 
 ## The candle
 
-- `src/game/candle/expression.ts` picks one mood at a time from what the body is doing and from short events (wax
-  picked up, a hard landing, a new best height). It also blinks and glances around, in a rhythm set by the candle's seed.
-- `face.ts` draws the hero's face; `close-up.ts` draws the same candle at three times the resolution for the
-  portrait circle.
-- `flame.ts` makes the flame react: it leaps on wax, is pressed flat by a landing and gathers while a jump charges.
-- `emotes.ts` adds small signs beside the flame for strong moments.
+- **Moods.** `src/game/candle/expression.ts` picks one mood at a time from what the body is doing and from short
+  events: content, focused (charging), soaring, alarmed (a fast fall), ouch (a hard landing, with a longer daze after a
+  very long fall), relieved (wax relit a glowing wick), delighted (wax), proud (a new best, or a new landing), uneasy
+  (sliding on ice), worried (low fuel), sleepy (long idle) and fading (the flame is out). It blinks, glances about and
+  looks up at its own flame, in a rhythm set by the candle's seed.
+- **Awareness.** `awareness.ts` turns the eyes toward wax within reach and over the edge of a ledge.
+- **Face and close-up.** `face.ts` draws the hero's face; `close-up.ts` draws the same candle at three times the
+  resolution for the portrait circle, and `run-candle.ts` shows it, flame out, on the end screen.
+- **Flame.** `flame.ts` makes the flame react: it leaps on wax, is pressed flat by a landing and gathers while a jump
+  charges. The candle trembles at full charge.
+- **Small signs.** `emotes.ts` adds sparkles, an exclamation mark, circling stars, a bead of wax, z's, a puff of
+  relief, wax knocked off by a hard landing and breath in the snow. `ground-shadow.ts` puts a shadow under the candle.
+- **One of a kind.** Each candle has its own wax tone (ten), face features and often a trait: a coloured band, a
+  dipped base, a tuft of wax, or (about one in 36) soft swirl stripes. Drips grow as it burns through a run.
+- **The menu candle** waits, gathers, hops, lands and looks pleased, and grins toward the menu while Play has focus.
 
-A mood is a reaction to the game (a fall, low fuel). It is never a reading of the player.
+A mood is a reaction to the game (a fall, low fuel). It is never a reading of the player. Under reduced motion the
+blinking, bouncing and drifting parts stop and the still parts remain.
 
 ## Rules that still hold
 

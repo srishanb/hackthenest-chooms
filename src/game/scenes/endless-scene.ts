@@ -19,6 +19,7 @@ import type { EventBus } from '../../shared/contracts/events';
 import type { RunSnapshot } from '../../shared/contracts/game-state';
 import type { KeyValueStorage } from '../../shared/safe-storage';
 import { surroundings } from '../candle/awareness';
+import { groundShadow } from '../candle/ground-shadow';
 import { pickCandleSeed } from '../candle/candle-genome';
 import { createCandleView } from '../candle/candle-view';
 import { flameSizeFromRadius } from '../candle/flame';
@@ -112,6 +113,8 @@ export class EndlessScene extends Phaser.Scene {
   private burnt = 0;
   /** Time into the last moment of a run (the wick has gone cold), or null while the run is alive. */
   private endingMs: number | null = null;
+  /** The candle's shadow on the ledge below it (drawn under the candle, above the ledges). */
+  private shadow!: Phaser.GameObjects.Ellipse;
   /** A dark sheet over the world, under the candle, that closes in during the last moment. */
   private veil!: Phaser.GameObjects.Rectangle;
   /** Direction held in the latest physics step, for the candle's aim cue (visual only). */
@@ -211,6 +214,7 @@ export class EndlessScene extends Phaser.Scene {
 
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
     this.player.setVisible(false); // The candle view draws the body; this rectangle is only the camera's follow target.
+    this.shadow = this.add.ellipse(0, 0, 10, 4, 0x05060a, 0.3).setDepth(DEPTH.player - 1).setVisible(false);
     this.candle = createCandleView(this, gameConfig.player.height, this.deps.candleSeed ?? pickCandleSeed(window.location.search, import.meta.env.DEV));
     this.portrait = createPortraitView(this, gameConfig.view.height);
 
@@ -405,6 +409,9 @@ export class EndlessScene extends Phaser.Scene {
       bus.emit({ type: 'precision_window', active: this.precisionActive });
     }
     this.player.setPosition(this.state.x, this.state.y);
+    const shadow = groundShadow({ x: this.state.x, y: this.feetY() }, gameConfig.player.width, this.platforms);
+    this.shadow.setVisible(shadow !== null);
+    if (shadow) this.shadow.setPosition(shadow.x, shadow.y).setSize(shadow.widthPx, shadow.heightPx).setAlpha(shadow.alpha);
     this.forest.syncPlatforms(this.platforms);
     // Weather follows the height: snow fades in before a snowy band and out after it. There is no wind.
     const snow01 = snowAt(this.feetY(), config);
@@ -482,6 +489,8 @@ export class EndlessScene extends Phaser.Scene {
       spent01,
       // Fully melted-looking after about two and a half candles' worth of burning.
       melt01: Math.min(1, this.burnt / 2.5),
+      // In the snow its breath shows.
+      cold: snow01 > 0.25,
       // What the candle notices: wax in reach, the edge of its ledge, ice underfoot. Eyes only.
       around: surroundings(this.state, this.liveWax().filter((drop) => !this.wax.isCollected(drop.id)),
         this.platforms.find((p) => p.id === this.state.platformId), gameConfig.view.width),
