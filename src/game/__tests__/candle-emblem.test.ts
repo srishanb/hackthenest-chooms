@@ -43,3 +43,13 @@ it('never draws outside its box, for any candle at any moment of the loop', () =
   expect(minY).toBeGreaterThanOrEqual(0);
   expect(maxY).toBeLessThan(EMBLEM_H);
 });
+
+it('is eager while Play has the focus: a waiting candle grins toward the menu, and a hopping one is left alone', () => {
+  const genome = createCandleGenome(11);
+  const waiting = 600, hopping = 3100;
+  expect(JSON.stringify(emblemPixels(genome, waiting, true, true))).not.toBe(JSON.stringify(emblemPixels(genome, waiting, true, false)));
+  expect(emblemPixels(genome, hopping, true, true)).toEqual(emblemPixels(genome, hopping, true, false));
+  // Same outline either way: eagerness only changes the face.
+  const cells = (pixels: { x: number; y: number }[]) => pixels.map((p) => p.x * 1000 + p.y).sort((a, b) => a - b).join(',');
+  expect(cells(emblemPixels(genome, waiting, true, true))).toBe(cells(emblemPixels(genome, waiting, true, false)));
+});

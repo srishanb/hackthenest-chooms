@@ -74,11 +74,13 @@ export interface EmblemPixel {
 }
 
 /** Every pixel of the emblem at `timeMs`, in box coordinates (0..EMBLEM_W-1, 0..EMBLEM_H-1). */
-export function emblemPixels(genome: CandleGenome, timeMs: number, still: boolean): EmblemPixel[] {
+export function emblemPixels(genome: CandleGenome, timeMs: number, still: boolean, eager = false): EmblemPixel[] {
   const { tracker, charge01, flare01, lift, mood, moodMs } = emblemMoment(timeMs);
   // The emblem has a face too: content while it waits (it blinks and glances), set while it gathers, glad as it hops.
-  const face = faceFor({ ...INITIAL_EXPRESSION, mood, clockMs: timeMs, moodMs },
+  const plain = faceFor({ ...INITIAL_EXPRESSION, mood, clockMs: timeMs, moodMs },
     { pose: tracker.pose, charge01, fall01: 0, aim: 0, facingLeft: false, fuel01: 1, lit: true, reducedMotion: still }, genome.seed);
+  // Eager: while Play has the pointer or the focus, a waiting candle grins and looks toward the menu.
+  const face = eager && mood === 'content' ? { ...plain, mouth: 'grin' as const, gazeX: 1 as const, gazeY: 0 as const, blush: true } : plain;
   const body = rasterCandle(genome, bodyShape(tracker, charge01), 1, false, { face, glow01: 0.8 });
   const flame = rasterFlame(genome, { size01: 1, timeMs, reducedMotion: still, lean: 0, fall01: 0.55 * flare01, gather01: charge01 });
   const feetX = EMBLEM_W / 2;
@@ -101,6 +103,7 @@ export function mountCandleEmblem(canvas: HTMLCanvasElement, seed: number, reduc
   if (!context) return () => {};
   const genome = createCandleGenome(seed);
   let lastFrame = -1;
+  let lastEager = false;
   let raf = 0;
   const start = performance.now();
 
@@ -108,10 +111,13 @@ export function mountCandleEmblem(canvas: HTMLCanvasElement, seed: number, reduc
     const still = reducedMotion();
     const timeMs = still ? 0 : now - start;
     const frame = Math.floor((timeMs / 1000) * FLAME_FPS);
-    if (frame !== lastFrame) {
+    // The menu marks the canvas while Play has the pointer or the focus (see start-menu.ts); nothing else is shared.
+    const eager = canvas.dataset.eager === 'true';
+    if (frame !== lastFrame || eager !== lastEager) {
       lastFrame = frame;
+      lastEager = eager;
       context.clearRect(0, 0, canvas.width, canvas.height);
-      for (const p of emblemPixels(genome, timeMs, still)) {
+      for (const p of emblemPixels(genome, timeMs, still, eager)) {
         context.fillStyle = `#${p.color.toString(16).padStart(6, '0')}`;
         context.fillRect(p.x * PX, p.y * PX, PX, PX);
       }

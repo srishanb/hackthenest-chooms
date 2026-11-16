@@ -72,6 +72,8 @@ export interface ExpressionEvents {
   /** Wax relit a wick whose flame had gone out. */
   relit?: boolean;
   hardLanding?: boolean;
+  /** With `hardLanding`: 0..1 how far beyond a hard landing the fall was. A very long fall leaves the candle dazed for longer. */
+  daze01?: number;
   newBest?: boolean;
 }
 
@@ -96,6 +98,8 @@ export const INITIAL_EXPRESSION: ExpressionTracker = { mood: 'content', moodMs: 
 /** How long each reaction lasts, and the thresholds between moods. */
 export const EXPRESSION_TIMING = {
   ouchMs: 520,
+  /** A very long fall adds up to this much to the wince: the candle stays dazed, stars circling. It can still move. */
+  dazeExtraMs: 1100,
   delightMs: 1100,
   /** Relief after a relight: a long breath out (`exhaleMs`), then a smile. */
   relievedMs: 1500,
@@ -121,7 +125,8 @@ export const EXPRESSION_TIMING = {
 export function stepExpression(prev: ExpressionTracker, input: ExpressionInput, events: ExpressionEvents, deltaMs: number, paused: boolean): ExpressionTracker {
   const dt = paused ? 0 : Math.max(0, Number.isFinite(deltaMs) ? deltaMs : 0);
   const T = EXPRESSION_TIMING;
-  const ouchMs = events.hardLanding ? T.ouchMs : Math.max(0, prev.ouchMs - dt);
+  const daze = Math.min(1, Math.max(0, Number.isFinite(events.daze01) ? events.daze01! : 0));
+  const ouchMs = events.hardLanding ? T.ouchMs + T.dazeExtraMs * daze : Math.max(0, prev.ouchMs - dt);
   const delightMs = events.wax ? T.delightMs : Math.max(0, prev.delightMs - dt);
   const proudMs = events.newBest ? T.proudMs : Math.max(0, prev.proudMs - dt);
   const relievedMs = events.relit ? T.relievedMs : Math.max(0, (prev.relievedMs ?? 0) - dt);
@@ -195,7 +200,8 @@ export function faceFor(tracker: ExpressionTracker, input: ExpressionInput, seed
       // Heavy lids while the wick still glows; eyes shut once it has gone cold.
       return input.spent ? { ...base, eyes: 'closed', mouth: 'small' } : { ...base, eyes: 'half', mouth: 'frown', gazeY: 1 };
     case 'ouch':
-      return { ...base, eyes: 'closed', mouth: 'wobble' };
+      // A wince first; if the daze goes on (a very long fall), the eyes half open and the mouth still wavers.
+      return tracker.moodMs < EXPRESSION_TIMING.ouchMs ? { ...base, eyes: 'closed', mouth: 'wobble' } : { ...base, eyes: 'half', mouth: 'wobble', sweat: true };
     case 'alarmed':
       return { ...base, eyes: 'wide', mouth: 'open', gazeY: 1, sweat: input.fall01 > 0.7 };
     case 'relieved':

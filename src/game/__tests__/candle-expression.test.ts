@@ -167,3 +167,21 @@ describe('face', () => {
     expect(left).toEqual(right);
   });
 });
+
+describe('a very long fall', () => {
+  it('leaves the candle dazed for longer, wincing first and woozy after', () => {
+    const dazed = stepExpression(INITIAL_EXPRESSION, calm, { hardLanding: true, daze01: 1 }, 16, false);
+    const plain = stepExpression(INITIAL_EXPRESSION, calm, { hardLanding: true }, 16, false);
+    expect(dazed.ouchMs).toBeCloseTo(T.ouchMs + T.dazeExtraMs);
+    expect(plain.ouchMs).toBe(T.ouchMs);
+    // An ordinary hard landing is over while the long fall still has stars circling.
+    const later = (tracker: typeof dazed) => stepExpression(tracker, calm, {}, T.ouchMs + 50, false);
+    expect(later(plain).mood).toBe('content');
+    expect(later(dazed).mood).toBe('ouch');
+    const input = { ...calm, reducedMotion: true };
+    expect(faceFor(dazed, input, 3)).toMatchObject({ eyes: 'closed', mouth: 'wobble' });
+    expect(faceFor(later(dazed), input, 3)).toMatchObject({ eyes: 'half', mouth: 'wobble' });
+    // A broken value means no extra daze.
+    expect(stepExpression(INITIAL_EXPRESSION, calm, { hardLanding: true, daze01: Number.NaN }, 16, false).ouchMs).toBe(T.ouchMs);
+  });
+});

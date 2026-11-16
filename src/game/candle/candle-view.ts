@@ -54,6 +54,9 @@ const BEAD_STEPS = 6;
 
 /** Landing faster than this (px/s, downward) makes the candle wince. */
 const HARD_LANDING_PX_S = 620;
+/** Between these landing speeds (px/s) the wince grows into a daze: about a 3 m fall to a 9 m one. */
+const DAZE_FROM_PX_S = 900;
+const DAZE_FULL_PX_S = 1500;
 
 /** How long the flame leaps after a happy moment, and how long it stays pressed down after a landing (ms). */
 const FLARE_MS = 520;
@@ -136,7 +139,10 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       const spent01 = Math.round(Math.min(Math.max(look.spent01 ?? 0, 0), 1) * 5) / 5;
       const shape = slumpShape({ ...bodyShape(tracker, look.charge01), lean: wickLean(cue) }, spent01);
       lastShape = shape;
-      if (landedNow && airVy > HARD_LANDING_PX_S) pending.hardLanding = true;
+      if (landedNow && airVy > HARD_LANDING_PX_S) {
+        pending.hardLanding = true;
+        pending.daze01 = Math.min(1, Math.max(0, (airVy - DAZE_FROM_PX_S) / (DAZE_FULL_PX_S - DAZE_FROM_PX_S)));
+      }
       const dt = paused ? 0 : Math.max(0, deltaMs);
       if (pending.wax || pending.newBest) flareMs = FLARE_MS;
       if (landedNow) { duckMs = DUCK_MS; duckStrength = 0.35 + 0.65 * (tracker.impact01 ?? 0); sinceLandMs = 0; landImpact = tracker.impact01 ?? 0; }

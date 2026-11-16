@@ -66,7 +66,8 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [ ] #50 The snow weather layer is the slowest thing in the headless check: measure it on a real GPU before changing it
 - [x] #51 The candle trembles at full charge, so the player can see the charge has reached its cap
 - [x] #52 Each new landing reached is a small milestone: the candle looks proud, once per landing
-- [ ] #53 A longer daze after a very long fall (stars keep circling for a second), still with no death and no lost control
-- [ ] #54 The candle waves from the menu when the pointer or focus reaches Play
+- [x] #53 A longer daze after a very long fall (stars keep circling for up to 1.1 s more, eyes half open), still with no death and no lost control
+- [x] #54 The menu candle is eager (grins toward the menu) while Play has the pointer or the focus
 - [ ] #55 The menu footer still says "Endless climb" in classic mode; say which climb is selected
 - [ ] #56 Keep a separate best height for today's climb, shown on its end screen
+- [ ] #57 A screenshot of the eager menu face and of the daze: both are covered by tests only so far

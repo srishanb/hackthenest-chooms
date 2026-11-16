@@ -29,9 +29,12 @@ export const startMenu: UiComponent = {
     const emblem = document.createElement('div'); emblem.className = 'launch-emblem'; emblem.setAttribute('aria-hidden', 'true');
     // The game's own candle, animated, when main.ts provides a drawer; otherwise the flame icon.
     let stopEmblem = (): void => {};
+    // The game's emblem reads this one flag off its canvas: "Play has the pointer or the focus".
+    let emblemCanvas: HTMLCanvasElement | null = null;
     if (drawEmblem) {
       const canvas = document.createElement('canvas'); canvas.className = 'launch-emblem__candle'; emblem.append(canvas);
       stopEmblem = drawEmblem(canvas);
+      emblemCanvas = canvas;
     } else emblem.append(icon('flame'));
     const title = document.createElement('h1'); title.textContent = t('start.title');
     const subtitle = document.createElement('p'); subtitle.className = 'launch-subtitle'; subtitle.textContent = t('start.journey');
@@ -55,6 +58,10 @@ export const startMenu: UiComponent = {
       }, stores.settings.get().reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180);
     };
     const play = menuButton(t('start.play'), start); play.className = 'menu-primary'; play.prepend(icon('play'));
+    const eager = (on: boolean): void => { if (emblemCanvas) emblemCanvas.dataset.eager = String(on); };
+    for (const type of ['focus', 'mouseenter'] as const) play.addEventListener(type, () => eager(true));
+    play.addEventListener('blur', () => eager(play.matches(':hover')));
+    play.addEventListener('mouseleave', () => eager(document.activeElement === play));
     const settings = menuButton(t('menu.settings'), () => { if (!pending) { focusReturn = settings; actions.settingsOpen.set(true); } });
     settings.prepend(icon('settings')); settings.hidden = !actions.settingsAvailable;
     const how = menuButton(t('start.how'), () => { if (!pending) { focusReturn = how; actions.tutorialOpen.set(true); } });
