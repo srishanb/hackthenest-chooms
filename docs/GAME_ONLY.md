@@ -133,7 +133,7 @@ on all three systems as a rehearsal and attaches nothing.
 ## Rules that still hold
 
 The binding rules in [AGENTS.md](../AGENTS.md) apply here too: nothing changes gravity, walking or jump strength; no
-network at run time; no AI-generated art (the candle is drawn by code); height and a personal best only, with no
+network at run time; no generative AI for art, images or music (the candle is drawn by code; ElevenLabs narrator speech is the one exception); height and a personal best only, with no
 ranking; history is never rewritten.
 
 ## Where the work is tracked

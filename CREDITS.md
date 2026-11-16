@@ -1,7 +1,8 @@
 # Credits
 
 Every third-party asset and library in this repo, with its licence. Owner: Neil (assets), integrator (libraries).
-**No AI-generated textures or models.** Add a row before you commit an asset.
+**No generative AI for art, images or music** (AGENTS.md rule 5; the only exception is ElevenLabs narrator speech,
+Decision D-29). Add a row before you commit an asset, with its licence and the evidence that it is human-made.
 
 ## Inspiration
 
