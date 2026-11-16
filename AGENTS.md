@@ -32,6 +32,10 @@ Srishan's merge.
 
 ## Project
 
+**Since Decision D-31 (16 Nov 2026) `main` holds the game-only edition** ([docs/GAME_ONLY.md](docs/GAME_ONLY.md)): no EEG,
+an endless climb. The paragraph and rules below were written for the EEG game (tag `demo-ready`) and still bind
+wherever they apply.
+
 **Lighten Up**: a 2D charge-jump climbing game for Hack The Nest 2026 (Nov 14–15, 24-hour build),
 Mind and Machine (BCI) track. A PiEEG Octopus 16 EEG board drives the lantern, fog and music, and gates a recovery
 mechanic. It never changes the controls or physics.

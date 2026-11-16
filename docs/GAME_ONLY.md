@@ -1,11 +1,13 @@
 # Lighten Up, game-only edition
 
-A variant of Lighten Up with **no EEG**: no headset, no simulator, no calibration. It lives on the branch
-`game-only` and is not meant to merge into `main`, where the EEG game stays as it is.
+A variant of Lighten Up with **no EEG**: no headset, no simulator, no calibration. It was built on the branch
+`game-only` and merged into `main` on 16 Nov 2026 (Decision D-31), so `main` and the hosted page are now this
+edition. The EEG game as shown at the hackathon is kept at the tag `demo-ready`. New work still goes to `game-only`
+first (the desktop releases are cut from it) and reaches `main` through a pull request.
 
 What is different from `main`:
 
-| | `main` | This branch |
+| | The EEG game (tag `demo-ready`) | This edition |
 |---|---|---|
 | Input | Keyboard, plus the PiEEG Octopus 16 for lantern, fog and music | Keyboard only |
 | World | Five authored stages with a top | An endless climb, generated as you go |

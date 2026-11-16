@@ -1,6 +1,7 @@
 name: release-game-only
 
-# Publishes GitHub releases for the game-only variant. This file lives only on the game-only branch.
+# Publishes GitHub releases for the game-only edition. It runs on pushes to the game-only branch only; the
+# copy of this file on main (the edition was merged there, Decision D-31) never triggers.
 #
 # A release is a notes file: docs/releases/game-only-v<version>.md. When a push to game-only adds one
 # that has no release yet, this workflow:

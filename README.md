@@ -1,6 +1,6 @@
 # Lighten Up | EMU HACK THE NEST 2026 - 3RD PLACE OVERALL
 
-> **This branch is the game-only edition:** no EEG, an endless generated climb and an expressive candle. See [docs/GAME_ONLY.md](docs/GAME_ONLY.md). The EEG game is on `main`.
+> **`main` is now the game-only edition** (Decision D-31, 16 Nov 2026): no EEG, an endless generated climb and an expressive candle. See [docs/GAME_ONLY.md](docs/GAME_ONLY.md). The EEG game as shown at the hackathon is kept at the tag `demo-ready`; the text below describes that version.
 
 **1st Place for Best Use of Eleven Labs**
 
