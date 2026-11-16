@@ -71,16 +71,16 @@ export function stepBird(bird: Bird, dtMs: number, threat: { x: number; y: numbe
         holdMs: config.idleMinMs + hold.value * (config.idleMaxMs - config.idleMinMs) };
     }
     // A small act plays once, then the bird stands again.
-    if (next.actMs >= clips[next.act].frames * config.frameMs) return { ...next, act: 'stand', actMs: 0 };
+    if (next.actMs >= clips[next.act].cells.length * config.frameMs) return { ...next, act: 'stand', actMs: 0 };
     return next;
   }
 
   const seconds = dt / 1000;
   if (next.act === 'takeoff') {
     // The first half of the take-off is the crouch and spring, still on the ledge.
-    const lifted = next.actMs > clips.takeoff.frames * config.frameMs / 2;
+    const lifted = next.actMs > clips.takeoff.cells.length * config.frameMs / 2;
     if (lifted) { next.x += next.facing * config.flySpeedPxPerS * 0.5 * seconds; next.y -= config.climbPxPerS * seconds; }
-    if (next.actMs >= clips.takeoff.frames * config.frameMs) return { ...next, act: 'fly', actMs: 0 };
+    if (next.actMs >= clips.takeoff.cells.length * config.frameMs) return { ...next, act: 'fly', actMs: 0 };
     return next;
   }
   next.x += next.facing * config.flySpeedPxPerS * seconds;
@@ -91,8 +91,9 @@ export function stepBird(bird: Bird, dtMs: number, threat: { x: number; y: numbe
 /** The sheet cell (counted along the rows) that shows the bird right now. */
 export function birdFrame(bird: Bird, config: BirdConfig): number {
   const clip: BirdClip = config.clips[bird.act];
+  const frames = clip.cells.length;
   const step = Math.floor(bird.actMs / (bird.act === 'stand' ? config.standFrameMs : config.frameMs));
   // Standing and flying loop; everything else holds its last frame until the act changes.
-  const frame = bird.act === 'stand' || bird.act === 'fly' ? step % clip.frames : Math.min(clip.frames - 1, step);
-  return clip.row * config.columns + frame;
+  const frame = bird.act === 'stand' || bird.act === 'fly' ? step % frames : Math.min(frames - 1, step);
+  return clip.cells[frame]!;
 }

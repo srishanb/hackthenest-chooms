@@ -63,7 +63,7 @@ Recovery keeps a marker placed after each return. Pickup is required before plac
 | `createForestWorld` | `forest/forest-world.ts` | Decorative scenery, platform skins and bounded particles; no collision writes. |
 | `createRubyView` | `forest/ruby-view.ts` | Legacy: the Ruby sprite view. No longer used by the scene; `createCandleView` replaced it. |
 | `stepForestEffects` | `forest/forest-effects.ts` | Existing engine plus optional visual-only forest field preview. |
-| `stableUnit`, `reveal`, `mixColor`, `fitPropScale` | `forest/presentation.ts` | Deterministic seeds, continuous visual mapping, corrupted-prop scale fitting. |
+| `stableUnit`, `reveal`, `mixColor`, `pickFitting`, `pickPartner`, `DrawnSize` | `forest/presentation.ts` | Deterministic seeds, continuous visual mapping, and picking a ledge prop (and its decayed partner) by what fits instead of scaling it. |
 | `createAtmosphere` | `forest/atmosphere.ts` | Weather and corruption atmosphere; renderer-only. |
 | `createVerticalForest` | `forest/vertical-forest.ts` | Continuous background composition by height (layout helpers in `forest/vertical-layout.ts`). |
 | `createBackdropGardens` | `forest/backdrop-gardens.ts` | Pooled, seeded, non-collidable parallax garden ledges. |
@@ -74,7 +74,7 @@ Atmosphere: createAtmosphere (forest/atmosphere.ts) consumes existing corruption
 
 createBackdropGardens (forest/backdrop-gardens.ts): five pooled, seeded non-collidable parallax garden ledges; no physics or bright landing rims.
 
-fitPropScale (forest/presentation.ts) fits corrupted decorations to their partner's displayed height with a 48 px cap, preventing oversized winter crystals.
+pickPartner (forest/presentation.ts) chooses a decayed partner no taller than its healthy prop, so no oversized decoration grows over a landing; nothing is scaled to fit (Decision D-34).
 
 createCorruptionScreen / createCorruptionFilter (forest/): bounded high-corruption visual-only motion/filter. createLanternFuel / burnFuel (forest/lantern-fuel.ts): actual playing-time resource with wax refill and held airborne light radius; never reads preview values.
 
@@ -163,9 +163,13 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 `__tests__/candle-close-up.html` draws the close-up for every mood. `__tests__/candle-faces.html` is a dev page that draws every mood for six seeds.
 
 | `stepBird`, `birdFrame`, `perchedBird`, `isAirborne`, `Bird`, `BirdAct` | `forest/bird-behaviour.ts` | What a bird on a ledge does: stands, pecks, chirps, looks around, and flies off when the candle comes near or the forest turns. Pure, decoration only. |
-| `createPerchingBirds` | `forest/perching-birds.ts` | A pool of three bird sprites seated on ledges above the view. |
+| `createPerchingBirds` | `forest/perching-birds.ts` | A pool of three small birds (birb.png at the one pixel size) seated on ledges above the view. |
 | `createAmbientLife` | `forest/ambient-life.ts` | A far flock now and then, fireflies and spores, single falling leaves that redden with corruption. |
 | `createGrassTufts` | `forest/grass-tufts.ts` | Swaying grass on forest ledges; withers with corruption. |
+| `snapToGrid`, `snapInside`, `PIXEL_GRID` | `forest/pixel-grid-snap.ts` | The one art grid (Decision D-34): rounds a drawn position to a multiple of `FOREST_CONFIG.pixelScale`; `snapInside` keeps it within bounds. Only drawing snaps; physics stays exact. |
+| `createGridCamera`, `GridCamera` | `scenes/grid-camera.ts` | Follows the candle with the same easing as `startFollow(player, true, 0.12, 0.12)`, but hands the camera a scroll on the art grid each frame. |
+| `PROP_ART`, `DECAYED_ART`, `FOREST_PROPS`, `WINTER_PROPS`, `FOREST_DECAY`, `WINTER_DECAY`, `PropArt`, `drawnSize`, `addPropFrames` | `forest/prop-art.ts` | The ledge props as whole pieces at the one pixel size; crops of the multi-sprite sheets (single mushroom, thorn bush and so on) added as frames. |
+| `ensureParticleTexture`, `PARTICLE_TEXTURE`, `leafPose`, `leafFrame`, `LEAF_COLOURS`, `LeafColour`, `LeafFrame` | `forest/pixel-particles.ts` | Fireflies, spores and falling leaves as a few code-drawn art pixels, painted once into one texture; leaves turn by three drawn poses and flips instead of free rotation. |
 | `ForestWorld.setCandle` | `forest/forest-world.ts` | The scenes tell the scenery where the candle is. Read by the birds only. |
 
 Far garden ledges (`forest/backdrop-gardens.ts`) now sometimes spill a waterfall, which freezes in the snow.

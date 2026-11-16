@@ -1,19 +1,40 @@
 /** Forest changes are continuous, bounded and independent of movement/recovery inputs. */
 import { describe, expect, it } from 'vitest';
 import { EFFECTS_TABLE } from '../../config/effects.config';
-import { forestPreviewValue } from '../../config/forest.config';
+import { FOREST_CONFIG, forestPreviewValue } from '../../config/forest.config';
 import { neutralFrame, stepEffects, type EffectInput } from '../effects/effects-engine';
 import { stepForestEffects } from '../forest/forest-effects';
-import { fitPropScale, mixColor, reveal, stableUnit } from '../forest/presentation';
+import { mixColor, pickFitting, pickPartner, reveal, stableUnit } from '../forest/presentation';
+import { drawnSize, FOREST_DECAY, FOREST_PROPS, PROP_ART, WINTER_DECAY, WINTER_PROPS, type PropArt } from '../forest/prop-art';
 
 const input: EffectInput = { intensity: 0.8, valid: true, mode: 'adaptive', airborne: false, effectStrength: 1, reducedMotion: false };
 describe('forest presentation', () => {
-  it('fits corrupted crystals to the displayed pine rather than its 110px source', () => {
-    const displayedPineHeight = 110 * (48 / 110);
-    expect(16 * fitPropScale(16, displayedPineHeight)).toBeCloseTo(48);
-    expect(16 * fitPropScale(16, 220)).toBe(48);
-    expect(fitPropScale(0, 48)).toBe(0);
-    expect(fitPropScale(16, NaN)).toBe(0);
+  it('picks ledge props by what fits and never scales them: the own pick when it fits, else the tallest that does', () => {
+    const size = (piece: PropArt) => drawnSize(piece);
+    const own = PROP_ART['mushroom-tall'];
+    expect(pickFitting([own, ...FOREST_PROPS], size, 200, 64)).toBe(own);
+    // A 62 px mushroom does not fit under 40 px: the tallest that does (a 32 px bush) stands in.
+    expect(pickFitting([own, ...FOREST_PROPS], size, 200, 40)).toBe(PROP_ART.bush);
+    // Nothing fits: the smallest, never a squeezed one.
+    expect(pickFitting([own, ...FOREST_PROPS], size, 4, 4)).toBe(PROP_ART.stone);
+    expect(pickFitting([], size, 10, 10)).toBeUndefined();
+  });
+  it('a decayed partner is never taller than its healthy prop, and the seed varies it', () => {
+    const size = (piece: PropArt) => drawnSize(piece);
+    for (const healthy of FOREST_PROPS) {
+      const limit = drawnSize(healthy).height + 4;
+      const picks = new Set([0, 0.2, 0.4, 0.6, 0.8, 1].map((unit) => pickPartner(FOREST_DECAY, size, limit, unit)));
+      const smallest = Math.min(...FOREST_DECAY.map((piece) => drawnSize(piece).height));
+      for (const pick of picks) expect(drawnSize(pick!).height).toBeLessThanOrEqual(Math.max(limit, smallest));
+    }
+    expect(new Set([0, 0.5, 0.99].map((unit) => pickPartner(FOREST_DECAY, size, 64, unit))).size).toBeGreaterThan(1);
+    expect(pickPartner(WINTER_DECAY, size, 64, 0.5)).toBe(WINTER_DECAY[0]);
+  });
+  it('every prop crop has an even width, so a centred prop lands on the art grid', () => {
+    for (const piece of [...FOREST_PROPS, ...WINTER_PROPS, ...FOREST_DECAY, ...WINTER_DECAY]) {
+      expect(piece.width % 2, piece.frame ?? piece.key).toBe(0);
+      expect(drawnSize(piece)).toEqual({ width: piece.width * FOREST_CONFIG.pixelScale, height: piece.height * FOREST_CONFIG.pixelScale });
+    }
   });
   it('reveal thresholds and positions remain deterministic and fade continuously', () => {
     expect(stableUnit('ledge:1')).toBe(stableUnit('ledge:1'));

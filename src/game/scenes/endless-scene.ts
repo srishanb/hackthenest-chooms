@@ -45,6 +45,8 @@ import { createForestWorld, type ForestWorld } from '../forest/forest-world';
 import { backdropBiomeAt } from '../endless/backdrop-biome';
 import { fuelVisibilityRadius } from '../forest/fuel-visibility';
 import { createLandingPuff } from '../forest/landing-puff';
+import { createGridCamera, type GridCamera } from './grid-camera';
+import { snapToGrid } from '../forest/pixel-grid-snap';
 import { createKeyboardInput } from '../keyboard-input';
 import { stepPlayer, teleportPlayer } from '../player/movement';
 import type { PlatformBox, PlayerState } from '../player/types';
@@ -106,6 +108,7 @@ export class EndlessScene extends Phaser.Scene {
   private seed = 0;
   private player!: Phaser.GameObjects.Rectangle;
   private landingPuff!: ReturnType<typeof createLandingPuff>;
+  private gridCamera!: GridCamera;
   private candleLighting!: ReturnType<typeof createCandleLighting>;
   private darkness!: Phaser.GameObjects.Image;
   private forest!: ForestWorld;
@@ -255,7 +258,9 @@ export class EndlessScene extends Phaser.Scene {
     this.portrait = createPortraitView(this, gameConfig.view.height);
 
     this.cameras.main.setBounds(0, -SKY_PX, width, SKY_PX + floorBottom);
-    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+    // Follows like startFollow(player, true, 0.12, 0.12), but the drawn scroll lands on the art grid.
+    this.gridCamera = createGridCamera(this, 0.12);
+    this.gridCamera.follow(this.player);
 
     this.darkness = createDarkness(this, DEPTH.darkness);
     // At night the edge of the light is on screen all the time, so blend it smoothly instead of in blocks.
@@ -313,8 +318,8 @@ export class EndlessScene extends Phaser.Scene {
       const frozen = snapshot.phase === 'paused' || snapshot.phase === 'menu';
       if (frozen === cameraFrozen) return;
       cameraFrozen = frozen;
-      if (frozen) this.cameras.main.stopFollow();
-      else this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+      if (frozen) this.gridCamera.stop();
+      else this.gridCamera.follow(this.player);
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, offCamera);
     stores.effects.set(neutralFrame(effectsTable));
@@ -325,13 +330,13 @@ export class EndlessScene extends Phaser.Scene {
   private slideCameraTo(x: number, y: number): void {
     const camera = this.cameras.main;
     this.player.setPosition(x, y);
-    camera.stopFollow();
+    this.gridCamera.stop();
     const distance = Math.hypot(camera.midPoint.x - x, camera.midPoint.y - y);
     const duration = this.deps.stores.settings.get().reducedMotion ? 0 : Math.min(2200, Math.max(600, distance / 1.1));
     this.sliding = true;
     const done = (): void => {
       this.sliding = false;
-      camera.startFollow(this.player, true, 0.12, 0.12);
+      this.gridCamera.follow(this.player);
     };
     if (duration === 0) { camera.centerOn(x, y); done(); return; }
     camera.pan(x, y, duration, 'Sine.easeInOut', true, (_camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
@@ -456,7 +461,8 @@ export class EndlessScene extends Phaser.Scene {
     this.player.setPosition(this.state.x, this.state.y);
     const shadow = groundShadow({ x: this.state.x, y: this.feetY() }, gameConfig.player.width, this.platforms);
     this.shadow.setVisible(shadow !== null);
-    if (shadow) this.shadow.setPosition(shadow.x, shadow.y).setSize(shadow.widthPx, shadow.heightPx).setAlpha(shadow.alpha);
+    // Drawn on the art grid (pixel-grid-snap.ts); sizes in whole steps of two art pixels so a centred ellipse stays on it.
+    if (shadow) this.shadow.setPosition(snapToGrid(shadow.x), snapToGrid(shadow.y)).setSize(snapToGrid(shadow.widthPx, 4), snapToGrid(shadow.heightPx, 4)).setAlpha(shadow.alpha);
     this.forest.syncPlatforms(this.platforms);
     // Weather follows the height: snow fades in before a snowy band and out after it. There is no wind.
     const snow01 = snowAt(this.feetY(), config);

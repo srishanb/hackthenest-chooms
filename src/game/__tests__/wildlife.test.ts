@@ -53,9 +53,29 @@ it('only ever shows cells of the clip it is playing', () => {
   for (let t = 0; t < 30000; t += 16) {
     bird = stepBird(bird, 16, t > 20000 ? { x: 310, y: 200 } : null, false, C);
     const clip = C.clips[bird.act], frame = birdFrame(bird, C);
-    expect(Math.floor(frame / C.columns)).toBe(clip.row);
-    expect(frame % C.columns).toBeLessThan(clip.frames);
+    expect(clip.cells).toContain(frame);
   }
+});
+
+it('ledge birds use the small birb sheet: every clip shows cells that exist and are drawn', () => {
+  // birb.png is a 4 x 4 grid of 8 x 8 cells; the last cell (15) is empty.
+  expect(C.sheet).toBe('wildlife-birb');
+  expect(C.frame).toEqual({ width: 8, height: 8 });
+  for (const clip of Object.values(C.clips)) {
+    expect(clip.cells.length).toBeGreaterThan(0);
+    for (const cell of clip.cells) { expect(Number.isInteger(cell)).toBe(true); expect(cell).toBeGreaterThanOrEqual(0); expect(cell).toBeLessThan(15); }
+  }
+  // The flight loop is the pack's own (birb.json: 8, 9, 8, 7), and a take-off ends in the air.
+  expect(C.clips.fly.cells).toEqual([8, 9, 8, 7]);
+  expect(C.clips.takeoff.cells.at(-1)).toBe(7);
+});
+
+it('a bird plays its whole act: a peck shows every peck cell, then it stands again', () => {
+  let bird: Bird = { ...perchedBird(0, 0, 1, C), act: 'peck', actMs: 0 };
+  const seen: number[] = [];
+  for (let t = 0; t < C.clips.peck.cells.length * C.frameMs; t += C.frameMs) { seen.push(birdFrame(bird, C)); bird = stepBird(bird, C.frameMs, null, false, C); }
+  expect(seen).toEqual([...C.clips.peck.cells]);
+  expect(bird.act).toBe('stand');
 });
 
 it('ignores bad time steps', () => {

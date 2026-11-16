@@ -18,6 +18,7 @@ What is different from `main`:
 | Backdrop | Two layers of repeating bark and two crown pictures | Painted from the run's seed in three layers that pass at different speeds: wandering trunks, branches, vines and floating islands with trees. It turns to pines and snow with height, and each forest stretch has a seeded flavour (leafy, autumn, mushroom or blossom). Drawn by code, like the candle |
 | Background life | None | Birds sit on ledges and fly off as the candle nears, flocks cross far behind, fireflies blink, leaves fall, grass sways and far ledges spill waterfalls. All of it fades as the forest corrupts |
 | The candle | A plain wax block with a flame | A face with fourteen moods, a reacting flame, emotes and a detailed close-up portrait |
+| Pixel grid | Props, birds and particles at mixed sizes, on half pixels | All gameplay art at one pixel size (2 screen px per art pixel at 960x540) on one grid, camera included; the picture is still fitted to the window (Decision D-34) |
 
 ## Play it
 

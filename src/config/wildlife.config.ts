@@ -9,16 +9,20 @@
  * Sheet layouts are fixed by the art (see public/assets/wildlife/license-source.md).
  */
 
-/** One animation on the bird sheet: which row it is and how many frames that row uses. */
-export interface BirdClip { row: number; frames: number }
+/** One animation of a ledge bird: the sheet cells it shows, in order. */
+export interface BirdClip { cells: readonly number[] }
 
 export const WILDLIFE_CONFIG = {
   bird: {
-    /** Cell size of bird.png in px, and cells per row. */
-    frame: { width: 32, height: 21 }, columns: 10,
+    /**
+     * Ledge birds use birb.png (8 x 8 px cells, 4 per row), drawn at the one pixel size like the rest
+     * of the art. (The bigger bird.png, 32 x 21 cells, would stand taller than the candle at that size.)
+     * Cells: 0 and 3 stand, 1 and 2 bend down to eat, 12 to 14 land (legs out), 4 to 11 fly.
+     */
+    sheet: 'wildlife-birb', frame: { width: 8, height: 8 }, columns: 4,
     clips: {
-      look: { row: 1, frames: 10 }, stand: { row: 2, frames: 4 }, peck: { row: 3, frames: 8 },
-      chirp: { row: 4, frames: 5 }, takeoff: { row: 6, frames: 9 }, fly: { row: 7, frames: 4 },
+      stand: { cells: [0, 0, 0, 3] }, look: { cells: [0, 3, 0, 3, 3, 0] }, peck: { cells: [1, 2, 2, 1, 2, 2, 1, 0] },
+      chirp: { cells: [3, 0, 3, 0, 3] }, takeoff: { cells: [0, 14, 13, 12, 4, 5, 6, 7] }, fly: { cells: [8, 9, 8, 7] },
     } satisfies Record<string, BirdClip>,
     /** How long one animation frame shows, in ms. Standing still breathes more slowly. */
     frameMs: 100, standFrameMs: 260,
@@ -41,8 +45,8 @@ export const WILDLIFE_CONFIG = {
     /** Birds in one flock, and the wait between flocks in ms. */
     size: 5, minGapMs: 9000, maxGapMs: 22000,
     speedPxPerS: 62, bobPx: 5, spacingPx: 26,
-    /** Drawn size as a multiple of the 8 px art, and how solid the silhouettes are. */
-    scale: 2, alpha: 0.6,
+    /** How solid the silhouettes are. (They are drawn at the one pixel size, FOREST_CONFIG.pixelScale.) */
+    alpha: 0.6,
   },
   firefly: {
     count: 12,

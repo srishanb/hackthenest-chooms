@@ -16,6 +16,7 @@ import type { GameConfig } from '../../shared/contracts/config';
 import type { PlatformBox } from '../player/types';
 import { outlineSegments, reachableLedges, type WorldBounds } from '../world/reachable-ledges';
 import { fadeSegments } from './outline-fade';
+import { snapToGrid } from '../forest/pixel-grid-snap';
 
 const LINE_WIDTH_PX = 2;
 const CURRENT_COLOR = 0xfff3c4;
@@ -65,7 +66,11 @@ export function createProtectedVisibility(
         if (piece.current) continue;
         // Style is set before each stroke (Phaser styles are not retroactive).
         graphics.lineStyle(LINE_WIDTH_PX, piece.current ? CURRENT_COLOR : REACHABLE_COLOR, LINE_ALPHA * piece.alpha);
-        graphics.lineBetween(piece.x1, piece.y1, piece.x2, piece.y2);
+        // A 2 px stroke is centred on its line: put a level line's centre between two grid lines (and a
+        // standing one's likewise), and its ends on grid lines, so the stroke covers whole art pixels.
+        const level = piece.y1 === piece.y2, centre = (value: number): number => snapToGrid(value - 1) + 1;
+        graphics.lineBetween(level ? snapToGrid(piece.x1) : centre(piece.x1), level ? centre(piece.y1) : snapToGrid(piece.y1),
+          level ? snapToGrid(piece.x2) : centre(piece.x2), level ? centre(piece.y2) : snapToGrid(piece.y2));
       }
     },
   };
