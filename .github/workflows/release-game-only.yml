@@ -22,6 +22,7 @@ on:
     paths:
       - 'docs/releases/game-only-v*.md'
       - '.github/workflows/release-game-only.yml'
+      - 'desktop/**'
 
 permissions:
   contents: write
@@ -113,7 +114,7 @@ jobs:
           gh release download "$TAG" --pattern "lighten-up-${TAG}.zip" --dir .
           mkdir dist
           unzip -q "lighten-up-${TAG}.zip" -d dist
-      # A rehearsal: when this workflow changes and there is nothing to release, the app is still
+      # A rehearsal: when this workflow or the app (desktop/) changes and there is nothing to release, the app is still
       # packaged on all three systems (as version 0.0.0, attached nowhere), so a broken workflow is
       # found before a version number is spent on it.
       - name: Build the game here (rehearsal, nothing to release)

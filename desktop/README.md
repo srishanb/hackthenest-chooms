@@ -11,6 +11,7 @@ Vite build (`dist/`) and adds the update check. It has its own `package.json`, s
 | `update-feed.cjs` | Pure rule: which release to update to. Tested in `tools/desktop/update-feed.test.ts` |
 | `copy-game.cjs` | Copies `../dist` into this folder for packaging |
 | `package.json` | Exact dependency pins and the packager's settings (`build`) |
+| `icons/icon.png` | The app icon: the candle in its gold-rimmed circle, drawn by the game's own candle code. Redraw it with `npx tsx tools/desktop/make-icon.ts` from the repository root |
 
 ## How updating works
 

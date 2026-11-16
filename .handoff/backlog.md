@@ -105,7 +105,7 @@ still go at the end of this list, as ideas only.
 - [ ] #73 Narrator lines for being shaken and for steadying (gentle, never judging), if the content lane has matching moments
 - [x] #74 Releases cut by a workflow from a notes file (`docs/releases/game-only-v<version>.md`); v0.1.0 published (asked for by Srishan)
 - [x] #75 Desktop app (`desktop/`, Electron) for Windows, Linux and macOS that updates itself on Windows and Linux; v0.2.0 published (asked for by Srishan)
-- [ ] #76 An app icon for the desktop app, drawn from the game's own candle (the default Electron icon is used now)
+- [x] #76 An app icon for the desktop app: the candle in its gold-rimmed circle, drawn by the game's own candle code (`tools/desktop/make-icon.ts`; asked for by Srishan)
 - [ ] #77 Srishan or a teammate: run the Windows installer and the macOS disk image once and report what happens
 - [ ] #78 Sign the apps (needs paid certificates from Srishan): removes the first-start warnings and lets the Mac build update itself
 

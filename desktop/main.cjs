@@ -23,6 +23,7 @@ const HOST = 'lighten';
 const DIST = path.join(__dirname, 'dist');
 const DIST_URL = pathToFileURL(DIST + path.sep).toString();
 const TITLE = 'Lighten Up';
+const ICON = path.join(__dirname, 'icons', 'icon.png');
 
 protocol.registerSchemesAsPrivileged([
   { scheme: SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } },
@@ -43,6 +44,8 @@ let mainWindow = null;
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280, height: 760, backgroundColor: '#05060a', title: `${TITLE} ${app.getVersion()}`, autoHideMenuBar: true,
+    // The candle in its circle (drawn by tools/desktop/make-icon.ts). macOS takes the icon from the app bundle instead.
+    icon: process.platform === 'darwin' ? undefined : ICON,
     webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false },
   });
   mainWindow = win;
