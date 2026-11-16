@@ -103,3 +103,19 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 | `Portrait`, `PortraitPixel`, `PortraitInput`, `SMOKE_BELOW`, `GUTTER_BELOW`, `BLUE_BELOW` | `candle/portrait.ts` | Portrait types and the light-strength thresholds for smoke, guttering and blue flame. |
 | `PortraitLook` | `candle/portrait-view.ts` | Input type of the portrait view. |
 | `CandleLook` | `candle/candle-view.ts` | Light, growth and settings the candle draws from each frame. |
+
+## Endless mode (hands-only variant)
+
+| Export | File | What it does |
+|---|---|---|
+| `EndlessScene`, `EndlessSceneDeps` | `scenes/endless-scene.ts` | The generated climb: same input, `stepPlayer`, candle and forest as the climb scene, on streamed chunks. Fuel ends the run; no signal. |
+| `traceArc`, `buildArcTable`, `descentAt`, `launch`, `standOn`, `chargeStepsFor`, `JumpArc`, `ArcPoint` | `endless/jump-arcs.ts` | Sample jump arcs traced with the real `stepPlayer`; the generator places ledges under them. |
+| `createEndlessGenerator`, `replayStep`, `difficultyAt`, `EndlessChunk`, `RouteStep`, `WaxSpot`, `EndlessGenerator` | `endless/generator.ts` | Seeded, random-access chunks. Every ledge is reachable by construction and its jump is replayed before it is kept. |
+| `createChunkStream`, `ChunkStream`, `StreamChange` | `endless/chunk-stream.ts` | Keeps a fixed window of chunks alive around the player. |
+| `freshFlame`, `stepFlame`, `addWax`, `burnPerSecond`, `isLit`, `FlameState` | `endless/flame-fuel.ts` | Fuel burns with time, wax refills it, a grace time before the run ends. |
+| `moodIntensity` | `endless/mood.ts` | Fuel to the 0..1 intensity fed to the effects table (the mood follows the flame). |
+| `createEndlessWax` | `endless/endless-wax.ts` | One-time wax pickups at generated spots; same snapshot field and bus event as the classic wax. |
+| `createWaxDropsView` | `endless/wax-drops-view.ts` | Draws the live wax drops; marks come and go with the chunks. |
+| `createRunScore`, `RunScore` | `endless/run-score.ts` | Height of the run (ledges stood on) and the best height on this device. |
+| `createRouteBot` | `endless/route-bot.ts` | Development-only player that follows the generated route (`?bot=1`), for automated browser checks. |
+| `ForestWorld.addPlatform`, `ForestWorld.removePlatform` | `forest/forest-world.ts` | Platform art added and removed while playing. |

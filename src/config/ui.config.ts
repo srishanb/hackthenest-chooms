@@ -24,6 +24,12 @@ export const UI_CONFIG: UiConfig = {
   },
 };
 
+/**
+ * Hands-only variant: there is no EEG input, so the UI hides everything about a signal
+ * (source line on the menu, replay presets, the "show signal" toggle).
+ */
+export const HANDS_ONLY = true;
+
 /** Presentation scale: 32 world pixels represent one metre in the HUD. */
 export const HUD_WORLD_PIXELS_PER_METRE = 32;
 /** Radius represented by the complete lantern gauge, including wax light bonuses. */

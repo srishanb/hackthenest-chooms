@@ -6,6 +6,7 @@ import type { UiComponent } from '../../types';
 import { createUiActions } from '../../ui-actions';
 import { canContinue, menuSelection, startStalled, startsOnKey } from './start-menu-state';
 import { createCredits } from './credits';
+import { HANDS_ONLY } from '../../../config/ui.config';
 import '../../theme/menus.css';
 import './start-menu.css';
 
@@ -76,6 +77,8 @@ export const startMenu: UiComponent = {
     screen.append(scenery, hero, credits, footer); root.append(screen);
 
     function renderSource(): void {
+      // No signal in the hands-only variant: one fixed line instead of a source status.
+      if (HANDS_ONLY) { status.textContent = t('start.handsOnly'); status.dataset.ready = 'true'; return; }
       const state = signal.reader.getState();
       const label = state.source === 'SIMULATED' ? 'start.signal.sim' : state.source === 'REPLAY' ? 'start.signal.replay' : state.valid ? 'start.signal.live' : 'start.signal.waiting';
       const value = t(label);
@@ -104,6 +107,8 @@ export const startMenu: UiComponent = {
       const label = t(canContinue(snapshot, played) ? 'start.continue' : 'start.play');
       if (play.dataset.label !== label) { play.replaceChildren(...(iconElement ? [iconElement] : []), document.createTextNode(label)); play.dataset.label = label; }
       for (const button of buttons) button.disabled = pending;
+      // The stage editor edits the authored climb; the endless climb has no stages to edit.
+      editor.hidden = snapshot.run !== undefined;
       hero.hidden = actions.settingsOpen.get() || actions.tutorialOpen.get() || actions.calibrationFrom.get() !== null || !credits.hidden;
       if (focusReturn && !hero.hidden) {
         const target = focusReturn; focusReturn = null;

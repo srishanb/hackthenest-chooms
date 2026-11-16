@@ -112,7 +112,12 @@ mountUi(requireElement('ui'), {
     () => (stores.snapshot.get().navigation?.checkpoints.length ?? 0) > 0, () => stores.settings.get().reducedMotion),
 }, UI_CONFIG);
 
-createAudio({ bus, stores, config: AUDIO_CONFIG, narratorLines: NARRATOR_LINES });
+// The recorded welcome explains the ember and the signal, and the stage and finish lines talk about
+// stages and a summit. None of those exist in the endless climb, so it keeps only the lines that fit.
+const narratorLines = endless
+  ? NARRATOR_LINES.filter((line) => line.moment === undefined || ['fall', 'height', 'low-fuel'].includes(line.moment))
+  : NARRATOR_LINES;
+createAudio({ bus, stores, config: AUDIO_CONFIG, narratorLines });
 }
 const route = (editor: boolean): void => { const url = new URL(location.href); url.searchParams.delete('editorTest'); url.searchParams.delete('editorDraft'); if (editor && testing) url.searchParams.set('editorDraft', '1'); if (editor) url.searchParams.set('editor','1'); else url.searchParams.delete('editor'); location.assign(url.href); };
 if (query.has('editor')) {

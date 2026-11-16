@@ -94,10 +94,12 @@ export const hud: UiComponent = {
       const navigation = snapshot.navigation;
       const nav = navigationView(navigation, HUD_WORLD_PIXELS_PER_METRE);
       const heightPx = (nav?.heightMetres ?? 0) * HUD_WORLD_PIXELS_PER_METRE;
-      bestPx = Math.max(bestPx, heightPx);
+      // An endless run keeps its own best (ledges stood on); the authored climb keeps the HUD's.
+      const run = snapshot.run;
+      if (!run) bestPx = Math.max(bestPx, heightPx);
       if (snapshot.phase !== 'playing') saveBest();
       text(height, nav ? `${nav.heightMetres.toFixed(1)} ${t('hud.metres')}` : '—');
-      text(best, `${(bestPx / HUD_WORLD_PIXELS_PER_METRE).toFixed(1)} ${t('hud.metres')}`);
+      text(best, `${((run ? run.bestPx : bestPx) / HUD_WORLD_PIXELS_PER_METRE).toFixed(1)} ${t('hud.metres')}`);
       text(waxMetric, snapshot.wax?.total ? `${snapshot.wax.collected}/${snapshot.wax.total}` : String(snapshot.wax?.collected ?? 0));
       compass.classList.toggle('is-empty', !nav?.checkpoint);
       if (nav?.checkpoint) needleTarget = nav.checkpoint.angleDegrees;
@@ -105,7 +107,8 @@ export const hud: UiComponent = {
         ? `${t('hud.checkpoint')} ${nav.checkpoint.distanceMetres.toFixed(1)} ${t('hud.metres')}` : t('hud.noCheckpoint'));
       const flags = stores.settings.get().hud;
       metrics.hidden = !flags.showStatus;
-      checkpoint.hidden = !flags.showEmber;
+      // No ember in an endless run, so no compass pointing to one.
+      checkpoint.hidden = !flags.showEmber || run !== undefined;
       const view = hudState(snapshot, signalState, SIGNAL_CONFIG.staleAfterMs);
       const lessonKey = snapshot.lessonKey;
       const stageKey = `stage.${snapshot.stage?.id}`;
@@ -126,7 +129,7 @@ export const hud: UiComponent = {
       text(prompt, view.prompt ?? '');
       progress.value = view.progressPercent;
       status.hidden = quality.hidden = !flags.showStatus;
-      ember.hidden = !flags.showEmber;
+      ember.hidden = !flags.showEmber || run !== undefined;
       progress.hidden = !flags.showEmber || !snapshot.ember.active;
       composure.hidden = !flags.showSignal;
       prompt.hidden = !view.prompt;

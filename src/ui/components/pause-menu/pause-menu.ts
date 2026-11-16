@@ -29,7 +29,10 @@ export const pauseMenu: UiComponent = {
     const render = (): void => {
       const phase = stores.snapshot.get().phase;
       restart.disabled = !stores.snapshot.get().navigation?.checkpoints.length;
-      hint.hidden = !restart.disabled;
+      // The endless climb has no ember checkpoint: landings catch every fall instead.
+      const endless = stores.snapshot.get().run !== undefined;
+      restart.hidden = endless;
+      hint.hidden = endless || !restart.disabled;
       panel.hidden = phase !== 'paused' || actions.settingsOpen.get() || actions.calibrationFrom.get() !== null;
       if (phase === 'paused' && lastPhase !== 'paused') {
         previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;

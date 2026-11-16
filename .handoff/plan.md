@@ -23,8 +23,8 @@ Decisions made without asking (low-maintenance request), each easy to reverse:
 
 ## Phases
 
-- [🔄] Phase 1: Hands-only boot and endless core  — current
-- [ ] Phase 2: Expressive, detailed candle (face, expressions, body detail)
+- [x] Phase 1: Hands-only boot and endless core  — completed 2026-11-16
+- [🔄] Phase 2: Expressive, detailed candle (face, expressions, body detail)  — current
 - [ ] Phase 3: Iteration loop from `.handoff/backlog.md` (variety, juice, tuning, polish)
 
 ## Change list
