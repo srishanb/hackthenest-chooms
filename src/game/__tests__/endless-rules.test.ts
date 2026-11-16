@@ -120,3 +120,40 @@ describe('endless wax', () => {
     expect(snapshot.get().wax?.collected).toBe(0);
   });
 });
+
+describe('biomes', () => {
+  it('alternate in bands, starting with forest', async () => {
+    const { biomeOf, chunkOfPlatform } = await import('../endless/biome');
+    const band = C.biome.chunksPerBand;
+    expect(biomeOf(0, C)).toBe('forest');
+    expect(biomeOf(band - 1, C)).toBe('forest');
+    expect(biomeOf(band, C)).toBe('snow');
+    expect(biomeOf(2 * band, C)).toBe('forest');
+    expect(biomeOf(-4, C)).toBe('forest');
+    expect(chunkOfPlatform('e12:p3')).toBe(12);
+    expect(chunkOfPlatform('e7:floor')).toBe(7);
+    expect(chunkOfPlatform('lower-floor')).toBe(0);
+  });
+
+  it('snow fades in before a snowy band, is strongest inside it, and is gone in the forest', async () => {
+    const { snowAt } = await import('../endless/biome');
+    const bandPx = C.biome.chunksPerBand * C.chunkHeightPx;
+    const at = (heightPx: number): number => snowAt(C.baseFloorTopPx - heightPx, C);
+    expect(at(0)).toBe(0);
+    expect(at(bandPx - C.biome.blendPx - 1)).toBe(0);
+    expect(at(bandPx - C.biome.blendPx / 2)).toBeGreaterThan(0);
+    expect(at(bandPx + bandPx / 2)).toBeCloseTo(C.biome.firstSnow01);
+    expect(at(2 * bandPx + bandPx / 2)).toBe(0);
+    // Later snow bands snow harder, never above 1, and the value never jumps.
+    expect(at(3 * bandPx + bandPx / 2)).toBeGreaterThan(C.biome.firstSnow01);
+    let previous = at(0);
+    for (let h = 0; h < 40 * bandPx; h += 16) {
+      const value = at(h);
+      expect(value).toBeGreaterThanOrEqual(0);
+      expect(value).toBeLessThanOrEqual(1);
+      expect(Math.abs(value - previous)).toBeLessThan(0.08);
+      previous = value;
+    }
+    expect(snowAt(Number.NaN, C)).toBe(0);
+  });
+});

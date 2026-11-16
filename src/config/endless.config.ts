@@ -59,6 +59,15 @@ export const ENDLESS_CONFIG = {
     calmIntensity: 0.14,
     peakIntensity: 0.9,
   },
+  biome: {
+    /** Forest and snow alternate in bands this many chunks tall, starting with forest. */
+    chunksPerBand: 3,
+    /** The snowfall fades in and out over this height (px) around a snowy band. */
+    blendPx: 480,
+    /** Snowfall strength (0..1) in the first snowy band, and how much stronger each later one is. */
+    firstSnow01: 0.55,
+    snowStep01: 0.15,
+  },
   /** Storage key for the best height in px. */
   bestKey: 'lighten.endless.best-px.v1',
 } as const;

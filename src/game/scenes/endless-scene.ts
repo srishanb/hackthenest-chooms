@@ -25,6 +25,7 @@ import { createPortraitView } from '../candle/portrait-view';
 import { createDarkness, minCoveringRadius, updateDarkness } from '../effects/darkness';
 import { neutralFrame } from '../effects/effects-engine';
 import { createProtectedVisibility, type ProtectedVisibility } from '../effects/protected-visibility';
+import { biomeOf, chunkOfPlatform, snowAt } from '../endless/biome';
 import { createChunkStream, type ChunkStream } from '../endless/chunk-stream';
 import { createEndlessWax } from '../endless/endless-wax';
 import { addWax, freshFlame, isLit, stepFlame, type FlameState } from '../endless/flame-fuel';
@@ -63,6 +64,8 @@ export interface EndlessSceneDeps {
   fixedSeed: boolean;
   /** Development only: let the route bot play (`?bot=1`). A bot run never saves a best height. */
   bot: boolean;
+  /** Development only: start on this chunk's landing (`?startChunk=`), to look at a later height. Such a run never saves a best. */
+  startChunk?: number;
 }
 
 const DEPTH = { player: 10, darkness: 100, alwaysReadable: 200 } as const;
@@ -107,7 +110,8 @@ export class EndlessScene extends Phaser.Scene {
   /** Where the candle stands at the start of every run: the middle of the first landing. */
   private spawn(): { x: number; y: number } {
     const { gameConfig, config } = this.deps;
-    return { x: gameConfig.view.width / 2, y: config.baseFloorTopPx - gameConfig.player.height / 2 };
+    const floorTop = config.baseFloorTopPx - (this.deps.startChunk ?? 0) * config.chunkHeightPx;
+    return { x: gameConfig.view.width / 2, y: floorTop - gameConfig.player.height / 2 };
   }
 
   /** Feet y of the body: the height everything in endless mode is measured from. */
@@ -134,7 +138,8 @@ export class EndlessScene extends Phaser.Scene {
     const now = this.stream.platforms();
     const live = new Set(now.map((platform) => platform.id));
     for (const platform of before) if (!live.has(platform.id)) this.forest.removePlatform(platform.id);
-    for (const platform of now) this.forest.addPlatform(platform, false);
+    // Each ledge wears the skin of its chunk's biome (forest or snow).
+    for (const platform of now) this.forest.addPlatform(platform, biomeOf(chunkOfPlatform(platform.id), this.deps.config) === 'snow');
     this.platforms = platformsAt(now, this.worldTimeMs);
     this.waxView.sync(this.stream.wax(), this.wax.isCollected);
   }
@@ -163,8 +168,9 @@ export class EndlessScene extends Phaser.Scene {
     this.wax = createEndlessWax({ gameConfig, bus, snapshot: stores.snapshot });
     this.waxView = createWaxDropsView(this, bus);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.waxView.destroy());
-    this.score = createRunScore({ seed: this.deps.seed, originFeetY: config.baseFloorTopPx, storage: this.deps.storage,
-      key: config.bestKey, persist: !this.deps.bot });
+    // Height is measured from where the run starts (the first landing, or a later one in a development run).
+    this.score = createRunScore({ seed: this.deps.seed, originFeetY: this.spawn().y + gameConfig.player.height / 2, storage: this.deps.storage,
+      key: config.bestKey, persist: !this.deps.bot && !this.deps.startChunk });
     this.startRun(this.deps.seed);
 
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
@@ -308,7 +314,8 @@ export class EndlessScene extends Phaser.Scene {
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
       // A fall just ends on whatever catches you; no reset, no death.
       if (out.events.landed) {
-        this.landingPuff.burst(this.state.x, this.feetY(), false, settings.reducedMotion);
+        const snowy = biomeOf(chunkOfPlatform(out.events.landed.platformId), config) === 'snow';
+        this.landingPuff.burst(this.state.x, this.feetY(), snowy, settings.reducedMotion);
         for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
         if (this.score.stand(this.feetY())) {
           const run = this.score.snapshot();
@@ -329,6 +336,9 @@ export class EndlessScene extends Phaser.Scene {
     this.player.setPosition(this.state.x, this.state.y);
     this.waxView.update(deltaMs, this.phase.isRunning(), settings.reducedMotion);
     this.forest.syncPlatforms(this.platforms);
+    // Weather follows the height: snow fades in before a snowy band and out after it. There is no wind.
+    const snow01 = snowAt(this.feetY(), config);
+    this.forest.setEnvironment({ snowEnabled: snow01 > 0, snow01, windEnabled: false, wind01: 0, direction: 1 });
     const frozen = stores.snapshot.get().phase === 'paused' || stores.snapshot.get().phase === 'menu';
     const frame = frozen ? stores.effects.get() : stepForestEffects(stores.effects.get(), effectsTable, {
       // The mood follows the flame: there is no signal in this variant.

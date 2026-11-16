@@ -82,6 +82,8 @@ const endless = classic ? undefined : {
   seed: fixedSeed ? Number(seedText) >>> 0 : pickCandleSeed('', false),
   fixedSeed,
   bot: import.meta.env.DEV && query.has('bot'),
+  // Development only: `?startChunk=4` starts higher up, to look at a later part of the climb.
+  startChunk: import.meta.env.DEV ? Math.max(0, Math.min(500, Math.floor(Number(query.get('startChunk')) || 0))) : 0,
 };
 
 // One candle seed for the first run: the menu emblem and the player are the same candle.

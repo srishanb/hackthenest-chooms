@@ -1,7 +1,7 @@
 /** Transparent control reminders, projected through the game camera without capturing input. */
 import type { UiComponent } from '../../types';
 import { t } from '../../strings';
-import { controlKeys, reminderPosition, showWorldTutorial, worldTransform } from './layout';
+import { controlKeys, reminderPosition, showEndlessReminder, showWorldTutorial, worldTransform } from './layout';
 import './world-tutorial.css';
 const ACTIONS = ['move', 'jump', 'ember', 'return', 'pause'] as const;
 export const worldTutorial: UiComponent = {
@@ -12,15 +12,20 @@ export const worldTutorial: UiComponent = {
     viewport.setAttribute('aria-label', t('worldTutorial.label'));
     const world = document.createElement('div'); world.className = 'world-tutorial__world';
     const reminder = document.createElement('dl'); reminder.className = 'world-tutorial__controls';
+    const rows: Array<{ action: typeof ACTIONS[number]; key: HTMLElement; label: HTMLElement }> = [];
     const keys = ACTIONS.map(action => {
       const key = document.createElement('dt'), label = document.createElement('dd');
-      label.textContent = t(`worldTutorial.control.${action}`); reminder.append(key, label); return key;
+      label.textContent = t(`worldTutorial.control.${action}`); reminder.append(key, label); rows.push({ action, key, label }); return key;
     });
     world.append(reminder); viewport.append(world); root.append(viewport);
     let bounds = worldCanvas.getBoundingClientRect();
     const render = (): void => {
       const view = stores.worldView!.get();
-      viewport.hidden = !view || !showWorldTutorial(stores.snapshot.get(), tutorialSections);
+      const snapshot = stores.snapshot.get();
+      const endless = showEndlessReminder(snapshot);
+      viewport.hidden = !view || !(endless || showWorldTutorial(snapshot, tutorialSections));
+      // The endless climb has no ember, so its two rows are left out there.
+      for (const row of rows) row.key.hidden = row.label.hidden = snapshot.run !== undefined && (row.action === 'ember' || row.action === 'return');
       if (!view) return;
       world.style.transform = worldTransform(view, bounds.width);
       const position = reminderPosition(view);

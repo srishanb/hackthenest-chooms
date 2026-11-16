@@ -6,6 +6,11 @@ import type { WorldViewSnapshot } from '../../../shared/contracts/world-view';
 export function showWorldTutorial(snapshot: Pick<GameSnapshot, 'sectionId' | 'phase'>, sections: readonly SectionData[]): boolean {
   return ['playing', 'ember'].includes(snapshot.phase) && sections.some(section => section.id === snapshot.sectionId && section.stage?.kind === 'tutorial');
 }
+/** An endless run has no tutorial stage, so the same reminder shows until the candle has climbed this far (world px). */
+export const ENDLESS_REMINDER_UNTIL_PX = 420;
+export function showEndlessReminder(snapshot: Pick<GameSnapshot, 'phase' | 'run'>): boolean {
+  return snapshot.phase === 'playing' && snapshot.run !== undefined && snapshot.run.heightPx < ENDLESS_REMINDER_UNTIL_PX;
+}
 export function worldTransform(view: WorldViewSnapshot, canvasWidth: number): string {
   const scale = canvasWidth / view.width;
   return `translate(${-view.scrollX * scale}px, ${-view.scrollY * scale}px) scale(${scale})`;

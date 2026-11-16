@@ -17,10 +17,10 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 ## Endless mode
 
 - [ ] #9 Moving ledges and ice in later height bands, covered by the route replay test
-- [ ] #10 Biomes by height (forest, snow, wind) with matching platform skins and weather
+- [x] #10 Biomes by height (forest and snow bands) with matching platform skins and weather
 - [ ] #11 Break up the full-width landings into staggered wide ledges that still catch every fall
 - [ ] #12 Tune fuel and wax with a route-following bot (par time per chunk) so a clean run is sustainable and a sloppy one is not
-- [ ] #13 Run summary on the finish screen: height, best, wax, seed, "new best" moment
+- [x] #13 Run summary on the finish screen: height, best, wax, seed, "new best" moment
 - [ ] #14 Daily seed and a seed field on the menu
 - [ ] #15 Height markers in the world every 25 m and a marker at the personal best
 - [ ] #16 Menu choice between Endless and the classic authored climb
@@ -30,6 +30,15 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [ ] #17 Landing shake and squash tied to fall height (the `landingShake` setting exists and nothing reads it)
 - [ ] #18 Flame-out sequence: light closes in, ember glows, relight on wax
 - [ ] #19 Narrator lines for endless moments (new height band, low flame, new best) from existing clips only
-- [ ] #20 Tutorial hints for the first chunk in endless
+- [x] #20 Tutorial hints for the first chunk in endless
 - [ ] #21 Performance check: object counts and frame time after ten minutes of climbing
 - [ ] #22 README and docs for the hands-only branch
+
+## Added during the loop
+
+- [ ] #23 Ice ledges in snow bands, with their own look (pale blue rim) so they can be told apart
+- [ ] #24 Darker baseline at great height, so the candle's own light matters before the fuel is low
+- [ ] #25 Remove the old small `rasterPortrait` once nothing else needs it as the reference
+- [ ] #26 Check the frame rate on real hardware: the headless check runs at 13 to 24 fps with software rendering
+- [ ] #27 A wind band (third biome) only if wind can be made part of the route replay
+- [ ] #28 Candle idle fidgets: a little hop or a look up at its flame after a long wait, before it gets sleepy
