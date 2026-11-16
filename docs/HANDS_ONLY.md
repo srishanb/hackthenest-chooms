@@ -45,7 +45,9 @@ Dev pages for looking at the candle: `/src/game/__tests__/candle-faces.html` (ev
 3. Each ledge is placed under a jump arc traced with the game's own `stepPlayer`. The jump is then replayed against
    the finished chunk, and a ledge the replay does not land on is thrown away. The test suite replays every jump of
    480 chunks.
-4. Side ledges hold extra wax. They can be reached, but getting back may mean dropping down.
+4. Side ledges hold extra wax. They can be reached, but getting back may mean dropping down. From chunk 4 up some
+   of them slide left and right, carrying their wax; they move only as far as their jump still lands on them, and
+   the main path never moves.
 5. Ledges get narrower and the steps taller over the first 14 chunks. The candle also burns faster with height, and
    keeps burning a little faster after that, so every run ends.
 6. Forest and snow alternate every three chunks. In the snow about a third of the ledges are ice (a bright blue sheet

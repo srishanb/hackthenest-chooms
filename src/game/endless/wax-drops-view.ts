@@ -46,23 +46,25 @@ export function createWaxDropsView(scene: Scene, bus: EventBus) {
         });
       }
     },
-    update(dtMs: number, running: boolean, reduceMotion: boolean, light?: NightLight): void {
+    /** `xOf` gives a drop's current x when it rides a moving ledge (defaults to where it was generated). */
+    update(dtMs: number, running: boolean, reduceMotion: boolean, light?: NightLight, xOf: (drop: WaxSpot) => number = (drop) => drop.x): void {
       reducedMotion = reduceMotion;
       if (running) animationMs += Math.max(0, dtMs);
       for (const { drop, glow, body, shine, beacon } of marks.values()) {
         // Each drop hovers on its own phase so a row of them does not bob in step.
         const phase = animationMs / WAX_CONFIG.hoverPeriodMs * Math.PI * 2 + drop.x * 0.05;
         const hover = reduceMotion ? 0 : Math.sin(phase) * WAX_CONFIG.hoverPx;
-        glow.setPosition(drop.x, drop.y + hover);
-        body.setPosition(drop.x, drop.y + hover);
-        shine.setPosition(drop.x - 2, drop.y - 3 + hover);
+        const x = xOf(drop);
+        glow.setPosition(x, drop.y + hover);
+        body.setPosition(x, drop.y + hover);
+        shine.setPosition(x - 2, drop.y - 3 + hover);
         // In the dark, wax glows a little beyond the candle's light, fading with distance.
         let alpha = 0;
         if (light && light.night01 > 0 && light.radiusPx > 0) {
-          const distance = Math.hypot(drop.x - light.x, drop.y - light.y) / light.radiusPx;
+          const distance = Math.hypot(x - light.x, drop.y - light.y) / light.radiusPx;
           alpha = light.night01 * 0.85 * Math.min(1, Math.max(0, (BEACON_REACH - distance) / (BEACON_REACH - 1)));
         }
-        beacon.setPosition(drop.x, drop.y + hover).setAlpha(alpha);
+        beacon.setPosition(x, drop.y + hover).setAlpha(alpha);
       }
     },
     destroy(): void { off(); for (const mark of marks.values()) destroy(mark); marks.clear(); },

@@ -111,6 +111,7 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 | `EndlessScene`, `EndlessSceneDeps` | `scenes/endless-scene.ts` | The generated climb: same input, `stepPlayer`, candle and forest as the climb scene, on streamed chunks. Fuel ends the run; no signal. |
 | `traceArc`, `buildArcTable`, `descentAt`, `launch`, `standOn`, `chargeStepsFor`, `JumpArc`, `ArcPoint` | `endless/jump-arcs.ts` | Sample jump arcs traced with the real `stepPlayer`; the generator places ledges under them. |
 | `createEndlessGenerator`, `replayStep`, `difficultyAt`, `EndlessChunk`, `RouteStep`, `WaxSpot`, `EndlessGenerator` | `endless/generator.ts` | Seeded, random-access chunks. Every ledge is reachable by construction and its jump is replayed before it is kept. |
+| `EndlessChunk.sideRoute`, `WaxSpot.ledgeId`, `WaxSpot.ledgeX` | `endless/generator.ts` | The jump to each optional side ledge; wax on a moving side ledge knows which ledge it rides. |
 | `createChunkStream`, `ChunkStream`, `StreamChange` | `endless/chunk-stream.ts` | Keeps a fixed window of chunks alive around the player. |
 | `freshFlame`, `stepFlame`, `addWax`, `burnPerSecond`, `isLit`, `FlameState` | `endless/flame-fuel.ts` | Fuel burns with time, wax refills it, a grace time before the run ends. |
 | `moodIntensity` | `endless/mood.ts` | Fuel to the 0..1 intensity fed to the effects table (the mood follows the flame). |

@@ -16,7 +16,7 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 
 ## Endless mode
 
-- [ ] #9 Moving ledges and ice in later height bands, covered by the route replay test
+- [x] #9 Moving ledges and ice in later height bands, covered by the route replay test (only optional side ledges move; their wax rides along)
 - [x] #10 Biomes by height (forest and snow bands) with matching platform skins and weather
 - [ ] #11 Break up the full-width landings into staggered wide ledges that still catch every fall
 - [x] #12 Tune fuel and wax with a route-following bot (par time per chunk) so a clean run is sustainable and a sloppy one is not (first pass; `tools/endless/par.ts`)
@@ -57,5 +57,7 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #41 Give the classic climb (`?climb=classic`) the same awareness and cheer calls, so both modes have the full candle
 - [ ] #42 Srishan to judge by playing: is the night too dark at low fuel (radius 130 px empty, 330 px full, full night from chunk 10)?
 - [x] #43 Wax drops glow in the dark a little beyond the light, so the player can plan toward them at night (not yet seen in a screenshot: no drop was past the edge)
-- [ ] #44 Capture a screenshot that shows a wax beacon past the edge of the light, and tune its size and brightness
+- [x] #44 Capture a screenshot that shows a wax beacon past the edge of the light (seen at the edge of the light at chunk 12; left as it is)
 - [ ] #45 The close-up portrait shows the melted drips and the running bead too
+- [ ] #46 See a moving side ledge in motion in the browser (two frames a second apart) and check its wax rides with it
+- [ ] #47 Let the route bot optionally detour to side ledges, so par.ts measures a wax-hungry run too

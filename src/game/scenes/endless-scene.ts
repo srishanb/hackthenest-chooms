@@ -31,7 +31,7 @@ import { biomeOf, chunkOfPlatform, snowAt } from '../endless/biome';
 import { createChunkStream, type ChunkStream } from '../endless/chunk-stream';
 import { createEndlessWax } from '../endless/endless-wax';
 import { addWax, freshFlame, isLit, stepFlame, type FlameState } from '../endless/flame-fuel';
-import { createEndlessGenerator } from '../endless/generator';
+import { createEndlessGenerator, type WaxSpot } from '../endless/generator';
 import { moodIntensity } from '../endless/mood';
 import { nightAt, nightShadowAlpha, sightRadius } from '../endless/night';
 import { createRouteBot } from '../endless/route-bot';
@@ -128,6 +128,19 @@ export class EndlessScene extends Phaser.Scene {
 
   /** The run's public record: its score plus the candle that is playing it. */
   private runSnapshot(): RunSnapshot { return { ...this.score.snapshot(), candleSeed: this.candle.seed() }; }
+
+  /** Where a wax drop is right now: drops on a moving ledge ride along with it. */
+  private waxX = (drop: WaxSpot): number => {
+    if (drop.ledgeId === undefined || drop.ledgeX === undefined) return drop.x;
+    const ledge = this.platforms.find((platform) => platform.id === drop.ledgeId);
+    return ledge ? drop.x + ledge.x - drop.ledgeX : drop.x;
+  };
+
+  /** The live wax drops at their current positions (a new list only when a drop rides a moving ledge). */
+  private liveWax(): readonly WaxSpot[] {
+    const drops = this.stream.wax();
+    return drops.some((drop) => drop.ledgeId !== undefined) ? drops.map((drop) => (drop.ledgeId === undefined ? drop : { ...drop, x: this.waxX(drop) })) : drops;
+  }
 
   /** Feet y of the body: the height everything in endless mode is measured from. */
   private feetY(): number { return this.state.y + this.deps.gameConfig.player.height / 2; }
@@ -346,7 +359,7 @@ export class EndlessScene extends Phaser.Scene {
       this.flame = stepFlame(this.flame, stepMs, this.stream.indexAt(this.feetY()), config);
       this.burnt += Math.max(0, before - this.flame.fuel01);
       const wasLit = isLit(this.flame);
-      const taken = this.wax.update(this.state, this.stream.wax());
+      const taken = this.wax.update(this.state, this.liveWax());
       for (let i = 0; i < taken.length; i++) this.flame = addWax(this.flame, config);
       if (taken.length) { this.waxView.sync(this.stream.wax(), this.wax.isCollected); if (wasLit) this.candle.cheer(); else this.candle.relit(); }
 
@@ -424,7 +437,7 @@ export class EndlessScene extends Phaser.Scene {
     updateDarkness(this.darkness, this.state.x, this.state.y, Math.max(radius, 1));
     this.candleLighting.update(this.state.x, this.state.y, this.flame.fuel01, frame.forestCorruption);
     this.waxView.update(deltaMs, this.phase.isRunning(), settings.reducedMotion,
-      { x: this.state.x, y: this.state.y, radiusPx: radius, night01: nightAt(this.feetY(), config) * (1 - spent01) });
+      { x: this.state.x, y: this.state.y, radiusPx: radius, night01: nightAt(this.feetY(), config) * (1 - spent01) }, this.waxX);
     // Ledge outlines fade with the light in the last moment.
     this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius * (1 - spent01), this.platforms);
 
@@ -459,7 +472,7 @@ export class EndlessScene extends Phaser.Scene {
       // Fully melted-looking after about two and a half candles' worth of burning.
       melt01: Math.min(1, this.burnt / 2.5),
       // What the candle notices: wax in reach, the edge of its ledge, ice underfoot. Eyes only.
-      around: surroundings(this.state, this.stream.wax().filter((drop) => !this.wax.isCollected(drop.id)),
+      around: surroundings(this.state, this.liveWax().filter((drop) => !this.wax.isCollected(drop.id)),
         this.platforms.find((p) => p.id === this.state.platformId), gameConfig.view.width),
     });
 

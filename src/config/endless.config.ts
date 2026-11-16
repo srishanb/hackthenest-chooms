@@ -66,6 +66,12 @@ export const ENDLESS_CONFIG = {
     peakIntensity: 0.9,
   },
   /**
+   * Moving side ledges. From `fromChunk` up, a side ledge slides left and right with this chance (0..1),
+   * up to `maxDistancePx` either way (less when the landing spot needs the room), once every
+   * `periodMs` (shortest to longest). Only optional side ledges move: the main path never does.
+   */
+  moving: { fromChunk: 4, chance: 0.55, minDistancePx: 18, maxDistancePx: 60, periodMs: [3400, 5600] as const },
+  /**
    * Night falls with height: none below `fromChunk`, as dark as it gets (`max01`, 0..1) from `fullChunk`.
    * In the dark the view is the candle's own circle: `radiusEmptyPx` with no fuel, `radiusFullPx` when
    * full. `shadowAlpha` is how dark the unlit part of the screen becomes at full night.

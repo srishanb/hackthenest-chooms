@@ -28,6 +28,9 @@ export interface WaxSpot {
   /** Centre of the drop in world px. */
   x: number;
   y: number;
+  /** Set when the drop sits on a moving ledge: the ledge's id and its resting centre, so the drop can ride along. */
+  ledgeId?: string;
+  ledgeX?: number;
 }
 
 /** One jump of the guaranteed path: stand at `takeoffX` on `fromId`, hold jump `chargeSteps`, release holding `direction`. */
@@ -48,6 +51,8 @@ export interface EndlessChunk {
   wax: WaxSpot[];
   /** Jumps from this chunk's landing to the next chunk's landing. */
   route: RouteStep[];
+  /** The jump that reaches each optional side ledge, from a ledge of the main path. */
+  sideRoute: RouteStep[];
 }
 
 export interface EndlessGenerator {
@@ -108,7 +113,9 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
   /** True when `candidate` keeps the required distance from every ledge already placed. */
   function clear(candidate: PlatformData, placed: readonly PlatformData[]): boolean {
     for (const other of placed) {
-      const gapX = Math.abs(candidate.x - other.x) - (candidate.width + other.width) / 2;
+      // A ledge that slides needs its whole travel kept clear, not only where it rests.
+      const travel = (other.motion?.distance ?? 0) + (candidate.motion?.distance ?? 0);
+      const gapX = Math.abs(candidate.x - other.x) - (candidate.width + other.width) / 2 - travel;
       const gapY = Math.abs(topOf(candidate) - topOf(other));
       if (gapX < config.sideClearancePx && gapY < config.stackClearancePx) return false;
     }
@@ -120,7 +127,7 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
    * jump that reaches it, or null when this attempt does not fit the walls.
    */
   function tryLedge(random: () => number, from: PlatformData, id: string, risePx: number, width: number,
-    direction: -1 | 0 | 1): { ledge: PlatformData; step: RouteStep } | null {
+    direction: -1 | 0 | 1): { ledge: PlatformData; step: RouteStep; landingX: number } | null {
     const table = direction === 0 ? arcs.up : arcs.side;
     const usable: Array<{ arc: JumpArc; dx: number }> = [];
     for (const arc of table) {
@@ -145,7 +152,7 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
       id, x: Math.round(centre), y: topOf(from) - risePx + config.ledgeHeightPx / 2,
       width: Math.round(width), height: config.ledgeHeightPx, type: 'static',
     };
-    return { ledge, step: { fromId: from.id, toId: id, takeoffX, chargeSteps: pick.arc.chargeSteps, direction } };
+    return { ledge, step: { fromId: from.id, toId: id, takeoffX, chargeSteps: pick.arc.chargeSteps, direction }, landingX };
   }
 
   function build(index: number): EndlessChunk {
@@ -208,12 +215,37 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
 
     // Optional side ledges with wax. Each must be reachable, and must not catch a main-path jump.
     const sides: PlatformData[] = [];
+    const sideRoute: RouteStep[] = [];
     const wax: WaxSpot[] = [];
     const waxAbove = (platform: PlatformData, id: string): WaxSpot => ({ id, x: platform.x,
       y: topOf(platform) - config.waxHoverPx - body.height / 2 });
     const routeHolds = (extra: PlatformData): boolean => {
       const all = [...main, ...sides, extra, nextFloor];
       return route.every((step) => replayStep(step, all, worldWidth, gameConfig) === step.toId);
+    };
+    /**
+     * Turn a side ledge into one that slides left and right, if there is room. It may move only as far
+     * as the landing spot of its jump stays on it, so the jump lands whenever it is made. At both ends
+     * and in between it must stay clear of the walls and other ledges, still catch its own jump, and
+     * never catch a jump of the main path. Returns null when it should stay still.
+     */
+    const moving = (candidate: { ledge: PlatformData; step: RouteStep; landingX: number }): PlatformData | null => {
+      if (index < config.moving.fromChunk || random() >= config.moving.chance) return null;
+      const { ledge, step, landingX } = candidate;
+      const room = ledge.width / 2 - body.width / 2 - 4 - Math.abs(ledge.x - landingX);
+      const walls = Math.min(ledge.x - ledge.width / 2, worldWidth - ledge.x - ledge.width / 2) - 2;
+      const distance = Math.floor(Math.min(config.moving.maxDistancePx, room, walls));
+      if (distance < config.moving.minDistancePx) return null;
+      const others = [...main, ...sides];
+      for (const offset of [-distance, -distance / 2, distance / 2, distance]) {
+        const shifted = { ...ledge, x: ledge.x + offset };
+        if (!clear(shifted, others)) return null;
+        const all = [...others, shifted, nextFloor];
+        if (replayStep(step, all, worldWidth, gameConfig) !== ledge.id) return null;
+        if (!route.every((mainStep) => replayStep(mainStep, all, worldWidth, gameConfig) === mainStep.toId)) return null;
+      }
+      const periodMs = Math.round(lerp(config.moving.periodMs[0], config.moving.periodMs[1], random()));
+      return { ...ledge, type: 'moving', motion: { axis: 'x', distance, periodMs } };
     };
     for (let i = 1; i < main.length; i++) {
       const from = main[i]!;
@@ -229,8 +261,10 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
         if (!clear(candidate.ledge, [...main, ...sides])) continue;
         const all = [...main, ...sides, candidate.ledge, nextFloor];
         if (replayStep(candidate.step, all, worldWidth, gameConfig) !== id || !routeHolds(candidate.ledge)) continue;
-        sides.push(candidate.ledge);
-        wax.push(waxAbove(candidate.ledge, `e${index}:wax-s${i}`));
+        const ledge = moving(candidate) ?? candidate.ledge;
+        sides.push(ledge);
+        sideRoute.push(candidate.step);
+        wax.push(ledge.motion ? { ...waxAbove(ledge, `e${index}:wax-s${i}`), ledgeId: ledge.id, ledgeX: ledge.x } : waxAbove(ledge, `e${index}:wax-s${i}`));
         break;
       }
     }
@@ -242,12 +276,12 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
     // Ice, in the snow bands only. It changes how walking feels on a ledge, not the jump from it,
     // so every stored jump still lands where it says (the tests replay them). Landings stay firm.
     const iced = (ledge: PlatformData): PlatformData => {
-      if (biomeOf(index, config) !== 'snow' || random() >= config.ice.chance) return ledge;
+      if (ledge.motion || biomeOf(index, config) !== 'snow' || random() >= config.ice.chance) return ledge;
       const ice01 = Math.round(lerp(config.ice.min01, config.ice.max01, random()) * 100) / 100;
       return { ...ledge, type: 'slippery', ice01 };
     };
     const ledges = [base, ...main.slice(1).map(iced), ...sides.map(iced)];
-    return { index, floorTopPx: floorTopPx(index), platforms: ledges, wax, route };
+    return { index, floorTopPx: floorTopPx(index), platforms: ledges, wax, route, sideRoute };
   }
 
   return {
