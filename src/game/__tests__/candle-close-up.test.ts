@@ -84,3 +84,18 @@ it('the close-up flame leaps, ducks and gathers with the hero flame', () => {
   expect(flameTop({ duck01: 1 })).toBeGreaterThan(resting);
   expect(flameTop({ gather01: 1 })).toBeLessThan(resting);
 });
+
+describe('the spent candle on the end screen', () => {
+  it('is the same candle, cold and tired, with a glowing or guttering wick and no steady flame', async () => {
+    const { spentCandle } = await import('../candle/run-candle');
+    const spent = spentCandle(genome, 0, true);
+    const lit = closeUp(0.9, 0, true, { face: faceOf('content') });
+    expect(spent.glow01).toBeLessThan(lit.glow01);
+    expect(spent.pixels.length).toBeLessThan(lit.pixels.length);
+    expect(spent.pixels.every((p) => p.x * p.x + p.y * p.y < CLOSE_UP_RADIUS * CLOSE_UP_RADIUS)).toBe(true);
+    // Still under reduced motion; smoking and changing otherwise.
+    expect(spentCandle(genome, 0, true)).toEqual(spentCandle(genome, 4000, true));
+    const frames = new Set(Array.from({ length: 12 }, (_, i) => JSON.stringify(spentCandle(genome, i * 200, false).pixels)));
+    expect(frames.size).toBeGreaterThan(1);
+  });
+});

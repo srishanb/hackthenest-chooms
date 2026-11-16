@@ -33,6 +33,7 @@ Open the address Vite prints. Arrow keys or A and D move; hold Space to charge a
 | `?bot=1` | Development builds only: a bot climbs by following the generator's route. Never saves a best height |
 | `?startChunk=4` | Development builds only: start higher up. Never saves a best height |
 | `?candleSeed=7` | Development builds only: pick the candle |
+| `?fuel=0.05` | Development builds only: the first run starts nearly out of fuel, to look at the flame going out |
 
 Dev pages for looking at the candle: `/src/game/__tests__/candle-faces.html` (every mood on the hero) and
 `/src/game/__tests__/candle-close-up.html` (every mood in the portrait close-up).

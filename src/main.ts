@@ -28,6 +28,7 @@ import { neutralFrame } from './game/effects/effects-engine';
 import { pickCandleSeed } from './game/candle/candle-genome';
 import { mountCandleEmblem } from './game/candle/emblem';
 import { mountWaxBall } from './game/candle/wax-ball';
+import { mountRunCandle } from './game/candle/run-candle';
 import { createGame } from './game/index';
 import { createEventBus } from './shared/bus';
 import type { Stores } from './shared/contracts/app';
@@ -83,6 +84,8 @@ const endless = classic ? undefined : {
   fixedSeed,
   bot: import.meta.env.DEV && query.has('bot'),
   // Development only: `?startChunk=4` starts higher up, to look at a later part of the climb.
+  // Development only: `?fuel=0.05` starts the first run nearly out of fuel, to look at the flame going out.
+  startFuel: import.meta.env.DEV && query.has('fuel') ? Math.max(0, Math.min(1, Number(query.get('fuel')) || 0)) : undefined,
   startChunk: import.meta.env.DEV ? Math.max(0, Math.min(500, Math.floor(Number(query.get('startChunk')) || 0))) : 0,
 };
 
@@ -110,6 +113,7 @@ mountUi(requireElement('ui'), {
   worldCanvas: game.canvas,
   bus, stores, signal,
   drawEmblem: (canvas) => mountCandleEmblem(canvas, candleSeed, () => stores.settings.get().reducedMotion),
+  drawRunCandle: (canvas, seed) => mountRunCandle(canvas, seed, () => stores.settings.get().reducedMotion),
   drawWaxBall: (canvas) => mountWaxBall(canvas, candleSeed,
     () => (stores.snapshot.get().navigation?.checkpoints.length ?? 0) > 0, () => stores.settings.get().reducedMotion),
 }, UI_CONFIG);

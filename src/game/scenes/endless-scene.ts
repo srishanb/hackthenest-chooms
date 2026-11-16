@@ -16,6 +16,7 @@ import type { Stores } from '../../shared/contracts/app';
 import type { EmberConfig, GameConfig } from '../../shared/contracts/config';
 import type { EffectRule } from '../../shared/contracts/effects';
 import type { EventBus } from '../../shared/contracts/events';
+import type { RunSnapshot } from '../../shared/contracts/game-state';
 import type { KeyValueStorage } from '../../shared/safe-storage';
 import { pickCandleSeed } from '../candle/candle-genome';
 import { createCandleView } from '../candle/candle-view';
@@ -66,6 +67,8 @@ export interface EndlessSceneDeps {
   bot: boolean;
   /** Development only: start on this chunk's landing (`?startChunk=`), to look at a later height. Such a run never saves a best. */
   startChunk?: number;
+  /** Development only: the first run starts with this much fuel (`?fuel=0.05`), to look at the flame going out. */
+  startFuel?: number;
 }
 
 const DEPTH = { player: 10, darkness: 100, alwaysReadable: 200 } as const;
@@ -114,16 +117,21 @@ export class EndlessScene extends Phaser.Scene {
     return { x: gameConfig.view.width / 2, y: floorTop - gameConfig.player.height / 2 };
   }
 
+  /** The run's public record: its score plus the candle that is playing it. */
+  private runSnapshot(): RunSnapshot { return { ...this.score.snapshot(), candleSeed: this.candle.seed() }; }
+
   /** Feet y of the body: the height everything in endless mode is measured from. */
   private feetY(): number { return this.state.y + this.deps.gameConfig.player.height / 2; }
 
   /** Build the chunk stream for `seed` and draw its first chunks. Removes any earlier run's ledges first. */
   private startRun(seed: number): void {
     const { gameConfig, config } = this.deps;
+    const firstRun = this.stream === undefined;
     for (const platform of this.stream?.platforms() ?? []) this.forest.removePlatform(platform.id);
     this.seed = seed;
     this.stream = createChunkStream(createEndlessGenerator(seed, gameConfig, config), config);
-    this.flame = freshFlame(config);
+    // Only the very first run of a development session may start short of fuel.
+    this.flame = { ...freshFlame(config), fuel01: firstRun ? this.deps.startFuel ?? 1 : 1 };
     this.worldTimeMs = 0;
     const spawn = this.spawn();
     this.state = teleportPlayer(spawn.x, spawn.y);
@@ -220,7 +228,7 @@ export class EndlessScene extends Phaser.Scene {
       this.startRun(seed);
       clearInput();
       this.candle.reseed(pickCandleSeed('', false));
-      stores.snapshot.set({ ...stores.snapshot.get(), phase: 'playing', run: this.score.snapshot() });
+      stores.snapshot.set({ ...stores.snapshot.get(), phase: 'playing', run: this.runSnapshot() });
       this.slideCameraTo(this.state.x, this.state.y);
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, offRestart);
@@ -238,7 +246,7 @@ export class EndlessScene extends Phaser.Scene {
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, offCamera);
     stores.effects.set(neutralFrame(effectsTable));
-    stores.snapshot.set({ ...stores.snapshot.get(), run: this.score.snapshot(), sectionId: SECTION_ID });
+    stores.snapshot.set({ ...stores.snapshot.get(), run: this.runSnapshot(), sectionId: SECTION_ID });
   }
 
   /** Play again: the camera slides down to the start (a cut under reduced motion), then follows again. */
@@ -286,7 +294,7 @@ export class EndlessScene extends Phaser.Scene {
     this.score.save();
     this.controls.clear();
     this.accumulatorMs = 0;
-    stores.snapshot.set({ ...stores.snapshot.get(), phase: 'finished', run: this.score.snapshot() });
+    stores.snapshot.set({ ...stores.snapshot.get(), phase: 'finished', run: this.runSnapshot() });
   }
 
   override update(_time: number, deltaMs: number): void {
@@ -330,7 +338,7 @@ export class EndlessScene extends Phaser.Scene {
         this.landingPuff.burst(this.state.x, this.feetY(), snowy, settings.reducedMotion);
         for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
         if (this.score.stand(this.feetY())) {
-          const run = this.score.snapshot();
+          const run = this.runSnapshot();
           // Keep the record safe as soon as it is beaten, not only when the run ends.
           if (run.heightPx >= run.bestPx) this.score.save();
           // Celebrate once, at the moment the old best is passed.

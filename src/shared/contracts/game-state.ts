@@ -41,6 +41,8 @@ export interface RunSnapshot {
   bestPx: number;
   /** True once this run has passed the best height it started with. */
   newBest: boolean;
+  /** Seed of the candle played in this run, so the end screen can show it. Optional for older writers. */
+  candleSeed?: number;
 }
 
 export interface GameSnapshot {

@@ -9,3 +9,5 @@
 .finish-screen .finish-screen__result dt { color: var(--color-text-dim); }
 .finish-screen .finish-screen__result dd { margin: 0; color: var(--color-text); font-weight: 600; text-align: right; }
 .finish-screen .finish-screen__new-best { margin: 0; color: var(--color-accent); font-weight: 600; }
+/* The run's candle, flame out, above the title. */
+.finish-screen .finish-screen__candle { width: 120px; height: 120px; image-rendering: pixelated; border-radius: 50%; background: #101b2b; border: 2px solid var(--color-accent); }

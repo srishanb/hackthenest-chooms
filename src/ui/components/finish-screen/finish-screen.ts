@@ -19,7 +19,7 @@ import './finish-screen.css';
 export const finishScreen: UiComponent = {
   id: 'finish-screen',
   visibleIn: ['finished'],
-  mount(root, { stores, bus }) {
+  mount(root, { stores, bus, drawRunCandle }) {
     const panel = document.createElement('section');
     panel.className = 'menu-panel finish-screen';
     panel.setAttribute('role', 'dialog');
@@ -40,7 +40,11 @@ export const finishScreen: UiComponent = {
     const playAgain = menuButton(t('finish.playAgain'), () => bus.emit({ type: 'run_restart' }));
     playAgain.className = 'finish-screen__play';
     const hint = document.createElement('p'); hint.className = 'finish-screen__hint'; hint.textContent = t('finish.keyHint');
-    panel.append(title, body, result, newBest, playAgain, hint);
+    // The candle that made the climb, its flame out. Decorative: the numbers below say what happened.
+    const candle = document.createElement('canvas'); candle.className = 'finish-screen__candle';
+    candle.setAttribute('aria-hidden', 'true'); candle.hidden = true;
+    let stopCandle = (): void => {}; let shownSeed: number | undefined;
+    panel.append(candle, title, body, result, newBest, playAgain, hint);
     root.append(panel);
 
     let wasVisible = false;
@@ -53,6 +57,14 @@ export const finishScreen: UiComponent = {
       panel.setAttribute('aria-label', t(run ? 'finish.endless.label' : 'finish.label'));
       hint.textContent = t(run ? 'finish.endless.keyHint' : 'finish.keyHint');
       body.hidden = run !== undefined; result.hidden = !run; newBest.hidden = !run?.newBest;
+      // Start drawing when the screen opens for a run with a known candle; stop when it closes.
+      const seed = visible && drawRunCandle ? run?.candleSeed : undefined;
+      if (seed !== shownSeed) {
+        stopCandle(); stopCandle = () => {};
+        candle.hidden = seed === undefined;
+        if (seed !== undefined && drawRunCandle) stopCandle = drawRunCandle(candle, seed);
+        shownSeed = seed;
+      }
       if (run) {
         heightValue.textContent = metres(run.heightPx); bestValue.textContent = metres(run.bestPx);
         waxValue.textContent = String(snapshot.wax?.collected ?? 0); seedValue.textContent = `#${run.seed}`;
@@ -78,6 +90,6 @@ export const finishScreen: UiComponent = {
     window.addEventListener('keydown', onKey);
     const offSnapshot = stores.snapshot.subscribe(render);
     render();
-    return () => { window.removeEventListener('keydown', onKey); offSnapshot(); panel.remove(); };
+    return () => { stopCandle(); window.removeEventListener('keydown', onKey); offSnapshot(); panel.remove(); };
   },
 };

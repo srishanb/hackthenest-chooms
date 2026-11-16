@@ -46,5 +46,6 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [ ] #30 Height markers every 25 m and a marker at the personal best (needs a UI component id, or a game-drawn mark with no text)
 - [x] #31 Close-up portrait reacts to the flame events too (flare on wax, duck on landing), like the hero
 - [x] #32 Each candle gets one trait of its own (a coloured band, a dipped base or a tuft of wax) so candles are told apart at a glance
-- [ ] #33 The end screen shows the run's candle (its close-up, cold) so the player sees who they played
+- [x] #33 The end screen shows the run's candle (its close-up, cold) so the player sees who they played
 - [ ] #34 More wax tones and a rare special candle (two-tone swirl), kept pale enough to read in the dark
+- [ ] #35 A short moment between the flame going out and the end screen (the candle slumps, the smoke rises) instead of a cut
