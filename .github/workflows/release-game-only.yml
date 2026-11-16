@@ -1,0 +1,38 @@
+name: release-game-only
+
+# Publishes a GitHub release for the game-only variant when a tag named game-only-v* is pushed.
+# It builds the game at that tag, zips dist/ and attaches the zip. The notes are the file
+# docs/releases/<tag>.md at that tag. The release is marked as a pre-release, so it never
+# replaces the EEG game's release as "Latest". This file lives only on the game-only branch.
+# Type check and tests are not repeated here: ci runs them on every push to the pull request.
+
+on:
+  push:
+    tags: ['game-only-v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Zip the built game
+        run: cd dist && zip -q -r "../lighten-up-${GITHUB_REF_NAME}.zip" .
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "lighten-up-${GITHUB_REF_NAME}.zip" \
+            --verify-tag \
+            --prerelease \
+            --title "Lighten Up (game-only) ${GITHUB_REF_NAME#game-only-}" \
+            --notes-file "docs/releases/${GITHUB_REF_NAME}.md"

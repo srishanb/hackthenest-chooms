@@ -106,6 +106,13 @@ page on it. Not judged by a person yet: whether the amounts feel fair, and how t
 A mood is a reaction to the game (a fall, low fuel). It is never a reading of the player. Under reduced motion the
 blinking, bouncing and drifting parts stop and the still parts remain.
 
+## Releases
+
+A release of this variant is a tag named `game-only-v<version>` on this branch. Pushing such a tag runs
+`.github/workflows/release-game-only.yml`, which builds the game, zips `dist/` and publishes a GitHub pre-release
+with the zip attached. The notes are `docs/releases/<tag>.md`, so write that file before tagging. Tags are never
+moved or deleted: a fix is a new version.
+
 ## Rules that still hold
 
 The binding rules in [AGENTS.md](../AGENTS.md) apply here too: nothing changes gravity, walking or jump strength; no
