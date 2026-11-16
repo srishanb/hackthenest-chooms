@@ -135,4 +135,8 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 | `wickSmoke`, `FlameInput.flare01`, `.duck01`, `.gather01` | `candle/flame.ts` | Smoke off a dead wick; the flame leaps on a happy moment, is pressed down by a landing and gathers on a charge. |
 | `BodyLook.warmth01` | `candle/candle-raster.ts` | The wax dims and turns bluish as the fuel runs out. |
 
-`__tests__/candle-faces.html` is a dev page that draws every mood for six seeds.
+| `rasterCloseUp`, `CLOSE_UP_RADIUS`, `CloseUpInput` | `candle/close-up.ts` | The portrait's detailed bust: the same candle at three times the resolution, with eyes that glint, lids, brows, teeth, cheeks and a bead of wax. Follows portrait.ts's light rules. |
+| `FlameInput.scale` | `candle/flame.ts` | Draws the flame larger for the close-up. |
+
+`createPortraitView` now paints the close-up into a canvas texture only when the picture changes.
+`__tests__/candle-close-up.html` draws the close-up for every mood. `__tests__/candle-faces.html` is a dev page that draws every mood for six seeds.

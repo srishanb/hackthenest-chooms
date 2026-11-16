@@ -37,6 +37,8 @@ export interface FlameInput {
   duck01?: number;
   /** 0..1 of a jump charge: the flame gathers into a thin, tall, hot point as the candle winds up. */
   gather01?: number;
+  /** Draw the flame this many times larger (the close-up portrait uses 2). Optional: 1 by default. */
+  scale?: number;
 }
 
 /** The blue of a flame with plenty of air, from the hot centre outward. */
@@ -84,10 +86,11 @@ export function rasterFlame(genome: CandleGenome, input: FlameInput): Pixel[] {
   const flare = unit(input.flare01);
   const duck = unit(input.duck01);
   const gather = unit(input.gather01);
-  const height = Math.max(2, Math.round((flameHeight(s) + Math.round(3 * fall) + 2 * gather + 4 * flare) * (1 - 0.55 * duck)) + tipJitter);
-  const width = Math.max(2, genome.flame.width * (0.55 + 0.45 * s) * (1 - 0.3 * fall) * (1 - 0.28 * gather) * (1 + 0.35 * flare + 0.4 * duck));
+  const scale = Number.isFinite(input.scale) && input.scale! > 0 ? input.scale! : 1;
+  const height = Math.max(2, Math.round((flameHeight(s) + Math.round(3 * fall) + 2 * gather + 4 * flare) * (1 - 0.55 * duck) * scale) + tipJitter);
+  const width = Math.max(2, genome.flame.width * scale * (0.55 + 0.45 * s) * (1 - 0.3 * fall) * (1 - 0.28 * gather) * (1 + 0.35 * flare + 0.4 * duck));
   const t = input.timeMs / 1000;
-  const sway = motion * (1 + 1.5 * fall) * (Math.sin(t * 5.1 + phaseA) * 0.8 + Math.sin(t * 8.3 + phaseB) * 0.5);
+  const sway = motion * scale * (1 + 1.5 * fall) * (Math.sin(t * 5.1 + phaseA) * 0.8 + Math.sin(t * 8.3 + phaseB) * 0.5);
   // The blue band at the base grows with the fall.
   // A nearly full charge burns hot at the base too.
   const blueBelow = fall > 0.15 ? 0.12 + 0.25 * fall : gather > 0.7 ? 0.1 + 0.12 * gather : 0;

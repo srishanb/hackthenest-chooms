@@ -12,6 +12,8 @@
  *   - below 30% the flame gutters: in some frames it goes out, leaving a red ember on the
  *     wick and more smoke, the way a candle looks just before it dies;
  *   - below 25% what is left of the flame burns a dim blue, starved and about to go out.
+ * The scene now draws the detailed close-up (close-up.ts), which follows these same rules and
+ * thresholds. This small full-body version is kept as the plain reference for them.
  * With reduced motion there is no guttering, stagger or drifting smoke; size, dimming and
  * glow still show the strength. Pure and visual only; same genome as the hero candle.
  */
