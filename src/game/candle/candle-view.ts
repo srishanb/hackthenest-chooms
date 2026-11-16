@@ -17,7 +17,7 @@ import { createCandleGenome, type CandleGenome } from './candle-genome';
 import { bodyShape, INITIAL_POSE, poseFrame, stepPose, type BodyShape, type PoseTracker } from './candle-pose';
 import { rasterCandle } from './candle-raster';
 import { type Aim, flameLean, flightSparks, wickLean } from './direction-cues';
-import { emotePixels } from './emotes';
+import { DROPLET_MS, emotePixels, landingDroplets } from './emotes';
 import { faceFor, INITIAL_EXPRESSION, stepExpression, type CandleFace, type ExpressionEvents, type ExpressionTracker } from './expression';
 import { fallIntensity, FLAME_FPS, flameSizeFromRadius, flickerRate, rasterFlame, wickSmoke } from './flame';
 
@@ -74,6 +74,9 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
   let duckMs = 0;
   /** How hard the landing that started the current duck was, 0..1. */
   let duckStrength = 0;
+  /** Time since the latest landing, for the wax droplets it knocks off. */
+  let sinceLandMs = DROPLET_MS;
+  let landImpact = 0;
 
   return {
     /** A new candle (a new run). */
@@ -112,7 +115,8 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       if (landedNow && airVy > HARD_LANDING_PX_S) pending.hardLanding = true;
       const dt = paused ? 0 : Math.max(0, deltaMs);
       if (pending.wax || pending.newBest) flareMs = FLARE_MS;
-      if (landedNow) { duckMs = DUCK_MS; duckStrength = 0.35 + 0.65 * (tracker.impact01 ?? 0); }
+      if (landedNow) { duckMs = DUCK_MS; duckStrength = 0.35 + 0.65 * (tracker.impact01 ?? 0); sinceLandMs = 0; landImpact = tracker.impact01 ?? 0; }
+      else sinceLandMs = Math.min(DROPLET_MS, sinceLandMs + dt);
       flareMs = Math.max(0, flareMs - dt);
       duckMs = Math.max(0, duckMs - dt);
       const steps = (value: number): number => Math.round(Math.min(Math.max(value, 0), 1) * REACTION_STEPS) / REACTION_STEPS;
@@ -133,9 +137,12 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       // Emotes are drawn at the flame's frame rate, like the rest of the candle's animation.
       const emoteMs = Math.floor(expression.moodMs / (1000 / FLAME_FPS)) * (1000 / FLAME_FPS);
       const emotes = emotePixels(expression.mood, emoteMs, look.reducedMotion);
+      const size = { halfWidth: Math.ceil((genome.width * Math.max(1, look.growth)) / 2), height: Math.round(genome.height * Math.max(1, look.growth)) };
+      const droplets = landingDroplets(genome.seed, Math.floor(sinceLandMs / (1000 / FLAME_FPS / 2)) * (1000 / FLAME_FPS / 2), landImpact,
+        size.halfWidth, size.height, genome.wax.light, look.reducedMotion);
       const lean = flameLean(cue);
       const sparks = flightSparks(genome, cue, flameFrame, look.reducedMotion);
-      const key = `${look.ember}|${look.corruptedEmber}|${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}|${JSON.stringify(face)}|${flare01}|${duck01}|${gather01}|${warmth01}|${JSON.stringify(emotes)}`;
+      const key = `${look.ember}|${look.corruptedEmber}|${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}|${JSON.stringify(face)}|${flare01}|${duck01}|${gather01}|${warmth01}|${JSON.stringify(emotes)}|${JSON.stringify(droplets)}`;
       if (key === drawnKey) return;
       drawnKey = key;
 
@@ -154,6 +161,11 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       for (const p of light) {
         graphics.fillStyle(p.color, 1);
         graphics.fillRect((body.wickTip.x + p.x) * px, (body.wickTip.y + p.y) * px, px, px);
+      }
+      // Wax knocked off by a landing, relative to the feet.
+      for (const p of droplets) {
+        graphics.fillStyle(p.color, 1);
+        graphics.fillRect(p.x * px, p.y * px, px, px);
       }
       // Beside the flame, always on the right, so the glyphs (a z, an exclamation mark) are never mirrored.
       for (const p of emotes) {

@@ -259,6 +259,18 @@ export class EndlessScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * A short camera shake when a long fall ends, if the player switched it on (it is off by default)
+   * and reduced motion is off. The view shakes; the body and the physics do not.
+   */
+  private shakeOnLanding(fallHeightPx: number): void {
+    const settings = this.deps.stores.settings.get();
+    const { minFallPx, fullFallPx, maxIntensity, durationMs } = this.deps.config.landingShake;
+    if (!settings.landingShake || settings.reducedMotion || fallHeightPx < minFallPx) return;
+    const strength = Math.min(1, (fallHeightPx - minFallPx) / (fullFallPx - minFallPx));
+    this.cameras.main.shake(durationMs, maxIntensity * (0.35 + 0.65 * strength));
+  }
+
   /** How far the player can see: the fuel decides it once the mood has darkened the world. */
   private visibleRadius(corruption: number): number {
     const camera = this.cameras.main;
@@ -313,6 +325,7 @@ export class EndlessScene extends Phaser.Scene {
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
       // A fall just ends on whatever catches you; no reset, no death.
       if (out.events.landed) {
+        this.shakeOnLanding(out.events.landed.fallHeightPx);
         const snowy = biomeOf(chunkOfPlatform(out.events.landed.platformId), config) === 'snow';
         this.landingPuff.burst(this.state.x, this.feetY(), snowy, settings.reducedMotion);
         for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);
@@ -350,6 +363,9 @@ export class EndlessScene extends Phaser.Scene {
     }, deltaMs, null);
     stores.effects.set(frame);
 
+    // While only the wick glows, the HUD says what to do. A key into the UI's strings, never text.
+    const lessonKey = !isLit(this.flame) && !this.flame.out ? 'endless.relight' : undefined;
+    if (stores.snapshot.get().lessonKey !== lessonKey) stores.snapshot.set({ ...stores.snapshot.get(), lessonKey });
     const spawn = this.spawn();
     const radius = this.visibleRadius(frame.forestCorruption);
     writeSnapshot(stores.snapshot, {

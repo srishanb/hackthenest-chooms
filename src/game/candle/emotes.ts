@@ -29,6 +29,33 @@ function zed(x: number, y: number, color: number): Pixel[] {
   return [[0, 0], [1, 0], [2, 0], [1, 1], [0, 2], [1, 2], [2, 2]].map(([dx, dy]) => ({ x: x + dx!, y: y + dy!, color }));
 }
 
+/** How long droplets from a hard landing stay in the air (ms). */
+export const DROPLET_MS = 420;
+
+/**
+ * Beads of wax knocked off the candle by a landing, relative to its feet (y grows downward).
+ * They leave from the shoulders, arc out and fall. `impact01` is how hard the landing was: a
+ * soft step sheds none, a hard one up to four. Nothing under reduced motion.
+ */
+export function landingDroplets(seed: number, sinceLandMs: number, impact01: number, halfWidth: number, height: number, color: number, reducedMotion: boolean): Pixel[] {
+  if (reducedMotion || !(impact01 > 0.25) || sinceLandMs < 0 || sinceLandMs >= DROPLET_MS) return [];
+  const count = Math.min(4, 1 + Math.floor(impact01 * 3.5));
+  const t = sinceLandMs / 1000;
+  const pixels: Pixel[] = [];
+  for (let i = 0; i < count; i++) {
+    const side = i % 2 === 0 ? -1 : 1;
+    // A small spread per droplet, fixed by the candle's seed so one landing always looks the same.
+    const spread = ((seed >>> (i * 5)) & 7) / 7;
+    const vx = side * (18 + 22 * spread) * (0.6 + 0.4 * impact01);
+    const vy = -(38 + 30 * (1 - spread)) * (0.6 + 0.4 * impact01);
+    const x = side * (halfWidth + 1) + vx * t;
+    const y = -height * 0.7 + vy * t + 0.5 * 260 * t * t;
+    if (y > 0) continue;
+    pixels.push({ x: Math.round(x), y: Math.round(y), color });
+  }
+  return pixels;
+}
+
 /** How long a one-shot emote stays after its mood begins (ms). Looping emotes ignore this. */
 export const EMOTE_MS = 900;
 

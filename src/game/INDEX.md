@@ -131,6 +131,7 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 | `createCandleView().cheer()`, `.celebrate()`, `.face()` | `candle/candle-view.ts` | The scene reports wax and a new best; the portrait reads the current face. |
 | `CandleGenome.face` | `candle/candle-genome.ts` | Per-candle features: eye row, eye and mouth colour, rosy cheeks. |
 
+| `landingDroplets`, `DROPLET_MS` | `candle/emotes.ts` | Beads of wax knocked off by a hard landing. |
 | `emotePixels`, `EMOTE_MS` | `candle/emotes.ts` | Pixel signs beside the flame for strong moments: sparkles, an exclamation mark, stars, a flying bead, z's. |
 | `landingImpact` | `candle/candle-pose.ts` | 0..1 how hard a landing was; the landing squash and the flame's duck scale with it. |
 | `wickSmoke`, `FlameInput.flare01`, `.duck01`, `.gather01` | `candle/flame.ts` | Smoke off a dead wick; the flame leaps on a happy moment, is pressed down by a landing and gathers on a charge. |

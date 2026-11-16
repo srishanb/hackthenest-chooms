@@ -25,7 +25,7 @@ export function recoveryHintKey(hasCheckpoint: boolean): StringKey | null {
 }
 
 /** Lessons that explain why the final ledge does not finish the stage. */
-const ESSENTIAL_LESSON_KEYS: readonly string[] = ['stage.relightRequired', 'stage.finishBlocked'];
+const ESSENTIAL_LESSON_KEYS: readonly string[] = ['stage.relightRequired', 'stage.finishBlocked', 'endless.relight'];
 
 /** Context rows shown even with stage details off (PR #108 default), because nothing else shows them. */
 export function hudEssentials(snapshot: Pick<GameSnapshot, 'phase' | 'ember' | 'lessonKey'>) {

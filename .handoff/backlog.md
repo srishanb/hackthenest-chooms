@@ -9,7 +9,7 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #2 Expressions from play: determined while charging, wide-eyed in a fall, squeezed on a hard landing, happy on wax, worried on low fuel, sleepy when idle
 - [x] #3 Body detail: rounded shoulders, melt pool around the wick, warm rim light from the flame, extra shade tone
 - [x] #4 Portrait close-up shows the same face larger, with its own detail (tear of wax when nearly out, glint in the eyes)
-- [ ] #5 Living wax: drips that grow and fall, droplets shaken off on a hard landing
+- [x] #5 Living wax: droplets knocked off on a hard landing (growing drips moved to #29)
 - [x] #6 Body language instead of limbs (decided: arms and feet do not read at 2 px per art pixel): reacting flame, emotes, impact squash, cooling wax
 - [ ] #7 Menu emblem greets the player (looks around, blinks, hops)
 - [x] #8 Candle gallery page updated with every expression, for visual review
@@ -27,8 +27,8 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 
 ## Feel and polish
 
-- [ ] #17 Landing shake and squash tied to fall height (the `landingShake` setting exists and nothing reads it)
-- [ ] #18 Flame-out sequence: light closes in, ember glows, relight on wax
+- [x] #17 Landing shake and squash tied to fall height (off by default; toggle in Settings)
+- [x] #18 Flame-out sequence: light closes in, ember glows and smokes, HUD hint, relight on wax
 - [ ] #19 Narrator lines for endless moments (new height band, low flame, new best) from existing clips only
 - [x] #20 Tutorial hints for the first chunk in endless
 - [ ] #21 Performance check: object counts and frame time after ten minutes of climbing
@@ -42,3 +42,5 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [ ] #26 Check the frame rate on real hardware: the headless check runs at 13 to 24 fps with software rendering
 - [ ] #27 A wind band (third biome) only if wind can be made part of the route replay
 - [ ] #28 Candle idle fidgets: a little hop or a look up at its flame after a long wait, before it gets sleepy
+- [ ] #29 Drips that slowly grow over a run and fall as the candle burns down
+- [ ] #30 Height markers every 25 m and a marker at the personal best (needs a UI component id, or a game-drawn mark with no text)

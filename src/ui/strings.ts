@@ -253,6 +253,8 @@ export const STRINGS = {
   'finish.body': 'The lantern made it all the way up.',
   'finish.playAgain': 'Play again',
   'finish.keyHint': 'Press Enter to climb again from the bottom.',
+  'endless.relight': 'The flame is out. Reach wax before the wick goes cold.',
+  'settings.landingShake': 'Shake the view after a long fall',
   'finish.endless.label': 'Run over',
   'finish.endless.title': 'Your light went out',
   'finish.endless.height': 'You climbed',

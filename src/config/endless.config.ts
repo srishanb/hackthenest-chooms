@@ -74,6 +74,8 @@ export const ENDLESS_CONFIG = {
     firstSnow01: 0.55,
     snowStep01: 0.15,
   },
+  /** Camera shake after a fall, only when the player turns the setting on. Intensity is a fraction of the view. */
+  landingShake: { minFallPx: 120, fullFallPx: 700, maxIntensity: 0.006, durationMs: 140 },
   /** Storage key for the best height in px. */
   bestKey: 'lighten.endless.best-px.v1',
 } as const;

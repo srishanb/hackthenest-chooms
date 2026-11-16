@@ -102,3 +102,20 @@ describe('emotes', () => {
     for (const mood of LOUD) expect(emotePixels(mood, 100, true)).toEqual(emotePixels(mood, 4000, true));
   });
 });
+
+describe('wax droplets from a landing', () => {
+  it('a soft step sheds none, a hard landing sheds several, and they are gone in under half a second', async () => {
+    const { DROPLET_MS, landingDroplets } = await import('../candle/emotes');
+    const drops = (ms: number, impact: number, reduced = false) => landingDroplets(77, ms, impact, 5, 15, 0xffffff, reduced);
+    expect(drops(60, 0.1)).toEqual([]);
+    expect(drops(60, 1).length).toBeGreaterThanOrEqual(3);
+    expect(drops(60, 1).length).toBeLessThanOrEqual(4);
+    expect(drops(DROPLET_MS, 1)).toEqual([]);
+    expect(drops(60, 1, true)).toEqual([]);
+    // They fly outward from both shoulders and never sink below the ground line.
+    for (let ms = 0; ms < DROPLET_MS; ms += 20) for (const p of drops(ms, 1)) expect(p.y).toBeLessThanOrEqual(0);
+    const early = drops(40, 1), later = drops(200, 1);
+    expect(Math.max(...later.map((p) => Math.abs(p.x)))).toBeGreaterThan(Math.max(...early.map((p) => Math.abs(p.x))));
+    expect(drops(120, 1)).toEqual(drops(120, 1));
+  });
+});

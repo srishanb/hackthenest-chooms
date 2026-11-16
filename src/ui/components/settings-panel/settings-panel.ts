@@ -52,6 +52,7 @@ export const settingsPanel: UiComponent = {
     }
     checkbox('settings.captions', (s) => s.captions.enabled, (s, enabled) => ({ ...s, captions: { ...s.captions, enabled } }));
     checkbox('settings.reducedMotion', (s) => s.reducedMotion, (s, reducedMotion) => ({ ...s, reducedMotion }));
+    checkbox('settings.landingShake', (s) => s.landingShake, (s, landingShake) => ({ ...s, landingShake }));
     for (const key of ['showSignal', 'showEmber', 'showStatus', 'showStageDetails'] as const) {
       if (HANDS_ONLY && key === 'showSignal') continue;
       checkbox(`settings.${key}`, (s) => s.hud[key], (s, value) => ({ ...s, hud: { ...s.hud, [key]: value } }));
