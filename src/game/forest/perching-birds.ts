@@ -8,7 +8,9 @@
 import type { GameObjects, Scene } from 'phaser';
 import { WILDLIFE_CONFIG } from '../../config/wildlife.config';
 import { birdFrame, isAirborne, perchedBird, stepBird, type Bird } from './bird-behaviour';
+import { FOREST_CONFIG } from '../../config/forest.config';
 import { mixColor, stableUnit } from './presentation';
+import { snapToGrid } from './pixel-grid-snap';
 
 const C = WILDLIFE_CONFIG.bird;
 /** A bird is drawn above the ledge art and below the candle. */
@@ -19,8 +21,9 @@ interface Perch { x: number; top: number; width: number; visited: boolean }
 export function createPerchingBirds(scene: Scene) {
   const perches = new Map<string, Perch>();
   const pool = Array.from({ length: C.pool }, () => ({
-    sprite: scene.add.sprite(0, 0, 'wildlife-bird', C.clips.stand.row * C.columns)
-      .setOrigin(0.5, 1).setDepth(DEPTH).setVisible(false) as GameObjects.Sprite,
+    // At the one pixel size, like the ledges it stands on (pixel-grid-snap.ts).
+    sprite: scene.add.sprite(0, 0, C.sheet, C.clips.stand.cells[0])
+      .setOrigin(0.5, 1).setScale(FOREST_CONFIG.pixelScale).setDepth(DEPTH).setVisible(false) as GameObjects.Sprite,
     bird: null as Bird | null,
     perchId: null as string | null,
     /** Where the bird stands relative to the middle of its ledge, so it rides a moving ledge. */
@@ -87,9 +90,9 @@ export function createPerchingBirds(scene: Scene) {
         const bird = slot.bird;
         const gone = bird.x < camera.scrollX - 40 || bird.x > camera.scrollX + camera.width + 40 || bird.y < viewTop - 60 || bird.y > viewBottom + camera.height;
         if (gone) { slot.bird = null; slot.perchId = null; slot.sprite.setVisible(false); continue; }
-        const frame = reducedMotion ? C.clips.stand.row * C.columns : birdFrame(bird, C);
+        const frame = reducedMotion ? C.clips.stand.cells[0]! : birdFrame(bird, C);
         if (slot.sprite.frame.name !== String(frame)) slot.sprite.setFrame(frame);
-        slot.sprite.setPosition(Math.round(bird.x), Math.round(bird.y)).setFlipX(bird.facing < 0).setTint(tint).setVisible(true);
+        slot.sprite.setPosition(snapToGrid(bird.x), snapToGrid(bird.y)).setFlipX(bird.facing < 0).setTint(tint).setVisible(true);
       }
     },
   };

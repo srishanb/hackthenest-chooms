@@ -43,7 +43,8 @@ export function preloadForest(scene: Scene): void {
     if (!scene.textures.exists('wildlife-' + name)) scene.load.image('wildlife-' + name, 'assets/wildlife/' + name + '.png');
   }
   const sheets: Array<[string, number, number]> = [
-    ['bird', W.bird.frame.width, W.bird.frame.height], ['birb', W.flock.frame, W.flock.frame],
+    // bird.png (the big ledge bird) is no longer loaded: at the one pixel size it stood taller than the candle; birb.png replaced it.
+    ['birb', W.flock.frame, W.flock.frame],
     ['grass-1', W.grass.frame.width, W.grass.frame.height], ['grass-3', W.grass.frame.width, W.grass.frame.height],
     ['waterfall-top', W.waterfall.frame, W.waterfall.frame], ['waterfall-middle', W.waterfall.frame, W.waterfall.frame],
     ['waterfall-bottom', W.waterfall.frame, W.waterfall.frame],
