@@ -71,8 +71,9 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #55 The menu footer says which climb is selected (endless, today's, a numbered climb, or classic)
 - [x] #56 A climb picked by its seed (today's climb or `?seed=`) keeps its own best height
 - [x] #57 The eager menu face is in the faces gallery (seen: grin, eyes toward the menu); the daze has a gallery column
-- [ ] #58 Old per-seed best heights pile up in local storage, one small entry a day: prune entries older than a month
+- [x] #58 Only the latest 30 seeded climbs keep a best height; older ones are forgotten
 - [x] #59 A soft shadow under the candle on the ledge below; it stays on that ledge and shrinks while the candle is in the air
 - [x] #60 In the snow the candle's breath shows: a small puff every few seconds while it stands or walks
-- [ ] #61 The classic climb gets the ground shadow too
+- [x] #61 The classic climb gets the ground shadow too
 - [ ] #62 Rare flame colours (a blue, green or violet flame) as another per-candle feature
+- [ ] #63 The classic climb is not smoke-tested beyond booting: climb a few ledges with keyboard input in the browser and check the candle there

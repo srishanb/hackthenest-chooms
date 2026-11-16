@@ -209,3 +209,55 @@ describe('night falls with height', () => {
     expect(nightShadowAlpha(0.98, 1, C)).toBe(0.98);
   });
 });
+
+describe('run score', () => {
+  it('counts height only on ledges, keeps the best, and survives blocked storage', async () => {
+    const { createRunScore } = await import('../endless/run-score');
+    const { createMemoryStorage } = await import('../../shared/safe-storage');
+    const storage = createMemoryStorage();
+    const score = createRunScore({ seed: 5, originFeetY: 500, storage, key: 'best' });
+    expect(score.stand(400)).toBe(true);
+    expect(score.stand(450)).toBe(false);
+    expect(score.snapshot()).toMatchObject({ mode: 'endless', seed: 5, heightPx: 100, bestPx: 100, newBest: false });
+    score.save();
+    expect(storage.getItem('best')).toBe('100');
+    // A later run starts from the stored best and says so when it is beaten.
+    const next = createRunScore({ seed: 6, originFeetY: 500, storage, key: 'best' });
+    next.stand(450);
+    expect(next.snapshot()).toMatchObject({ heightPx: 50, bestPx: 100, newBest: false });
+    next.stand(300);
+    expect(next.snapshot()).toMatchObject({ heightPx: 200, bestPx: 200, newBest: true });
+    const broken = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); }, removeItem: () => {} };
+    const offline = createRunScore({ seed: 1, originFeetY: 500, storage: broken, key: 'best' });
+    offline.stand(100);
+    expect(() => offline.save()).not.toThrow();
+    expect(offline.snapshot().bestPx).toBe(400);
+  });
+
+  it('a bot or development run never writes a best', async () => {
+    const { createRunScore } = await import('../endless/run-score');
+    const { createMemoryStorage } = await import('../../shared/safe-storage');
+    const storage = createMemoryStorage();
+    const score = createRunScore({ seed: 5, originFeetY: 500, storage, key: 'best', persist: false });
+    score.stand(0); score.save();
+    expect(storage.getItem('best')).toBeNull();
+  });
+
+  it('keeps the bests of the latest seeded climbs and forgets the oldest', async () => {
+    const { rememberSeededBest } = await import('../endless/run-score');
+    const { createMemoryStorage } = await import('../../shared/safe-storage');
+    const storage = createMemoryStorage();
+    for (let day = 1; day <= 5; day++) { storage.setItem(`best.${day}`, String(day * 10)); rememberSeededBest(storage, 'index', `best.${day}`, 3); }
+    expect(storage.getItem('best.1')).toBeNull();
+    expect(storage.getItem('best.2')).toBeNull();
+    expect(storage.getItem('best.3')).toBe('30');
+    expect(JSON.parse(storage.getItem('index')!)).toEqual(['best.3', 'best.4', 'best.5']);
+    // Playing an old climb again moves it to the newest end instead of listing it twice.
+    rememberSeededBest(storage, 'index', 'best.3', 3);
+    expect(JSON.parse(storage.getItem('index')!)).toEqual(['best.4', 'best.5', 'best.3']);
+    // A broken list is replaced, not trusted.
+    storage.setItem('index', '{nonsense');
+    rememberSeededBest(storage, 'index', 'best.9', 3);
+    expect(JSON.parse(storage.getItem('index')!)).toEqual(['best.9']);
+  });
+});

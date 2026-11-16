@@ -18,7 +18,28 @@ export interface RunScore {
   reset(seed: number): void;
 }
 
-export function createRunScore(options: { seed: number; originFeetY: number; storage?: KeyValueStorage; key: string; persist?: boolean }): RunScore {
+/** How many seeded climbs keep a best height; older ones are forgotten so storage never grows without end. */
+export const SEEDED_BESTS_KEPT = 30;
+
+/**
+ * Remember that `key` holds a seeded climb's best, and forget the oldest ones past the limit.
+ * Storage offers no way to list its keys, so the keys in use are kept in one small list at `indexKey`.
+ */
+export function rememberSeededBest(storage: KeyValueStorage, indexKey: string, key: string, kept = SEEDED_BESTS_KEPT): void {
+  try {
+    // A list that cannot be read is started again rather than trusted.
+    let parsed: unknown = [];
+    try { parsed = JSON.parse(storage.getItem(indexKey) ?? '[]'); } catch { parsed = []; }
+    const known = Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : [];
+    const next = [...known.filter((entry) => entry !== key), key];
+    for (const old of next.splice(0, Math.max(0, next.length - kept))) storage.removeItem(old);
+    storage.setItem(indexKey, JSON.stringify(next));
+  } catch { /* Blocked or full storage: nothing is pruned, and play continues. */ }
+}
+
+export function createRunScore(options: { seed: number; originFeetY: number; storage?: KeyValueStorage; key: string; persist?: boolean;
+  /** Set for a seeded climb's own best: the key of the list of such keys, so old ones can be pruned. */
+  indexKey?: string }): RunScore {
   const { originFeetY, storage, key, persist = true } = options;
   let seed = options.seed;
   let heightPx = 0;
@@ -42,6 +63,7 @@ export function createRunScore(options: { seed: number; originFeetY: number; sto
     save() {
       if (!persist) return;
       try { storage?.setItem(key, String(Math.round(bestPx))); } catch { /* Session-only best. */ }
+      if (storage && options.indexKey) rememberSeededBest(storage, options.indexKey, key);
     },
     reset(nextSeed) { seed = nextSeed; heightPx = 0; bestAtStart = bestPx; },
   };

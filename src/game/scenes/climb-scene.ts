@@ -30,6 +30,7 @@ import { stepForestEffects } from '../forest/forest-effects';
 import type { ForestWorld } from '../forest/forest-world';
 import { WAX_CONFIG } from '../../config/wax.config';
 import { surroundings } from '../candle/awareness';
+import { groundShadow } from '../candle/ground-shadow';
 import { pickCandleSeed } from '../candle/candle-genome';
 import { createCandleView } from '../candle/candle-view';
 import { flameSizeFromRadius } from '../candle/flame';
@@ -99,6 +100,8 @@ export class ClimbScene extends Phaser.Scene {
   private fuel = createLanternFuel();
   private forest!: ForestWorld;
   private candle!: ReturnType<typeof createCandleView>;
+  /** The candle's shadow on the ledge below it (see ground-shadow.ts). */
+  private shadow!: Phaser.GameObjects.Ellipse;
   private portrait!: ReturnType<typeof createPortraitView>;
   /** True while the camera slides back to the start after Play again; the player waits. */
   private sliding = false;
@@ -155,6 +158,7 @@ export class ClimbScene extends Phaser.Scene {
     });
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
     this.player.setVisible(false); // Preserve the camera's original follow target and exact body alignment.
+    this.shadow = this.add.ellipse(0, 0, 10, 4, 0x05060a, 0.3).setDepth(DEPTH.player - 1).setVisible(false);
     this.candle = createCandleView(this, gameConfig.player.height, this.deps.candleSeed ?? pickCandleSeed(window.location.search, import.meta.env.DEV));
     // Bottom-left close-up of the same candle: replaces the lantern strength bar.
     this.portrait = createPortraitView(this, gameConfig.view.height);
@@ -346,6 +350,9 @@ export class ClimbScene extends Phaser.Scene {
       bus.emit({ type: 'precision_window', active: this.precisionActive });
     }
     this.player.setPosition(this.state.x, this.state.y);
+    const shadow = groundShadow({ x: this.state.x, y: this.state.y + gameConfig.player.height / 2 }, gameConfig.player.width, this.platforms);
+    this.shadow.setVisible(shadow !== null);
+    if (shadow) this.shadow.setPosition(shadow.x, shadow.y).setSize(shadow.widthPx, shadow.heightPx).setAlpha(shadow.alpha);
     this.waxView.update(deltaMs, this.phase.isRunning(), settings.reducedMotion);
     this.worldView.update(this.platforms, this.worldTimeMs, settings.reducedMotion, this.state.y);
     const sectionId = sectionAt(sections, this.state.y + gameConfig.player.height / 2);
