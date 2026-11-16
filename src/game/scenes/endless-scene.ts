@@ -456,6 +456,7 @@ export class EndlessScene extends Phaser.Scene {
       shape: this.candle.shape(),
       face: this.candle.face(),
       flame: this.candle.reactions(),
+      melting: this.candle.melting(),
     });
     this.candle.update(this.state, deltaMs, !this.phase.isRunning(), {
       ember: !isLit(this.flame),

@@ -99,3 +99,12 @@ describe('the spent candle on the end screen', () => {
     expect(frames.size).toBeGreaterThan(1);
   });
 });
+
+it('the close-up shows the melted drips and the running bead', () => {
+  const pixels = (extra: object) => JSON.stringify(closeUp(0.8, 0, true, extra).pixels);
+  expect(pixels({ melt01: 1 })).not.toBe(pixels({ melt01: 0 }));
+  expect(pixels({ bead01: 0.2 })).not.toBe(pixels({}));
+  expect(pixels({ bead01: 0.2 })).not.toBe(pixels({ bead01: 0.9 }));
+  // Melting and the bead recolour wax; they never add pixels outside the candle.
+  expect(closeUp(0.8, 0, true, { melt01: 1, bead01: 0.5 }).pixels.length).toBe(closeUp(0.8, 0, true).pixels.length);
+});

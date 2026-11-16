@@ -61,7 +61,11 @@ export interface CandleGenome {
   trait: { kind: CandleTrait; accent: number; onLeft: boolean };
 }
 
-export type CandleTrait = 'plain' | 'band' | 'dipped' | 'tuft';
+/** `swirl` is the rare one: soft diagonal stripes of the accent colour, like a twisted party candle. */
+export type CandleTrait = 'plain' | 'band' | 'dipped' | 'tuft' | 'swirl';
+
+/** About one candle in this many is a swirl. */
+export const SWIRL_ONE_IN = 36;
 
 /** Pale wax tones that read against the dark forest; each pick shades and lightens itself. */
 const WAX_BASES = [0xefe6d2, 0xf2dcc0, 0xe9d4d8, 0xdfe6ef, 0xf0e2b6, 0xe2ead6, 0xe6dcf0, 0xf3d9c8, 0xd9ece6, 0xf4ecc4];
@@ -112,6 +116,8 @@ export function createCandleGenome(seed: number): CandleGenome {
   const face = { eyeRow: between(random, 4, 5), eyeColor, mouthColor: scaleColor(eyeColor, 1.9), rosy: random() < 0.4 };
   // The trait is drawn after the face, for the same reason.
   const trait = { kind: pick(random, TRAITS), accent: pick(random, ACCENTS), onLeft: random() < 0.5 };
+  // The rare swirl is rolled last of all, so it replaces a trait without shifting any other value.
+  if (random() < 1 / SWIRL_ONE_IN) trait.kind = 'swirl';
   return { seed, width, height, wax: { base, shade: scaleColor(base, 0.78), light: scaleColor(base, 1.08) }, drips, wickHeight, flame, face, trait };
 }
 

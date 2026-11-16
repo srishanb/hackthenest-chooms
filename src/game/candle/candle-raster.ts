@@ -109,6 +109,8 @@ export function rasterCandle(genome: CandleGenome, shape: BodyShape, growth: num
       // A band two rows tall low on the body; a dipped base with an uneven edge, like wax that ran.
       else if (kind === 'band' && (fromTop === bandRow || fromTop === bandRow + 1)) color = accentAt(col);
       else if (kind === 'dipped' && fromTop >= h - dipRows + (col % 3 === 1 ? 1 : 0)) color = accentAt(col);
+      // The rare swirl: soft diagonal stripes from the shoulders down, pale enough that the face still reads.
+      else if (kind === 'swirl' && fromTop >= 2 && (col + fromTop) % 4 === 0) color = mix(color, accentAt(col), 0.5);
       else if (beadCell && beadCell.col === col && beadCell.fromTop === fromTop) color = scaleColor(light, 1.12);
       else if (drip !== undefined && fromTop <= drip) color = light;
       // A bead at the end of each drip: one darker pixel under the pale streak.

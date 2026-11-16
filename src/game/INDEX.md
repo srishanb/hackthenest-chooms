@@ -132,7 +132,8 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 | `surroundings`, `AWARENESS`, `Surroundings`, `LookTarget` | `candle/awareness.ts` | What the candle notices: the nearest wax in reach, the edge of its ledge, ice underfoot. The eyes follow it; mood `uneasy` while sliding. |
 | `idleLookUp` | `candle/expression.ts` | An idle candle looks up at its own flame now and then. |
 | `EMBLEM_LOOP_MS`, `EmblemMoment` | `candle/emblem.ts` | The menu candle waits, gathers, hops, lands and looks pleased, on a 5.2 s loop. |
-| `CandleGenome.trait`, `CandleTrait` | `candle/candle-genome.ts` | One distinguishing trait per candle: a coloured band, a dipped base, a tuft of wax, or none. Drawn by the hero raster and the close-up. |
+| `SWIRL_ONE_IN`, `createCandleView().melting()`, `CloseUpInput.melt01`, `.bead01` | `candle/candle-genome.ts`, `candle/candle-view.ts`, `candle/close-up.ts` | The rare swirl candle's odds; the portrait shows the hero's melted drips and running bead. |
+| `CandleGenome.trait`, `CandleTrait` | `candle/candle-genome.ts` | One distinguishing trait per candle: a coloured band, a dipped base, a tuft of wax, the rare swirl, or none. Drawn by the hero raster and the close-up. |
 | `createCandleView().reactions()`, `CloseUpInput.flame` | `candle/candle-view.ts`, `candle/close-up.ts` | The portrait's flame leaps, ducks and gathers with the hero's. |
 | `mountRunCandle`, `spentCandle` | `candle/run-candle.ts` | The finished run's candle, flame out, for the end screen; main.ts hands `mountRunCandle` to the UI. |
 | `facePixels`, `FaceBox` | `candle/face.ts` | Eyes, mouth, blush and a bead of wax as art pixels on the body. |

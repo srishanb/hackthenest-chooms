@@ -51,13 +51,15 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #35 A short moment between the flame going out and the end screen (the candle slumps, its eyes close, the world goes dark) instead of a cut
 - [x] #36 Relight moment: when wax saves a glowing wick, the flame bursts back with a flare and the candle breathes out, then smiles
 - [ ] #37 Keep sweep tests under one second each so the slower CI runner never times out (time them after any candle change)
-- [ ] #38 A rare special candle (about one in forty): a two-tone swirl or a honeycomb pattern
+- [x] #38 A rare special candle (about one in 36): soft diagonal stripes, like a twisted party candle
 - [x] #39 The candle reacts to what is near it: looks toward wax within reach, peers down over the edge of its ledge
 - [x] #40 An uneasy look while sliding on ice (wide eyes on the ground, wavering mouth, a bead of wax)
 - [x] #41 Give the classic climb (`?climb=classic`) the same awareness and cheer calls, so both modes have the full candle
 - [ ] #42 Srishan to judge by playing: is the night too dark at low fuel (radius 130 px empty, 330 px full, full night from chunk 10)?
 - [x] #43 Wax drops glow in the dark a little beyond the light, so the player can plan toward them at night (not yet seen in a screenshot: no drop was past the edge)
 - [x] #44 Capture a screenshot that shows a wax beacon past the edge of the light (seen at the edge of the light at chunk 12; left as it is)
-- [ ] #45 The close-up portrait shows the melted drips and the running bead too
+- [x] #45 The close-up portrait shows the melted drips and the running bead too
 - [ ] #46 See a moving side ledge in motion in the browser (two frames a second apart) and check its wax rides with it
 - [ ] #47 Let the route bot optionally detour to side ledges, so par.ts measures a wax-hungry run too
+- [ ] #48 The end screen names what was special about the run's candle only through its picture: check the swirl shows there too
+- [ ] #49 Candle voice without words: tiny pitch-shifted sfx for hop, land and relief, from the sfx already in the repo only

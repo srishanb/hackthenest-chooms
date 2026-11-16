@@ -168,7 +168,11 @@ describe('one trait of its own', () => {
 
   it('every kind turns up, and about two candles in five are plain', () => {
     const kinds = Array.from({ length: 400 }, (_, i) => createCandleGenome(i + 1).trait.kind);
-    expect(new Set(kinds)).toEqual(new Set(['plain', 'band', 'dipped', 'tuft']));
+    expect(new Set(kinds)).toEqual(new Set(['plain', 'band', 'dipped', 'tuft', 'swirl']));
+    // The swirl is rare: a few in four hundred.
+    const swirls = kinds.filter((k) => k === 'swirl').length;
+    expect(swirls).toBeGreaterThan(2);
+    expect(swirls).toBeLessThan(30);
     const plain = kinds.filter((k) => k === 'plain').length / kinds.length;
     expect(plain).toBeGreaterThan(0.3);
     expect(plain).toBeLessThan(0.5);
@@ -180,6 +184,16 @@ describe('one trait of its own', () => {
     expect(accentPixels(withTrait('band'))).toBeGreaterThanOrEqual(12);
     expect(accentPixels(withTrait('dipped'))).toBeGreaterThan(accentPixels(withTrait('band')));
     expect(accentPixels(withTrait('plain'))).toBe(0);
+  });
+
+  it('a swirl stripes the body softly and leaves the outline alone', () => {
+    const g = withTrait('swirl');
+    const plain = raster({ ...g, trait: { ...g.trait, kind: 'plain' } });
+    const swirled = raster(g);
+    const changed = swirled.pixels.filter((p, i) => p.color !== plain.pixels[i]!.color).length;
+    expect(changed).toBeGreaterThan(15);
+    expect(changed).toBeLessThan(swirled.pixels.length / 2);
+    expect(swirled.pixels.map((p) => `${p.x},${p.y}`)).toEqual(plain.pixels.map((p) => `${p.x},${p.y}`));
   });
 
   it('a tuft adds two pixels above one shoulder and keeps the wick on top', () => {

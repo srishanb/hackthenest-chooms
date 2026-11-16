@@ -51,6 +51,10 @@ export interface CloseUpInput {
   face?: CandleFace;
   /** The hero flame's reactions this frame (see flame.ts), so the close-up flame leaps, ducks and gathers with it. */
   flame?: { flare01?: number; duck01?: number; gather01?: number };
+  /** 0..1 how much the candle has melted over the run: the drips are longer. */
+  melt01?: number;
+  /** 0..1 along the longest drip: a bright bead of wax running down it. Leave out for no bead. */
+  bead01?: number;
 }
 
 function hash01(seed: number, frame: number, k: number): number {
@@ -221,6 +225,8 @@ export function rasterCloseUp(genome: CandleGenome, input: CloseUpInput): Portra
       if (kind === 'band' && row >= bandTop && row < bandTop + 2 * K) color = accentAt(col);
       // The dipped edge wanders by a pixel or two, like wax that ran before it set.
       if (kind === 'dipped' && row >= dipTop + Math.round(Math.sin(col * 0.9) * 1.5)) color = accentAt(col);
+      // The rare swirl: soft diagonal stripes three pixels wide.
+      if (kind === 'swirl' && row >= 4 && (col + row) % 12 < 3) color = mix(color, accentAt(col), 0.5);
       // The top surface: a pale rim round a pool of melted wax.
       if (row === 0) color = light;
       else if (row === 1) color = col >= 4 && col < width - 4 ? pool : light;
@@ -239,9 +245,13 @@ export function rasterCloseUp(genome: CandleGenome, input: CloseUpInput): Portra
   if (s > 0.2) { canvas.put(left + 6, top + 1, scaleColor(GLINT, 0.6 + 0.4 * s), 0.9); canvas.put(left + 7, top + 1, scaleColor(GLINT, 0.6 + 0.4 * s), 0.6); }
 
   // Drips: a pale streak two pixels wide with a highlight, a rounded end and a shadow under it.
+  const melt = clamp01(input.melt01 ?? 0);
+  let longest: { x: number; length: number } | null = null;
   for (const drip of genome.drips) {
     const x = left + Math.min(width - 4, Math.max(1, Math.round((drip.x * (width - 1)) / Math.max(1, genome.width - 1))));
-    const length = drip.length * K - 1;
+    // Melting adds up to three hero pixels to each drip, as on the hero candle.
+    const length = (drip.length + Math.round(3 * melt)) * K - 1;
+    if (!longest || length > longest.length) longest = { x, length };
     for (let row = 1; row <= length; row++) {
       canvas.put(x, top + row, scaleColor(scaleColor(light, 1.05), dim));
       canvas.put(x + 1, top + row, scaleColor(light, dim));
@@ -249,6 +259,13 @@ export function rasterCloseUp(genome: CandleGenome, input: CloseUpInput): Portra
     }
     canvas.put(x, top + length + 1, scaleColor(light, dim)); canvas.put(x + 1, top + length + 1, scaleColor(light, dim));
     canvas.tint(x, top + length + 2, shade, 0.55); canvas.tint(x + 1, top + length + 2, shade, 0.55);
+  }
+
+  // A bead of wax running down the longest drip: two bright pixels with a glint.
+  if (input.bead01 !== undefined && longest) {
+    const row = 2 + Math.round(clamp01(input.bead01) * (longest.length - 2));
+    for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]] as const) canvas.put(longest.x + dx, top + row + dy, scaleColor(scaleColor(light, 1.12), dim));
+    canvas.put(longest.x, top + row, scaleColor(GLINT, dim), 0.9);
   }
 
   if (input.face) {

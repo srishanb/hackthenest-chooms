@@ -88,6 +88,7 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
   let duckStrength = 0;
   /** Time since the latest landing, for the wax droplets it knocks off. */
   let lastReactions = { flare01: 0, duck01: 0, gather01: 0 };
+  let lastMelting: { melt01: number; bead01: number | undefined } = { melt01: 0, bead01: undefined };
   let sinceLandMs = DROPLET_MS;
   let landImpact = 0;
 
@@ -108,6 +109,8 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
     celebrate(): void { pending.newBest = true; },
     /** The face drawn this frame, so the portrait shows the same expression. */
     face: (): CandleFace | undefined => lastFace,
+    /** How melted the candle looks this frame and where the running bead is, so the portrait shows the same. */
+    melting: (): { melt01: number; bead01: number | undefined } => lastMelting,
     /** The flame's reactions this frame, so the portrait's flame leaps, ducks and gathers with the hero's. */
     reactions: (): { flare01: number; duck01: number; gather01: number } => lastReactions,
     seed: (): number => genome.seed,
@@ -165,6 +168,7 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       const melt01 = Math.round(Math.min(Math.max(look.melt01 ?? 0, 0), 1) * 3) / 3;
       const beadAt = clockMs % BEAD_EVERY_MS;
       const bead01 = lit && !look.reducedMotion && beadAt < BEAD_RUN_MS ? Math.floor((beadAt / BEAD_RUN_MS) * BEAD_STEPS) / (BEAD_STEPS - 1) : undefined;
+      if (lastMelting.melt01 !== melt01 || lastMelting.bead01 !== bead01) lastMelting = { melt01, bead01 };
       const lean = flameLean(cue);
       const sparks = flightSparks(genome, cue, flameFrame, look.reducedMotion);
       const key = `${look.ember}|${look.corruptedEmber}|${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}|${JSON.stringify(face)}|${flare01}|${duck01}|${gather01}|${warmth01}|${JSON.stringify(emotes)}|${JSON.stringify(droplets)}|${spent01}|${melt01}|${bead01}`;
