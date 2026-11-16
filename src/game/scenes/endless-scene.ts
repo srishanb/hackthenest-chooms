@@ -18,6 +18,7 @@ import type { EffectRule } from '../../shared/contracts/effects';
 import type { EventBus } from '../../shared/contracts/events';
 import type { RunSnapshot } from '../../shared/contracts/game-state';
 import type { KeyValueStorage } from '../../shared/safe-storage';
+import { surroundings } from '../candle/awareness';
 import { pickCandleSeed } from '../candle/candle-genome';
 import { createCandleView } from '../candle/candle-view';
 import { flameSizeFromRadius } from '../candle/flame';
@@ -443,6 +444,9 @@ export class EndlessScene extends Phaser.Scene {
       reducedMotion: settings.reducedMotion,
       fuel01: this.flame.fuel01,
       spent01,
+      // What the candle notices: wax in reach, the edge of its ledge, ice underfoot. Eyes only.
+      around: surroundings(this.state, this.stream.wax().filter((drop) => !this.wax.isCollected(drop.id)),
+        this.platforms.find((p) => p.id === this.state.platformId), gameConfig.view.width),
     });
 
     if (import.meta.env.DEV) {

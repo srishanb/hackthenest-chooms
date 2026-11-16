@@ -52,5 +52,6 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #36 Relight moment: when wax saves a glowing wick, the flame bursts back with a flare and the candle breathes out, then smiles
 - [ ] #37 Keep sweep tests under one second each so the slower CI runner never times out (time them after any candle change)
 - [ ] #38 A rare special candle (about one in forty): a two-tone swirl or a honeycomb pattern
-- [ ] #39 The candle reacts to what is near it: looks toward wax within reach, glances down at a long drop beside it
-- [ ] #40 A sliding look for the candle on ice (leans back, worried mouth) so the surface is felt as well as seen
+- [x] #39 The candle reacts to what is near it: looks toward wax within reach, peers down over the edge of its ledge
+- [x] #40 An uneasy look while sliding on ice (wide eyes on the ground, wavering mouth, a bead of wax)
+- [ ] #41 Give the classic climb (`?climb=classic`) the same awareness and cheer calls, so both modes have the full candle

@@ -104,7 +104,7 @@ describe('blink and glance', () => {
 });
 
 describe('face', () => {
-  const MOODS: CandleMood[] = ['content', 'focused', 'soaring', 'alarmed', 'ouch', 'relieved', 'delighted', 'proud', 'worried', 'sleepy', 'fading'];
+  const MOODS: CandleMood[] = ['content', 'focused', 'soaring', 'alarmed', 'ouch', 'relieved', 'delighted', 'proud', 'uneasy', 'worried', 'sleepy', 'fading'];
   const POSES: CandlePoseName[] = ['idle', 'run', 'charge', 'rise', 'fall', 'land'];
 
   it('each mood has its own look', () => {

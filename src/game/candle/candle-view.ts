@@ -17,6 +17,7 @@ import { createCandleGenome, type CandleGenome } from './candle-genome';
 import { bodyShape, INITIAL_POSE, poseFrame, slumpShape, stepPose, type BodyShape, type PoseTracker } from './candle-pose';
 import { rasterCandle } from './candle-raster';
 import { type Aim, flameLean, flightSparks, wickLean } from './direction-cues';
+import type { Surroundings } from './awareness';
 import { DROPLET_MS, emotePixels, landingDroplets } from './emotes';
 import { faceFor, INITIAL_EXPRESSION, stepExpression, type CandleFace, type ExpressionEvents, type ExpressionTracker } from './expression';
 import { fallIntensity, FLAME_FPS, flameSizeFromRadius, flickerRate, rasterFlame, wickSmoke } from './flame';
@@ -40,6 +41,8 @@ export interface CandleLook {
   fuel01?: number;
   /** 0..1 through the last moment of a run, after the wick has gone cold: the candle slumps and its eyes close. */
   spent01?: number;
+  /** What the candle notices around it (awareness.ts): where to look, and whether it is sliding on ice. */
+  around?: Surroundings;
 }
 
 /** Landing faster than this (px/s, downward) makes the candle wince. */
@@ -137,7 +140,8 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       airVy = state.grounded ? 0 : state.vy;
       const lit = !look.ember;
       const mood = { pose: tracker.pose, charge01: look.charge01, fall01, aim: look.aim, facingLeft: tracker.facingLeft,
-        fuel01: look.fuel01 ?? 1, lit, reducedMotion: look.reducedMotion, spent: spent01 > 0 };
+        fuel01: look.fuel01 ?? 1, lit, reducedMotion: look.reducedMotion, spent: spent01 > 0,
+        sliding: look.around?.sliding, look: look.around?.look };
       expression = stepExpression(expression, mood, pending, deltaMs, paused);
       pending = {};
       const face = faceFor(expression, mood, genome.seed);

@@ -21,6 +21,7 @@ export type CandleMood =
   | 'relieved'   // wax just relit a wick that was only glowing
   | 'delighted'  // just picked up wax
   | 'proud'      // just beat the best height
+  | 'uneasy'     // sliding on ice
   | 'worried'    // fuel is low
   | 'sleepy'     // idle for a long time
   | 'fading';    // the flame is out
@@ -59,6 +60,10 @@ export interface ExpressionInput {
   reducedMotion: boolean;
   /** True in the last moment of a run, once the wick has gone cold: the eyes close. */
   spent?: boolean;
+  /** True while sliding on ice. */
+  sliding?: boolean;
+  /** Something nearby worth a look (wax, the edge of the ledge), as a world direction: see awareness.ts. */
+  look?: { x: -1 | 0 | 1; y: -1 | 0 | 1; peek: boolean } | null;
 }
 
 /** One-off moments the scene reports; each starts a short reaction. */
@@ -130,6 +135,7 @@ export function stepExpression(prev: ExpressionTracker, input: ExpressionInput, 
     : delightMs > 0 ? 'delighted'
     : input.pose === 'charge' ? 'focused'
     : input.pose === 'rise' ? 'soaring'
+    : input.sliding ? 'uneasy'
     : proudMs > 0 ? 'proud'
     : input.fuel01 <= T.worriedBelowFuel01 ? 'worried'
     : idleMs >= T.sleepyAfterMs ? 'sleepy'
@@ -205,6 +211,9 @@ export function faceFor(tracker: ExpressionTracker, input: ExpressionInput, seed
       return { ...base, eyes: blink ? 'closed' : 'open', mouth: 'grin', gazeY: -1 };
     case 'proud':
       return { ...base, eyes: 'happy', mouth: 'smile', blush: true };
+    case 'uneasy':
+      // Wide eyes fixed on the ground ahead, a wavering mouth and a bead of wax: this ledge is ice.
+      return { ...base, eyes: 'wide', mouth: 'wobble', gazeY: 1, sweat: true, turned: true };
     case 'worried': {
       // Glances up at its own flame, with a bead of wax that comes and goes.
       const bead = still ? true : Math.floor(tracker.clockMs / 600) % 2 === 0;
@@ -216,6 +225,12 @@ export function faceFor(tracker: ExpressionTracker, input: ExpressionInput, seed
       return { ...base, eyes: yawning ? 'closed' : 'half', mouth: yawning ? 'open' : 'small' };
     }
     case 'content': {
+      // Something nearby wins the eyes: wax in reach, or the drop beside the ledge. World left and right
+      // become back and ahead here, because the body is mirrored when it faces left.
+      if (input.look && (input.pose === 'idle' || input.pose === 'run')) {
+        const ahead = (input.facingLeft ? -input.look.x : input.look.x) as -1 | 0 | 1;
+        return { ...base, eyes: blink ? 'closed' : 'open', mouth: input.look.peek ? 'small' : 'smile', gazeX: ahead, gazeY: input.look.y };
+      }
       // Standing about, it glances to the side and now and then looks up at its own flame.
       const fidget = input.pose === 'idle' && !still;
       const up = fidget && idleLookUp(seed, tracker.clockMs);
