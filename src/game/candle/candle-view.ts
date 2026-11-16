@@ -12,6 +12,7 @@
  */
 import type * as Phaser from 'phaser';
 import { FOREST_CONFIG } from '../../config/forest.config';
+import { snapToGrid } from '../forest/pixel-grid-snap';
 import type { PlayerState } from '../player/types';
 import { createCandleGenome, type CandleGenome } from './candle-genome';
 import { bodyShape, INITIAL_POSE, poseFrame, slumpShape, stepPose, type BodyShape, type PoseTracker } from './candle-pose';
@@ -135,9 +136,10 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       // Falling feeds the flame air: its flicker clock runs up to 2.5x faster (flame.ts).
       const fall01 = Math.round(fallIntensity(state.grounded, state.vy) * 10) / 10;
       if (!paused) clockMs += Math.max(0, deltaMs) * flickerRate(fall01);
-      // At full charge the whole candle trembles a pixel either way: the picture is not redrawn, only moved.
+      // At full charge the whole candle trembles an art pixel either way: the picture is not redrawn, only moved.
       const tremble = fullChargeTremble(state.charging, look.charge01, look.reducedMotion ? 0 : Math.floor((clockMs / 1000) * FLAME_FPS), look.reducedMotion);
-      graphics.setPosition(state.x + tremble, state.y + bodyHeight / 2);
+      // Drawn on the art grid (pixel-grid-snap.ts), like the ledges it stands on; the body's own position stays exact.
+      graphics.setPosition(snapToGrid(state.x) + tremble * px, snapToGrid(state.y + bodyHeight / 2));
 
       const size01 = Math.round(flameSizeFromRadius(look.radiusPx, look.minRadiusPx, look.maxRadiusPx) * SIZE_STEPS) / SIZE_STEPS;
       const flameFrame = look.reducedMotion ? 0 : Math.floor((clockMs / 1000) * FLAME_FPS);

@@ -4,6 +4,8 @@
  * The signal never drives movement; it only feeds visual effects.
  */
 import { createLandingPuff } from '../forest/landing-puff';
+import { createGridCamera, type GridCamera } from './grid-camera';
+import { snapToGrid } from '../forest/pixel-grid-snap';
 import { FUEL_VISIBILITY_CONFIG as FUEL_VIEW, sceneryCorruption } from '../../config/fuel-visibility.config';
 import { createCandleLighting } from '../forest/candle-lighting';
 import { fuelVisibilityRadius } from '../forest/fuel-visibility';
@@ -94,6 +96,7 @@ export class ClimbScene extends Phaser.Scene {
   private waxView!: ReturnType<typeof createWaxView>;
   private player!: Phaser.GameObjects.Rectangle;
   private landingPuff!: ReturnType<typeof createLandingPuff>;
+  private gridCamera!: GridCamera;
   private candleLighting!: ReturnType<typeof createCandleLighting>;
   private darkness!: Phaser.GameObjects.Image;
   private lanternMark!: Phaser.GameObjects.Arc;
@@ -172,7 +175,9 @@ export class ClimbScene extends Phaser.Scene {
     }
 
     this.cameras.main.setBounds(0, world.top, world.width, world.bottom - world.top);
-    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+    // Follows like startFollow(player, true, 0.12, 0.12), but the drawn scroll lands on the art grid.
+    this.gridCamera = createGridCamera(this, 0.12);
+    this.gridCamera.follow(this.player);
 
     this.darkness = createDarkness(this, DEPTH.darkness);
     this.candleLighting = createCandleLighting(this);
@@ -184,8 +189,9 @@ export class ClimbScene extends Phaser.Scene {
     const shrine = this.add.graphics();
     shrine.fillStyle(0xffb83f, 0.12).fillCircle(0, -14, 26);
     shrine.fillStyle(0x6c8291).fillRect(-12, -20, 24, 22);
-    shrine.fillStyle(0x142231).fillRect(-7, -18, 14, 19);
-    shrine.fillStyle(0xaac4d2).fillRect(-15, 0, 30, 5).fillRect(-10, -24, 20, 5);
+    // Every rectangle on whole art pixels (two world px), so the shrine sits on the art grid.
+    shrine.fillStyle(0x142231).fillRect(-6, -18, 12, 18);
+    shrine.fillStyle(0xaac4d2).fillRect(-16, 0, 32, 6).fillRect(-10, -24, 20, 6);
     shrine.fillStyle(0xff9b26).fillTriangle(-6, -3, 0, -20, 7, -3);
     shrine.fillStyle(0xffe68c).fillTriangle(-3, -3, 1, -13, 4, -3);
     this.emberMark = this.add.container(0, 0, [shrine]).setDepth(DEPTH.alwaysReadable).setVisible(false);
@@ -253,8 +259,8 @@ export class ClimbScene extends Phaser.Scene {
       const frozen = snapshot.phase === 'paused' || snapshot.phase === 'menu';
       if (frozen === cameraFrozen) return;
       cameraFrozen = frozen;
-      if (frozen) this.cameras.main.stopFollow();
-      else this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+      if (frozen) this.gridCamera.stop();
+      else this.gridCamera.follow(this.player);
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, offCamera);
     stores.effects.set(neutralFrame(effectsTable));
@@ -264,13 +270,13 @@ export class ClimbScene extends Phaser.Scene {
   private slideCameraTo(x: number, y: number): void {
     const camera = this.cameras.main;
     this.player.setPosition(x, y);
-    camera.stopFollow();
+    this.gridCamera.stop();
     const distance = Math.hypot(camera.midPoint.x - x, camera.midPoint.y - y);
     const duration = this.deps.stores.settings.get().reducedMotion ? 0 : Math.min(2200, Math.max(600, distance / 1.1));
     this.sliding = true;
     const done = (): void => {
       this.sliding = false;
-      camera.startFollow(this.player, true, 0.12, 0.12);
+      this.gridCamera.follow(this.player);
     };
     if (duration === 0) { camera.centerOn(x, y); done(); return; }
     camera.pan(x, y, duration, 'Sine.easeInOut', true, (_camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
@@ -344,7 +350,7 @@ export class ClimbScene extends Phaser.Scene {
     this.ember.refreshPrompt(this.state);
     const anchor = this.ember.getAnchor();
     this.emberMark.setVisible(anchor !== null);
-    if (anchor) this.emberMark.setPosition(anchor.x, anchor.y + gameConfig.player.height / 2 - 7);
+    if (anchor) this.emberMark.setPosition(snapToGrid(anchor.x), snapToGrid(anchor.y + gameConfig.player.height / 2 - 7));
     if (this.state.charging !== this.precisionActive) {
       this.precisionActive = this.state.charging;
       bus.emit({ type: 'precision_window', active: this.precisionActive });
@@ -352,7 +358,8 @@ export class ClimbScene extends Phaser.Scene {
     this.player.setPosition(this.state.x, this.state.y);
     const shadow = groundShadow({ x: this.state.x, y: this.state.y + gameConfig.player.height / 2 }, gameConfig.player.width, this.platforms);
     this.shadow.setVisible(shadow !== null);
-    if (shadow) this.shadow.setPosition(shadow.x, shadow.y).setSize(shadow.widthPx, shadow.heightPx).setAlpha(shadow.alpha);
+    // Drawn on the art grid (pixel-grid-snap.ts); sizes in whole steps of two art pixels so a centred ellipse stays on it.
+    if (shadow) this.shadow.setPosition(snapToGrid(shadow.x), snapToGrid(shadow.y)).setSize(snapToGrid(shadow.widthPx, 4), snapToGrid(shadow.heightPx, 4)).setAlpha(shadow.alpha);
     this.waxView.update(deltaMs, this.phase.isRunning(), settings.reducedMotion);
     this.worldView.update(this.platforms, this.worldTimeMs, settings.reducedMotion, this.state.y);
     const sectionId = sectionAt(sections, this.state.y + gameConfig.player.height / 2);
@@ -402,7 +409,7 @@ export class ClimbScene extends Phaser.Scene {
     updateDarkness(this.darkness, this.state.x, this.state.y, radius);
     this.candleLighting.update(this.state.x, this.state.y, this.fuel.value, frame.forestCorruption);
     this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius, this.platforms);
-    this.lanternMark.setPosition(this.state.x, this.state.y - gameConfig.player.height / 2 - 6);
+    this.lanternMark.setPosition(snapToGrid(this.state.x), snapToGrid(this.state.y - gameConfig.player.height / 2 - 6));
     const lantern = effectsTable.find((rule) => rule.id === 'lanternRadius');
     const growth = waxGrowth(stores.snapshot.get().wax?.collected ?? 0, WAX_CONFIG.growthPerWax, WAX_CONFIG.growthCapWax);
     this.portrait.update(this.candle.genome(), deltaMs, {
