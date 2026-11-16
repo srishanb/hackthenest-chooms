@@ -10,7 +10,7 @@
  * downward). The view picks the side, so glyphs are never mirrored.
  */
 import type { Pixel } from './candle-raster';
-import type { CandleMood } from './expression';
+import { EXPRESSION_TIMING, type CandleMood } from './expression';
 
 const GOLD = 0xffe27a;
 const PALE = 0xfff8e0;
@@ -138,6 +138,21 @@ export function emotePixels(mood: CandleMood, moodMs: number, reducedMotion: boo
         const y = Math.round(Math.sin(angle + offset) * 2) - 3;
         return sparkle(x, y, false, PALE).concat([{ x: x + 1, y, color: GOLD }]);
       });
+    }
+    case 'steadying': {
+      // A slow breath out, once per breath (in time with the face): a puff drifts off to the side and thins.
+      if (reducedMotion) return [];
+      const since = (t % EXPRESSION_TIMING.breathMs) - EXPRESSION_TIMING.breathOutFromMs;
+      if (since < 0 || since > 630) return [];
+      const drift = Math.floor(since / 90);
+      const puff: Pixel[] = [{ x: 1 + drift, y: 6, color: PALE }, { x: 2 + drift, y: 5, color: PALE }];
+      return drift < 4 ? [...puff, { x: 2 + drift, y: 6, color: DREAM }] : puff;
+    }
+    case 'shaken': {
+      // Two short shiver marks beside the head that flick on and off.
+      if (reducedMotion) return [{ x: 5, y: -3, color: PALE }, { x: 6, y: -4, color: PALE }];
+      if (Math.floor(t / 160) % 2 === 1) return [];
+      return [{ x: 5, y: -3, color: PALE }, { x: 6, y: -4, color: PALE }, { x: -6, y: -3, color: PALE }, { x: -7, y: -4, color: PALE }];
     }
     case 'worried': {
       // A bead of wax flies off to the side now and then.

@@ -119,7 +119,8 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 | `EndlessChunk.sideRoute`, `WaxSpot.ledgeId`, `WaxSpot.ledgeX` | `endless/generator.ts` | The jump to each optional side ledge; wax on a moving side ledge knows which ledge it rides. |
 | `createChunkStream`, `ChunkStream`, `StreamChange` | `endless/chunk-stream.ts` | Keeps a fixed window of chunks alive around the player. |
 | `freshFlame`, `stepFlame`, `addWax`, `burnPerSecond`, `isLit`, `FlameState` | `endless/flame-fuel.ts` | Fuel burns with time, wax refills it, a grace time before the run ends. |
-| `moodIntensity` | `endless/mood.ts` | Fuel to the 0..1 intensity fed to the effects table (the mood follows the flame). |
+| `moodIntensity` | `endless/mood.ts` | Composure and fuel to the 0..1 intensity fed to the effects table (the mood follows the candle). |
+| `steadyComposure`, `shake`, `steady`, `stepComposure`, `isSteadying`, `fallShake`, `burnScale`, `Composure` | `endless/composure.ts` | The candle's composure from play: falls shake it, standing still steadies it; drives the forest's corruption and a faster burn. Never movement. |
 | `createEndlessWax` | `endless/endless-wax.ts` | One-time wax pickups at generated spots; same snapshot field and bus event as the classic wax. |
 | `createWaxDropsView` | `endless/wax-drops-view.ts` | Draws the live wax drops; marks come and go with the chunks. |
 | `createRunScore`, `RunScore`, `rememberSeededBest`, `SEEDED_BESTS_KEPT` | `endless/run-score.ts` | Height of the run (ledges stood on) and the best height on this device; seeded climbs keep their own best, the latest 30 of them. |

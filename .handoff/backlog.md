@@ -80,3 +80,10 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #64 Flow: after four clean jumps in a row (each landing no lower than its takeoff) the candle hums, with small notes floating up and a little colour in its cheeks, until it falls
 - [ ] #65 The light on the world (the halo round the candle and the wax pulse) takes a rare flame's colour too
 - [ ] #66 A short, soft reaction when flow breaks (the note pops, a small sigh), so the fall is felt but not punished
+- [x] #67 Composure from play: falls shake the candle, the forest corrupts, the music tenses and the flame burns faster; standing still steadies it (asked for by Srishan: keep the corruption mechanic without brain data)
+- [x] #68 The candle shows it: a shaken look (wide darting eyes, shiver marks) and a steadying look (eyes shut, a slow breath), on the hero and in the portrait
+- [ ] #69 The classic climb (`?climb=classic`) still runs on the still signal: give it composure from play as well, checking its stage-finish rule ("the forest must be calm to finish") still makes sense
+- [ ] #70 The flame itself should show composure: gutter and flicker while shaken, burn tall and even while steadying
+- [ ] #71 A sound for steadying (a soft breath from the sfx already in the repo), parked with #49 until Srishan can listen
+- [ ] #72 Srishan to judge by playing: do the composure amounts feel fair (a two-ledge fall starts to turn the forest; 2.5 s of standing still clears the worst)?
+- [ ] #73 Narrator lines for being shaken and for steadying (gentle, never judging), if the content lane has matching moments

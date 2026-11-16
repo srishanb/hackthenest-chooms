@@ -31,6 +31,7 @@ import { createProtectedVisibility, type ProtectedVisibility } from '../effects/
 import { biomeOf, chunkOfPlatform, snowAt } from '../endless/biome';
 import { createChunkStream, type ChunkStream } from '../endless/chunk-stream';
 import { createEndlessWax } from '../endless/endless-wax';
+import { burnScale, isSteadying, shake, steady, steadyComposure, stepComposure, type Composure } from '../endless/composure';
 import { addWax, freshFlame, isLit, stepFlame, type FlameState } from '../endless/flame-fuel';
 import { createEndlessGenerator, type WaxSpot } from '../endless/generator';
 import { moodIntensity } from '../endless/mood';
@@ -72,12 +73,16 @@ export interface EndlessSceneDeps {
   startChunk?: number;
   /** Development only: the first run starts with this much fuel (`?fuel=0.05`), to look at the flame going out. */
   startFuel?: number;
+  /** Development only: how shaken (0..1) the candle starts the first run. */
+  startShaken?: number;
 }
 
 /** The veil sits above the darkness and the ledge outlines but below the candle (210) and the portrait (300). */
 const DEPTH = { player: 10, darkness: 100, alwaysReadable: 200, veil: 205 } as const;
 /** Never simulate more than this many steps in one frame (a long pause must not spiral). */
 const MAX_STEPS_PER_FRAME = 8;
+/** Slower than this (px/s) with no direction held counts as standing still, for steadying the candle. */
+const STILL_SPEED_PX_S = 6;
 /** The camera may scroll this far up (px). Large enough to never be reached; the floor is the only real bound. */
 const SKY_PX = 50_000_000;
 const SECTION_ID = 'endless';
@@ -117,6 +122,8 @@ export class EndlessScene extends Phaser.Scene {
   private endingMs: number | null = null;
   /** The candle's shadow on the ledge below it (drawn under the candle, above the ledges). */
   private shadow!: Phaser.GameObjects.Ellipse;
+  /** How shaken the candle is (composure.ts): drives the forest's corruption and the extra burn. */
+  private composure: Composure = steadyComposure();
   /** A dark sheet over the world, under the candle, that closes in during the last moment. */
   private veil!: Phaser.GameObjects.Rectangle;
   /** Direction held in the latest physics step, for the candle's aim cue (visual only). */
@@ -161,6 +168,7 @@ export class EndlessScene extends Phaser.Scene {
     this.stream = createChunkStream(createEndlessGenerator(seed, gameConfig, config), config);
     // Only the very first run of a development session may start short of fuel.
     this.flame = { ...freshFlame(config), fuel01: firstRun ? this.deps.startFuel ?? 1 : 1 };
+    this.composure = steadyComposure(firstRun ? this.deps.startShaken ?? 0 : 0);
     this.worldTimeMs = 0;
     this.endingMs = null;
     this.burnt = 0;
@@ -368,11 +376,15 @@ export class EndlessScene extends Phaser.Scene {
       this.syncWorld();
 
       const before = this.flame.fuel01;
-      this.flame = stepFlame(this.flame, stepMs, this.stream.indexAt(this.feetY()), config);
+      // The candle's composure: standing still steadies it, and a shaken candle burns faster.
+      const still = this.state.grounded && !this.state.charging && this.aim === 0 && Math.abs(this.state.vx) < STILL_SPEED_PX_S;
+      this.composure = stepComposure(this.composure, stepMs, still, config);
+      this.flame = stepFlame(this.flame, stepMs, this.stream.indexAt(this.feetY()), config, burnScale(this.composure.shaken01, config));
       this.burnt += Math.max(0, before - this.flame.fuel01);
       const wasLit = isLit(this.flame);
       const taken = this.wax.update(this.state, this.liveWax());
       for (let i = 0; i < taken.length; i++) this.flame = addWax(this.flame, config);
+      if (taken.length) this.composure = steady(this.composure, config.composure.wax01 * taken.length);
       if (taken.length) { this.waxView.sync(this.stream.wax(), this.wax.isCollected); if (wasLit) this.candle.cheer(); else this.candle.relit(); }
 
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
@@ -380,6 +392,10 @@ export class EndlessScene extends Phaser.Scene {
       if (out.events.landed) {
         this.shakeOnLanding(out.events.landed.fallHeightPx);
         this.cleanJumps = out.events.landed.fallHeightPx > 0 ? 0 : this.cleanJumps + 1;
+        // A fall shakes the candle; a landing no lower than the takeoff steadies it a little.
+        this.composure = out.events.landed.fallHeightPx > 0
+          ? shake(this.composure, out.events.landed.fallHeightPx, config)
+          : steady(this.composure, config.composure.cleanLanding01);
         // A new landing is a milestone: the candle is proud of it, once.
         const landedOn = out.events.landed.platformId;
         if (landedOn.endsWith(':floor') && chunkOfPlatform(landedOn) > this.landingReached) {
@@ -423,8 +439,8 @@ export class EndlessScene extends Phaser.Scene {
     this.forest.setEnvironment({ snowEnabled: snow01 > 0, snow01, windEnabled: false, wind01: 0, direction: 1 });
     const frozen = stores.snapshot.get().phase === 'paused' || stores.snapshot.get().phase === 'menu';
     const frame = frozen ? stores.effects.get() : stepForestEffects(stores.effects.get(), effectsTable, {
-      // The mood follows the flame: there is no signal in this variant.
-      intensity: moodIntensity(this.flame.fuel01, config),
+      // The mood follows the candle (how shaken it is, how low the flame): there is no signal in this variant.
+      intensity: moodIntensity(this.flame.fuel01, config, this.composure.shaken01),
       valid: true,
       mode: 'adaptive',
       airborne: !this.state.grounded,
@@ -434,7 +450,8 @@ export class EndlessScene extends Phaser.Scene {
     stores.effects.set(frame);
 
     // While only the wick glows, the HUD says what to do. A key into the UI's strings, never text.
-    const lessonKey = !isLit(this.flame) && !this.flame.out ? 'endless.relight' : undefined;
+    const shaken = this.composure.shaken01 >= config.composure.shownFrom01;
+    const lessonKey = !isLit(this.flame) ? (this.flame.out ? undefined : 'endless.relight') : shaken && this.endingMs === null ? 'endless.steady' : undefined;
     if (stores.snapshot.get().lessonKey !== lessonKey) stores.snapshot.set({ ...stores.snapshot.get(), lessonKey });
     const spawn = this.spawn();
     const radius = this.visibleRadius(frame.forestCorruption);
@@ -496,6 +513,9 @@ export class EndlessScene extends Phaser.Scene {
       melt01: Math.min(1, this.burnt / 2.5),
       // Four clean jumps in a row and it starts to hum.
       flow: this.cleanJumps >= config.flowAfterJumps,
+      // How shaken it is, and whether it is standing still to steady itself (eyes closed, a slow breath).
+      shaken,
+      steadying: isSteadying(this.composure, config),
       // In the snow its breath shows.
       cold: snow01 > 0.25,
       // What the candle notices: wax in reach, the edge of its ledge, ice underfoot. Eyes only.
@@ -508,6 +528,8 @@ export class EndlessScene extends Phaser.Scene {
       const data = this.game.canvas.dataset;
       data.endlessHeightPx = String(Math.round(config.baseFloorTopPx - this.feetY()));
       data.endlessFuel = this.flame.fuel01.toFixed(3);
+      data.endlessShaken = this.composure.shaken01.toFixed(3);
+      data.endlessCorruption = frame.forestCorruption.toFixed(3);
       data.endlessLedges = String(this.stream.platforms().length);
       data.endlessObjects = String(this.children.length);
       data.endlessSeed = String(this.seed);

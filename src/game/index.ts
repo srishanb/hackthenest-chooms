@@ -36,7 +36,7 @@ export interface GameDeps {
    * Set to play the endless, generated climb instead of the authored sections (game-only variant).
    * `seed` picks the climb; `fixedSeed` keeps it for every run; `bot` is the development route bot.
    */
-  endless?: { config: EndlessConfig; seed: number; fixedSeed: boolean; bot: boolean; startChunk?: number; startFuel?: number };
+  endless?: { config: EndlessConfig; seed: number; fixedSeed: boolean; bot: boolean; startChunk?: number; startFuel?: number; startShaken?: number };
 }
 
 export function createGame(deps: GameDeps): Phaser.Game {
@@ -56,6 +56,7 @@ export function createGame(deps: GameDeps): Phaser.Game {
         bot: deps.endless.bot,
         startChunk: deps.endless.startChunk,
         startFuel: deps.endless.startFuel,
+        startShaken: deps.endless.startShaken,
       })
     : new ClimbScene({
         startAt: deps.startAt,

@@ -9,10 +9,10 @@ What is different from `main`:
 |---|---|---|
 | Input | Keyboard, plus the PiEEG Octopus 16 for lantern, fog and music | Keyboard only |
 | World | Five authored stages with a top | An endless climb, generated as you go |
-| What drives the mood | The composure signal | The candle's fuel: the forest darkens as the flame gets low |
+| What drives the mood | The composure signal | The candle's own composure, from play: falls shake it, standing still steadies it. Low fuel darkens the forest too |
 | How a run ends | Landing on the last ledge | The flame goes out |
 | Recovery | A placed ember (E and R) | A full-width landing at the start of every stretch catches any fall |
-| The candle | A plain wax block with a flame | A face with ten moods, a reacting flame, emotes and a detailed close-up portrait |
+| The candle | A plain wax block with a flame | A face with fourteen moods, a reacting flame, emotes and a detailed close-up portrait |
 
 ## Play it
 
@@ -37,6 +37,7 @@ The menu has **Today's climb** (the same ledges for everyone on the same day, fr
 | `?startChunk=4` | Development builds only: start higher up. Never saves a best height |
 | `?candleSeed=7` | Development builds only: pick the candle |
 | `?fuel=0.05` | Development builds only: the first run starts nearly out of fuel, to look at the flame going out |
+| `?shaken=0.9` | Development builds only: the first run starts with a shaken candle, to look at the forest turning |
 
 Dev pages for looking at the candle: `/src/game/__tests__/candle-faces.html` (every mood on the hero) and
 `/src/game/__tests__/candle-close-up.html` (every mood in the portrait close-up).
@@ -62,12 +63,34 @@ Dev pages for looking at the candle: `/src/game/__tests__/candle-faces.html` (ev
 `npx tsx tools/endless/par.ts` prints how long the route bot needs per chunk and what that means for fuel. Tuning
 numbers are in `src/config/endless.config.ts`.
 
+## Composure without a headset
+
+In the EEG game a tense signal corrupted the forest, narrowed the view, tensed the music and burned the candle
+faster, and calming down brought the forest back. This variant keeps that loop and drives it from play
+(`src/game/endless/composure.ts`, numbers in `composure` in `src/config/endless.config.ts`):
+
+- **A fall shakes the candle.** Landing 60 px or more below the takeoff shakes it, more the further it fell. A fall
+  of about two ledges is enough for the forest to start turning; half a chunk shakes it badly. Falls add up.
+- **While it is shaken** the same effects table as on `main` runs: the forest corrupts, the music turns tense and the
+  view narrows as the fuel drops. The candle also burns faster, up to 1.7 times at its worst.
+- **Standing still steadies it.** After a third of a second without walking or charging, the candle shuts its eyes
+  and breathes, and it is steady again within about two and a half seconds. This is the choice the mechanic asks
+  for after a fall: spend a moment to steady the candle, or push on while it burns faster and the forest is dark.
+- **Clean jumps and wax steady it too**, and on the move it settles slowly by itself (about half a minute).
+- A flame that is running low still darkens the forest as before. Whichever cause is stronger wins.
+
+It never changes gravity, walking, jump strength or steering. It is the candle's state, a reaction to what happens
+in the game, and not a reading of the player; nothing shows it as a number or a rank. The HUD shows one line while
+the candle is shaken ("Your candle is shaken. Stand still for a moment to steady it."), and the quick start has a
+page on it. Not judged by a person yet: whether the amounts feel fair, and how the tense music sounds.
+
 ## The candle
 
 - **Moods.** `src/game/candle/expression.ts` picks one mood at a time from what the body is doing and from short
   events: content, focused (charging), soaring, alarmed (a fast fall), ouch (a hard landing, with a longer daze after a
   very long fall), relieved (wax relit a glowing wick), delighted (wax), proud (a new best, or a new landing), uneasy
-  (sliding on ice), worried (low fuel), sleepy (long idle) and fading (the flame is out). It blinks, glances about and
+  (sliding on ice), shaken (after a fall: wide darting eyes), steadying (standing still to get over it: eyes shut, a
+  slow breath), worried (low fuel), sleepy (long idle) and fading (the flame is out). It blinks, glances about and
   looks up at its own flame, in a rhythm set by the candle's seed.
 - **Awareness.** `awareness.ts` turns the eyes toward wax within reach and over the edge of a ledge.
 - **Face and close-up.** `face.ts` draws the hero's face; `close-up.ts` draws the same candle at three times the

@@ -17,8 +17,10 @@ Decisions made without asking (low-maintenance request), each easy to reverse:
 2. **Endless is the default mode.** The authored five-stage climb stays reachable with `?climb=classic`.
 3. **The run ends when the flame goes out.** Fuel burns with playing time, wax refills it, and falls cost time. A full
    width landing at the start of every chunk bounds any fall to one chunk. No death on a fall (FAL-1 kept).
-4. **The world's mood follows the flame.** With no signal, low fuel drives the existing corruption visuals and tense
-   music through the existing effects table. It never changes controls or physics (binding rule 2 kept in spirit).
+4. **The world's mood follows the candle.** With no signal, the candle's own composure drives the existing
+   corruption visuals, tense music and a faster burn through the existing effects table: falls shake it, standing
+   still steadies it (asked for by Srishan on 2026-11-16: keep the corruption mechanic without brain data). Low fuel
+   darkens the forest too. It never changes controls or physics (binding rule 2 kept in spirit).
 5. **Score is height and a local personal best only.** No ranking, no percentage of anything (binding rule 7).
 
 ## Phases

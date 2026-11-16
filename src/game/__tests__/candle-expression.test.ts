@@ -22,6 +22,28 @@ describe('mood', () => {
     expect(step({ lit: false, fuel01: 0 }).mood).toBe('fading');
   });
 
+  it('a shaken candle looks it, and standing still to steady itself wins over that', () => {
+    expect(step({ shaken: true }).mood).toBe('shaken');
+    expect(step({ shaken: true, steadying: true }).mood).toBe('steadying');
+    expect(step({ steadying: true, fuel01: 0.1 }).mood).toBe('steadying');
+    // What the body is doing still comes first.
+    expect(step({ shaken: true, pose: 'charge' }).mood).toBe('focused');
+    expect(step({ shaken: true, pose: 'fall', fall01: 0.9 }).mood).toBe('alarmed');
+    expect(step({ shaken: true, lit: false }).mood).toBe('fading');
+    const face = (mood: CandleMood, moodMs: number, input: Partial<ExpressionInput> = {}) =>
+      faceFor({ ...INITIAL_EXPRESSION, mood, moodMs, clockMs: moodMs }, { ...calm, ...input }, 3);
+    // Steadying: eyes shut the whole time, breathing in through a small mouth and out through an open one.
+    expect(face('steadying', 100)).toMatchObject({ eyes: 'closed', mouth: 'small' });
+    expect(face('steadying', T.breathOutFromMs + 50)).toMatchObject({ eyes: 'closed', mouth: 'open' });
+    expect(face('steadying', T.breathOutFromMs + 50, { reducedMotion: true })).toMatchObject({ eyes: 'closed', mouth: 'small' });
+    // Shaken: the eyes dart from side to side, but not under reduced motion.
+    expect(face('shaken', 0, { reducedMotion: true })).toMatchObject({ eyes: 'wide', mouth: 'wobble', gazeX: 0, sweat: true });
+    expect(new Set([0, T.dartMs, T.dartMs * 2, T.dartMs * 3].map((ms) => face('shaken', ms + 1).gazeX)).size).toBe(2);
+    // Charging while shaken shows a bead of wax.
+    expect(face('focused', 0, { pose: 'charge', shaken: true }).sweat).toBe(true);
+    expect(face('focused', 0, { pose: 'charge' }).sweat).toBe(false);
+  });
+
   it('a flame that is out beats everything, and a hard landing beats a pickup', () => {
     expect(step({ lit: false }, { wax: true, hardLanding: true }).mood).toBe('fading');
     expect(step({}, { wax: true, hardLanding: true }).mood).toBe('ouch');
@@ -104,7 +126,7 @@ describe('blink and glance', () => {
 });
 
 describe('face', () => {
-  const MOODS: CandleMood[] = ['content', 'focused', 'soaring', 'alarmed', 'ouch', 'relieved', 'delighted', 'proud', 'uneasy', 'worried', 'sleepy', 'fading'];
+  const MOODS: CandleMood[] = ['content', 'focused', 'soaring', 'alarmed', 'ouch', 'relieved', 'delighted', 'proud', 'uneasy', 'steadying', 'shaken', 'worried', 'sleepy', 'fading'];
   const POSES: CandlePoseName[] = ['idle', 'run', 'charge', 'rise', 'fall', 'land'];
 
   it('each mood has its own look', () => {

@@ -22,6 +22,8 @@ export type CandleMood =
   | 'delighted'  // just picked up wax
   | 'proud'      // just beat the best height
   | 'uneasy'     // sliding on ice
+  | 'steadying'  // standing still to get over a fall: eyes shut, a slow breath
+  | 'shaken'     // rattled by a fall, and not yet steady again
   | 'worried'    // fuel is low
   | 'sleepy'     // idle for a long time
   | 'fading';    // the flame is out
@@ -64,6 +66,10 @@ export interface ExpressionInput {
   sliding?: boolean;
   /** True while the candle is in flow (several clean jumps in a row): a contented, rosy look. */
   flow?: boolean;
+  /** True while the candle is shaken by a fall (composure.ts) and not yet steady again. */
+  shaken?: boolean;
+  /** True while it stands still to steady itself. */
+  steadying?: boolean;
   /** Something nearby worth a look (wax, the edge of the ledge), as a world direction: see awareness.ts. */
   look?: { x: -1 | 0 | 1; y: -1 | 0 | 1; peek: boolean } | null;
 }
@@ -107,6 +113,11 @@ export const EXPRESSION_TIMING = {
   relievedMs: 1500,
   exhaleMs: 450,
   proudMs: 1600,
+  /** While steadying, one slow breath takes this long; the second part of it is the breath out. */
+  breathMs: 1700,
+  breathOutFromMs: 950,
+  /** A shaken candle's eyes dart from side to side this often. */
+  dartMs: 420,
   /** Standing still this long makes the candle drowsy. */
   sleepyAfterMs: 9000,
   /** Fuel at or below this worries the candle. */
@@ -144,6 +155,8 @@ export function stepExpression(prev: ExpressionTracker, input: ExpressionInput, 
     : input.pose === 'rise' ? 'soaring'
     : input.sliding ? 'uneasy'
     : proudMs > 0 ? 'proud'
+    : input.steadying ? 'steadying'
+    : input.shaken ? 'shaken'
     : input.fuel01 <= T.worriedBelowFuel01 ? 'worried'
     : idleMs >= T.sleepyAfterMs ? 'sleepy'
     : 'content';
@@ -214,7 +227,8 @@ export function faceFor(tracker: ExpressionTracker, input: ExpressionInput, seed
       return { ...base, eyes: 'happy', mouth: 'grin', blush: true };
     case 'focused':
       // The brows come down as the charge builds, and the mouth sets hard near full charge.
-      return { ...base, eyes: input.charge01 > 0.3 ? 'set' : 'open', mouth: input.charge01 > 0.8 ? 'grit' : 'flat' };
+      // A shaken candle charges with a bead of wax on its temple.
+      return { ...base, eyes: input.charge01 > 0.3 ? 'set' : 'open', mouth: input.charge01 > 0.8 ? 'grit' : 'flat', sweat: input.shaken === true };
     case 'soaring':
       return { ...base, eyes: blink ? 'closed' : 'open', mouth: 'grin', gazeY: -1 };
     case 'proud':
@@ -222,6 +236,16 @@ export function faceFor(tracker: ExpressionTracker, input: ExpressionInput, seed
     case 'uneasy':
       // Wide eyes fixed on the ground ahead, a wavering mouth and a bead of wax: this ledge is ice.
       return { ...base, eyes: 'wide', mouth: 'wobble', gazeY: 1, sweat: true, turned: true };
+    case 'steadying': {
+      // Eyes shut, breathing slowly: in through a small mouth, out through an open one.
+      const out = !still && tracker.moodMs % EXPRESSION_TIMING.breathMs >= EXPRESSION_TIMING.breathOutFromMs;
+      return { ...base, eyes: 'closed', mouth: out ? 'open' : 'small', turned: false };
+    }
+    case 'shaken': {
+      // Wide eyes that dart from side to side, a wavering mouth and a bead of wax.
+      const dart = still ? 0 : Math.floor(tracker.clockMs / EXPRESSION_TIMING.dartMs) % 2 === 0 ? -1 : 1;
+      return { ...base, eyes: blink ? 'closed' : 'wide', mouth: 'wobble', gazeX: dart, sweat: true };
+    }
     case 'worried': {
       // Glances up at its own flame, with a bead of wax that comes and goes.
       const bead = still ? true : Math.floor(tracker.clockMs / 600) % 2 === 0;

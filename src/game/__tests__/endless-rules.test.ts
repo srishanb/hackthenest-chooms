@@ -7,6 +7,7 @@ import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state';
 import type { GameEvent } from '../../shared/contracts/events';
 import { createStore } from '../../shared/store';
 import { createChunkStream } from '../endless/chunk-stream';
+import { burnScale, fallShake, isSteadying, shake, steady, steadyComposure, stepComposure } from '../endless/composure';
 import { createEndlessWax } from '../endless/endless-wax';
 import { addWax, burnPerSecond, freshFlame, isLit, stepFlame } from '../endless/flame-fuel';
 import { createEndlessGenerator } from '../endless/generator';
@@ -115,6 +116,84 @@ describe('mood follows the flame', () => {
       previous = value;
     }
     expect(moodIntensity(Number.NaN, C)).toBe(C.mood.calmIntensity);
+  });
+  it('a shaken candle darkens the forest too, and the stronger of the two causes wins', () => {
+    expect(moodIntensity(1, C, 0)).toBe(C.mood.calmIntensity);
+    expect(moodIntensity(1, C, 1)).toBeCloseTo(C.mood.peakIntensity);
+    expect(moodIntensity(1, C, 0.5)).toBeGreaterThan(moodIntensity(1, C, 0.2));
+    // Low fuel with a steady candle, and a full candle that is shaken: each alone is enough.
+    expect(moodIntensity(0.05, C, 0)).toBeGreaterThan(moodIntensity(1, C, 0.3));
+    expect(moodIntensity(0.45, C, 0.8)).toBeCloseTo(moodIntensity(1, C, 0.8));
+    for (const shaken of [-1, 0, 0.3, 1, 5, Number.NaN]) for (const fuel of [0, 0.3, 1]) {
+      const value = moodIntensity(fuel, C, shaken);
+      expect(value).toBeGreaterThanOrEqual(C.mood.calmIntensity);
+      expect(value).toBeLessThanOrEqual(C.mood.peakIntensity + 1e-9);
+    }
+  });
+});
+
+describe('composure: falls shake the candle, standing still steadies it', () => {
+  const K = C.composure;
+  it('a small drop does nothing; a longer fall shakes more, up to a cap', () => {
+    expect(fallShake(0, C)).toBe(0);
+    expect(fallShake(K.fall.minPx - 1, C)).toBe(0);
+    expect(fallShake(K.fall.minPx, C)).toBeCloseTo(K.fall.min01);
+    expect(fallShake(K.fall.fullPx, C)).toBeCloseTo(K.fall.max01);
+    expect(fallShake(K.fall.fullPx * 10, C)).toBeCloseTo(K.fall.max01);
+    expect(fallShake(300, C)).toBeGreaterThan(fallShake(100, C));
+    expect(fallShake(Number.NaN, C)).toBe(0);
+    expect(shake(steadyComposure(), 20, C)).toEqual(steadyComposure());
+  });
+  it('falls add up, never past 1, and one long fall is enough to show', () => {
+    let state = shake(steadyComposure(), K.fall.fullPx, C);
+    expect(state.shaken01).toBeGreaterThanOrEqual(K.shownFrom01);
+    for (let i = 0; i < 5; i++) state = shake(state, K.fall.fullPx, C);
+    expect(state.shaken01).toBe(1);
+  });
+  it('standing still steadies it much faster than moving, after a short settle time', () => {
+    const run = (still: boolean, ms: number) => {
+      let state = steadyComposure(1);
+      for (let t = 0; t < ms; t += 10) state = stepComposure(state, 10, still, C);
+      return state;
+    };
+    // Not yet settled: no faster than moving.
+    expect(run(true, K.settleMs - 20).shaken01).toBeCloseTo(run(false, K.settleMs - 20).shaken01);
+    expect(isSteadying(run(true, K.settleMs - 20), C)).toBe(false);
+    expect(isSteadying(run(true, K.settleMs + 20), C)).toBe(true);
+    expect(run(true, 2000).shaken01).toBeLessThan(run(false, 2000).shaken01 - 0.4);
+    // Fully steady again within a few seconds of standing; moving alone takes far longer but gets there.
+    expect(run(true, 3200).shaken01).toBe(0);
+    expect(isSteadying(run(true, 3200), C)).toBe(false);
+    expect(run(false, 10_000).shaken01).toBeGreaterThan(0.5);
+    expect(run(false, 40_000).shaken01).toBe(0);
+  });
+  it('moving again resets the settle time', () => {
+    let state = steadyComposure(1);
+    for (let t = 0; t < 1000; t += 10) state = stepComposure(state, 10, true, C);
+    state = stepComposure(state, 10, false, C);
+    expect(state.stillMs).toBe(0);
+    expect(isSteadying(state, C)).toBe(false);
+  });
+  it('clean landings and wax steady it, never below 0, and bad numbers are ignored', () => {
+    expect(steady(steadyComposure(0.5), K.wax01).shaken01).toBeCloseTo(0.5 - K.wax01);
+    expect(steady(steadyComposure(0.01), K.cleanLanding01).shaken01).toBe(0);
+    expect(steady(steadyComposure(0.5), Number.NaN).shaken01).toBe(0.5);
+    expect(stepComposure(steadyComposure(0.5), Number.NaN, true, C).shaken01).toBe(0.5);
+    expect(steadyComposure(Number.NaN).shaken01).toBe(0);
+  });
+  it('a shaken candle burns faster, within the cap, and a steady one burns as before', () => {
+    expect(burnScale(0, C)).toBe(1);
+    expect(burnScale(K.burnFrom01, C)).toBe(1);
+    expect(burnScale(1, C)).toBeCloseTo(K.burnScaleMax);
+    expect(burnScale(7, C)).toBeCloseTo(K.burnScaleMax);
+    expect(burnScale(0.6, C)).toBeGreaterThan(1);
+    const calm = stepFlame(freshFlame(C), 1000, 0, C).fuel01;
+    const shaken = stepFlame(freshFlame(C), 1000, 0, C, burnScale(1, C)).fuel01;
+    expect(1 - shaken).toBeCloseTo((1 - calm) * K.burnScaleMax);
+    // The scale never slows the burn and never touches the glowing wick's grace time.
+    expect(stepFlame(freshFlame(C), 1000, 0, C, 0.2).fuel01).toBe(calm);
+    const glowing = { fuel01: 0, graceLeftMs: C.fuel.graceMs, out: false };
+    expect(stepFlame(glowing, 1000, 0, C, 5).graceLeftMs).toBe(C.fuel.graceMs - 1000);
   });
 });
 

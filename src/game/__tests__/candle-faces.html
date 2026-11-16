@@ -1,6 +1,6 @@
 <!doctype html><html><head><title>Candle faces</title>
 <style>body{margin:0;background:#1b2a2a;color:#cfd6e4;font:12px monospace}canvas{image-rendering:pixelated;display:block}</style></head><body>
-<p style="padding:6px 10px">Rows: ten seeds (plain, banded, dipped and tufted candles; the last two are the rare swirl). Columns: content, glance, run (turned), blink, focused (charging), soaring, alarmed, ouch, delighted, proud, worried, sleepy, yawn, fading; then facing left. Dev-only visual check.</p>
+<p style="padding:6px 10px">Rows: ten seeds (plain, banded, dipped and tufted candles; the last two are the rare swirl). Columns: content, glance, run (turned), blink, focused (charging), soaring, alarmed, ouch, delighted, proud, shaken, steadying, breath out, worried, sleepy, yawn, fading; then facing left. Dev-only visual check.</p>
 <canvas id="c"></canvas>
 <p style="padding:6px 10px">Menu emblem: waiting, then eager (Play has the focus), for four candles.</p>
 <canvas id="e"></canvas>
@@ -32,6 +32,9 @@ const COLS=[
   {label:'relief (breath)',mood:'relieved'},
   {label:'relief',mood:'relieved',moodMs:600},
   {label:'proud',mood:'proud'},
+  {label:'shaken',mood:'shaken',input:{shaken:true}},
+  {label:'steadying',mood:'steadying',input:{steadying:true}},
+  {label:'breath out',mood:'steadying',moodMs:1100,input:{steadying:true}},
   {label:'worried',mood:'worried',input:{fuel01:0.1},size:0.12},
   {label:'sleepy',mood:'sleepy'},
   {label:'yawn',mood:'sleepy',face:{eyes:'closed',mouth:'open'}},

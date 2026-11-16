@@ -86,6 +86,8 @@ const endless = classic ? undefined : {
   // Development only: `?startChunk=4` starts higher up, to look at a later part of the climb.
   // Development only: `?fuel=0.05` starts the first run nearly out of fuel, to look at the flame going out.
   startFuel: import.meta.env.DEV && query.has('fuel') ? Math.max(0, Math.min(1, Number(query.get('fuel')) || 0)) : undefined,
+  // Development only: `?shaken=0.8` starts the first run with a shaken candle, to look at the forest turning.
+  startShaken: import.meta.env.DEV && query.has('shaken') ? Math.max(0, Math.min(1, Number(query.get('shaken')) || 0)) : undefined,
   startChunk: import.meta.env.DEV ? Math.max(0, Math.min(500, Math.floor(Number(query.get('startChunk')) || 0))) : 0,
 };
 

@@ -71,6 +71,33 @@ export const ENDLESS_CONFIG = {
     peakIntensity: 0.9,
   },
   /**
+   * The candle's composure: how shaken it is by the climb, from 0 (steady) to 1 (badly shaken). It stands
+   * in for the signal of the EEG game: it feeds the same effects table (forest corruption, tense music, a
+   * narrower view), and a shaken candle burns faster. It never changes how the candle moves.
+   */
+  composure: {
+    /**
+     * A fall shakes the candle when it lands at least `minPx` below its takeoff: by `min01` there, rising
+     * to `max01` for a fall of `fullPx` or more (half a chunk). A fall of two ledges (about 200 px) is
+     * enough for the forest to start turning.
+     */
+    fall: { minPx: 60, fullPx: 480, min01: 0.25, max01: 0.8 },
+    /** Standing still on a ledge, not charging, for this long (ms) starts to steady the candle... */
+    settleMs: 350,
+    /** ...by this much per second while it stays still. A badly shaken candle is steady again in about 2.5 s. */
+    steadyPerSecond: 0.42,
+    /** On the move the candle still steadies, slowly: this much per second. */
+    easePerSecond: 0.035,
+    /** A jump that lands no lower than it took off steadies by this much; one wax by `wax01`. */
+    cleanLanding01: 0.05,
+    wax01: 0.2,
+    /** The extra burn starts at this much shaken and reaches `burnScaleMax` times the normal burn at 1. */
+    burnFrom01: 0.25,
+    burnScaleMax: 1.7,
+    /** From this much shaken the candle looks it, and the HUD says how to steady it. */
+    shownFrom01: 0.4,
+  },
+  /**
    * Moving side ledges. From `fromChunk` up, a side ledge slides left and right with this chance (0..1),
    * up to `maxDistancePx` either way (less when the landing spot needs the room), once every
    * `periodMs` (shortest to longest). Only optional side ledges move: the main path never does.
