@@ -51,6 +51,9 @@ Dev pages for looking at the candle: `/src/game/__tests__/candle-faces.html` (ev
 6. Forest and snow alternate every three chunks. In the snow about a third of the ledges are ice (a bright blue sheet
    with icicles): walking slides, the jump itself is unchanged.
 
+7. Night falls with height. Low down the whole screen is visible; from about chunk 10 the view is the candle's own
+   circle of light, wide with a full candle and small with an empty one. Reachable ledges are still outlined inside it.
+
 `npx tsx tools/endless/par.ts` prints how long the route bot needs per chunk and what that means for fuel. Tuning
 numbers are in `src/config/endless.config.ts`.
 

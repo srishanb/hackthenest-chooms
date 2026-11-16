@@ -29,6 +29,7 @@ import { neutralFrame } from '../effects/effects-engine';
 import { stepForestEffects } from '../forest/forest-effects';
 import type { ForestWorld } from '../forest/forest-world';
 import { WAX_CONFIG } from '../../config/wax.config';
+import { surroundings } from '../candle/awareness';
 import { pickCandleSeed } from '../candle/candle-genome';
 import { createCandleView } from '../candle/candle-view';
 import { flameSizeFromRadius } from '../candle/flame';
@@ -229,7 +230,7 @@ export class ClimbScene extends Phaser.Scene {
     const offAssist = this.deps.bus.on('ember_assist_requested', () => this.returnToEmber(this.ember.assist()));
     const offCancel = this.deps.bus.on('ember_cancel_request', () => this.ember.cancel());
     const offCheckpoint = this.deps.bus.on('checkpoint_restart_requested', () => this.returnToEmber(this.ember.restartAtAnchor()));
-    const offFuelWax = this.deps.bus.on('wax_collected', () => this.fuel.refill());
+    const offFuelWax = this.deps.bus.on('wax_collected', () => { this.fuel.refill(); this.candle.cheer(); });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, offFuelWax);
     const offRestart = this.deps.bus.on('run_restart', () => {
       this.fuel.reset();
@@ -415,6 +416,10 @@ export class ClimbScene extends Phaser.Scene {
       charge01: this.state.chargeMs / gameConfig.jump.maxChargeMs,
       aim: this.phase.isRunning() ? this.aim : 0,
       reducedMotion: settings.reducedMotion,
+      fuel01: this.fuel.value,
+      // The same eyes as the endless climb: toward the active wax drop, over a ledge edge, uneasy on ice.
+      around: surroundings(this.state, this.wax.drops.filter((drop) => this.wax.isActive(drop.id)),
+        this.platforms.find((p) => p.id === this.state.platformId), gameConfig.view.width),
     });
   }
 }

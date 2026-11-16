@@ -37,7 +37,7 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 ## Added during the loop
 
 - [x] #23 Ice ledges in snow bands, with their own look (a bright blue sheet and icicles) so they can be told apart
-- [ ] #24 Darker baseline at great height, so the candle's own light matters before the fuel is low
+- [x] #24 Night falls with height, so the candle's own light (its fuel) decides how far you see
 - [ ] #25 Remove the old small `rasterPortrait` once nothing else needs it as the reference
 - [ ] #26 Check the frame rate on real hardware: the headless check runs at 13 to 24 fps with software rendering
 - [ ] #27 A wind band (third biome) only if wind can be made part of the route replay
@@ -54,4 +54,6 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [ ] #38 A rare special candle (about one in forty): a two-tone swirl or a honeycomb pattern
 - [x] #39 The candle reacts to what is near it: looks toward wax within reach, peers down over the edge of its ledge
 - [x] #40 An uneasy look while sliding on ice (wide eyes on the ground, wavering mouth, a bead of wax)
-- [ ] #41 Give the classic climb (`?climb=classic`) the same awareness and cheer calls, so both modes have the full candle
+- [x] #41 Give the classic climb (`?climb=classic`) the same awareness and cheer calls, so both modes have the full candle
+- [ ] #42 Srishan to judge by playing: is the night too dark at low fuel (radius 130 px empty, 330 px full, full night from chunk 10)?
+- [ ] #43 Wax drops glow in the dark a little beyond the light, so the player can plan toward them at night

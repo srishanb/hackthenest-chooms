@@ -33,6 +33,7 @@ import { createEndlessWax } from '../endless/endless-wax';
 import { addWax, freshFlame, isLit, stepFlame, type FlameState } from '../endless/flame-fuel';
 import { createEndlessGenerator } from '../endless/generator';
 import { moodIntensity } from '../endless/mood';
+import { nightAt, nightShadowAlpha, sightRadius } from '../endless/night';
 import { createRouteBot } from '../endless/route-bot';
 import { createRunScore, type RunScore } from '../endless/run-score';
 import { createWaxDropsView } from '../endless/wax-drops-view';
@@ -197,6 +198,8 @@ export class EndlessScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
 
     this.darkness = createDarkness(this, DEPTH.darkness);
+    // At night the edge of the light is on screen all the time, so blend it smoothly instead of in blocks.
+    this.darkness.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
     this.veil = this.add.rectangle(0, 0, width, gameConfig.view.height, 0x05060a).setOrigin(0).setScrollFactor(0)
       .setDepth(DEPTH.veil).setAlpha(0);
     this.candleLighting = createCandleLighting(this);
@@ -294,7 +297,9 @@ export class EndlessScene extends Phaser.Scene {
     const x = this.state.x - camera.scrollX, y = this.state.y - camera.scrollY;
     const farX = Math.max(Math.abs(x), Math.abs(camera.width - x));
     const farY = Math.max(Math.abs(y), Math.abs(camera.height - y));
-    return fuelVisibilityRadius(this.flame.fuel01, corruption, farX, farY);
+    // By day the fuel rule decides; as night falls with height the candle's own circle takes over.
+    const open = fuelVisibilityRadius(this.flame.fuel01, corruption, farX, farY);
+    return sightRadius(open, this.flame.fuel01, nightAt(this.feetY(), this.deps.config), this.deps.config);
   }
 
   /** The flame went cold: freeze play and show the end screen. No `finish` event: nothing was "won". */
@@ -408,8 +413,9 @@ export class EndlessScene extends Phaser.Scene {
     });
 
     this.forest.update(frame.forestCorruption, deltaMs, settings.reducedMotion, !this.phase.isRunning(), settings.effectStrength);
-    this.darkness.setAlpha(FUEL_VIEW.normalShadowAlpha +
-      (FUEL_VIEW.corruptedShadowAlpha - FUEL_VIEW.normalShadowAlpha) * sceneryCorruption(frame.forestCorruption));
+    this.darkness.setAlpha(nightShadowAlpha(FUEL_VIEW.normalShadowAlpha +
+      (FUEL_VIEW.corruptedShadowAlpha - FUEL_VIEW.normalShadowAlpha) * sceneryCorruption(frame.forestCorruption),
+      nightAt(this.feetY(), config), config));
     // Never let the sheet shrink so far that its edge shows on screen.
     updateDarkness(this.darkness, this.state.x, this.state.y, Math.max(radius, 1));
     this.candleLighting.update(this.state.x, this.state.y, this.flame.fuel01, frame.forestCorruption);

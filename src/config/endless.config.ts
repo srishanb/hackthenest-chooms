@@ -66,6 +66,12 @@ export const ENDLESS_CONFIG = {
     peakIntensity: 0.9,
   },
   /**
+   * Night falls with height: none below `fromChunk`, as dark as it gets (`max01`, 0..1) from `fullChunk`.
+   * In the dark the view is the candle's own circle: `radiusEmptyPx` with no fuel, `radiusFullPx` when
+   * full. `shadowAlpha` is how dark the unlit part of the screen becomes at full night.
+   */
+  night: { fromChunk: 1.5, fullChunk: 10, max01: 1, radiusEmptyPx: 130, radiusFullPx: 330, shadowAlpha: 0.93 },
+  /**
    * Ice in the snow bands. `chance` is how likely a ledge there is icy (0..1); `min01`..`max01` is how
    * slippery (the game's own ice rule: less grip while walking, the jump itself is unchanged).
    */

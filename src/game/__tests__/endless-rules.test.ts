@@ -162,3 +162,38 @@ describe('biomes', () => {
     expect(snowAt(Number.NaN, C)).toBe(0);
   });
 });
+
+describe('night falls with height', () => {
+  it('none low down, rising smoothly to its cap, and never past it', async () => {
+    const { nightAt } = await import('../endless/night');
+    const at = (chunks: number): number => nightAt(C.baseFloorTopPx - chunks * C.chunkHeightPx, C);
+    expect(at(0)).toBe(0);
+    expect(at(C.night.fromChunk)).toBe(0);
+    expect(at(C.night.fullChunk)).toBeCloseTo(C.night.max01);
+    expect(at(C.night.fullChunk * 10)).toBeCloseTo(C.night.max01);
+    let previous = 0;
+    for (let chunks = 0; chunks < C.night.fullChunk + 2; chunks += 0.05) {
+      const value = at(chunks);
+      expect(value).toBeGreaterThanOrEqual(previous - 1e-9);
+      expect(value - previous).toBeLessThan(0.02);
+      previous = value;
+    }
+    expect(nightAt(Number.NaN, C)).toBe(0);
+  });
+
+  it('in the dark you see as far as the candle has fuel; by day night changes nothing', async () => {
+    const { candleRadius, nightShadowAlpha, sightRadius } = await import('../endless/night');
+    const open = 1100;
+    expect(sightRadius(open, 1, 0, C)).toBe(open);
+    expect(sightRadius(open, 1, 1, C)).toBeCloseTo(C.night.radiusFullPx);
+    expect(sightRadius(open, 0, 1, C)).toBeCloseTo(C.night.radiusEmptyPx);
+    expect(sightRadius(open, 0.5, 1, C)).toBeGreaterThan(sightRadius(open, 0.2, 1, C));
+    expect(candleRadius(5, C)).toBe(C.night.radiusFullPx);
+    // Night never widens a view the daylight rule has already narrowed (low fuel in a darkened forest).
+    expect(sightRadius(200, 1, 1, C)).toBe(200);
+    // The unlit part gets darker with night, and never lighter than by day.
+    expect(nightShadowAlpha(0.6, 0, C)).toBe(0.6);
+    expect(nightShadowAlpha(0.6, 1, C)).toBeCloseTo(C.night.shadowAlpha);
+    expect(nightShadowAlpha(0.98, 1, C)).toBe(0.98);
+  });
+});

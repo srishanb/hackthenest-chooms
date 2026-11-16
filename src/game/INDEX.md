@@ -118,6 +118,7 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 | `createWaxDropsView` | `endless/wax-drops-view.ts` | Draws the live wax drops; marks come and go with the chunks. |
 | `createRunScore`, `RunScore` | `endless/run-score.ts` | Height of the run (ledges stood on) and the best height on this device. |
 | `biomeOf`, `snowAt`, `chunkOfPlatform`, `Biome` | `endless/biome.ts` | Forest and snow bands by height: platform skin per chunk and snowfall that fades in and out. Presentation only. |
+| `nightAt`, `sightRadius`, `candleRadius`, `nightShadowAlpha` | `endless/night.ts` | Night falls with height; in the dark the view is the candle's own circle, sized by its fuel. Presentation only. |
 | `createRouteBot` | `endless/route-bot.ts` | Development-only player that follows the generated route (`?bot=1`), for automated browser checks. |
 | `ForestWorld.addPlatform`, `ForestWorld.removePlatform` | `forest/forest-world.ts` | Platform art added and removed while playing. |
 
