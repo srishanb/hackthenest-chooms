@@ -18,7 +18,7 @@ export const STRINGS = {
   'tutorial.terrain.title': 'Read the ledges',
   'tutorial.terrain.keys': 'Outlined ledges · landings · side ledges',
   'tutorial.terrain.body': 'A pale line marks every ledge a jump can reach from where you stand. Every so often a landing spans the whole width: it catches any fall, so a slip never costs more than one stretch of the climb.',
-  'tutorial.terrain.tip': 'Side ledges are optional. They hold extra wax, and getting back may mean dropping down.',
+  'tutorial.terrain.tip': 'Side ledges are optional. They hold extra wax, and getting back may mean dropping down. In the snow, pale blue ledges are ice: you slide when you walk, so stop early.',
   'narrator.voice.title': 'Narrator voice',
   'narrator.voice.label': 'Voice',
   'narrator.voice.chris': 'Chris · conversational',

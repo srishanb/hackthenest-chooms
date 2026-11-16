@@ -36,7 +36,7 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 
 ## Added during the loop
 
-- [ ] #23 Ice ledges in snow bands, with their own look (pale blue rim) so they can be told apart
+- [x] #23 Ice ledges in snow bands, with their own look (a bright blue sheet and icicles) so they can be told apart
 - [ ] #24 Darker baseline at great height, so the candle's own light matters before the fuel is low
 - [ ] #25 Remove the old small `rasterPortrait` once nothing else needs it as the reference
 - [ ] #26 Check the frame rate on real hardware: the headless check runs at 13 to 24 fps with software rendering
@@ -53,3 +53,4 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [ ] #37 Keep sweep tests under one second each so the slower CI runner never times out (time them after any candle change)
 - [ ] #38 A rare special candle (about one in forty): a two-tone swirl or a honeycomb pattern
 - [ ] #39 The candle reacts to what is near it: looks toward wax within reach, glances down at a long drop beside it
+- [ ] #40 A sliding look for the candle on ice (leans back, worried mouth) so the surface is felt as well as seen

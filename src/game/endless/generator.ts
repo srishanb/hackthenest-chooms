@@ -20,6 +20,7 @@ import type { EndlessConfig } from '../../config/endless.config';
 import { seededRandom } from '../candle/candle-genome';
 import { stepPlayer } from '../player/movement';
 import type { PlatformBox } from '../player/types';
+import { biomeOf } from './biome';
 import { buildArcTable, descentAt, launch, standOn, type JumpArc } from './jump-arcs';
 
 export interface WaxSpot {
@@ -238,7 +239,15 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
       const holder = main[1 + Math.floor(random() * (main.length - 1))]!;
       wax.push(waxAbove(holder, `e${index}:wax-p`));
     }
-    return { index, floorTopPx: floorTopPx(index), platforms: [...main, ...sides], wax, route };
+    // Ice, in the snow bands only. It changes how walking feels on a ledge, not the jump from it,
+    // so every stored jump still lands where it says (the tests replay them). Landings stay firm.
+    const iced = (ledge: PlatformData): PlatformData => {
+      if (biomeOf(index, config) !== 'snow' || random() >= config.ice.chance) return ledge;
+      const ice01 = Math.round(lerp(config.ice.min01, config.ice.max01, random()) * 100) / 100;
+      return { ...ledge, type: 'slippery', ice01 };
+    };
+    const ledges = [base, ...main.slice(1).map(iced), ...sides.map(iced)];
+    return { index, floorTopPx: floorTopPx(index), platforms: ledges, wax, route };
   }
 
   return {

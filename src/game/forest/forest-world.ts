@@ -112,8 +112,22 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       top + 12, 'hanging-vine').setOrigin(0.5, 0).setDepth(-2)
       .setScale(0.65 + stableUnit(`vine:${platform.id}:${offset}`) * 0.7)
       .setTint(winter ? 0xb1cad6 : 0x8ca778));
+    // Ice: a bright blue sheet over the top, a white glint along it and icicles hanging off the front,
+    // so an icy ledge is told apart from plain snow at a glance.
+    const ice: GameObjects.Rectangle[] = [];
+    if (platform.type === 'slippery') {
+      ice.push(scene.add.rectangle(left - 1, top - 2, platform.width + 2, 7, 0x8fd4ff, 0.95).setOrigin(0).setDepth(0.5));
+      ice.push(scene.add.rectangle(left + 3, top - 2, platform.width - 6, 2, 0xe9f8ff, 0.95).setOrigin(0).setDepth(0.6));
+      const icicles = Math.max(3, Math.floor(platform.width / 22));
+      for (let i = 0; i < icicles; i++) {
+        const x = Math.round(left + 4 + (platform.width - 12) * (i + stableUnit(`ice:${platform.id}:${i}`) * 0.7) / icicles);
+        const length = 5 + Math.round(stableUnit(`ice-len:${platform.id}:${i}`) * 9);
+        ice.push(scene.add.rectangle(x, top + 5, 4, length, 0xa9e2ff, 0.92).setOrigin(0).setDepth(0.5));
+        ice.push(scene.add.rectangle(x + 1, top + 5 + length, 2, 3, 0xcfefff, 0.9).setOrigin(0).setDepth(0.5));
+      }
+    }
     // Follow authored moving ledges using simulation positions, never signal values.
-    const images = [...vines, ...terrain, ...props.flatMap((prop) => [prop.healthy, prop.decayed])];
+    const images = [...vines, ...terrain, ...ice, ...props.flatMap((prop) => [prop.healthy, prop.decayed])];
     skins.set(platform.id, { id: platform.id, x: platform.x, y: platform.y, drawnX: platform.x, drawnY: platform.y, terrain, redTerrain, props,
       marks: images.map((image) => ({ image, x: image.x, y: image.y })) });
   }

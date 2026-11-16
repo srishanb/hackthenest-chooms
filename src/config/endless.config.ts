@@ -65,6 +65,11 @@ export const ENDLESS_CONFIG = {
     calmIntensity: 0.14,
     peakIntensity: 0.9,
   },
+  /**
+   * Ice in the snow bands. `chance` is how likely a ledge there is icy (0..1); `min01`..`max01` is how
+   * slippery (the game's own ice rule: less grip while walking, the jump itself is unchanged).
+   */
+  ice: { chance: 0.32, min01: 0.55, max01: 1 },
   biome: {
     /** Forest and snow alternate in bands this many chunks tall, starting with forest. */
     chunksPerBand: 3,

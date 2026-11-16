@@ -48,7 +48,8 @@ Dev pages for looking at the candle: `/src/game/__tests__/candle-faces.html` (ev
 4. Side ledges hold extra wax. They can be reached, but getting back may mean dropping down.
 5. Ledges get narrower and the steps taller over the first 14 chunks. The candle also burns faster with height, and
    keeps burning a little faster after that, so every run ends.
-6. Forest and snow alternate every three chunks.
+6. Forest and snow alternate every three chunks. In the snow about a third of the ledges are ice (a bright blue sheet
+   with icicles): walking slides, the jump itself is unchanged.
 
 `npx tsx tools/endless/par.ts` prints how long the route bot needs per chunk and what that means for fuel. Tuning
 numbers are in `src/config/endless.config.ts`.

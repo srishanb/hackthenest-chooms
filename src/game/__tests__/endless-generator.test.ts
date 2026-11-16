@@ -94,6 +94,29 @@ describe('endless generator', () => {
     expect(ledges).toBeGreaterThan(3000);
   }, 60_000);
 
+  it('ice appears only in the snow bands, never on a landing, and within the configured grip', () => {
+    let icy = 0, snowLedges = 0;
+    for (let seed = 1; seed <= 12; seed++) {
+      const generator = createEndlessGenerator(seed * 104729, GAME_CONFIG, ENDLESS_CONFIG);
+      for (let index = 0; index < 9; index++) {
+        const snow = Math.floor(index / ENDLESS_CONFIG.biome.chunksPerBand) % 2 === 1;
+        const chunk = generator.chunk(index);
+        expect(chunk.platforms[0]!.type).toBe('static');
+        for (const p of chunk.platforms.slice(1)) {
+          if (snow) snowLedges++;
+          if (p.type !== 'slippery') { expect(p.ice01).toBeUndefined(); continue; }
+          icy++;
+          expect(snow).toBe(true);
+          expect(p.ice01).toBeGreaterThanOrEqual(ENDLESS_CONFIG.ice.min01);
+          expect(p.ice01).toBeLessThanOrEqual(ENDLESS_CONFIG.ice.max01);
+        }
+      }
+    }
+    // About a third of snow ledges are icy.
+    expect(icy / snowLedges).toBeGreaterThan(ENDLESS_CONFIG.ice.chance - 0.1);
+    expect(icy / snowLedges).toBeLessThan(ENDLESS_CONFIG.ice.chance + 0.1);
+  });
+
   it('rejects a bad chunk index', () => {
     const generator = createEndlessGenerator(1, GAME_CONFIG, ENDLESS_CONFIG);
     expect(() => generator.chunk(-1)).toThrow();
