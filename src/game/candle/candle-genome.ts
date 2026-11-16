@@ -75,6 +75,15 @@ const FLAMES = [
   { core: 0xfffde0, inner: 0xfff09a, outer: 0xffb84a, edge: 0xe0702e },
 ];
 
+/** Rare flames: cool colours that only a few candles burn with. Core outward, like `FLAMES`. */
+const RARE_FLAMES = [
+  { core: 0xf0f8ff, inner: 0x9fd0ff, outer: 0x4f8fe8, edge: 0x2b4fb0 },
+  { core: 0xf2ffe8, inner: 0xb6f08a, outer: 0x5fc25a, edge: 0x2e7d46 },
+  { core: 0xfbeeff, inner: 0xd9a6ff, outer: 0x9a62e0, edge: 0x5a36a8 },
+];
+/** About one candle in this many burns with a rare flame colour. */
+export const RARE_FLAME_ONE_IN = 12;
+
 /** Multiply each RGB channel by `factor` (darker below 1, lighter above), clamped to 0..255. */
 export function scaleColor(color: number, factor: number): number {
   const channel = (shift: number): number => Math.min(255, Math.max(0, Math.round(((color >> shift) & 0xff) * factor)));
@@ -118,6 +127,8 @@ export function createCandleGenome(seed: number): CandleGenome {
   const trait = { kind: pick(random, TRAITS), accent: pick(random, ACCENTS), onLeft: random() < 0.5 };
   // The rare swirl is rolled last of all, so it replaces a trait without shifting any other value.
   if (random() < 1 / SWIRL_ONE_IN) trait.kind = 'swirl';
+  // The rare flame colour is rolled after that, for the same reason.
+  if (random() < 1 / RARE_FLAME_ONE_IN) flame.colors = pick(random, RARE_FLAMES);
   return { seed, width, height, wax: { base, shade: scaleColor(base, 0.78), light: scaleColor(base, 1.08) }, drips, wickHeight, flame, face, trait };
 }
 

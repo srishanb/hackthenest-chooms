@@ -75,5 +75,8 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #59 A soft shadow under the candle on the ledge below; it stays on that ledge and shrinks while the candle is in the air
 - [x] #60 In the snow the candle's breath shows: a small puff every few seconds while it stands or walks
 - [x] #61 The classic climb gets the ground shadow too
-- [ ] #62 Rare flame colours (a blue, green or violet flame) as another per-candle feature
+- [x] #62 Rare flame colours (a blue, green or violet flame, about one candle in twelve); the portrait's halo takes the flame's colour
 - [ ] #63 The classic climb is not smoke-tested beyond booting: climb a few ledges with keyboard input in the browser and check the candle there
+- [x] #64 Flow: after four clean jumps in a row (each landing no lower than its takeoff) the candle hums, with small notes floating up and a little colour in its cheeks, until it falls
+- [ ] #65 The light on the world (the halo round the candle and the wax pulse) takes a rare flame's colour too
+- [ ] #66 A short, soft reaction when flow breaks (the note pops, a small sigh), so the fall is felt but not punished

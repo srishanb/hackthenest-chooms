@@ -62,6 +62,8 @@ export interface ExpressionInput {
   spent?: boolean;
   /** True while sliding on ice. */
   sliding?: boolean;
+  /** True while the candle is in flow (several clean jumps in a row): a contented, rosy look. */
+  flow?: boolean;
   /** Something nearby worth a look (wax, the edge of the ledge), as a world direction: see awareness.ts. */
   look?: { x: -1 | 0 | 1; y: -1 | 0 | 1; peek: boolean } | null;
 }
@@ -240,7 +242,7 @@ export function faceFor(tracker: ExpressionTracker, input: ExpressionInput, seed
       // Standing about, it glances to the side and now and then looks up at its own flame.
       const fidget = input.pose === 'idle' && !still;
       const up = fidget && idleLookUp(seed, tracker.clockMs);
-      return { ...base, eyes: blink ? 'closed' : 'open', mouth: 'smile',
+      return { ...base, eyes: blink ? 'closed' : 'open', mouth: 'smile', blush: input.flow === true,
         gazeX: fidget && !up ? idleGlance(seed, tracker.clockMs) : 0, gazeY: up ? -1 : 0 };
     }
   }

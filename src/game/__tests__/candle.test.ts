@@ -205,3 +205,24 @@ describe('one trait of its own', () => {
     expect(tufted.wickTip.y).toBe(Math.min(...tufted.pixels.map((p) => p.y)));
   });
 });
+
+describe('rare flame colours', () => {
+  it('about one candle in twelve burns blue, green or violet; the rest keep a warm flame', async () => {
+    const { RARE_FLAME_ONE_IN } = await import('../candle/candle-genome');
+    const warmCores = new Set([0xfffbe8, 0xfff8f0, 0xfffde0]);
+    const cores = Array.from({ length: 1200 }, (_, i) => createCandleGenome(i + 1).flame.colors.core);
+    const rare = cores.filter((core) => !warmCores.has(core));
+    expect(rare.length / cores.length).toBeGreaterThan(0.5 / RARE_FLAME_ONE_IN);
+    expect(rare.length / cores.length).toBeLessThan(1.6 / RARE_FLAME_ONE_IN);
+    expect(new Set(rare).size).toBe(3);
+  });
+
+  it('a rare flame is drawn in its own colours', () => {
+    let genome = createCandleGenome(1);
+    for (let seed = 1; seed < 400 && genome.flame.colors.core !== 0xf0f8ff; seed++) genome = createCandleGenome(seed);
+    expect(genome.flame.colors.core).toBe(0xf0f8ff);
+    const colors = new Set(rasterFlame(genome, { size01: 1, timeMs: 0, reducedMotion: true, lean: 0 }).map((p) => p.color));
+    expect(colors.has(0x4f8fe8)).toBe(true);
+    expect(colors.has(0xffa23a)).toBe(false);
+  });
+});

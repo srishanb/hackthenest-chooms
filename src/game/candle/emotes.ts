@@ -48,6 +48,28 @@ export function coldBreath(clockMs: number, facingLeft: boolean, halfWidth: numb
   return step < 5 ? [...puff, { x: x + side, y, color: DREAM }] : puff;
 }
 
+/** While the candle is in flow it hums: a note every `NOTE_EVERY_MS`, floating for `NOTE_MS`. */
+export const NOTE_EVERY_MS = 2200;
+export const NOTE_MS = 1100;
+
+/**
+ * A small music note beside the flame, relative to the emote anchor (y grows downward): a head two
+ * pixels wide, a stem and a flag. It floats up and sways, then is gone until the next. One still
+ * note under reduced motion, so the hum is still shown.
+ */
+export function flowNote(clockMs: number, reducedMotion: boolean): Pixel[] {
+  const t = reducedMotion ? 300 : clockMs % NOTE_EVERY_MS;
+  if (t >= NOTE_MS) return [];
+  const rise = reducedMotion ? 2 : Math.floor(t / 110);
+  const x = 2 + (reducedMotion ? 0 : Math.round(Math.sin(t / 180)));
+  const y = -1 - rise;
+  return [
+    { x, y, color: GOLD }, { x: x + 1, y, color: GOLD },
+    { x: x + 1, y: y - 1, color: PALE }, { x: x + 1, y: y - 2, color: PALE }, { x: x + 1, y: y - 3, color: PALE },
+    { x: x + 2, y: y - 3, color: PALE }, { x: x + 2, y: y - 2, color: GOLD },
+  ];
+}
+
 /** How long droplets from a hard landing stay in the air (ms). */
 export const DROPLET_MS = 420;
 

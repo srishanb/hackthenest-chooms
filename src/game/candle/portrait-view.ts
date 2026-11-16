@@ -26,7 +26,6 @@ const DEPTH = 300;
 /** Match the HUD's panel and gold accent (src/ui/theme/tokens.css). */
 const PANEL = 0x101b2b;
 const RIM = 0xffda70;
-const GLOW = 0xffb347;
 const STEPS = 24;
 
 export interface PortraitLook {
@@ -84,7 +83,8 @@ export function createPortraitView(scene: Phaser.Scene, viewHeight: number) {
       // The halo: soft rings around the flame, brighter and wider while the candle is strong.
       context.save();
       context.beginPath(); context.arc(centre, centre, radius, 0, Math.PI * 2); context.clip();
-      context.fillStyle = hex(GLOW);
+      // The halo takes the colour of this candle's own flame (warm for most, cool for the rare ones).
+      context.fillStyle = hex(genome.flame.colors.outer);
       for (let ring = 5; ring >= 1; ring--) {
         context.globalAlpha = 0.05 * portrait.glow01;
         context.beginPath(); context.arc(centre, centre - 16 * PX, ring * 4.6 * PX * (0.4 + 0.6 * portrait.glow01), 0, Math.PI * 2); context.fill();

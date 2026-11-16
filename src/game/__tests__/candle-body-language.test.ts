@@ -203,3 +203,24 @@ describe('breath in the cold', () => {
     expect(Math.max(...coldBreath(700, false, 5, 15, false).map((p) => p.x))).toBeGreaterThan(Math.max(...right.map((p) => p.x)));
   });
 });
+
+describe('flow', () => {
+  it('a note floats up beside the flame, then nothing until the next; one still note under reduced motion', async () => {
+    const { flowNote, NOTE_EVERY_MS, NOTE_MS } = await import('../candle/emotes');
+    const early = flowNote(100, false), later = flowNote(900, false);
+    expect(early.length).toBe(7);
+    expect(Math.min(...later.map((p) => p.y))).toBeLessThan(Math.min(...early.map((p) => p.y)));
+    expect(flowNote(NOTE_MS + 10, false)).toEqual([]);
+    expect(flowNote(NOTE_EVERY_MS + 100, false)).toEqual(early);
+    expect(flowNote(0, true)).toEqual(flowNote(5000, true));
+    expect(flowNote(0, true).length).toBe(7);
+  });
+
+  it('gives the contented face a little colour, and only that face', async () => {
+    const { faceFor, INITIAL_EXPRESSION } = await import('../candle/expression');
+    const input = { pose: 'idle' as const, charge01: 0, fall01: 0, aim: 0 as const, facingLeft: false, fuel01: 1, lit: true, reducedMotion: true };
+    expect(faceFor(INITIAL_EXPRESSION, { ...input, flow: true }, 4).blush).toBe(true);
+    expect(faceFor(INITIAL_EXPRESSION, input, 4).blush).toBe(false);
+    expect(faceFor({ ...INITIAL_EXPRESSION, mood: 'worried' }, { ...input, flow: true }, 4).blush).toBe(false);
+  });
+});

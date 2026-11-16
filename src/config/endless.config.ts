@@ -101,6 +101,8 @@ export const ENDLESS_CONFIG = {
    * `ms` before the end screen opens. `veilAlpha` is how dark the world gets (0..1); the candle stays visible.
    */
   ending: { ms: 1700, veilAlpha: 0.88 },
+  /** Clean jumps in a row (landings no lower than their takeoff) before the candle starts to hum. */
+  flowAfterJumps: 4,
   /** Camera shake after a fall, only when the player turns the setting on. Intensity is a fraction of the view. */
   landingShake: { minFallPx: 120, fullFallPx: 700, maxIntensity: 0.006, durationMs: 140 },
   /** Storage key for the best height in px. */

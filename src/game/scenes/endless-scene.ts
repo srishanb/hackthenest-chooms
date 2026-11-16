@@ -107,6 +107,8 @@ export class EndlessScene extends Phaser.Scene {
   private bot = createRouteBot();
   /** True while the camera slides back to the start after Play again; the player waits. */
   private sliding = false;
+  /** Clean jumps in a row: landings no lower than their takeoff. A fall resets it. */
+  private cleanJumps = 0;
   /** The highest landing reached in this run (a chunk index), so each new one is cheered once. */
   private landingReached = 0;
   /** Fuel burned so far in this run (in candles): the more that has burned, the longer the candle's drips. */
@@ -162,6 +164,7 @@ export class EndlessScene extends Phaser.Scene {
     this.worldTimeMs = 0;
     this.endingMs = null;
     this.burnt = 0;
+    this.cleanJumps = 0;
     this.landingReached = this.deps.startChunk ?? 0;
     const spawn = this.spawn();
     this.state = teleportPlayer(spawn.x, spawn.y);
@@ -376,6 +379,7 @@ export class EndlessScene extends Phaser.Scene {
       // A fall just ends on whatever catches you; no reset, no death.
       if (out.events.landed) {
         this.shakeOnLanding(out.events.landed.fallHeightPx);
+        this.cleanJumps = out.events.landed.fallHeightPx > 0 ? 0 : this.cleanJumps + 1;
         // A new landing is a milestone: the candle is proud of it, once.
         const landedOn = out.events.landed.platformId;
         if (landedOn.endsWith(':floor') && chunkOfPlatform(landedOn) > this.landingReached) {
@@ -490,6 +494,8 @@ export class EndlessScene extends Phaser.Scene {
       spent01,
       // Fully melted-looking after about two and a half candles' worth of burning.
       melt01: Math.min(1, this.burnt / 2.5),
+      // Four clean jumps in a row and it starts to hum.
+      flow: this.cleanJumps >= config.flowAfterJumps,
       // In the snow its breath shows.
       cold: snow01 > 0.25,
       // What the candle notices: wax in reach, the edge of its ledge, ice underfoot. Eyes only.

@@ -31,6 +31,8 @@ Owner: Ali. Search here before adding a function.
 | `waxGrowth`, `grownMovement` | `candle/growth.ts` | +2% size per wax; walk x growth, launch speeds x sqrt(growth). Wax count only, never the signal. |
 | `groundShadow`, `GroundShadow`, `SHADOW_REACH_PX` | `candle/ground-shadow.ts` | The candle's shadow on the ledge straight below: largest when standing, smaller and fainter with height. |
 | `coldBreath`, `BREATH_EVERY_MS`, `BREATH_MS`, `CandleLook.cold` | `candle/emotes.ts`, `candle/candle-view.ts` | A puff of breath in the snow. |
+| `RARE_FLAME_ONE_IN` | `candle/candle-genome.ts` | About one candle in twelve burns with a blue, green or violet flame. |
+| `flowNote`, `NOTE_EVERY_MS`, `NOTE_MS`, `CandleLook.flow`, `ExpressionInput.flow` | `candle/emotes.ts`, `candle/candle-view.ts`, `candle/expression.ts` | After four clean jumps in a row the candle hums: a note floats beside the flame and its cheeks colour. |
 | `fullChargeTremble` | `candle/direction-cues.ts` | A one-pixel tremble at full charge, so the cap is visible. |
 | `flameLean`, `wickLean`, `flightSparks`, `CueInput` | `candle/direction-cues.ts` | Jump-direction cues: aim lean while charging, trailing flame and sparks in flight; never bends the body. |
 | `rasterPortrait`, `isGuttered`, `PORTRAIT_RADIUS` | `candle/portrait.ts` | Close-up of the player's candle by light strength: dims, staggers, smokes and gutters out near death. |

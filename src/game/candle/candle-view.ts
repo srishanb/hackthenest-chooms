@@ -18,7 +18,7 @@ import { bodyShape, INITIAL_POSE, poseFrame, slumpShape, stepPose, type BodyShap
 import { rasterCandle } from './candle-raster';
 import { type Aim, flameLean, flightSparks, fullChargeTremble, wickLean } from './direction-cues';
 import type { Surroundings } from './awareness';
-import { coldBreath, DROPLET_MS, emotePixels, landingDroplets } from './emotes';
+import { coldBreath, DROPLET_MS, emotePixels, flowNote, landingDroplets } from './emotes';
 import { faceFor, INITIAL_EXPRESSION, stepExpression, type CandleFace, type ExpressionEvents, type ExpressionTracker } from './expression';
 import { fallIntensity, FLAME_FPS, flameSizeFromRadius, flickerRate, rasterFlame, wickSmoke } from './flame';
 
@@ -47,6 +47,8 @@ export interface CandleLook {
   melt01?: number;
   /** True in the cold (a snow band): the candle's breath shows. */
   cold?: boolean;
+  /** True while the candle is in flow (several clean jumps in a row): it hums. */
+  flow?: boolean;
 }
 
 /** A bead of wax runs down a drip for `BEAD_RUN_MS` once every `BEAD_EVERY_MS`, in `BEAD_STEPS` steps. */
@@ -161,7 +163,7 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       const lit = !look.ember;
       const mood = { pose: tracker.pose, charge01: look.charge01, fall01, aim: look.aim, facingLeft: tracker.facingLeft,
         fuel01: look.fuel01 ?? 1, lit, reducedMotion: look.reducedMotion, spent: spent01 > 0,
-        sliding: look.around?.sliding, look: look.around?.look };
+        sliding: look.around?.sliding, look: look.around?.look, flow: look.flow };
       expression = stepExpression(expression, mood, pending, deltaMs, paused);
       pending = {};
       const face = faceFor(expression, mood, genome.seed);
@@ -170,7 +172,10 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       const warmth01 = !lit ? 0 : Math.round(Math.min(1, 0.35 + (look.fuel01 ?? 1) * 1.65) * 10) / 10;
       // Emotes are drawn at the flame's frame rate, like the rest of the candle's animation.
       const emoteMs = Math.floor(expression.moodMs / (1000 / FLAME_FPS)) * (1000 / FLAME_FPS);
-      const emotes = emotePixels(expression.mood, emoteMs, look.reducedMotion);
+      // A mood's own sign comes first; in flow, and with no louder sign showing, the candle hums a note.
+      const moodEmotes = emotePixels(expression.mood, emoteMs, look.reducedMotion);
+      const emotes = moodEmotes.length === 0 && look.flow && lit && expression.mood !== 'fading'
+        ? flowNote(Math.floor(clockMs / (1000 / FLAME_FPS)) * (1000 / FLAME_FPS), look.reducedMotion) : moodEmotes;
       const size = { halfWidth: Math.ceil((genome.width * Math.max(1, look.growth)) / 2), height: Math.round(genome.height * Math.max(1, look.growth)) };
       const droplets = landingDroplets(genome.seed, Math.floor(sinceLandMs / (1000 / FLAME_FPS / 2)) * (1000 / FLAME_FPS / 2), landImpact,
         size.halfWidth, size.height, genome.wax.light, look.reducedMotion);
