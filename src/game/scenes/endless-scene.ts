@@ -33,7 +33,7 @@ import { createChunkStream, type ChunkStream } from '../endless/chunk-stream';
 import { createEndlessWax } from '../endless/endless-wax';
 import { burnScale, isSteadying, shake, steady, steadyComposure, stepComposure, type Composure } from '../endless/composure';
 import { addWax, freshFlame, isLit, stepFlame, type FlameState } from '../endless/flame-fuel';
-import { createEndlessGenerator, type WaxSpot } from '../endless/generator';
+import { createEndlessGenerator, type EndlessGenerator, type WaxSpot } from '../endless/generator';
 import { moodIntensity } from '../endless/mood';
 import { nightAt, nightShadowAlpha, sightRadius } from '../endless/night';
 import { createRouteBot } from '../endless/route-bot';
@@ -70,7 +70,7 @@ export interface EndlessSceneDeps {
   fixedSeed: boolean;
   /** Development only: let the route bot play (`?bot=1`). A bot run never saves a best height. */
   bot: boolean;
-  /** Development only: start on this chunk's landing (`?startChunk=`), to look at a later height. Such a run never saves a best. */
+  /** Development only: start on this chunk's anchor ledge (`?startChunk=`), to look at a later height. Such a run never saves a best. */
   startChunk?: number;
   /** Development only: the first run starts with this much fuel (`?fuel=0.05`), to look at the flame going out. */
   startFuel?: number;
@@ -91,6 +91,8 @@ const SECTION_ID = 'endless';
 export class EndlessScene extends Phaser.Scene {
   private controls!: ReturnType<typeof createKeyboardInput>;
   private stream!: ChunkStream;
+  /** The run's generator: the stream builds chunks from it, and the spawn stands on one of its anchors. */
+  private generator!: EndlessGenerator;
   private platforms: PlatformBox[] = [];
   private worldTimeMs = 0;
   private state!: PlayerState;
@@ -134,11 +136,17 @@ export class EndlessScene extends Phaser.Scene {
     super(CLIMB_SCENE_KEY);
   }
 
-  /** Where the candle stands at the start of every run: the middle of the first landing. */
+  /**
+   * Where the candle stands at the start of every run: the middle of the ground, or in a development run
+   * the middle of that chunk's anchor ledge. The height does not need the generator (anchors sit at known
+   * heights), so the score can take its origin before the first run is built.
+   */
   private spawn(): { x: number; y: number } {
     const { gameConfig, config } = this.deps;
-    const floorTop = config.baseFloorTopPx - (this.deps.startChunk ?? 0) * config.chunkHeightPx;
-    return { x: gameConfig.view.width / 2, y: floorTop - gameConfig.player.height / 2 };
+    const startChunk = this.deps.startChunk ?? 0;
+    const floorTop = config.baseFloorTopPx - startChunk * config.chunkHeightPx;
+    const x = this.generator ? this.generator.floor(startChunk).x : gameConfig.view.width / 2;
+    return { x, y: floorTop - gameConfig.player.height / 2 };
   }
 
   /** The run's public record: its score plus the candle that is playing it. */
@@ -167,7 +175,8 @@ export class EndlessScene extends Phaser.Scene {
     for (const platform of this.stream?.platforms() ?? []) this.forest.removePlatform(platform.id);
     this.seed = seed;
     this.forest.reseedBackdrop(seed);
-    this.stream = createChunkStream(createEndlessGenerator(seed, gameConfig, config), config);
+    this.generator = createEndlessGenerator(seed, gameConfig, config);
+    this.stream = createChunkStream(this.generator, config);
     // Only the very first run of a development session may start short of fuel.
     this.flame = { ...freshFlame(config), fuel01: firstRun ? this.deps.startFuel ?? 1 : 1 };
     this.composure = steadyComposure(firstRun ? this.deps.startShaken ?? 0 : 0);
@@ -182,10 +191,17 @@ export class EndlessScene extends Phaser.Scene {
     this.syncWorld();
   }
 
-  /** Move the chunk window to the player and bring platform art and wax in line with it. */
+  /**
+   * Move the chunk window to the player and bring platform art and wax in line with it. Called after every
+   * physics step. While falling, the window also reaches as far as the next step can carry the body (twice
+   * that, to be safe), so no ledge is ever skipped because its chunk was not loaded yet.
+   */
   private syncWorld(): void {
     const before = this.stream.platforms();
-    if (!this.stream.update(this.feetY())) return;
+    const { gameConfig } = this.deps;
+    const stepS = 1 / gameConfig.stepHz;
+    const fallAheadPx = 2 * Math.max(0, this.state.vy + gameConfig.gravityY * stepS) * stepS;
+    if (!this.stream.update(this.feetY(), fallAheadPx)) return;
     const now = this.stream.platforms();
     const live = new Set(now.map((platform) => platform.id));
     for (const platform of before) if (!live.has(platform.id)) this.forest.removePlatform(platform.id);
@@ -225,7 +241,7 @@ export class EndlessScene extends Phaser.Scene {
     this.wax = createEndlessWax({ gameConfig, bus, snapshot: stores.snapshot });
     this.waxView = createWaxDropsView(this, bus);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.waxView.destroy());
-    // Height is measured from where the run starts (the first landing, or a later one in a development run).
+    // Height is measured from where the run starts (the ground, or a later anchor ledge in a development run).
     this.score = createRunScore({ seed: this.deps.seed, originFeetY: this.spawn().y + gameConfig.player.height / 2, storage: this.deps.storage,
       // A climb picked by its seed (today's climb, or `?seed=`) keeps its own best, apart from fresh climbs.
       key: this.deps.fixedSeed ? `${config.bestKey}.seed-${this.deps.seed}` : config.bestKey,
@@ -404,7 +420,7 @@ export class EndlessScene extends Phaser.Scene {
         this.composure = out.events.landed.fallHeightPx > 0
           ? shake(this.composure, out.events.landed.fallHeightPx, config)
           : steady(this.composure, config.composure.cleanLanding01);
-        // A new landing is a milestone: the candle is proud of it, once.
+        // Reaching a new chunk's anchor ledge (id `eN:floor`) is a milestone: the candle is proud of it, once.
         const landedOn = out.events.landed.platformId;
         if (landedOn.endsWith(':floor') && chunkOfPlatform(landedOn) > this.landingReached) {
           this.landingReached = chunkOfPlatform(landedOn);

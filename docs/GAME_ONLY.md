@@ -13,7 +13,7 @@ What is different from `main`:
 | World | Five authored stages with a top | An endless climb, generated as you go |
 | What drives the mood | The composure signal | The candle's own composure, from play: falls shake it, standing still steadies it. Low fuel darkens the forest too |
 | How a run ends | Landing on the last ledge | The flame goes out |
-| Recovery | A placed ember (E and R) | A full-width landing at the start of every stretch catches any fall |
+| Recovery | A placed ember (E and R) | None. Above the starting ground no ledge spans the screen, so a missed jump falls until a lower ledge or the ground catches it, however far that is (Decision D-33) |
 | Desktop app | A Windows installer, built by hand | Windows, Linux and macOS apps built by the release workflow; Windows and Linux update themselves |
 | Backdrop | Two layers of repeating bark and two crown pictures | Painted from the run's seed in three layers that pass at different speeds: wandering trunks, branches, vines and floating islands with trees. It turns to pines and snow with height, and each forest stretch has a seeded flavour (leafy, autumn, mushroom or blossom). Drawn by code, like the candle |
 | Background life | None | Birds sit on ledges and fly off as the candle nears, flocks cross far behind, fireflies blink, leaves fall, grass sways and far ledges spill waterfalls. All of it fades as the forest corrupts |
@@ -39,7 +39,7 @@ The menu has **Today's climb** (the same ledges for everyone on the same day, fr
 | `?seed=1234` | Play one particular climb. The same number always gives the same ledges |
 | `?climb=classic` | The authored five-stage climb, with the still signal (fixed light) |
 | `?bot=1` | Development builds only: a bot climbs by following the generator's route. Never saves a best height |
-| `?startChunk=4` | Development builds only: start higher up. Never saves a best height |
+| `?startChunk=4` | Development builds only: start higher up, standing on that chunk's anchor ledge. Never saves a best height |
 | `?candleSeed=7` | Development builds only: pick the candle |
 | `?fuel=0.05` | Development builds only: the first run starts nearly out of fuel, to look at the flame going out |
 | `?shaken=0.9` | Development builds only: the first run starts with a shaken candle, to look at the forest turning |
@@ -49,11 +49,15 @@ Dev pages for looking at the candle: `/src/game/__tests__/candle-faces.html` (ev
 
 ## How the endless climb is made
 
-1. The climb is cut into chunks 960 px tall. Each chunk starts with a landing that spans the whole width.
-2. A chunk depends only on the run's seed and its own number, so a chunk below can be rebuilt after a fall.
+1. The climb is cut into chunks 960 px tall. Each chunk starts on an anchor: an ordinary ledge at a known height, whose
+   place and width come from the seed and the chunk number alone. Only chunk 0's anchor, the ground the run starts
+   on, spans the whole width. Nothing else catches a fall: a slip costs as much height as it costs (Decision D-33).
+2. A chunk depends only on the run's seed and its own number, so a chunk below can be rebuilt after a fall. The last
+   jump of each chunk lands on the next chunk's anchor, and is replayed like every other jump.
 3. Each ledge is placed under a jump arc traced with the game's own `stepPlayer`. The jump is then replayed against
    the finished chunk, and a ledge the replay does not land on is thrown away. The test suite replays every jump of
-   480 chunks.
+   480 chunks, and drops the candle from high up to check that a long fall through the streamed chunks lands exactly
+   where it would with every ledge loaded.
 4. Side ledges hold extra wax. They can be reached, but getting back may mean dropping down. From chunk 4 up some
    of them slide left and right, carrying their wax; they move only as far as their jump still lands on them, and
    the main path never moves.
@@ -93,7 +97,7 @@ page on it. Not judged by a person yet: whether the amounts feel fair, and how t
 
 - **Moods.** `src/game/candle/expression.ts` picks one mood at a time from what the body is doing and from short
   events: content, focused (charging), soaring, alarmed (a fast fall), ouch (a hard landing, with a longer daze after a
-  very long fall), relieved (wax relit a glowing wick), delighted (wax), proud (a new best, or a new landing), uneasy
+  very long fall), relieved (wax relit a glowing wick), delighted (wax), proud (a new best, or a new chunk's anchor reached), uneasy
   (sliding on ice), shaken (after a fall: wide darting eyes), steadying (standing still to get over it: eyes shut, a
   slow breath), worried (low fuel), sleepy (long idle) and fading (the flame is out). It blinks, glances about and
   looks up at its own flame, in a rhythm set by the candle's seed.

@@ -33,7 +33,7 @@ describe('chunk stream', () => {
     expect(up.added.map((c) => c.index)).toEqual([2, 3]);
     expect(up.removed.map((c) => c.index)).toEqual([0]);
   });
-  it('rebuilds a chunk identically after a fall, and includes the landing above the window', () => {
+  it('rebuilds a chunk identically after a fall, and includes the anchor above the window', () => {
     const s = stream();
     s.update(C.baseFloorTopPx);
     const before = structuredClone(s.chunks()[0]);
@@ -44,16 +44,20 @@ describe('chunk stream', () => {
     const bounds = s.bounds();
     expect(bounds.bottom).toBeGreaterThan(bounds.top);
   });
-  it('drops the chunk below once the player has climbed out of sight of it, and brings it back on a fall', () => {
+  it('always keeps the chunk below (nothing else catches a fall), and loads down to where a fast fall can reach', () => {
     const s = stream();
-    const landing = C.baseFloorTopPx - 3 * C.chunkHeightPx;
-    s.update(landing - 10);
+    const anchorTop = C.baseFloorTopPx - 3 * C.chunkHeightPx;
+    s.update(anchorTop - 10);
     expect(s.chunks().map((c) => c.index)).toEqual([2, 3, 4]);
-    const up = s.update(landing - C.belowViewPx - 20)!;
-    expect(up.removed.map((c) => c.index)).toEqual([2]);
-    expect(s.chunks().map((c) => c.index)).toEqual([3, 4]);
-    const back = s.update(landing - 40)!;
-    expect(back.added.map((c) => c.index)).toEqual([2]);
+    // High in the chunk the chunk below stays: a missed jump falls into it.
+    expect(s.update(anchorTop - C.chunkHeightPx + 30)).toBeNull();
+    expect(s.chunks().map((c) => c.index)).toEqual([2, 3, 4]);
+    // A body about to fall further than one chunk in one step has those chunks loaded first.
+    s.update(anchorTop - 10, 2.5 * C.chunkHeightPx);
+    expect(s.chunks().map((c) => c.index)).toEqual([0, 1, 2, 3, 4]);
+    // Bad numbers are ignored.
+    s.update(anchorTop - 10, Number.NaN);
+    expect(s.chunks().map((c) => c.index)).toEqual([2, 3, 4]);
   });
 
   it('never reports a chunk below the first one', () => {
