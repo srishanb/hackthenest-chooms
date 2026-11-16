@@ -1,0 +1,57 @@
+<!doctype html><html><head><title>Candle faces</title>
+<style>body{margin:0;background:#1b2a2a;color:#cfd6e4;font:12px monospace}canvas{image-rendering:pixelated;display:block}</style></head><body>
+<p style="padding:6px 10px">Rows: six seeds. Columns: content, glance, run (turned), blink, focused (charging), soaring, alarmed, ouch, delighted, proud, worried, sleepy, yawn, fading; then facing left. Dev-only visual check.</p>
+<canvas id="c"></canvas>
+<script type="module">
+// Dev-only visual check of every candle expression; draws the pure rasters with a plain 2D canvas.
+import { createCandleGenome } from './../candle/candle-genome.ts';
+import { bodyShape, INITIAL_POSE } from './../candle/candle-pose.ts';
+import { rasterCandle } from './../candle/candle-raster.ts';
+import { rasterFlame } from './../candle/flame.ts';
+import { faceFor, INITIAL_EXPRESSION } from './../candle/expression.ts';
+const SEEDS=[1,2,3,40,500,6006];
+// Each column: a mood, the pose that goes with it, and overrides for the input.
+const base={pose:'idle',charge01:0,fall01:0,aim:0,facingLeft:false,fuel01:1,lit:true,reducedMotion:true};
+const COLS=[
+  {label:'content',mood:'content'},
+  {label:'glance',mood:'content',face:{gazeX:1}},
+  {label:'run',mood:'content',pose:'run'},
+  {label:'blink',mood:'content',face:{eyes:'closed'}},
+  {label:'focused',mood:'focused',pose:'charge',input:{charge01:0.5,aim:1}},
+  {label:'full charge',mood:'focused',pose:'charge',input:{charge01:1,aim:0}},
+  {label:'soaring',mood:'soaring',pose:'rise'},
+  {label:'alarmed',mood:'alarmed',pose:'fall',input:{fall01:0.9}},
+  {label:'ouch',mood:'ouch',pose:'land'},
+  {label:'delighted',mood:'delighted'},
+  {label:'proud',mood:'proud'},
+  {label:'worried',mood:'worried',input:{fuel01:0.1},size:0.12},
+  {label:'sleepy',mood:'sleepy'},
+  {label:'yawn',mood:'sleepy',face:{eyes:'closed',mouth:'open'}},
+  {label:'fading',mood:'fading',input:{lit:false},size:0},
+  {label:'left',mood:'content',left:true},
+];
+const P=6,CELL=36,CW=18;
+const canvas=document.querySelector('#c');canvas.width=COLS.length*CW*P;canvas.height=SEEDS.length*CELL*P+16;
+const ctx=canvas.getContext('2d');
+const hex=(n)=>'#'+n.toString(16).padStart(6,'0');
+const draw=(pixels,ox,oy)=>{for(const p of pixels){ctx.fillStyle=hex(p.color);ctx.fillRect((ox+p.x)*P,(oy+p.y)*P,P,P);}};
+ctx.fillStyle='#1b2a2a';ctx.fillRect(0,0,canvas.width,canvas.height);
+SEEDS.forEach((seed,row)=>{
+  const g=createCandleGenome(seed),oy=row*CELL+CELL-3;
+  COLS.forEach((col,i)=>{
+    const pose=col.pose||'idle';
+    const input={...base,pose,...(col.input||{})};
+    const tracker={...INITIAL_POSE,pose,elapsedMs:0,facingLeft:!!col.left};
+    const face={...faceFor({...INITIAL_EXPRESSION,mood:col.mood},input,seed),...(col.face||{})};
+    const size=col.size??0.7;
+    const body=rasterCandle(g,bodyShape(tracker,input.charge01),1,!!col.left,{face,glow01:input.lit?0.35+0.65*size:0.08});
+    const ox=i*CW+CW/2;
+    draw(body.pixels,ox,oy);
+    if(input.lit) draw(rasterFlame(g,{size01:size,timeMs:0,reducedMotion:true,lean:0,fall01:input.fall01}),ox+body.wickTip.x,oy+body.wickTip.y);
+    else draw([{x:0,y:-1,color:0xd58138}],ox+body.wickTip.x,oy+body.wickTip.y);
+  });
+});
+ctx.fillStyle='#cfd6e4';ctx.font='11px monospace';
+COLS.forEach((col,i)=>ctx.fillText(col.label,i*CW*P+6,canvas.height-4));
+window.galleryReady=true;
+</script></body></html>

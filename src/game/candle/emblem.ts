@@ -12,6 +12,7 @@
 import { createCandleGenome, type CandleGenome } from './candle-genome';
 import { bodyShape, INITIAL_POSE, type PoseTracker } from './candle-pose';
 import { rasterCandle } from './candle-raster';
+import { faceFor, INITIAL_EXPRESSION, type CandleMood } from './expression';
 import { FLAME_FPS, rasterFlame } from './flame';
 
 /**
@@ -45,7 +46,11 @@ export interface EmblemPixel {
 /** Every pixel of the emblem at `timeMs`, in box coordinates (0..EMBLEM_W-1, 0..EMBLEM_H-1). */
 export function emblemPixels(genome: CandleGenome, timeMs: number, still: boolean): EmblemPixel[] {
   const { tracker, charge01, flare01 } = emblemMoment(timeMs);
-  const body = rasterCandle(genome, bodyShape(tracker, charge01), 1, false);
+  // The emblem has a face too: content while it waits (it blinks and glances), set while it gathers, glad as it springs.
+  const mood: CandleMood = tracker.pose === 'charge' ? 'focused' : tracker.pose === 'rise' ? 'soaring' : 'content';
+  const face = faceFor({ ...INITIAL_EXPRESSION, mood, clockMs: timeMs, moodMs: tracker.elapsedMs },
+    { pose: tracker.pose, charge01, fall01: 0, aim: 0, facingLeft: false, fuel01: 1, lit: true, reducedMotion: still }, genome.seed);
+  const body = rasterCandle(genome, bodyShape(tracker, charge01), 1, false, { face, glow01: 0.8 });
   const flame = rasterFlame(genome, { size01: 1, timeMs, reducedMotion: still, lean: 0, fall01: 0.55 * flare01 });
   const feetX = EMBLEM_W / 2;
   const feetY = EMBLEM_H - 1;

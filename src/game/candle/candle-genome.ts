@@ -45,6 +45,15 @@ export interface CandleGenome {
     /** Colours from the core outward. */
     colors: { core: number; inner: number; outer: number; edge: number };
   };
+  /** What makes this candle's face its own. Expressions come from expression.ts; these are its features. */
+  face: {
+    /** Rows between the top of the wax and the eyes. */
+    eyeRow: number;
+    eyeColor: number;
+    mouthColor: number;
+    /** Always a little pink in the cheeks. */
+    rosy: boolean;
+  };
 }
 
 /** Pale wax tones that read against the dark forest; each pick shades and lightens itself. */
@@ -61,6 +70,9 @@ export function scaleColor(color: number, factor: number): number {
   return (channel(16) << 16) | (channel(8) << 8) | channel(0);
 }
 
+/** Dark, warm eye colours that read on every wax tone. */
+const EYES = [0x2a1d1a, 0x1f2430, 0x33221c, 0x241a2a];
+
 const pick = <T>(random: () => number, list: readonly T[]): T => list[Math.floor(random() * list.length)]!;
 const between = (random: () => number, min: number, max: number): number => min + Math.floor(random() * (max - min + 1));
 
@@ -76,21 +88,18 @@ export function createCandleGenome(seed: number): CandleGenome {
     if (drips.some((d) => Math.abs(d.x - x) < 2)) continue;
     drips.push({ x, length: between(random, 2, Math.max(3, Math.floor(height / 2))) });
   }
-  return {
-    seed,
-    width,
-    height,
-    wax: { base, shade: scaleColor(base, 0.78), light: scaleColor(base, 1.08) },
-    drips,
-    wickHeight: between(random, 1, 2),
-    flame: {
-      width: between(random, 5, 7),
-      phaseA: random() * Math.PI * 2,
-      phaseB: random() * Math.PI * 2,
-      turbulence: 0.25 + random() * 0.5,
-      colors: pick(random, FLAMES),
-    },
+  const wickHeight = between(random, 1, 2);
+  const flame = {
+    width: between(random, 5, 7),
+    phaseA: random() * Math.PI * 2,
+    phaseB: random() * Math.PI * 2,
+    turbulence: 0.25 + random() * 0.5,
+    colors: pick(random, FLAMES),
   };
+  // The face is drawn from the generator last, so older fields keep their values for a given seed.
+  const eyeColor = pick(random, EYES);
+  const face = { eyeRow: between(random, 4, 5), eyeColor, mouthColor: scaleColor(eyeColor, 1.9), rosy: random() < 0.4 };
+  return { seed, width, height, wax: { base, shade: scaleColor(base, 0.78), light: scaleColor(base, 1.08) }, drips, wickHeight, flame, face };
 }
 
 /** A seed for a new run, or the dev override from `?candleSeed=<integer>`. */

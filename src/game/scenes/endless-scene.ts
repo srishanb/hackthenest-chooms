@@ -303,7 +303,7 @@ export class EndlessScene extends Phaser.Scene {
       this.flame = stepFlame(this.flame, stepMs, difficulty, config);
       const taken = this.wax.update(this.state, this.stream.wax());
       for (let i = 0; i < taken.length; i++) this.flame = addWax(this.flame, config);
-      if (taken.length) this.waxView.sync(this.stream.wax(), this.wax.isCollected);
+      if (taken.length) { this.waxView.sync(this.stream.wax(), this.wax.isCollected); this.candle.cheer(); }
 
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
       // A fall just ends on whatever catches you; no reset, no death.
@@ -314,6 +314,8 @@ export class EndlessScene extends Phaser.Scene {
           const run = this.score.snapshot();
           // Keep the record safe as soon as it is beaten, not only when the run ends.
           if (run.heightPx >= run.bestPx) this.score.save();
+          // Celebrate once, at the moment the old best is passed.
+          if (run.newBest && !stores.snapshot.get().run?.newBest) this.candle.celebrate();
           stores.snapshot.set({ ...stores.snapshot.get(), run });
         }
       }
@@ -375,6 +377,7 @@ export class EndlessScene extends Phaser.Scene {
       visible: phase !== 'menu' && settings.hud.showStatus,
       paused: !this.phase.isRunning(),
       shape: this.candle.shape(),
+      face: this.candle.face(),
     });
     this.candle.update(this.state, deltaMs, !this.phase.isRunning(), {
       ember: !isLit(this.flame),
@@ -386,6 +389,7 @@ export class EndlessScene extends Phaser.Scene {
       charge01: this.state.chargeMs / gameConfig.jump.maxChargeMs,
       aim: this.phase.isRunning() ? this.aim : 0,
       reducedMotion: settings.reducedMotion,
+      fuel01: this.flame.fuel01,
     });
 
     if (import.meta.env.DEV) {

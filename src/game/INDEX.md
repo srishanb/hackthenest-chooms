@@ -119,3 +119,15 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 | `createRunScore`, `RunScore` | `endless/run-score.ts` | Height of the run (ledges stood on) and the best height on this device. |
 | `createRouteBot` | `endless/route-bot.ts` | Development-only player that follows the generated route (`?bot=1`), for automated browser checks. |
 | `ForestWorld.addPlatform`, `ForestWorld.removePlatform` | `forest/forest-world.ts` | Platform art added and removed while playing. |
+
+## Candle expression
+
+| Export | File | What it does |
+|---|---|---|
+| `stepExpression`, `faceFor`, `isBlinking`, `idleGlance`, `INITIAL_EXPRESSION`, `EXPRESSION_TIMING`, `CandleMood`, `CandleFace`, `EyeShape`, `MouthShape`, `ExpressionInput`, `ExpressionEvents`, `ExpressionTracker` | `candle/expression.ts` | One mood at a time from the body's state and short events (wax, hard landing, new best); seeded blink and glance. Pure, visual only. |
+| `facePixels`, `FaceBox` | `candle/face.ts` | Eyes, mouth, blush and a bead of wax as art pixels on the body. |
+| `BodyLook` | `candle/candle-raster.ts` | Optional face and flame glow for `rasterCandle` (rounded shoulders, melt pool, four tones, drip beads are always drawn). |
+| `createCandleView().cheer()`, `.celebrate()`, `.face()` | `candle/candle-view.ts` | The scene reports wax and a new best; the portrait reads the current face. |
+| `CandleGenome.face` | `candle/candle-genome.ts` | Per-candle features: eye row, eye and mouth colour, rosy cheeks. |
+
+`__tests__/candle-faces.html` is a dev page that draws every mood for six seeds.

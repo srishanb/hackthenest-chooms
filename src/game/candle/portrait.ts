@@ -17,6 +17,7 @@
  */
 import { scaleColor, type CandleGenome } from './candle-genome';
 import { bodyShape, INITIAL_POSE, type BodyShape } from './candle-pose';
+import type { CandleFace } from './expression';
 import { rasterCandle } from './candle-raster';
 import { FLAME_FPS, OXIDISED, rasterFlame } from './flame';
 
@@ -47,6 +48,8 @@ export interface PortraitInput {
   growth: number;
   /** The hero candle's body shape this frame, so the close-up squashes and stretches with every jump. Idle breathing without it. */
   shape?: BodyShape;
+  /** The hero candle's face this frame, so the close-up shows the same expression. Faceless without it. */
+  face?: CandleFace;
 }
 
 export interface Portrait {
@@ -87,7 +90,7 @@ export function rasterPortrait(genome: CandleGenome, input: PortraitInput): Port
   // idle pose when no shape is given, and dims as the light leaves it. The wick stays upright.
   const idle = { ...INITIAL_POSE, elapsedMs: input.timeMs * motion };
   const shape = input.shape ? { ...input.shape, lean: 0 } : bodyShape(idle, 0);
-  const body = rasterCandle(genome, shape, input.growth, false);
+  const body = rasterCandle(genome, shape, input.growth, false, { face: input.face, glow01: s });
   const dim = 0.45 + 0.55 * s;
   for (const p of body.pixels) push(p.x, p.y + FEET_Y, scaleColor(p.color, dim));
   const tipX = body.wickTip.x;

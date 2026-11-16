@@ -5,14 +5,14 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 
 ## Candle (the focus)
 
-- [ ] #1 Face: eyes, blink, gaze toward aim and motion, mouth; a pure expression state machine with tests
-- [ ] #2 Expressions from play: determined while charging, wide-eyed in a fall, squeezed on a hard landing, happy on wax, worried on low fuel, sleepy when idle
-- [ ] #3 Body detail: rounded shoulders, melt pool around the wick, warm rim light from the flame, extra shade tone
+- [x] #1 Face: eyes, blink, gaze toward aim and motion, mouth; a pure expression state machine with tests
+- [x] #2 Expressions from play: determined while charging, wide-eyed in a fall, squeezed on a hard landing, happy on wax, worried on low fuel, sleepy when idle
+- [x] #3 Body detail: rounded shoulders, melt pool around the wick, warm rim light from the flame, extra shade tone
 - [ ] #4 Portrait close-up shows the same face larger, with its own detail (tear of wax when nearly out, glint in the eyes)
 - [ ] #5 Living wax: drips that grow and fall, droplets shaken off on a hard landing
 - [ ] #6 Small limbs or feet that react (brace on charge, reach in the air), only if they read well at 2 px per art pixel
 - [ ] #7 Menu emblem greets the player (looks around, blinks, hops)
-- [ ] #8 Candle gallery page updated with every expression, for visual review
+- [x] #8 Candle gallery page updated with every expression, for visual review
 
 ## Endless mode
 
