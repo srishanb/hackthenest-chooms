@@ -33,17 +33,22 @@ export interface ProtectedVisibility {
 export function createProtectedVisibility(
   scene: Phaser.Scene,
   depth: number,
-  platforms: readonly PlatformBox[],
-  world: WorldBounds,
+  platformSource: readonly PlatformBox[] | (() => readonly PlatformBox[]),
+  worldSource: WorldBounds | (() => WorldBounds),
   config: GameConfig,
 ): ProtectedVisibility {
   const graphics = scene.add.graphics().setDepth(depth);
   const cache = new Map<string, string[]>();
   let drawnFor: string | null = null;
+  // A fixed list for the authored climb, or a getter for a streamed world (endless mode).
+  const platformsNow = typeof platformSource === 'function' ? platformSource : () => platformSource;
+  const worldNow = typeof worldSource === 'function' ? worldSource : () => worldSource;
 
   return {
-    update(platformId, lanternX, lanternY, radiusPx, livePlatforms = platforms) {
+    update(platformId, lanternX, lanternY, radiusPx, livePlatforms) {
       graphics.clear();
+      const platforms = platformsNow();
+      livePlatforms ??= platforms;
       platformId ??= drawnFor;
       if (platformId === null) return;
       const source = platforms.find((p) => p.id === platformId);
@@ -51,8 +56,10 @@ export function createProtectedVisibility(
       drawnFor = platformId;
       let reachable = cache.get(platformId);
       if (!reachable) {
-        reachable = reachableLedges(source, platforms, world, config);
+        reachable = reachableLedges(source, platforms, worldNow(), config);
         cache.set(platformId, reachable);
+        // A streamed world never stops handing out new ids; keep only the recent ones.
+        if (cache.size > 200) cache.delete(cache.keys().next().value!);
       }
       for (const piece of fadeSegments(outlineSegments(livePlatforms, platformId, reachable), lanternX, lanternY, radiusPx)) {
         if (piece.current) continue;

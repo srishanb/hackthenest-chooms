@@ -21,6 +21,10 @@ export interface ForestWorld {
   update(corruption: number, deltaMs: number, reducedMotion: boolean, paused: boolean, strength?: number): void;
   setEnvironment(value: Partial<VisualEnvironment>): void;
   syncPlatforms(platforms: readonly PlatformBox[]): void;
+  /** Draw a platform that appeared after the world was built (endless mode). `winter` picks the snowy skin. */
+  addPlatform(platform: PlatformBox, winter: boolean): void;
+  /** Destroy everything drawn for a platform. Unknown ids are ignored. */
+  removePlatform(id: string): void;
 }
 
 export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld {
@@ -34,17 +38,25 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
   const screen = createCorruptionScreen(scene);
   const mist = scene.add.tileSprite(0, 0, width, height, 'forest-mist').setOrigin(0).setScrollFactor(0)
     .setTileScale(C.pixelScale).setDepth(-8);
-  const terrain: GameObjects.TileSprite[] = [];
-  const redTerrain: Array<{ normal: GameObjects.TileSprite; red: GameObjects.TileSprite }> = [];
+  /** Everything drawn for one platform, kept together so a platform can be removed while playing. */
+  interface PlatformSkin {
+    id: string; x: number; y: number;
+    /** Where the art was last drawn, so a still ledge costs nothing per frame. */
+    drawnX: number; drawnY: number;
+    terrain: GameObjects.TileSprite[];
+    redTerrain: Array<{ normal: GameObjects.TileSprite; red: GameObjects.TileSprite }>;
+    props: Array<{ healthy: GameObjects.Image; decayed: GameObjects.Image; threshold: number }>;
+    marks: Array<{ image: GameObjects.Image | GameObjects.TileSprite | GameObjects.Rectangle; x: number; y: number }>;
+  }
+  const skins = new Map<string, PlatformSkin>();
   const rims: GameObjects.Rectangle[] = [];
-  const props: Array<{ healthy: GameObjects.Image; decayed: GameObjects.Image; threshold: number }> = [];
-  const platformMarks: Array<{ id: string; x: number; y: number; marks: Array<{
-    image: GameObjects.Image | GameObjects.TileSprite | GameObjects.Rectangle; x: number; y: number;
-  }> }> = [];
-  for (const platform of world.platforms) {
-    const winter = world.sections.some((section) => (section.stage?.snow01 ?? 0) > 0 && section.platforms.some((row) => row.id === platform.id));
+  /** Decorations that belong to no platform (the plants along the first floor). */
+  const looseProps: PlatformSkin['props'] = [];
+  let propCount = 0;
+  function addPlatform(platform: PlatformBox, winter: boolean): void {
+    if (skins.has(platform.id)) return;
     const skin = winter ? ENVIRONMENT_ASSETS.winter : ENVIRONMENT_ASSETS.forest;
-    const terrainStart = terrain.length, rimStart = rims.length, propStart = props.length;
+    const terrain: PlatformSkin['terrain'] = [], redTerrain: PlatformSkin['redTerrain'] = [], props: PlatformSkin['props'] = [];
     const left = platform.x - platform.width / 2, top = platform.y - platform.height / 2;
     terrain.push(scene.add.tileSprite(left, top, platform.width, Math.min(6, platform.height), skin.middle)
       .setOrigin(0).setTileScale(C.pixelScale).setDepth(0));
@@ -67,7 +79,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       terrain.push(scene.add.tileSprite(x, top, capWidth, Math.min(6, platform.height), key)
         .setOrigin(0).setTileScale(C.pixelScale).setDepth(0));
     }
-    if (!winter) for (const tile of terrain.slice(terrainStart)) {
+    if (!winter) for (const tile of [...terrain]) {
       const key = `${tile.texture.key}-red`;
       if (!scene.textures.exists(key)) continue;
       const red = scene.add.tileSprite(tile.x, tile.y, tile.width, tile.height, key)
@@ -75,12 +87,12 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       redTerrain.push({ normal: tile, red });
       terrain.push(red);
     }
-    if (props.length < C.maxProps) {
+    if (propCount < C.maxProps) {
       // Stable one/two-plant compositions avoid identical bookends on every platform.
       const composition = stableUnit(`composition:${platform.id}`);
       const slots = composition > 0.55 ? [-0.9, -0.45, 0.25, 0.8] : [-0.8, -0.15, 0.65];
       for (const side of slots) {
-        if (props.length >= C.maxProps) break;
+        if (propCount >= C.maxProps) break;
         const seed = stableUnit(`${platform.id}:${side}`);
         const x = platform.x + side * (platform.width / 2 - Math.min(28, platform.width / 4));
         const key = winter ? (seed > 0.75 ? 'winter-crystal' : seed > 0.5 ? 'winter-bush' : seed > 0.25 ? skin.plant : 'grass-stone') : seed > 0.8 ? 'grass-tree' : seed > 0.65 ? skin.plant : seed > 0.45 ? 'forest-fern' : seed > 0.1 ? 'forest-mushrooms' : 'grass-stone';
@@ -93,6 +105,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
         // Match the healthy prop's height instead of growing a tall atlas fragment over a landing.
         decayed.setScale(fitPropScale(decayed.height, healthy.displayHeight));
         props.push({ healthy, decayed, threshold: seed * 0.65 });
+        propCount++;
       }
     }
     const vines = [-0.65, 0.45].map((offset) => scene.add.image(platform.x + platform.width * offset / 2,
@@ -100,10 +113,19 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       .setScale(0.65 + stableUnit(`vine:${platform.id}:${offset}`) * 0.7)
       .setTint(winter ? 0xb1cad6 : 0x8ca778));
     // Follow authored moving ledges using simulation positions, never signal values.
-    const images = [...vines, ...terrain.slice(terrainStart), ...rims.slice(rimStart),
-      ...props.slice(propStart).flatMap((prop) => [prop.healthy, prop.decayed])];
-    platformMarks.push({ id: platform.id, x: platform.x, y: platform.y,
+    const images = [...vines, ...terrain, ...props.flatMap((prop) => [prop.healthy, prop.decayed])];
+    skins.set(platform.id, { id: platform.id, x: platform.x, y: platform.y, drawnX: platform.x, drawnY: platform.y, terrain, redTerrain, props,
       marks: images.map((image) => ({ image, x: image.x, y: image.y })) });
+  }
+  function removePlatform(id: string): void {
+    const skin = skins.get(id);
+    if (!skin) return;
+    propCount -= skin.props.length;
+    for (const mark of skin.marks) mark.image.destroy();
+    skins.delete(id);
+  }
+  for (const platform of world.platforms) {
+    addPlatform(platform, world.sections.some((section) => (section.stage?.snow01 ?? 0) > 0 && section.platforms.some((row) => row.id === platform.id)));
   }
   const spores = Array.from({ length: C.spores }, (_, i) => ({
     x: stableUnit(`spore-x:${i}`) * width, y: stableUnit(`spore-y:${i}`) * height,
@@ -115,7 +137,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
   if (floor) for (let i = 1; i <= 8; i++) {
     const plant = scene.add.image(i / 9 * world.width, floor.y - floor.height / 2 + 2,
       i % 3 === 0 ? 'forest-mushrooms' : 'forest-fern').setOrigin(0.5, 1).setScale(1).setDepth(-2);
-    props.push({ healthy: plant, decayed: scene.add.image(plant.x, plant.y, 'forest-thorns')
+    looseProps.push({ healthy: plant, decayed: scene.add.image(plant.x, plant.y, 'forest-thorns')
       .setOrigin(0.5, 1).setScale(0.7).setDepth(-1).setAlpha(0), threshold: stableUnit(`floor:${i}`) * 0.65 });
   }
   return {
@@ -125,11 +147,15 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       background.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
       gardens.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
     },
+    addPlatform,
+    removePlatform,
     syncPlatforms(platforms) {
-      const positions = new Map(platforms.map((platform) => [platform.id, platform]));
-      for (const group of platformMarks) {
-        const position = positions.get(group.id);
-        if (position) for (const mark of group.marks) {
+      for (const position of platforms) {
+        const group = skins.get(position.id);
+        // Only a ledge that moved since the last call needs its art moved.
+        if (!group || (position.x === group.drawnX && position.y === group.drawnY)) continue;
+        group.drawnX = position.x; group.drawnY = position.y;
+        for (const mark of group.marks) {
           mark.image.setPosition(mark.x + position.x - group.x, mark.y + position.y - group.y);
         }
       }
@@ -153,17 +179,21 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       mist.setTint(mixColor(mixColor(0xa9d4c0, 0xbed5e6, snowMix), 0xbf8aa9, c)).setAlpha(0.04 + C.mistMaxAlpha * c);
       const plantCorruption = sceneryCorruption(c);
       const tint = mixColor(C.terrain.calm, C.terrain.corrupted, plantCorruption);
-      for (const tile of terrain) tile.setTint(tint);
-      for (const pair of redTerrain) {
-        pair.normal.setAlpha(1);
-        pair.red.setAlpha(plantCorruption).setTint(0xffffff);
-      }
-      for (const rim of rims) rim.setFillStyle(mixColor(C.rim.calm, C.rim.corrupted, c));
-      for (const prop of props) {
+      const paintProp = (prop: PlatformSkin['props'][number]): void => {
         const blend = reveal(Math.min(1, plantCorruption * (0.3 / V.decayFadeWidth)), prop.threshold * V.decayThresholdScale);
         prop.healthy.setAlpha(0.85 * (1 - blend)).setTint(mixColor(0xd7ebcb, 0xb88da3, plantCorruption));
         prop.decayed.setAlpha(blend * V.decayOpacity);
+      };
+      for (const skin of skins.values()) {
+        for (const tile of skin.terrain) tile.setTint(tint);
+        for (const pair of skin.redTerrain) {
+          pair.normal.setAlpha(1);
+          pair.red.setAlpha(plantCorruption).setTint(0xffffff);
+        }
+        for (const prop of skin.props) paintProp(prop);
       }
+      for (const rim of rims) rim.setFillStyle(mixColor(C.rim.calm, C.rim.corrupted, c));
+      for (const prop of looseProps) paintProp(prop);
       for (const spore of spores) {
         const phase = clock / C.sporePeriodMs * Math.PI * 2 + spore.seed * Math.PI * 2;
         const drift = reducedMotion ? 0 : Math.sin(phase) * C.sporeDriftPx;
