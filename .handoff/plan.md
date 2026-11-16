@@ -24,105 +24,22 @@ Decisions made without asking (low-maintenance request), each easy to reverse:
 ## Phases
 
 - [x] Phase 1: Hands-only boot and endless core  — completed 2026-11-16
-- [🔄] Phase 2: Expressive, detailed candle (face, expressions, body detail)  — current
-- [ ] Phase 3: Iteration loop from `.handoff/backlog.md` (variety, juice, tuning, polish)
+- [x] Phase 2: Expressive, detailed candle (face, expressions, body detail)  — completed 2026-11-16
+- [🔄] Phase 3: Iteration loop from `.handoff/backlog.md` (variety, juice, tuning, polish)  — current
 
 ## Change list
 
-### `src/signal/still-signal.ts` — Create
-
-`createStillSignal(): SignalHandle`. Constant `ComposureState` (`mode: 'fixed'`, `valid: false`, `calibrated: false`,
-`source: 'SIMULATED'`), no-op control, empty presets. Lets every existing consumer keep its typed dependency while no
-device, simulator or pipeline runs.
-
-### `src/main.ts` — Modify
-
-Boot the still signal instead of `createSignal`; pick `endless` unless `?climb=classic`; pass the run seed
-(`?seed=` or random) to the game.
-
-- **Risk**: medium — composition root, every lane is wired here
-- **Side effects**: none
-- **Blast radius**: the game does not boot
-- **Rollback**: `git revert`
-
-### `src/config/ui.config.ts` — Modify
-
-Turn off `source-badge`, `calibration` and `debug-overlay` (signal-only components).
-
-### `src/config/endless.config.ts` — Create
-
-Typed, unit-labelled numbers: chunk height, platform widths by height, rise and charge ranges, wax frequency, fuel
-burn and refill, flame-out grace, mood curve.
-
-### `src/game/endless/jump-arcs.ts` — Create
-
-Sample jump arcs traced with the real `stepPlayer` (one per charge level and direction). The generator places ledges
-on these arcs, so reachability comes from the game's own physics, not duplicated maths.
-
-### `src/game/endless/generator.ts` — Create
-
-`generateChunk(seed, index)`: pure and random-access (a chunk depends only on seed and index, so a lower chunk can be
-rebuilt after a fall). Each chunk starts with a full-width landing, climbs by constructed jumps to within reach of
-the next landing, adds optional side ledges with wax, and returns its `route` (the exact inputs that climb it).
-
-### `src/game/endless/chunk-stream.ts` — Create
-
-Keeps the chunks around the player alive; reports added and removed platforms and wax drops.
-
-### `src/game/endless/flame-fuel.ts`, `src/game/endless/endless-wax.ts`, `src/game/endless/mood.ts` — Create
-
-Pure rules: fuel burn and refill with a flame-out grace; one-time wax pickups; fuel to mood intensity.
-
-### `src/game/forest/platform-skin.ts` — Create, `src/game/forest/forest-world.ts` — Modify
-
-Extract the per-platform skin so platforms can be added and removed while playing (`addPlatform`, `removePlatform`).
-The classic climb keeps its exact look.
-
-- **Risk**: medium — shared renderer used by the classic climb and the stage editor
-- **Side effects**: none
-- **Blast radius**: platform art in the classic climb and editor
-- **Rollback**: `git revert`
-
-### `src/game/effects/protected-visibility.ts` — Modify
-
-Accept a platform getter so outlines work on a streamed world.
-
-### `src/game/scenes/endless-scene.ts` — Create, `src/game/index.ts` — Modify
-
-The endless scene: same input, `stepPlayer`, candle, portrait, darkness and forest as the climb scene, on streamed
-chunks. `createGame` picks the scene from `deps.endless`.
-
-### `src/shared/contracts/game-state.ts` — Modify
-
-Optional `run?: { mode: 'endless'; seed: number; heightPx: number; bestPx: number }` on `GameSnapshot`, so the finish
-screen can show the result without importing the game.
-
-- **Risk**: medium — frozen contract (one optional field, no caller changes)
-- **Affected callers**: none (optional)
-- **Rollback**: `git revert`
-
-### `src/ui/strings.ts`, `src/ui/components/finish-screen/*`, `src/ui/components/start-menu/start-menu.ts`, `src/ui/components/hud/hud.ts` — Modify
-
-Endless wording on the finish screen (height, best, seed), no signal status line on the menu, no signal rows and no
-ember compass in the HUD when the still signal is in use.
-
-### `src/game/INDEX.md`, `docs/agent-reports/<stamp>-claude-endless-core.md` — Modify / Create
-
-New exports listed; after-job report.
+Phase 3 has no fixed change list. Each loop iteration takes the first open item in `.handoff/backlog.md`, builds it
+with tests, checks it in a browser where it can be seen, commits and pushes. Phases 1 and 2 are recorded in
+`docs/agent-reports/20261116-0525-claude-endless-core.md` and `docs/agent-reports/20261116-0545-claude-expressive-candle.md`.
 
 ## Test strategy
 
-- `src/game/__tests__/endless-generator.test.ts` — determinism per seed; every platform inside the walls; no
-  overlapping ledges; **route replay over many seeds and chunks with the real `stepPlayer` reaches the next landing**.
-- `src/game/__tests__/endless-stream.test.ts` — bounded live platform count; rebuilding a chunk gives identical data.
-- `src/game/__tests__/endless-rules.test.ts` — fuel burn, refill, grace and flame-out; wax collected once; mood curve
-  bounded and monotonic.
-- `src/signal/__tests__/still-signal.test.ts` — constant state, fixed mode, no throw on control calls.
-- Existing suites stay green (forest, candle, movement, UI).
+- Every new pure rule gets a test beside the others in `src/game/__tests__/`.
+- Anything the generator can now produce (moving ledges, ice) must pass the route replay in `endless-generator.test.ts`.
 
 ## Verification plan
 
 - `npm run check` — type check and all tests pass
 - `npm run build` — production build succeeds
-- Browser smoke test with the pre-installed Playwright: boot, press Play, climb with the generated route for a few
-  ledges, screenshot; no console errors.
+- Browser check with the dev server and the route bot (`?bot=1`), screenshot of the change, no console errors

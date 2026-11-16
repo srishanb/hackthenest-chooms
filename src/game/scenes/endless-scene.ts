@@ -29,7 +29,7 @@ import { biomeOf, chunkOfPlatform, snowAt } from '../endless/biome';
 import { createChunkStream, type ChunkStream } from '../endless/chunk-stream';
 import { createEndlessWax } from '../endless/endless-wax';
 import { addWax, freshFlame, isLit, stepFlame, type FlameState } from '../endless/flame-fuel';
-import { createEndlessGenerator, difficultyAt } from '../endless/generator';
+import { createEndlessGenerator } from '../endless/generator';
 import { moodIntensity } from '../endless/mood';
 import { createRouteBot } from '../endless/route-bot';
 import { createRunScore, type RunScore } from '../endless/run-score';
@@ -305,8 +305,7 @@ export class EndlessScene extends Phaser.Scene {
       this.state = out.state;
       this.syncWorld();
 
-      const difficulty = difficultyAt(this.stream.indexAt(this.feetY()), config);
-      this.flame = stepFlame(this.flame, stepMs, difficulty, config);
+      this.flame = stepFlame(this.flame, stepMs, this.stream.indexAt(this.feetY()), config);
       const taken = this.wax.update(this.state, this.stream.wax());
       for (let i = 0; i < taken.length; i++) this.flame = addWax(this.flame, config);
       if (taken.length) { this.waxView.sync(this.stream.wax(), this.wax.isCollected); this.candle.cheer(); }

@@ -44,9 +44,15 @@ export const ENDLESS_CONFIG = {
   /** Wax hovers this far above the ledge (px between the ledge top and the drop's lowest point). */
   waxHoverPx: 10,
   fuel: {
-    /** Seconds a full candle lasts at height 0 and at full difficulty. */
+    /** Seconds a full candle lasts at height 0 and at the end of the difficulty ramp (`rampChunks`). */
     burnSecondsEasy: 80,
     burnSecondsHard: 52,
+    /**
+     * Past the ramp the candle keeps burning a little faster, down to this many seconds at `lateChunks`.
+     * Measured with the route bot: a clean climb takes about 15 s a chunk, so even a perfect run ends one day.
+     */
+    burnSecondsLate: 34,
+    lateChunks: 60,
     /** Fuel added by one wax, 0..1. */
     waxRefill01: 0.3,
     /** After the fuel reaches 0 the wick still glows this long (ms); wax in that time relights it. */

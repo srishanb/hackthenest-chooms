@@ -1,5 +1,7 @@
 # Lighten Up | EMU HACK THE NEST 2026 - 3RD PLACE OVERALL
 
+> **This branch is the hands-only edition:** no EEG, an endless generated climb and an expressive candle. See [docs/HANDS_ONLY.md](docs/HANDS_ONLY.md). The EEG game is on `main`.
+
 **1st Place for Best Use of Eleven Labs**
 
 

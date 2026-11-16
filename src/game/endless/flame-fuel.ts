@@ -21,18 +21,24 @@ export function freshFlame(config: EndlessConfig): FlameState {
   return { fuel01: 1, graceLeftMs: config.fuel.graceMs, out: false };
 }
 
-/** Fuel burned per second at a difficulty of 0..1 (harder burns a little faster). */
-export function burnPerSecond(difficulty01: number, config: EndlessConfig): number {
-  const d = Math.min(1, Math.max(0, Number.isFinite(difficulty01) ? difficulty01 : 0));
-  const seconds = config.fuel.burnSecondsEasy + (config.fuel.burnSecondsHard - config.fuel.burnSecondsEasy) * d;
+/**
+ * Fuel burned per second in chunk `chunkIndex`. The candle burns faster the higher it is: quickly
+ * over the difficulty ramp, then slowly on, so no climb lasts forever.
+ */
+export function burnPerSecond(chunkIndex: number, config: EndlessConfig): number {
+  const { burnSecondsEasy, burnSecondsHard, burnSecondsLate, lateChunks } = config.fuel;
+  const index = Math.max(0, Number.isFinite(chunkIndex) ? chunkIndex : 0);
+  const ramp = Math.min(1, index / config.rampChunks);
+  const late = Math.min(1, Math.max(0, (index - config.rampChunks) / Math.max(1, lateChunks - config.rampChunks)));
+  const seconds = burnSecondsEasy + (burnSecondsHard - burnSecondsEasy) * ramp + (burnSecondsLate - burnSecondsHard) * late;
   return 1 / seconds;
 }
 
-export function stepFlame(state: FlameState, dtMs: number, difficulty01: number, config: EndlessConfig): FlameState {
+export function stepFlame(state: FlameState, dtMs: number, chunkIndex: number, config: EndlessConfig): FlameState {
   if (state.out) return state;
   const dt = Number.isFinite(dtMs) ? Math.max(0, dtMs) : 0;
   if (state.fuel01 > 0) {
-    const fuel01 = Math.max(0, state.fuel01 - burnPerSecond(difficulty01, config) * dt / 1000);
+    const fuel01 = Math.max(0, state.fuel01 - burnPerSecond(chunkIndex, config) * dt / 1000);
     return { fuel01, graceLeftMs: config.fuel.graceMs, out: false };
   }
   const graceLeftMs = Math.max(0, state.graceLeftMs - dt);

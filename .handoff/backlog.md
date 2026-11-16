@@ -19,7 +19,7 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [ ] #9 Moving ledges and ice in later height bands, covered by the route replay test
 - [x] #10 Biomes by height (forest and snow bands) with matching platform skins and weather
 - [ ] #11 Break up the full-width landings into staggered wide ledges that still catch every fall
-- [ ] #12 Tune fuel and wax with a route-following bot (par time per chunk) so a clean run is sustainable and a sloppy one is not
+- [x] #12 Tune fuel and wax with a route-following bot (par time per chunk) so a clean run is sustainable and a sloppy one is not (first pass; `tools/endless/par.ts`)
 - [x] #13 Run summary on the finish screen: height, best, wax, seed, "new best" moment
 - [ ] #14 Daily seed and a seed field on the menu
 - [ ] #15 Height markers in the world every 25 m and a marker at the personal best
@@ -32,7 +32,7 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [ ] #19 Narrator lines for endless moments (new height band, low flame, new best) from existing clips only
 - [x] #20 Tutorial hints for the first chunk in endless
 - [ ] #21 Performance check: object counts and frame time after ten minutes of climbing
-- [ ] #22 README and docs for the hands-only branch
+- [x] #22 README and docs for the hands-only branch (`docs/HANDS_ONLY.md`)
 
 ## Added during the loop
 

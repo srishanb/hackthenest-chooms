@@ -55,8 +55,13 @@ describe('flame fuel', () => {
     let flame = freshFlame(C);
     for (let ms = 0; ms < C.fuel.burnSecondsEasy * 1000 / 2; ms += 100) flame = stepFlame(flame, 100, 0, C);
     expect(flame.fuel01).toBeCloseTo(0.5, 2);
-    expect(burnPerSecond(1, C)).toBeGreaterThan(burnPerSecond(0, C));
     expect(burnPerSecond(Number.NaN, C)).toBe(burnPerSecond(0, C));
+    expect(burnPerSecond(-5, C)).toBe(burnPerSecond(0, C));
+    // Faster over the ramp, slowly faster after it, then steady: no climb lasts forever.
+    expect(1 / burnPerSecond(C.rampChunks, C)).toBeCloseTo(C.fuel.burnSecondsHard);
+    expect(1 / burnPerSecond(C.fuel.lateChunks, C)).toBeCloseTo(C.fuel.burnSecondsLate);
+    expect(burnPerSecond(C.fuel.lateChunks * 4, C)).toBe(burnPerSecond(C.fuel.lateChunks, C));
+    for (let index = 1; index <= C.fuel.lateChunks; index++) expect(burnPerSecond(index, C)).toBeGreaterThan(burnPerSecond(index - 1, C));
   });
   it('glows for the grace time at zero, then goes out for good', () => {
     let flame = stepFlame({ ...freshFlame(C), fuel01: 0.0001 }, 1000, 0, C);
