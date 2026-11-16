@@ -5,7 +5,7 @@
 > items below stay open and wait for him; do not start them. When a pass finds nothing worth fixing, stop the loop
 > and wait.
 
-**State on 2026-11-16, 13:00 UTC: the fix list below is done and the loop has stopped. It is waiting for Srishan.**
+**State on 2026-11-16, 15:25 UTC: the fix list below is done and the loop has stopped. It is waiting for Srishan.** Since then, at his request: releases (v0.1.0) and the desktop app that updates itself (v0.2.0).
 
 While the freeze holds, a loop tick is: look for a real bug or a measured slow spot in what exists, fix it with a
 test, run `npm run check` and `npm run build`, check it in the browser where it can be seen, commit, push. New ideas
@@ -103,3 +103,9 @@ still go at the end of this list, as ideas only.
 - [ ] #71 A sound for steadying (a soft breath from the sfx already in the repo), parked with #49 until Srishan can listen
 - [ ] #72 Srishan to judge by playing: do the composure amounts feel fair (a two-ledge fall starts to turn the forest; 2.5 s of standing still clears the worst)?
 - [ ] #73 Narrator lines for being shaken and for steadying (gentle, never judging), if the content lane has matching moments
+- [x] #74 Releases cut by a workflow from a notes file (`docs/releases/game-only-v<version>.md`); v0.1.0 published (asked for by Srishan)
+- [x] #75 Desktop app (`desktop/`, Electron) for Windows, Linux and macOS that updates itself on Windows and Linux; v0.2.0 published (asked for by Srishan)
+- [ ] #76 An app icon for the desktop app, drawn from the game's own candle (the default Electron icon is used now)
+- [ ] #77 Srishan or a teammate: run the Windows installer and the macOS disk image once and report what happens
+- [ ] #78 Sign the apps (needs paid certificates from Srishan): removes the first-start warnings and lets the Mac build update itself
+
