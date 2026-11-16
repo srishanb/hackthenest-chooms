@@ -1,7 +1,21 @@
 # Backlog: game-only endless Lighten Up
 
-Ordered. The loop takes the first open item, builds it, runs `npm run check` and `npm run build`, takes a browser
-screenshot where the change is visible, commits, pushes, then moves on. Add new ideas at the end.
+> **Feature freeze (Srishan, 2026-11-16): do not overdevelop.** No new features and no big changes until Srishan
+> says what he wants next. Until then the loop only fixes bugs and optimizes what is already built. Open feature
+> items below stay open and wait for him; do not start them. When a pass finds nothing worth fixing, stop the loop
+> and wait.
+
+While the freeze holds, a loop tick is: look for a real bug or a measured slow spot in what exists, fix it with a
+test, run `npm run check` and `npm run build`, check it in the browser where it can be seen, commit, push. New ideas
+still go at the end of this list, as ideas only.
+
+## Fixes and optimization (allowed during the freeze)
+
+- [ ] #F1 Play a few ledges of the classic climb (`?climb=classic`) by keyboard in the browser and fix anything broken (was #63)
+- [ ] #F2 Remove the old unused `rasterPortrait` if nothing uses it (was #25)
+- [ ] #F3 Time the test suite and keep every sweep test under one second (was #37)
+- [ ] #F4 Review the composure change for bugs: restart, pause, moving ledges, ice, the bot, the flame-out moment
+- [ ] #F5 Profile a frame in the endless scene and remove avoidable per-frame work (lists rebuilt every frame, repeated lookups)
 
 ## Candle (the focus)
 

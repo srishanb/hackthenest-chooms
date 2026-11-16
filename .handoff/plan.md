@@ -28,11 +28,14 @@ Decisions made without asking (low-maintenance request), each easy to reverse:
 - [x] Phase 1: Game-only boot and endless core  — completed 2026-11-16
 - [x] Phase 2: Expressive, detailed candle (face, expressions, body detail)  — completed 2026-11-16
 - [🔄] Phase 3: Iteration loop from `.handoff/backlog.md` (variety, juice, tuning, polish)  — current
+  - **Feature freeze since 2026-11-16 (Srishan: "do not overdevelop").** Bug fixes and optimization only, no new
+    features and no big changes, until Srishan gives input.
 
 ## Change list
 
-Phase 3 has no fixed change list. Each loop iteration takes the first open item in `.handoff/backlog.md`, builds it
-with tests, checks it in a browser where it can be seen, commits and pushes. Phases 1 and 2 are recorded in
+Phase 3 has no fixed change list. While the feature freeze holds, each loop iteration takes the first open item
+under "Fixes and optimization" in `.handoff/backlog.md` (or a bug it finds), fixes it with a test, checks it in a
+browser where it can be seen, commits and pushes. It starts no feature item. Phases 1 and 2 are recorded in
 `docs/agent-reports/20261116-0525-claude-endless-core.md` and `docs/agent-reports/20261116-0545-claude-expressive-candle.md`.
 
 ## Test strategy
