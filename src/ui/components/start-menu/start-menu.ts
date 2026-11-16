@@ -4,7 +4,7 @@ import { icon } from '../../icons';
 import { t } from '../../strings';
 import type { UiComponent } from '../../types';
 import { createUiActions } from '../../ui-actions';
-import { canContinue, menuSelection, startStalled, startsOnKey } from './start-menu-state';
+import { canContinue, climbMode, dailySeed, menuSelection, modeUrl, startStalled, startsOnKey } from './start-menu-state';
 import { createCredits } from './credits';
 import { HANDS_ONLY } from '../../../config/ui.config';
 import '../../theme/menus.css';
@@ -67,7 +67,18 @@ export const startMenu: UiComponent = {
       if (pending) return; pending = true;
       const url = new URL(location.href); url.searchParams.delete('editorTest'); url.searchParams.delete('editorDraft'); url.searchParams.set('editor', '1'); location.assign(url.href);
     });
-    const buttons = [play, settings, how, creditsButton, editor];
+    // Other ways to play, each a change of the page address (the game reads the mode and seed from it at boot).
+    const mode = climbMode(location.search);
+    const go = (href: string): void => { if (pending) return; pending = true; location.assign(href); };
+    const seedNow = new URLSearchParams(location.search).get('seed');
+    const today = String(dailySeed(new Date()));
+    // "Today's climb" is the same for everyone on the same day; pressing it again goes back to a fresh climb each run.
+    const daily = menuButton(t(seedNow === today ? 'start.fresh' : 'start.daily'),
+      () => go(modeUrl(location.href, { climb: 'endless', seed: seedNow === today ? null : Number(today) })));
+    const other = menuButton(t(mode === 'classic' ? 'start.endless' : 'start.classic'),
+      () => go(modeUrl(location.href, { climb: mode === 'classic' ? 'endless' : 'classic' })));
+    daily.hidden = mode === 'classic';
+    const buttons = [play, daily, other, settings, how, creditsButton, editor];
     nav.append(...buttons);
     const hint = document.createElement('p'); hint.className = 'launch-key-hint'; hint.textContent = t('start.keyHint'); nav.append(hint);
     hero.append(copy, nav);
@@ -108,7 +119,7 @@ export const startMenu: UiComponent = {
       if (play.dataset.label !== label) { play.replaceChildren(...(iconElement ? [iconElement] : []), document.createTextNode(label)); play.dataset.label = label; }
       for (const button of buttons) button.disabled = pending;
       // The stage editor edits the authored climb; the endless climb has no stages to edit.
-      editor.hidden = snapshot.run !== undefined;
+      editor.hidden = mode === 'endless';
       hero.hidden = actions.settingsOpen.get() || actions.tutorialOpen.get() || actions.calibrationFrom.get() !== null || !credits.hidden;
       if (focusReturn && !hero.hidden) {
         const target = focusReturn; focusReturn = null;

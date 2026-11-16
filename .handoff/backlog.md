@@ -21,9 +21,9 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [ ] #11 Break up the full-width landings into staggered wide ledges that still catch every fall
 - [x] #12 Tune fuel and wax with a route-following bot (par time per chunk) so a clean run is sustainable and a sloppy one is not (first pass; `tools/endless/par.ts`)
 - [x] #13 Run summary on the finish screen: height, best, wax, seed, "new best" moment
-- [ ] #14 Daily seed and a seed field on the menu
+- [x] #14 Daily seed on the menu ("Today's climb"; a typed seed field is left out: `?seed=` covers it)
 - [ ] #15 Height markers in the world every 25 m and a marker at the personal best
-- [ ] #16 Menu choice between Endless and the classic authored climb
+- [x] #16 Menu choice between Endless and the classic authored climb
 
 ## Feel and polish
 
@@ -68,3 +68,5 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #52 Each new landing reached is a small milestone: the candle looks proud, once per landing
 - [ ] #53 A longer daze after a very long fall (stars keep circling for a second), still with no death and no lost control
 - [ ] #54 The candle waves from the menu when the pointer or focus reaches Play
+- [ ] #55 The menu footer still says "Endless climb" in classic mode; say which climb is selected
+- [ ] #56 Keep a separate best height for today's climb, shown on its end screen

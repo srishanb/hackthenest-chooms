@@ -32,6 +32,33 @@ export function startMenuVisible(phase: GamePhase, settingsOpen: boolean): boole
   return phase === 'menu' && !settingsOpen;
 }
 
+/** Which climb the page is showing, from its address: endless unless it says `?climb=classic`. */
+export function climbMode(search: string): 'endless' | 'classic' {
+  return new URLSearchParams(search).get('climb') === 'classic' ? 'classic' : 'endless';
+}
+
+/**
+ * The seed of "today's climb": the local date as the number YYYYMMDD. Everyone who plays on the
+ * same day gets the same ledges, with nothing looked up on a network.
+ */
+export function dailySeed(date: Date): number {
+  return date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+}
+
+/**
+ * The page address for another way to play. `climb` switches between the endless and the classic
+ * climb; `seed` picks one endless climb (null clears it, for a fresh random climb each run).
+ * Everything else in the address is kept.
+ */
+export function modeUrl(href: string, change: { climb?: 'endless' | 'classic'; seed?: number | null }): string {
+  const url = new URL(href);
+  if (change.climb === 'classic') { url.searchParams.set('climb', 'classic'); url.searchParams.delete('seed'); }
+  if (change.climb === 'endless') url.searchParams.delete('climb');
+  if (change.seed === null) url.searchParams.delete('seed');
+  else if (change.seed !== undefined) url.searchParams.set('seed', String(change.seed));
+  return url.href;
+}
+
 export interface StartKeyInput {
   code: string;
   repeat: boolean;

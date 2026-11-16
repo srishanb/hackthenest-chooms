@@ -1,7 +1,33 @@
 /** Start menu rules: shown only before the climb, steps aside for settings, Enter starts Play. */
 import { describe, expect, it } from 'vitest';
-import { canContinue, menuSelection, startStalled, startMenuVisible, startsOnKey, type StartKeyInput } from '../components/start-menu/start-menu-state';
+import { canContinue, climbMode, dailySeed, menuSelection, modeUrl, startStalled, startMenuVisible, startsOnKey, type StartKeyInput } from '../components/start-menu/start-menu-state';
 import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state';
+
+describe('ways to play', () => {
+  it('the address says which climb: endless unless it asks for classic', () => {
+    expect(climbMode('')).toBe('endless');
+    expect(climbMode('?seed=5')).toBe('endless');
+    expect(climbMode('?climb=classic')).toBe('classic');
+    expect(climbMode('?climb=other')).toBe('endless');
+  });
+
+  it("today's climb is the local date as a number, the same all day and different tomorrow", () => {
+    expect(dailySeed(new Date(2026, 10, 16, 0, 5))).toBe(20261116);
+    expect(dailySeed(new Date(2026, 10, 16, 23, 59))).toBe(20261116);
+    expect(dailySeed(new Date(2026, 10, 17, 0, 0))).toBe(20261117);
+    expect(dailySeed(new Date(2027, 0, 3))).toBe(20270103);
+  });
+
+  it('switching mode or seed changes only that part of the address', () => {
+    const base = 'http://localhost:5199/?candleSeed=7';
+    expect(modeUrl(base, { climb: 'classic' })).toBe('http://localhost:5199/?candleSeed=7&climb=classic');
+    expect(modeUrl('http://localhost:5199/?climb=classic&candleSeed=7', { climb: 'endless' })).toBe(base);
+    expect(modeUrl(base, { climb: 'endless', seed: 20261116 })).toBe('http://localhost:5199/?candleSeed=7&seed=20261116');
+    expect(modeUrl('http://localhost:5199/?seed=20261116', { seed: null })).toBe('http://localhost:5199/');
+    // The classic climb has no seed, so a leftover one is dropped.
+    expect(modeUrl('http://localhost:5199/?seed=9', { climb: 'classic' })).toBe('http://localhost:5199/?climb=classic');
+  });
+});
 
 const key = (over: Partial<StartKeyInput> = {}): StartKeyInput =>
   ({ code: 'Enter', repeat: false, phase: 'menu', settingsOpen: false, focusOnControl: false, ...over });

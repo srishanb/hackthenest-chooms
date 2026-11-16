@@ -26,6 +26,9 @@ npm run dev
 
 Open the address Vite prints. Arrow keys or A and D move; hold Space to charge a jump, hold a direction, release.
 
+The menu has **Today's climb** (the same ledges for everyone on the same day, from the date, with no network) and
+**Classic climb** (the authored five stages). Both just change the address below.
+
 | URL | What it does |
 |---|---|
 | `?seed=1234` | Play one particular climb. The same number always gives the same ledges |
