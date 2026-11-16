@@ -61,6 +61,10 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #45 The close-up portrait shows the melted drips and the running bead too
 - [x] #46 See a moving side ledge in motion in the browser and check its wax rides with it (sampled eight times: the wax x equals the ledge x every time)
 - [ ] #47 Let the route bot optionally detour to side ledges, so par.ts measures a wax-hungry run too
-- [ ] #48 The end screen names what was special about the run's candle only through its picture: check the swirl shows there too
-- [ ] #49 Candle voice without words: tiny pitch-shifted sfx for hop, land and relief, from the sfx already in the repo only
+- [x] #48 The swirl candle shows on the end screen (checked with ?candleSeed=146&fuel=0.02)
+- [ ] #49 Candle voice without words: tiny pitch-shifted sfx for hop, land and relief, from the sfx already in the repo only (parked: nothing here can listen to it; do it when Srishan can hear the result)
 - [ ] #50 The snow weather layer is the slowest thing in the headless check: measure it on a real GPU before changing it
+- [x] #51 The candle trembles at full charge, so the player can see the charge has reached its cap
+- [x] #52 Each new landing reached is a small milestone: the candle looks proud, once per landing
+- [ ] #53 A longer daze after a very long fall (stars keep circling for a second), still with no death and no lost control
+- [ ] #54 The candle waves from the menu when the pointer or focus reaches Play

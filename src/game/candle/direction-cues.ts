@@ -30,6 +30,16 @@ const TRAIL_MIN_SPEED = 40;
 /** Sparks appear only in fast flight. */
 const SPARK_MIN_SPEED = 150;
 
+/**
+ * A fully charged jump makes the candle tremble: one world pixel left, then right, at the flame's
+ * frame rate. It tells the player the charge is at its cap and holding longer adds nothing.
+ * Returns the sideways offset in world px (-1, 0 or 1). Nothing under reduced motion.
+ */
+export function fullChargeTremble(charging: boolean, charge01: number, flameFrame: number, reducedMotion: boolean): -1 | 0 | 1 {
+  if (reducedMotion || !charging || !(charge01 >= 0.999)) return 0;
+  return flameFrame % 2 === 0 ? 1 : -1;
+}
+
 /** Signed flame-tip offset in art px (positive is right, screen space). */
 export function flameLean(input: CueInput): number {
   if (input.charging) return input.aim * (1 + Math.round(2 * Math.min(Math.max(input.charge01, 0), 1)));

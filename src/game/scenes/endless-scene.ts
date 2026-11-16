@@ -106,6 +106,8 @@ export class EndlessScene extends Phaser.Scene {
   private bot = createRouteBot();
   /** True while the camera slides back to the start after Play again; the player waits. */
   private sliding = false;
+  /** The highest landing reached in this run (a chunk index), so each new one is cheered once. */
+  private landingReached = 0;
   /** Fuel burned so far in this run (in candles): the more that has burned, the longer the candle's drips. */
   private burnt = 0;
   /** Time into the last moment of a run (the wick has gone cold), or null while the run is alive. */
@@ -157,6 +159,7 @@ export class EndlessScene extends Phaser.Scene {
     this.worldTimeMs = 0;
     this.endingMs = null;
     this.burnt = 0;
+    this.landingReached = this.deps.startChunk ?? 0;
     const spawn = this.spawn();
     this.state = teleportPlayer(spawn.x, spawn.y);
     this.accumulatorMs = 0;
@@ -367,6 +370,12 @@ export class EndlessScene extends Phaser.Scene {
       // A fall just ends on whatever catches you; no reset, no death.
       if (out.events.landed) {
         this.shakeOnLanding(out.events.landed.fallHeightPx);
+        // A new landing is a milestone: the candle is proud of it, once.
+        const landedOn = out.events.landed.platformId;
+        if (landedOn.endsWith(':floor') && chunkOfPlatform(landedOn) > this.landingReached) {
+          this.landingReached = chunkOfPlatform(landedOn);
+          this.candle.celebrate();
+        }
         const snowy = biomeOf(chunkOfPlatform(out.events.landed.platformId), config) === 'snow';
         this.landingPuff.burst(this.state.x, this.feetY(), snowy, settings.reducedMotion);
         for (const event of landingEvents(out.events.landed, emberConfig)) bus.emit(event);

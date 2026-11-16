@@ -16,7 +16,7 @@ import type { PlayerState } from '../player/types';
 import { createCandleGenome, type CandleGenome } from './candle-genome';
 import { bodyShape, INITIAL_POSE, poseFrame, slumpShape, stepPose, type BodyShape, type PoseTracker } from './candle-pose';
 import { rasterCandle } from './candle-raster';
-import { type Aim, flameLean, flightSparks, wickLean } from './direction-cues';
+import { type Aim, flameLean, flightSparks, fullChargeTremble, wickLean } from './direction-cues';
 import type { Surroundings } from './awareness';
 import { DROPLET_MS, emotePixels, landingDroplets } from './emotes';
 import { faceFor, INITIAL_EXPRESSION, stepExpression, type CandleFace, type ExpressionEvents, type ExpressionTracker } from './expression';
@@ -124,7 +124,9 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       // Falling feeds the flame air: its flicker clock runs up to 2.5x faster (flame.ts).
       const fall01 = Math.round(fallIntensity(state.grounded, state.vy) * 10) / 10;
       if (!paused) clockMs += Math.max(0, deltaMs) * flickerRate(fall01);
-      graphics.setPosition(state.x, state.y + bodyHeight / 2);
+      // At full charge the whole candle trembles a pixel either way: the picture is not redrawn, only moved.
+      const tremble = fullChargeTremble(state.charging, look.charge01, look.reducedMotion ? 0 : Math.floor((clockMs / 1000) * FLAME_FPS), look.reducedMotion);
+      graphics.setPosition(state.x + tremble, state.y + bodyHeight / 2);
 
       const size01 = Math.round(flameSizeFromRadius(look.radiusPx, look.minRadiusPx, look.maxRadiusPx) * SIZE_STEPS) / SIZE_STEPS;
       const flameFrame = look.reducedMotion ? 0 : Math.floor((clockMs / 1000) * FLAME_FPS);

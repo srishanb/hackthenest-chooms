@@ -29,6 +29,7 @@ Owner: Ali. Search here before adding a function.
 | `rasterCandle`, `grownSize` | `candle/candle-raster.ts` | Candle body, outline, drips and wick as art pixels. |
 | `rasterFlame`, `flameHeight`, `flameSizeFromRadius`, `fallIntensity`, `flickerRate`, `OXIDISED` | `candle/flame.ts` | Procedural pixel flame sized by the light radius, flickering at 12 fps (none under reduced motion); while falling it flickers faster, stretches, turns blue at the base and sheds licks. |
 | `waxGrowth`, `grownMovement` | `candle/growth.ts` | +2% size per wax; walk x growth, launch speeds x sqrt(growth). Wax count only, never the signal. |
+| `fullChargeTremble` | `candle/direction-cues.ts` | A one-pixel tremble at full charge, so the cap is visible. |
 | `flameLean`, `wickLean`, `flightSparks`, `CueInput` | `candle/direction-cues.ts` | Jump-direction cues: aim lean while charging, trailing flame and sparks in flight; never bends the body. |
 | `rasterPortrait`, `isGuttered`, `PORTRAIT_RADIUS` | `candle/portrait.ts` | Close-up of the player's candle by light strength: dims, staggers, smokes and gutters out near death. |
 | `createPortraitView` | `candle/portrait-view.ts` | Draws the portrait in a gold-rimmed circle fixed at the bottom left (replaces the lantern strength bar). |

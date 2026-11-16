@@ -120,3 +120,15 @@ describe('falling: flicker and oxidation', () => {
     expect(flame(1, 0, true)).toEqual(flame(1, 9999, true));
   });
 });
+
+describe('full charge', () => {
+  it('trembles one pixel either way only at the cap, and never under reduced motion', async () => {
+    const { fullChargeTremble } = await import('../candle/direction-cues');
+    expect(fullChargeTremble(true, 1, 0, false)).toBe(1);
+    expect(fullChargeTremble(true, 1, 1, false)).toBe(-1);
+    expect(fullChargeTremble(true, 0.9, 0, false)).toBe(0);
+    expect(fullChargeTremble(false, 1, 0, false)).toBe(0);
+    expect(fullChargeTremble(true, 1, 0, true)).toBe(0);
+    expect(fullChargeTremble(true, Number.NaN, 0, false)).toBe(0);
+  });
+});
