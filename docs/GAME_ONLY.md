@@ -12,6 +12,7 @@ What is different from `main`:
 | What drives the mood | The composure signal | The candle's own composure, from play: falls shake it, standing still steadies it. Low fuel darkens the forest too |
 | How a run ends | Landing on the last ledge | The flame goes out |
 | Recovery | A placed ember (E and R) | A full-width landing at the start of every stretch catches any fall |
+| Desktop app | A Windows installer, built by hand | Windows, Linux and macOS apps built by the release workflow; Windows and Linux update themselves |
 | The candle | A plain wax block with a flame | A face with fourteen moods, a reacting flame, emotes and a detailed close-up portrait |
 
 ## Play it
@@ -106,12 +107,28 @@ page on it. Not judged by a person yet: whether the amounts feel fair, and how t
 A mood is a reaction to the game (a fall, low fuel). It is never a reading of the player. Under reduced motion the
 blinking, bouncing and drifting parts stop and the still parts remain.
 
+## Desktop app
+
+`desktop/` wraps the built game in an Electron window that keeps itself up to date: on Windows and Linux it
+downloads a newer release in the background and installs it when the game is closed; on macOS (unsigned) it says a
+new version exists and offers the download page. The app asks GitHub once at start for the list of releases. That
+is the only network use, it is outside the game window (which has none), and `--no-update` switches it off.
+This is the one place the variant steps away from "nothing on the demo path uses the network": it was asked for by
+Srishan on 2026-11-16, and the game itself still never uses the network. Details: [desktop/README.md](../desktop/README.md).
+
 ## Releases
 
 A release of this variant is a notes file: `docs/releases/game-only-v<version>.md` on this branch. When a push adds
-one that has no release yet, `.github/workflows/release-game-only.yml` builds the game at that commit, zips `dist/`,
-creates the tag `game-only-v<version>` there and publishes a GitHub pre-release with the zip attached and the file as
-its notes. Tags are never moved or deleted: a fix is a new version with its own notes file.
+one that has no release yet, `.github/workflows/release-game-only.yml`:
+
+1. builds the game at that commit, creates the tag `game-only-v<version>` there and publishes a GitHub pre-release
+   with the zipped game and the file as its notes;
+2. packages the desktop app around that same zip on Windows, Linux and macOS and attaches the installers;
+3. builds an older copy of the Linux app and checks that it updates itself to the new release.
+
+Installed desktop apps find the new release by themselves. Tags are never moved or deleted: a fix is a new version
+with its own notes file. When the workflow file changes and there is nothing to release, it still packages the app
+on all three systems as a rehearsal and attaches nothing.
 
 ## Rules that still hold
 
