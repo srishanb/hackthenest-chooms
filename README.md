@@ -1,7 +1,6 @@
-# Lighten Up
+# Lighten Up | EMU HACK THE NEST 2026 - 3RD PLACE OVERALL
 
-##EMU HACK THE NEST 2026 - 3RD PLACE OVERALL
-1st Place for Best Use of Eleven Labs
+**1st Place for Best Use of Eleven Labs**
 
 
 A 2D charge-jump climbing game built in 24 hours for Hack The Nest 2026 (Nov 14-15), Mind and Machine (BCI) track.
