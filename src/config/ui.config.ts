@@ -6,6 +6,7 @@
  */
 import type { UiConfig } from '../shared/contracts/config';
 
+// Hands-only variant: the three signal-only components (source badge, calibration, debug overlay) are off.
 export const UI_CONFIG: UiConfig = {
   components: {
     'world-tutorial': { enabled: true, slot: 'full' },
@@ -14,12 +15,12 @@ export const UI_CONFIG: UiConfig = {
     'pause-menu': { enabled: true, slot: 'center' },
     'settings-panel': { enabled: true, slot: 'center' },
     hud: { enabled: true, slot: 'full' },
-    'source-badge': { enabled: true, slot: 'top-right' },
+    'source-badge': { enabled: false, slot: 'top-right' },
     captions: { enabled: true, slot: 'bottom-center' },
-    calibration: { enabled: true, slot: 'full' },
+    calibration: { enabled: false, slot: 'full' },
     'ember-prompt': { enabled: true, slot: 'center' },
     'finish-screen': { enabled: true, slot: 'center' },
-    'debug-overlay': { enabled: true, slot: 'bottom-left' },
+    'debug-overlay': { enabled: false, slot: 'bottom-left' },
   },
 };
 

@@ -4,6 +4,9 @@
  * It creates the shared objects (event bus, stores), then hands each lane exactly what it
  * needs. Lanes never import each other, so reading this file top to bottom shows how the
  * whole game is wired: signal -> game -> UI and audio.
+ *
+ * Hands-only variant: there is no EEG. The signal is the "still" one (always neutral), and the
+ * game plays the endless, generated climb unless the URL says `?climb=classic`.
  */
 import { readLayouts, writeLayouts, validateLayouts, layoutStorageKey, STAGE_LAYOUT_KEY, STAGE_DRAFT_KEY } from './game/editor/layouts';
 import { publishLayout } from './ui/components/stage-editor/publish-layout';
@@ -32,7 +35,8 @@ import type { WorldViewSnapshot } from './shared/contracts/world-view';
 import { INITIAL_GAME_SNAPSHOT } from './shared/contracts/game-state';
 import { createMemoryStorage, getLocalStorage } from './shared/safe-storage';
 import { createStore } from './shared/store';
-import { createSignal } from './signal/index';
+import { createStillSignal } from './signal/still-signal';
+import { ENDLESS_CONFIG } from './config/endless.config';
 import { mountUi } from './ui/registry';
 import { createSettingsStore } from './ui/settings-store';
 
@@ -66,8 +70,19 @@ const stores: Stores = {
   settings: createSettingsStore(browserStorage ?? createMemoryStorage()),
 };
 
-// The signal lane is the only one that will ever touch a device.
-const signal = createSignal(bus, SIGNAL_CONFIG, { storage: browserStorage });
+// No device, simulator or recording in this variant: a constant, neutral signal.
+const signal = createStillSignal(SIGNAL_CONFIG.neutralIntensity);
+
+// Endless is the default. `?seed=<number>` replays one climb; `?bot=1` (development only) lets the route bot play.
+const classic = testing || query.get('climb') === 'classic';
+const seedText = query.get('seed');
+const fixedSeed = seedText !== null && /^\d{1,10}$/.test(seedText);
+const endless = classic ? undefined : {
+  config: ENDLESS_CONFIG,
+  seed: fixedSeed ? Number(seedText) >>> 0 : pickCandleSeed('', false),
+  fixedSeed,
+  bot: import.meta.env.DEV && query.has('bot'),
+};
 
 // One candle seed for the first run: the menu emblem and the player are the same candle.
 const candleSeed = pickCandleSeed(window.location.search, import.meta.env.DEV);
@@ -84,6 +99,7 @@ const game = createGame({
   emberConfig: EMBER_CONFIG,
   storage: testing ? createMemoryStorage() : browserStorage,
   candleSeed,
+  endless,
   startAt: testing ? { ...runtimeStages[testIndex]!.spawn, platformId: runtimeStages[testIndex]!.platforms[0]!.id } : undefined,
 });
 
