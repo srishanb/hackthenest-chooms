@@ -60,6 +60,7 @@ Recovery keeps a marker placed after each return. Pickup is required before plac
 | Export | File | What it does |
 |---|---|---|
 | `preloadForest`, forest texture mappings | `forest/textures.ts` | Boot-only local image and Ruby sheet loading. |
+| `createColorGrade`, `COLOR_GRADE_FRAGMENT` | `forest/color-grade.ts` | One-pass whole-screen colour grade on the main camera (cool shadows, warm highlights, vignette). Visual only. |
 | `createForestWorld` | `forest/forest-world.ts` | Decorative scenery, platform skins and bounded particles; no collision writes. |
 | `createRubyView` | `forest/ruby-view.ts` | Legacy: the Ruby sprite view. No longer used by the scene; `createCandleView` replaced it. |
 | `stepForestEffects` | `forest/forest-effects.ts` | Existing engine plus optional visual-only forest field preview. |

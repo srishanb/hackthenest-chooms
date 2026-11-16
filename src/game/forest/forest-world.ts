@@ -15,6 +15,7 @@ import { createVerticalForest } from './vertical-forest';
 import { createAtmosphere } from './atmosphere';
 import { createBackdropGardens } from './backdrop-gardens';
 import { createCorruptionScreen } from './corruption-screen';
+import { createColorGrade } from './color-grade';
 import { createAmbientLife } from './ambient-life';
 import { createGrassTufts } from './grass-tufts';
 import { createPerchingBirds } from './perching-birds';
@@ -45,6 +46,8 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
   let candle: { x: number; y: number } | null = null;
   let snowMix = 0;
   const screen = createCorruptionScreen(scene);
+  // After the corruption filter, so the grade colours the final picture (color-grade.ts).
+  createColorGrade(scene);
   const mist = scene.add.tileSprite(0, 0, width, height, 'forest-mist').setOrigin(0).setScrollFactor(0)
     .setTileScale(C.pixelScale).setDepth(-8);
   /** Everything drawn for one platform, kept together so a platform can be removed while playing. */

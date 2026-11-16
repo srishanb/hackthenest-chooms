@@ -13,6 +13,7 @@ Every tunable number lives here. Search here before adding a constant. Lane owne
 | `EFFECTS_TABLE` | `effects.config.ts` | Content and tuning (Neil) | One row per signal-driven effect: cap, smoothing time and a written never-rule. |
 | `ACTIVE_RESPONSE_CONFIG`, `responsiveActivity` | `active-response.config.ts` | Not in the Lanes table | Gain and attack/release for the calibrated activity response. Zero stays zero; invalid input is not boosted. |
 | `ATMOSPHERE_CONFIG`, `DEFAULT_ENVIRONMENT`, `VisualEnvironment`, `unit`, `normalizeEnvironment` | `atmosphere.config.ts` | Not in the Lanes table | Wind and snow render settings. Renderer only. |
+| `COLOR_GRADE_CONFIG` | `color-grade.config.ts` | Not in the Lanes table | Fixed colour-grade numbers (contrast, saturation, split tone, vignette) and an on/off switch. Never signal-driven. |
 | `CORRUPTION_SCREEN_CONFIG`, `screenCorruption` | `corruption-screen.config.ts` | Not in the Lanes table | Caps for the corruption frame: fog, shake, shift, noise, lightning. Presentation only. |
 | `ENVIRONMENT_ASSETS` | `environment-assets.config.ts` | Not in the Lanes table | Which tile and plant skins the forest and winter stages use. |
 | `FOREST_CONFIG`, `FOREST_PREVIEW_EVENT`, `forestPreviewValue` | `forest.config.ts` | Not in the Lanes table | Forest presentation: pixel scale, character frame, parallax. Not used by movement or recovery. |
