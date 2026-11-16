@@ -15,6 +15,7 @@ What is different from `main`:
 | How a run ends | Landing on the last ledge | The flame goes out |
 | Recovery | A placed ember (E and R) | A full-width landing at the start of every stretch catches any fall |
 | Desktop app | A Windows installer, built by hand | Windows, Linux and macOS apps built by the release workflow; Windows and Linux update themselves |
+| Backdrop | Two layers of repeating bark and two crown pictures | Painted from the run's seed in three layers that pass at different speeds: wandering trunks, branches, vines and floating islands with trees. It turns to pines and snow with height, and each forest stretch has a seeded flavour (leafy, autumn, mushroom or blossom). Drawn by code, like the candle |
 | Background life | None | Birds sit on ledges and fly off as the candle nears, flocks cross far behind, fireflies blink, leaves fall, grass sways and far ledges spill waterfalls. All of it fades as the forest corrupts |
 | The candle | A plain wax block with a flame | A face with fourteen moods, a reacting flame, emotes and a detailed close-up portrait |
 

@@ -169,3 +169,19 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 | `ForestWorld.setCandle` | `forest/forest-world.ts` | The scenes tell the scenery where the candle is. Read by the birds only. |
 
 Far garden ledges (`forest/backdrop-gardens.ts`) now sometimes spill a waterfall, which freezes in the snow.
+
+## Generated backdrop (`backdrop/`)
+
+The forest behind the endless climb is painted from the run's seed. `__tests__/backdrop-gallery.html` is a dev page
+that shows it at several heights (`?seed=`, `?heights=`, `?zoom=`, `?layer=`).
+
+| Export | File | What it does |
+|---|---|---|
+| `TONE`, `TONE_COUNT`, `PixelGrid`, `createGrid`, `put`, `hash`, `noise1`, `subSeed` | `backdrop/pixel-grid.ts` | A grid of colour slots to paint into, and repeatable seeded numbers. |
+| `paintClump`, `paintLimb`, `paintBroadleaf`, `paintPine`, `paintMushroom`, `paintIsland`, `Surface` | `backdrop/shapes.ts` | The pieces: leaves, limbs, three kinds of tree and a floating island, as pixel art from a seed. |
+| `paintChunk`, `trunkLanes`, `ChunkRequest`, `BackdropBiome`, `TrunkLane` | `backdrop/paint-chunk.ts` | One chunk of one layer: full-height trunks, islands with trees, branches and vines, the forest floor. Chunks join exactly. |
+| `colourChunk` | `backdrop/palette.ts` | Slots to colours, row by row: the flavour's palette mixed toward the cold one by height, then toward the sky by the layer's fog. |
+| `createBackdrop`, `BackdropSource` | `backdrop/backdrop-view.ts` | Keeps a few painted chunks per layer on canvas textures and scrolls them with the camera. |
+| `backdropBiomeAt`, `flavourOfBand` | `endless/backdrop-biome.ts` | How cold a height is (smooth, following the snow bands) and each forest band's seeded flavour. |
+| `createForestWorld(scene, world, backdrop?)`, `ForestWorld.reseedBackdrop` | `forest/forest-world.ts` | With a `backdrop` the generated forest replaces the repeating trunks and far garden ledges. |
+

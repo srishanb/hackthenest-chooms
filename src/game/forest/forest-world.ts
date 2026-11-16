@@ -18,6 +18,8 @@ import { createCorruptionScreen } from './corruption-screen';
 import { createAmbientLife } from './ambient-life';
 import { createGrassTufts } from './grass-tufts';
 import { createPerchingBirds } from './perching-birds';
+import { createBackdrop, type BackdropSource } from '../backdrop/backdrop-view';
+import { BACKDROP_CONFIG } from '../../config/backdrop.config';
 import { fitPropScale, mixColor, reveal, stableUnit } from './presentation';
 
 export interface ForestWorld {
@@ -25,6 +27,8 @@ export interface ForestWorld {
   setEnvironment(value: Partial<VisualEnvironment>): void;
   /** Tell the scenery where the candle is, so the birds on the ledges can fly off as it comes near. */
   setCandle(x: number, y: number): void;
+  /** A new run's seed for the generated backdrop. Does nothing when the world was built without one. */
+  reseedBackdrop(seed: number): void;
   syncPlatforms(platforms: readonly PlatformBox[]): void;
   /** Draw a platform that appeared after the world was built (endless mode). `winter` picks the snowy skin. */
   addPlatform(platform: PlatformBox, winter: boolean): void;
@@ -32,13 +36,18 @@ export interface ForestWorld {
   removePlatform(id: string): void;
 }
 
-export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld {
+/**
+ * `backdrop` asks for the forest behind the climb to be generated from a seed (the endless climb).
+ * Without it the older repeating trunks and far garden ledges are drawn (the authored climb).
+ */
+export function createForestWorld(scene: Scene, world: LoadedWorld, backdrop?: BackdropSource): ForestWorld {
   const camera = scene.cameras.main;
   const width = scene.scale.width, height = scene.scale.height;
   const sky = scene.add.rectangle(0, 0, width, height, C.sky.calm).setOrigin(0).setScrollFactor(0).setDepth(-40);
-  const background = createVerticalForest(scene);
+  const generated = backdrop ? createBackdrop(scene, backdrop) : null;
+  const background = generated ? null : createVerticalForest(scene);
   const atmosphere = createAtmosphere(scene);
-  const gardens = createBackdropGardens(scene);
+  const gardens = generated ? null : createBackdropGardens(scene);
   const life = createAmbientLife(scene);
   const grass = createGrassTufts(scene);
   const birds = createPerchingBirds(scene);
@@ -171,11 +180,12 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
     setEnvironment(value) {
       snowMix = value.snowEnabled && Number.isFinite(value.snow01) ? Math.max(0, Math.min(1, value.snow01!)) : 0;
       atmosphere.setEnvironment(value);
-      background.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
-      gardens.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
+      background?.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
+      gardens?.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
       life.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
     },
     setCandle(x, y) { candle = { x, y }; },
+    reseedBackdrop(seed) { generated?.reseed(seed); },
     addPlatform,
     removePlatform,
     syncPlatforms(platforms) {
@@ -197,9 +207,14 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
         scene.game.canvas.dataset.forestFps = scene.game.loop.actualFps.toFixed(1);
       }
       if (!reducedMotion && !paused) clock += Math.min(deltaMs, 100);
-      sky.setFillStyle(mixColor(mixColor(C.sky.calm, 0x263a4d, snowMix), C.sky.corrupted, c));
-      background.update(c);
-      gardens.update(c, clock);
+      // Behind a generated backdrop the sky is the colour its far layer fades toward, so the two always meet.
+      const skyCalm = generated
+        ? mixColor(BACKDROP_CONFIG.sky.forest, BACKDROP_CONFIG.sky.cold, generated.coldAtCamera())
+        : mixColor(C.sky.calm, 0x263a4d, snowMix);
+      sky.setFillStyle(mixColor(skyCalm, C.sky.corrupted, c));
+      background?.update(c);
+      generated?.update(sceneryCorruption(c));
+      gardens?.update(c, clock);
       const paintCorruption = sceneryCorruption(c);
       life.update(paintCorruption, deltaMs, reducedMotion, paused);
       grass.update(clock, paintCorruption);

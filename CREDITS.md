@@ -115,6 +115,12 @@ Grassland corruption palettes: left-red.png, middle-red.png, right-red.png and s
 Ancient Forest trunk-snow.png derives from existing trunk-loop.png: luminance conversion, blue palette (R0.78/G0.90/B1.00), alpha and exact repeat seam preserved. Original Lukya Forge project-use license applies.
 Clastic Artistic, Abstract Textures, texture (25): https://clastic-artistic.itch.io/caabstracttextures . Publisher confirms CC0 and no generative AI. Local README preserved at public/assets/corruption/CC0.txt. Selected source -clasticartistic-_6000-4000px_texture (25).jpg only; central6000x3375 crop at(0,312), downsample64x36, selective green→red palette shift, nearest upscale256x144 as abstract-25.png. Used as a low-opacity corrupted atmosphere layer. No full-resolution source or complete660MB pack copied.
 
+## Generated backdrop
+
+The forest behind the endless climb (trunks, branches, leaves, pines, tall mushrooms, floating islands) is drawn by this
+project's own code from the run's seed (`src/game/backdrop/`). It uses no asset files and no generative AI. The authored
+classic climb keeps the Lukya Forge backdrop credited above.
+
 ## Background life (birds, fireflies, leaves, grass, waterfalls)
 
 Added 2026-11-16 for the game-only variant. All four packs are human-made: each asset page carries itch.io's
