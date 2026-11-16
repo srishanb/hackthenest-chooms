@@ -106,5 +106,5 @@
   box-shadow: 0 0 0 10px #e3994b1f, 0 0 40px #e3994b55, inset 0 0 26px #e3994b2e; }
 .launch-emblem::before { inset: -18px; } .launch-emblem::after { inset: -30px; }
 /* Explicit sizes: a percentage height falls back to the canvas's own 184 px inside this grid. */
-.launch-emblem__candle { height: calc(var(--emblem-size) * .8); width: calc(var(--emblem-size) * .8 * 28 / 46); image-rendering: pixelated; }
+.launch-emblem__candle { height: calc(var(--emblem-size) * .92); width: calc(var(--emblem-size) * .92 * 36 / 54); image-rendering: pixelated; }
 @media (max-width: 720px) { .launch-emblem { --emblem-size: 96px; } }

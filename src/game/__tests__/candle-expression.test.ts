@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createCandleGenome } from '../candle/candle-genome';
 import { bodyShape, INITIAL_POSE, type CandlePoseName } from '../candle/candle-pose';
 import { rasterCandle } from '../candle/candle-raster';
-import { EXPRESSION_TIMING as T, faceFor, idleGlance, INITIAL_EXPRESSION, isBlinking, stepExpression,
+import { EXPRESSION_TIMING as T, faceFor, idleGlance, idleLookUp, INITIAL_EXPRESSION, isBlinking, stepExpression,
   type CandleMood, type ExpressionInput } from '../candle/expression';
 import { facePixels } from '../candle/face';
 
@@ -73,6 +73,17 @@ describe('blink and glance', () => {
       expect(face.eyes).toBe('open');
       expect(face.gazeX).toBe(0);
     }
+  });
+
+  it('an idle candle sometimes looks up at its flame, never while walking, and not while glancing sideways', () => {
+    let up = 0;
+    for (let ms = 0; ms < 120_000; ms += 20) {
+      const idle = faceFor({ ...INITIAL_EXPRESSION, clockMs: ms }, calm, 7);
+      if (idle.gazeY === -1) { up++; expect(idle.gazeX).toBe(0); expect(idleLookUp(7, ms)).toBe(true); }
+      expect(faceFor({ ...INITIAL_EXPRESSION, clockMs: ms }, { ...calm, pose: 'run' }, 7).gazeY).toBe(0);
+    }
+    expect(up / 6000).toBeGreaterThan(0.04);
+    expect(up / 6000).toBeLessThan(0.25);
   });
 
   it('two candles do not blink in step', () => {

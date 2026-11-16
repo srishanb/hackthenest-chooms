@@ -126,6 +126,8 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 | Export | File | What it does |
 |---|---|---|
 | `stepExpression`, `faceFor`, `isBlinking`, `idleGlance`, `INITIAL_EXPRESSION`, `EXPRESSION_TIMING`, `CandleMood`, `CandleFace`, `EyeShape`, `MouthShape`, `ExpressionInput`, `ExpressionEvents`, `ExpressionTracker` | `candle/expression.ts` | One mood at a time from the body's state and short events (wax, hard landing, new best); seeded blink and glance. Pure, visual only. |
+| `idleLookUp` | `candle/expression.ts` | An idle candle looks up at its own flame now and then. |
+| `EMBLEM_LOOP_MS`, `EmblemMoment` | `candle/emblem.ts` | The menu candle waits, gathers, hops, lands and looks pleased, on a 5.2 s loop. |
 | `facePixels`, `FaceBox` | `candle/face.ts` | Eyes, mouth, blush and a bead of wax as art pixels on the body. |
 | `BodyLook` | `candle/candle-raster.ts` | Optional face and flame glow for `rasterCandle` (rounded shoulders, melt pool, four tones, drip beads are always drawn). |
 | `createCandleView().cheer()`, `.celebrate()`, `.face()` | `candle/candle-view.ts` | The scene reports wax and a new best; the portrait reads the current face. |

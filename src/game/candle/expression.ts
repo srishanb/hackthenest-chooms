@@ -98,6 +98,9 @@ export const EXPRESSION_TIMING = {
   /** While idle the eyes glance to one side for `glanceMs` about every `glanceEveryMs`. */
   glanceMs: 900,
   glanceEveryMs: 5200,
+  /** While idle the candle also looks up at its own flame for `lookUpMs` about every `lookUpEveryMs`. */
+  lookUpMs: 800,
+  lookUpEveryMs: 7300,
 } as const;
 
 export function stepExpression(prev: ExpressionTracker, input: ExpressionInput, events: ExpressionEvents, deltaMs: number, paused: boolean): ExpressionTracker {
@@ -151,6 +154,15 @@ export function idleGlance(seed: number, clockMs: number): -1 | 0 | 1 {
   return hash01(seed, window, 4) < 0.5 ? -1 : 1;
 }
 
+/** While idle: true for a moment in each `lookUpEveryMs` window, when the candle looks up at its own flame. */
+export function idleLookUp(seed: number, clockMs: number): boolean {
+  const T = EXPRESSION_TIMING;
+  const window = Math.floor(clockMs / T.lookUpEveryMs);
+  const within = clockMs - window * T.lookUpEveryMs;
+  const start = hash01(seed, window, 5) * (T.lookUpEveryMs - T.lookUpMs);
+  return within >= start && within < start + T.lookUpMs;
+}
+
 /** The face for the tracker's mood. `seed` is the candle's seed, so each candle blinks in its own rhythm. */
 export function faceFor(tracker: ExpressionTracker, input: ExpressionInput, seed: number): CandleFace {
   const still = input.reducedMotion;
@@ -184,8 +196,12 @@ export function faceFor(tracker: ExpressionTracker, input: ExpressionInput, seed
       const yawning = !still && tracker.moodMs % 4200 > 3300;
       return { ...base, eyes: yawning ? 'closed' : 'half', mouth: yawning ? 'open' : 'small' };
     }
-    case 'content':
+    case 'content': {
+      // Standing about, it glances to the side and now and then looks up at its own flame.
+      const fidget = input.pose === 'idle' && !still;
+      const up = fidget && idleLookUp(seed, tracker.clockMs);
       return { ...base, eyes: blink ? 'closed' : 'open', mouth: 'smile',
-        gazeX: input.pose === 'idle' && !still ? idleGlance(seed, tracker.clockMs) : 0 };
+        gazeX: fidget && !up ? idleGlance(seed, tracker.clockMs) : 0, gazeY: up ? -1 : 0 };
+    }
   }
 }

@@ -11,7 +11,7 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #4 Portrait close-up shows the same face larger, with its own detail (tear of wax when nearly out, glint in the eyes)
 - [x] #5 Living wax: droplets knocked off on a hard landing (growing drips moved to #29)
 - [x] #6 Body language instead of limbs (decided: arms and feet do not read at 2 px per art pixel): reacting flame, emotes, impact squash, cooling wax
-- [ ] #7 Menu emblem greets the player (looks around, blinks, hops)
+- [x] #7 Menu emblem greets the player (looks around, blinks, hops, lands and sparkles)
 - [x] #8 Candle gallery page updated with every expression, for visual review
 
 ## Endless mode
@@ -41,6 +41,8 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [ ] #25 Remove the old small `rasterPortrait` once nothing else needs it as the reference
 - [ ] #26 Check the frame rate on real hardware: the headless check runs at 13 to 24 fps with software rendering
 - [ ] #27 A wind band (third biome) only if wind can be made part of the route replay
-- [ ] #28 Candle idle fidgets: a little hop or a look up at its flame after a long wait, before it gets sleepy
+- [x] #28 Candle idle fidgets: looks up at its own flame now and then (no hop: a hop without a jump would mislead)
 - [ ] #29 Drips that slowly grow over a run and fall as the candle burns down
 - [ ] #30 Height markers every 25 m and a marker at the personal best (needs a UI component id, or a game-drawn mark with no text)
+- [ ] #31 Close-up portrait reacts to the flame events too (flare on wax, duck on landing), like the hero
+- [ ] #32 Each candle gets one small trait of its own (a tuft of wax, a freckle, a tilted wick) so candles are told apart at a glance
