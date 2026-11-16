@@ -18,6 +18,7 @@ export type CandleMood =
   | 'soaring'    // rising
   | 'alarmed'    // falling fast
   | 'ouch'       // just landed hard
+  | 'relieved'   // wax just relit a wick that was only glowing
   | 'delighted'  // just picked up wax
   | 'proud'      // just beat the best height
   | 'worried'    // fuel is low
@@ -63,6 +64,8 @@ export interface ExpressionInput {
 /** One-off moments the scene reports; each starts a short reaction. */
 export interface ExpressionEvents {
   wax?: boolean;
+  /** Wax relit a wick whose flame had gone out. */
+  relit?: boolean;
   hardLanding?: boolean;
   newBest?: boolean;
 }
@@ -77,6 +80,8 @@ export interface ExpressionTracker {
   ouchMs: number;
   delightMs: number;
   proudMs: number;
+  /** Optional so trackers written before this reaction existed still type-check; treated as 0. */
+  relievedMs?: number;
   /** Time standing still with nothing happening, ms. */
   idleMs: number;
 }
@@ -87,6 +92,9 @@ export const INITIAL_EXPRESSION: ExpressionTracker = { mood: 'content', moodMs: 
 export const EXPRESSION_TIMING = {
   ouchMs: 520,
   delightMs: 1100,
+  /** Relief after a relight: a long breath out (`exhaleMs`), then a smile. */
+  relievedMs: 1500,
+  exhaleMs: 450,
   proudMs: 1600,
   /** Standing still this long makes the candle drowsy. */
   sleepyAfterMs: 9000,
@@ -111,12 +119,14 @@ export function stepExpression(prev: ExpressionTracker, input: ExpressionInput, 
   const ouchMs = events.hardLanding ? T.ouchMs : Math.max(0, prev.ouchMs - dt);
   const delightMs = events.wax ? T.delightMs : Math.max(0, prev.delightMs - dt);
   const proudMs = events.newBest ? T.proudMs : Math.max(0, prev.proudMs - dt);
+  const relievedMs = events.relit ? T.relievedMs : Math.max(0, (prev.relievedMs ?? 0) - dt);
   const idleMs = input.pose === 'idle' ? prev.idleMs + dt : 0;
 
   // One mood at a time. Order matters: what is happening to the body right now beats a lingering reaction.
   const mood: CandleMood = !input.lit ? 'fading'
     : ouchMs > 0 ? 'ouch'
     : input.fall01 >= T.alarmedFromFall01 ? 'alarmed'
+    : relievedMs > 0 ? 'relieved'
     : delightMs > 0 ? 'delighted'
     : input.pose === 'charge' ? 'focused'
     : input.pose === 'rise' ? 'soaring'
@@ -124,8 +134,10 @@ export function stepExpression(prev: ExpressionTracker, input: ExpressionInput, 
     : input.fuel01 <= T.worriedBelowFuel01 ? 'worried'
     : idleMs >= T.sleepyAfterMs ? 'sleepy'
     : 'content';
-  return { mood, moodMs: mood === prev.mood ? prev.moodMs + dt : 0, clockMs: prev.clockMs + dt, ouchMs, delightMs, proudMs, idleMs };
+  return { mood, moodMs: mood === prev.mood ? prev.moodMs + dt : 0, clockMs: prev.clockMs + dt, ouchMs, delightMs, proudMs, relievedMs, idleMs };
 }
+
+const T_EXHALE_MS = EXPRESSION_TIMING.exhaleMs;
 
 /** A small integer hash to 0..1, for the seeded blink and glance rhythm. */
 function hash01(seed: number, a: number, b: number): number {
@@ -180,6 +192,10 @@ export function faceFor(tracker: ExpressionTracker, input: ExpressionInput, seed
       return { ...base, eyes: 'closed', mouth: 'wobble' };
     case 'alarmed':
       return { ...base, eyes: 'wide', mouth: 'open', gazeY: 1, sweat: input.fall01 > 0.7 };
+    case 'relieved':
+      // A long breath out with the eyes shut, then a grateful smile. The bead of wax stays a moment longer.
+      return tracker.moodMs < T_EXHALE_MS ? { ...base, eyes: 'closed', mouth: 'open', sweat: true }
+        : { ...base, eyes: 'happy', mouth: 'smile', blush: true, sweat: tracker.moodMs < T_EXHALE_MS * 2 };
     case 'delighted':
       return { ...base, eyes: 'happy', mouth: 'grin', blush: true };
     case 'focused':

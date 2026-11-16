@@ -10,7 +10,7 @@ const calm: ExpressionInput = { pose: 'idle', charge01: 0, fall01: 0, aim: 0, fa
 const faceOf = (mood: CandleMood) => faceFor({ ...INITIAL_EXPRESSION, mood }, { ...calm, charge01: 1, fall01: 1 }, genome.seed);
 const closeUp = (strength01: number, timeMs = 0, reducedMotion = false, extra: object = {}) =>
   rasterCloseUp(genome, { strength01, timeMs, reducedMotion, growth: 1, ...extra });
-const MOODS: CandleMood[] = ['content', 'focused', 'soaring', 'alarmed', 'ouch', 'delighted', 'proud', 'worried', 'sleepy', 'fading'];
+const MOODS: CandleMood[] = ['content', 'focused', 'soaring', 'alarmed', 'ouch', 'relieved', 'delighted', 'proud', 'worried', 'sleepy', 'fading'];
 const brightness = (color: number) => ((color >> 16) & 255) + ((color >> 8) & 255) + (color & 255);
 
 describe('candle close-up', () => {

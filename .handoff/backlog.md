@@ -47,7 +47,9 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #31 Close-up portrait reacts to the flame events too (flare on wax, duck on landing), like the hero
 - [x] #32 Each candle gets one trait of its own (a coloured band, a dipped base or a tuft of wax) so candles are told apart at a glance
 - [x] #33 The end screen shows the run's candle (its close-up, cold) so the player sees who they played
-- [ ] #34 More wax tones and a rare special candle (two-tone swirl), kept pale enough to read in the dark
+- [x] #34 More wax tones (ten in all); the rare special candle moved to #38
 - [x] #35 A short moment between the flame going out and the end screen (the candle slumps, its eyes close, the world goes dark) instead of a cut
-- [ ] #36 Relight moment: when wax saves a glowing wick, the flame bursts back with a flare and the candle looks relieved
+- [x] #36 Relight moment: when wax saves a glowing wick, the flame bursts back with a flare and the candle breathes out, then smiles
 - [ ] #37 Keep sweep tests under one second each so the slower CI runner never times out (time them after any candle change)
+- [ ] #38 A rare special candle (about one in forty): a two-tone swirl or a honeycomb pattern
+- [ ] #39 The candle reacts to what is near it: looks toward wax within reach, glances down at a long drop beside it

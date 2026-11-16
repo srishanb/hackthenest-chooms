@@ -92,6 +92,8 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
     },
     /** Wax was picked up: a short delighted look. */
     cheer(): void { pending.wax = true; },
+    /** Wax relit a wick that was only glowing: a breath of relief, and the flame bursts back. */
+    relit(): void { pending.relit = true; pending.wax = true; },
     /** A new best height: a short proud look. */
     celebrate(): void { pending.newBest = true; },
     /** The face drawn this frame, so the portrait shows the same expression. */

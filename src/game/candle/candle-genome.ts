@@ -64,7 +64,7 @@ export interface CandleGenome {
 export type CandleTrait = 'plain' | 'band' | 'dipped' | 'tuft';
 
 /** Pale wax tones that read against the dark forest; each pick shades and lightens itself. */
-const WAX_BASES = [0xefe6d2, 0xf2dcc0, 0xe9d4d8, 0xdfe6ef, 0xf0e2b6, 0xe2ead6];
+const WAX_BASES = [0xefe6d2, 0xf2dcc0, 0xe9d4d8, 0xdfe6ef, 0xf0e2b6, 0xe2ead6, 0xe6dcf0, 0xf3d9c8, 0xd9ece6, 0xf4ecc4];
 const FLAMES = [
   { core: 0xfffbe8, inner: 0xffe27a, outer: 0xffa23a, edge: 0xd9542b },
   { core: 0xfff8f0, inner: 0xffd36a, outer: 0xff8a3d, edge: 0xc4402c },

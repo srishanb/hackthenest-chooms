@@ -334,9 +334,10 @@ export class EndlessScene extends Phaser.Scene {
       this.syncWorld();
 
       this.flame = stepFlame(this.flame, stepMs, this.stream.indexAt(this.feetY()), config);
+      const wasLit = isLit(this.flame);
       const taken = this.wax.update(this.state, this.stream.wax());
       for (let i = 0; i < taken.length; i++) this.flame = addWax(this.flame, config);
-      if (taken.length) { this.waxView.sync(this.stream.wax(), this.wax.isCollected); this.candle.cheer(); }
+      if (taken.length) { this.waxView.sync(this.stream.wax(), this.wax.isCollected); if (wasLit) this.candle.cheer(); else this.candle.relit(); }
 
       if (out.events.jumped) bus.emit({ type: 'jump', charge01: out.events.jumped.charge01 });
       // A fall just ends on whatever catches you; no reset, no death.

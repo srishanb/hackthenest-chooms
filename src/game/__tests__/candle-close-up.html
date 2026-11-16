@@ -20,6 +20,8 @@ const COLS=[
   {label:'alarmed',mood:'alarmed',pose:'fall',input:{fall01:0.9}},
   {label:'ouch',mood:'ouch',pose:'land',impact:1},
   {label:'delighted',mood:'delighted'},
+  {label:'relief (breath)',mood:'relieved'},
+  {label:'relief',mood:'relieved',moodMs:600},
   {label:'proud',mood:'proud'},
   {label:'worried',mood:'worried',strength:0.2,time:900},
   {label:'sleepy',mood:'sleepy'},
@@ -35,7 +37,7 @@ SEEDS.forEach((seed,row)=>{
     const pose=col.pose||'idle';
     const input={...base,pose,...(col.input||{})};
     const tracker={...INITIAL_POSE,pose,elapsedMs:pose==='rise'?200:0,impact01:col.impact??0.3};
-    const face={...faceFor({...INITIAL_EXPRESSION,mood:col.mood},input,seed),...(col.face||{})};
+    const face={...faceFor({...INITIAL_EXPRESSION,mood:col.mood,moodMs:col.moodMs??0},input,seed),...(col.face||{})};
     const picture=rasterCloseUp(g,{strength01:col.strength??0.75,timeMs:col.time??0,reducedMotion:col.time===undefined,growth:1,shape:bodyShape(tracker,input.charge01),face});
     const cx=(i*D+D/2)*P,cy=(row*D+D/2)*P;
     ctx.fillStyle='#16233a';ctx.beginPath();ctx.arc(cx,cy,CLOSE_UP_RADIUS*P,0,Math.PI*2);ctx.fill();

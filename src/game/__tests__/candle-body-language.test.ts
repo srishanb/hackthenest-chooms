@@ -80,7 +80,7 @@ describe('a dead wick and cold wax', () => {
 });
 
 describe('emotes', () => {
-  const LOUD: CandleMood[] = ['delighted', 'proud', 'alarmed', 'ouch', 'worried', 'sleepy'];
+  const LOUD: CandleMood[] = ['delighted', 'relieved', 'proud', 'alarmed', 'ouch', 'worried', 'sleepy'];
   const QUIET: CandleMood[] = ['content', 'focused', 'soaring', 'fading'];
 
   it('strong moments get a sign; everyday moods do not', () => {

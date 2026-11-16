@@ -40,6 +40,17 @@ describe('mood', () => {
     expect(step({}, {}, tracker, 40).mood).toBe('content');
   });
 
+  it('a relight is a breath out with the eyes shut, then a grateful smile, and it beats plain delight', () => {
+    let tracker = step({}, { relit: true, wax: true });
+    expect(tracker.mood).toBe('relieved');
+    const input = { ...calm, reducedMotion: true };
+    expect(faceFor(tracker, input, 3)).toMatchObject({ eyes: 'closed', mouth: 'open', sweat: true });
+    tracker = step({}, {}, tracker, T.exhaleMs + 10);
+    expect(faceFor(tracker, input, 3)).toMatchObject({ eyes: 'happy', mouth: 'smile' });
+    tracker = step({}, {}, tracker, T.relievedMs);
+    expect(tracker.mood).toBe('content');
+  });
+
   it('gets sleepy only after standing still for a long time, and wakes on any move', () => {
     let tracker = step({}, {}, INITIAL_EXPRESSION, T.sleepyAfterMs - 10);
     expect(tracker.mood).toBe('content');
@@ -93,7 +104,7 @@ describe('blink and glance', () => {
 });
 
 describe('face', () => {
-  const MOODS: CandleMood[] = ['content', 'focused', 'soaring', 'alarmed', 'ouch', 'delighted', 'proud', 'worried', 'sleepy', 'fading'];
+  const MOODS: CandleMood[] = ['content', 'focused', 'soaring', 'alarmed', 'ouch', 'relieved', 'delighted', 'proud', 'worried', 'sleepy', 'fading'];
   const POSES: CandlePoseName[] = ['idle', 'run', 'charge', 'rise', 'fall', 'land'];
 
   it('each mood has its own look', () => {

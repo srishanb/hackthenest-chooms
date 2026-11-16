@@ -71,6 +71,13 @@ export function emotePixels(mood: CandleMood, moodMs: number, reducedMotion: boo
         return sparkle(x, y, age > 90 && age < 400, GOLD);
       });
     }
+    case 'relieved': {
+      // A puff of breath drifts off to the side and thins out.
+      if (t > 700) return [];
+      const drift = Math.floor(t / 90);
+      const puff: Pixel[] = [{ x: 1 + drift, y: 6, color: PALE }, { x: 2 + drift, y: 5, color: PALE }];
+      return drift < 5 ? [...puff, { x: 2 + drift, y: 6, color: DREAM }, { x: 3 + drift, y: 6, color: DREAM }] : puff;
+    }
     case 'proud': {
       // One star rises and holds.
       const rise = Math.min(6, Math.floor(t / 70));
