@@ -29,7 +29,7 @@ export const pauseMenu: UiComponent = {
     const render = (): void => {
       const phase = stores.snapshot.get().phase;
       restart.disabled = !stores.snapshot.get().navigation?.checkpoints.length;
-      // The endless climb has no ember checkpoint: landings catch every fall instead.
+      // The endless climb has no ember checkpoint and nothing to restart from: a fall lands where it lands.
       const endless = stores.snapshot.get().run !== undefined;
       restart.hidden = endless;
       hint.hidden = endless || !restart.disabled;
