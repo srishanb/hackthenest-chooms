@@ -1,0 +1,52 @@
+<!doctype html><html><head><title>Backdrop gallery</title>
+<style>body{margin:0;background:#0b1114;color:#cfd6e4;font:12px monospace}canvas{image-rendering:pixelated;display:block}p{padding:6px 10px;margin:0}</style></head><body>
+<p id="note"></p>
+<canvas id="c"></canvas>
+<script type="module">
+// Dev-only visual check of the generated backdrop: what the three layers look like behind the climb at several heights.
+// ?seed=7 picks the forest, ?heights=0,3.5,7 the heights (in chunks above the start), ?zoom=2 the size, ?layer=1 one layer alone.
+import { BACKDROP_CONFIG as B } from './../../config/backdrop.config.ts';
+import { ENDLESS_CONFIG as E } from './../../config/endless.config.ts';
+import { paintChunk } from './../backdrop/paint-chunk.ts';
+import { colourChunk } from './../backdrop/palette.ts';
+import { backdropBiomeAt } from './../endless/backdrop-biome.ts';
+const query = new URLSearchParams(location.search);
+const seed = Number(query.get('seed') ?? 42), zoom = Number(query.get('zoom') ?? 1), only = query.get('layer');
+const heights = (query.get('heights') ?? '0,1.3,2.7,3.6,5.6,6.6,9.7,12.6').split(',').map(Number);
+const VIEW_W = 480, VIEW_H = 270, SCREEN_H = 540, START_SCROLL = -20, COLS = Math.min(4, heights.length);
+const canvas = document.querySelector('#c');
+canvas.width = COLS * VIEW_W * zoom; canvas.height = Math.ceil(heights.length / COLS) * VIEW_H * zoom;
+const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false;
+const hex = (n) => '#' + n.toString(16).padStart(6, '0');
+const mix = (a, b, t) => [16, 8, 0].reduce((sum, s) => sum | (Math.round(((a >> s) & 255) * (1 - t) + ((b >> s) & 255) * t) << s), 0);
+const scratch = document.createElement('canvas'); scratch.width = B.chunkWidth; scratch.height = B.chunkHeight;
+const sctx = scratch.getContext('2d'), image = sctx.createImageData(B.chunkWidth, B.chunkHeight);
+let paintMs = 0, paints = 0;
+heights.forEach((height, i) => {
+  const scrollY = START_SCROLL - height * E.chunkHeightPx;
+  const ox = (i % COLS) * VIEW_W * zoom, oy = Math.floor(i / COLS) * VIEW_H * zoom;
+  const here = backdropBiomeAt(scrollY + SCREEN_H / 2, seed, E);
+  ctx.fillStyle = hex(mix(B.sky.forest, B.sky.cold, here.cold01)); ctx.fillRect(ox, oy, VIEW_W * zoom, VIEW_H * zoom);
+  ctx.save(); ctx.beginPath(); ctx.rect(ox, oy, VIEW_W * zoom, VIEW_H * zoom); ctx.clip();
+  B.layers.forEach((layer, layerIndex) => {
+    if (only !== null && Number(only) !== layerIndex) return;
+    // Same sums as backdrop-view.ts: the layer follows `parallax` of the camera's climb.
+    const biomeAt = (y) => backdropBiomeAt((y * B.pixelScale - SCREEN_H / 2) / layer.parallax + SCREEN_H / 2, seed, E);
+    const groundY = ((E.baseFloorTopPx - START_SCROLL) + START_SCROLL * layer.parallax) / B.pixelScale;
+    const top = scrollY * layer.parallax / B.pixelScale;
+    for (let chunk = Math.floor(top / B.chunkHeight); chunk * B.chunkHeight < top + VIEW_H; chunk++) {
+      const started = performance.now();
+      const grid = paintChunk({ seed, layerIndex, chunk, biomeAt, groundY });
+      colourChunk(grid, chunk * B.chunkHeight, biomeAt, layer.fog01, image.data);
+      paintMs += performance.now() - started; paints++;
+      sctx.putImageData(image, 0, 0);
+      ctx.drawImage(scratch, ox, oy + Math.round(chunk * B.chunkHeight - top) * zoom, B.chunkWidth * zoom, B.chunkHeight * zoom);
+    }
+  });
+  ctx.restore();
+  ctx.fillStyle = '#ffffffcc'; ctx.font = `${10 * zoom}px monospace`;
+  ctx.fillText(`${height} chunks  ${here.flavour}  cold ${here.cold01.toFixed(2)}`, ox + 4 * zoom, oy + 12 * zoom);
+});
+document.querySelector('#note').textContent = `seed ${seed}: ${paints} chunks painted, ${(paintMs / paints).toFixed(1)} ms each on average`;
+window.galleryReady = true;
+</script></body></html>

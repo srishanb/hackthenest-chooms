@@ -42,6 +42,7 @@ import { createWaxDropsView } from '../endless/wax-drops-view';
 import { createCandleLighting } from '../forest/candle-lighting';
 import { stepForestEffects } from '../forest/forest-effects';
 import { createForestWorld, type ForestWorld } from '../forest/forest-world';
+import { backdropBiomeAt } from '../endless/backdrop-biome';
 import { fuelVisibilityRadius } from '../forest/fuel-visibility';
 import { createLandingPuff } from '../forest/landing-puff';
 import { createKeyboardInput } from '../keyboard-input';
@@ -165,6 +166,7 @@ export class EndlessScene extends Phaser.Scene {
     const firstRun = this.stream === undefined;
     for (const platform of this.stream?.platforms() ?? []) this.forest.removePlatform(platform.id);
     this.seed = seed;
+    this.forest.reseedBackdrop(seed);
     this.stream = createChunkStream(createEndlessGenerator(seed, gameConfig, config), config);
     // Only the very first run of a development session may start short of fuel.
     this.flame = { ...freshFlame(config), fuel01: firstRun ? this.deps.startFuel ?? 1 : 1 };
@@ -199,7 +201,13 @@ export class EndlessScene extends Phaser.Scene {
     const width = gameConfig.view.width;
     const floorBottom = config.baseFloorTopPx + config.ledgeHeightPx;
     // No authored platforms: every ledge is added and removed by the chunk stream.
-    this.forest = createForestWorld(this, { sections: [], platforms: [], width, top: -SKY_PX, bottom: floorBottom });
+    // The forest behind the climb is painted from the run's seed, and grows what the height's biome calls for.
+    this.forest = createForestWorld(this, { sections: [], platforms: [], width, top: -SKY_PX, bottom: floorBottom }, {
+      seed: this.deps.seed,
+      biomeAt: (worldY) => backdropBiomeAt(worldY, this.seed, config),
+      floorWorldY: config.baseFloorTopPx,
+      startScrollY: floorBottom - gameConfig.view.height,
+    });
 
     // Publish the final camera position, after Phaser has applied follow/pan for this frame.
     const publishCamera = (): void => {
