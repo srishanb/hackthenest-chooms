@@ -37,9 +37,23 @@ export interface PoseTracker {
   landedMs: number;
   wasGrounded: boolean;
   facingLeft: boolean;
+  /** Downward speed in the last airborne step (px/s), kept to judge the next landing. */
+  airVy?: number;
+  /** 0..1 how hard the latest landing was: a soft step barely squashes, a long fall flattens. */
+  impact01?: number;
 }
 
 export const INITIAL_POSE: PoseTracker = { pose: 'idle', elapsedMs: 0, landedMs: 0, wasGrounded: false, facingLeft: false };
+
+/** Landing speeds (px/s, downward) that count as the softest and the hardest landing. */
+const SOFT_LANDING_PX_S = 250;
+const HARD_LANDING_PX_S = 900;
+
+/** 0..1 for a landing at `vy` px/s downward. */
+export function landingImpact(vy: number): number {
+  if (!Number.isFinite(vy)) return 0;
+  return Math.min(Math.max((vy - SOFT_LANDING_PX_S) / (HARD_LANDING_PX_S - SOFT_LANDING_PX_S), 0), 1);
+}
 
 export function stepPose(prev: PoseTracker, state: PoseInput, deltaMs: number, paused: boolean): PoseTracker {
   const dt = paused ? 0 : Math.max(0, deltaMs);
@@ -47,12 +61,14 @@ export function stepPose(prev: PoseTracker, state: PoseInput, deltaMs: number, p
   if (state.charging && state.aim) facingLeft = state.aim < 0;
   else if (state.vx < -1) facingLeft = true;
   else if (state.vx > 1) facingLeft = false;
-  if (!prev.wasGrounded && state.grounded) landedMs = LAND_MS;
+  let impact01 = prev.impact01 ?? 0;
+  if (!prev.wasGrounded && state.grounded) { landedMs = LAND_MS; impact01 = landingImpact(prev.airVy ?? 0); }
+  const airVy = state.grounded ? 0 : state.vy;
   landedMs = Math.max(0, landedMs - dt);
   const pose: CandlePoseName = state.charging ? 'charge' : !state.grounded ? (state.vy < 0 ? 'rise' : 'fall')
     : landedMs > 0 ? 'land' : Math.abs(state.vx) > 1 ? 'run' : 'idle';
   const elapsedMs = pose === prev.pose ? prev.elapsedMs + dt : 0;
-  return { pose, elapsedMs, landedMs, wasGrounded: state.grounded, facingLeft };
+  return { pose, elapsedMs, landedMs, wasGrounded: state.grounded, facingLeft, airVy, impact01 };
 }
 
 /** Frame index within the pose (a one-shot pose holds its last frame). */
@@ -84,8 +100,15 @@ export function bodyShape(tracker: PoseTracker, charge01: number): BodyShape {
       const squash = Math.round(Math.min(Math.max(charge01, 0), 1) * 3);
       return { dWidth: squash > 1 ? 1 : 0, dHeight: -squash, lean: 0, lift: 0 };
     }
-    case 'rise': return { dWidth: -1, dHeight: 2, lean: 0, lift: 0 };
+    // The launch stretches hardest in its first frame, then settles into the rise.
+    case 'rise': return tracker.elapsedMs < 90 ? { dWidth: -2, dHeight: 3, lean: 0, lift: 0 } : { dWidth: -1, dHeight: 2, lean: 0, lift: 0 };
     case 'fall': return { dWidth: -1, dHeight: 1, lean: 0, lift: 0 };
-    case 'land': return { dWidth: frame === 0 ? 2 : frame === 1 ? 1 : 0, dHeight: frame === 0 ? -3 : frame === 1 ? -1 : 0, lean: 0, lift: 0 };
+    case 'land': {
+      // A soft step squashes 2 px, a hard landing up to 5 px, and both spring back over three frames.
+      const extra = Math.round(2 * (tracker.impact01 ?? 0.5));
+      return frame === 0 ? { dWidth: 1 + Math.ceil(extra / 2), dHeight: -(2 + extra), lean: 0, lift: 0 }
+        : frame === 1 ? { dWidth: extra > 1 ? 1 : 0, dHeight: -(1 + Math.floor(extra / 2)), lean: 0, lift: 0 }
+        : { dWidth: 0, dHeight: 0, lean: 0, lift: 0 };
+    }
   }
 }

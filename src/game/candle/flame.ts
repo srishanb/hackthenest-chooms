@@ -31,6 +31,12 @@ export interface FlameInput {
   lean: number;
   /** 0 when not falling, up to 1 in a fast fall (fallIntensity). Optional: 0 by default. */
   fall01?: number;
+  /** 0..1 a burst of joy (wax picked up, a new best): the flame leaps taller and wider for a moment. */
+  flare01?: number;
+  /** 0..1 a jolt (a landing): the flame is pressed down and spreads, then springs back. */
+  duck01?: number;
+  /** 0..1 of a jump charge: the flame gathers into a thin, tall, hot point as the candle winds up. */
+  gather01?: number;
 }
 
 /** The blue of a flame with plenty of air, from the hot centre outward. */
@@ -73,12 +79,18 @@ export function rasterFlame(genome: CandleGenome, input: FlameInput): Pixel[] {
   const turbulence = genome.flame.turbulence + (0.95 - genome.flame.turbulence) * fall * motion;
   // At rest the tip jumps 1 px about a third of the time; falling, more often and up to 2 px.
   const tipJitter = input.reducedMotion ? 0 : hash01(genome.seed, frame, 7, 7) < 0.35 + 0.4 * fall ? 1 + Math.round(fall) : 0;
-  const height = flameHeight(s) + Math.round(3 * fall) + tipJitter;
-  const width = Math.max(2, genome.flame.width * (0.55 + 0.45 * s) * (1 - 0.3 * fall));
+  // A missing or broken value means "no reaction", never a broken flame.
+  const unit = (value: number | undefined): number => (Number.isFinite(value) ? Math.min(Math.max(value!, 0), 1) : 0);
+  const flare = unit(input.flare01);
+  const duck = unit(input.duck01);
+  const gather = unit(input.gather01);
+  const height = Math.max(2, Math.round((flameHeight(s) + Math.round(3 * fall) + 2 * gather + 4 * flare) * (1 - 0.55 * duck)) + tipJitter);
+  const width = Math.max(2, genome.flame.width * (0.55 + 0.45 * s) * (1 - 0.3 * fall) * (1 - 0.28 * gather) * (1 + 0.35 * flare + 0.4 * duck));
   const t = input.timeMs / 1000;
   const sway = motion * (1 + 1.5 * fall) * (Math.sin(t * 5.1 + phaseA) * 0.8 + Math.sin(t * 8.3 + phaseB) * 0.5);
   // The blue band at the base grows with the fall.
-  const blueBelow = fall > 0.15 ? 0.12 + 0.25 * fall : 0;
+  // A nearly full charge burns hot at the base too.
+  const blueBelow = fall > 0.15 ? 0.12 + 0.25 * fall : gather > 0.7 ? 0.1 + 0.12 * gather : 0;
   const pixels: Pixel[] = [];
 
   for (let j = 0; j < height; j++) {
@@ -109,6 +121,24 @@ export function rasterFlame(genome: CandleGenome, input: FlameInput): Pixel[] {
       const dx = Math.round(hash01(genome.seed, frame, 51 + k, 5) * 2 - 1);
       pixels.push({ x: tipX + dx, y: -(height + gap), color: k === 0 ? colors.outer : colors.edge });
     }
+  }
+  return pixels;
+}
+
+const SMOKE = [0x9aa0aa, 0x7d838d, 0x60656e] as const;
+
+/**
+ * Smoke curling off a wick whose flame has gone out, relative to the wick tip. A few grey pixels
+ * that rise, drift and thin out. One still wisp under reduced motion.
+ */
+export function wickSmoke(genome: CandleGenome, timeMs: number, reducedMotion: boolean): Pixel[] {
+  if (reducedMotion) return [{ x: 0, y: -3, color: SMOKE[1] }, { x: 1, y: -5, color: SMOKE[2] }];
+  const pixels: Pixel[] = [];
+  const t = timeMs / 1000;
+  for (let i = 0; i < 4; i++) {
+    const age = (t * 0.5 + i / 4 + genome.flame.phaseA / (Math.PI * 2)) % 1;
+    const x = Math.round(Math.sin(age * 6 + i * 2.1 + genome.flame.phaseB) * 2.5 * age);
+    pixels.push({ x, y: -2 - Math.round(age * 11), color: SMOKE[Math.min(2, Math.floor(age * 3))]! });
   }
   return pixels;
 }

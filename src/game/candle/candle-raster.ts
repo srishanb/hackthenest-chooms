@@ -33,12 +33,16 @@ export interface BodyLook {
   face?: CandleFace;
   /** 0..1 how strongly the flame lights the top of the body. */
   glow01?: number;
+  /** 0 (cold wax, the flame is out) to 1 (warm). Optional: warm by default. The wax dims and turns bluish as it cools. */
+  warmth01?: number;
 }
 
 const WICK_COLOR = 0x2b2118;
 const OUTLINE_COLOR = 0x241c24;
 /** How far down the body the flame's warm light reaches, and how strong it is on each row. */
 const GLOW_ROWS = [0.42, 0.26, 0.12];
+/** Cold wax leans toward this blue-grey. */
+const COLD_TINT = 0x8f9bb5;
 
 /** Blend two RGB colours; `t` = 0 gives `a`, 1 gives `b`. */
 function mix(a: number, b: number, t: number): number {
@@ -105,6 +109,14 @@ export function rasterCandle(genome: CandleGenome, shape: BodyShape, growth: num
   for (let i = 1; i <= genome.wickHeight; i++) pixels.push({ x: wickX, y: outlineTop - i, color: WICK_COLOR });
   const wickTip = { x: wickX, y: outlineTop - genome.wickHeight };
 
+  const warmth = Math.min(Math.max(look.warmth01 ?? 1, 0), 1);
+  if (warmth < 1) {
+    // Cool every wax and face pixel together; the outline and wick are already dark.
+    for (const p of pixels) {
+      if (p.color === OUTLINE_COLOR || p.color === WICK_COLOR) continue;
+      p.color = scaleColor(mix(p.color, COLD_TINT, 0.3 * (1 - warmth)), 0.8 + 0.2 * warmth);
+    }
+  }
   if (!facingLeft) return { pixels: dedupe(pixels), wickTip };
   // Mirror cell [x, x+1) to [-x-1, -x).
   return { pixels: dedupe(pixels.map((p) => ({ ...p, x: -p.x - 1 }))), wickTip: { x: -wickTip.x - 1, y: wickTip.y } };

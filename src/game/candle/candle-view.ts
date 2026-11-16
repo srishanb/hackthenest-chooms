@@ -17,8 +17,9 @@ import { createCandleGenome, type CandleGenome } from './candle-genome';
 import { bodyShape, INITIAL_POSE, poseFrame, stepPose, type BodyShape, type PoseTracker } from './candle-pose';
 import { rasterCandle } from './candle-raster';
 import { type Aim, flameLean, flightSparks, wickLean } from './direction-cues';
+import { emotePixels } from './emotes';
 import { faceFor, INITIAL_EXPRESSION, stepExpression, type CandleFace, type ExpressionEvents, type ExpressionTracker } from './expression';
-import { fallIntensity, FLAME_FPS, flameSizeFromRadius, flickerRate, rasterFlame } from './flame';
+import { fallIntensity, FLAME_FPS, flameSizeFromRadius, flickerRate, rasterFlame, wickSmoke } from './flame';
 
 /** The light, the wax growth and the settings the candle draws from this frame. */
 export interface CandleLook {
@@ -42,6 +43,15 @@ export interface CandleLook {
 /** Landing faster than this (px/s, downward) makes the candle wince. */
 const HARD_LANDING_PX_S = 620;
 
+/** How long the flame leaps after a happy moment, and how long it stays pressed down after a landing (ms). */
+const FLARE_MS = 520;
+const DUCK_MS = 240;
+/** Flare, duck and gather are drawn in this many steps, so the picture is redrawn only when one changes visibly. */
+const REACTION_STEPS = 5;
+
+/** Emotes are anchored this many art px to the right of the wick. */
+const EMOTE_OFFSET_X = 6;
+
 /** Size steps for the flame: enough to look smooth in pixel art, few enough to redraw rarely. */
 const SIZE_STEPS = 24;
 const DEPTH = 210;
@@ -60,6 +70,10 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
   let pending: ExpressionEvents = {};
   /** Downward speed in the last airborne frame, to judge how hard a landing was. */
   let airVy = 0;
+  let flareMs = 0;
+  let duckMs = 0;
+  /** How hard the landing that started the current duck was, 0..1. */
+  let duckStrength = 0;
 
   return {
     /** A new candle (a new run). */
@@ -96,6 +110,16 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       const shape = { ...bodyShape(tracker, look.charge01), lean: wickLean(cue) };
       lastShape = shape;
       if (landedNow && airVy > HARD_LANDING_PX_S) pending.hardLanding = true;
+      const dt = paused ? 0 : Math.max(0, deltaMs);
+      if (pending.wax || pending.newBest) flareMs = FLARE_MS;
+      if (landedNow) { duckMs = DUCK_MS; duckStrength = 0.35 + 0.65 * (tracker.impact01 ?? 0); }
+      flareMs = Math.max(0, flareMs - dt);
+      duckMs = Math.max(0, duckMs - dt);
+      const steps = (value: number): number => Math.round(Math.min(Math.max(value, 0), 1) * REACTION_STEPS) / REACTION_STEPS;
+      // Reduced motion keeps the charge gathering (it carries information) and drops the two bounces.
+      const flare01 = look.reducedMotion ? 0 : steps(flareMs / FLARE_MS);
+      const duck01 = look.reducedMotion ? 0 : steps((duckMs / DUCK_MS) * duckStrength);
+      const gather01 = state.charging ? steps(look.charge01) : 0;
       airVy = state.grounded ? 0 : state.vy;
       const lit = !look.ember;
       const mood = { pose: tracker.pose, charge01: look.charge01, fall01, aim: look.aim, facingLeft: tracker.facingLeft,
@@ -104,25 +128,37 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       pending = {};
       const face = faceFor(expression, mood, genome.seed);
       lastFace = face;
+      // The wax cools as the fuel runs low: warm above 40%, cold with the flame out.
+      const warmth01 = !lit ? 0 : Math.round(Math.min(1, 0.35 + (look.fuel01 ?? 1) * 1.65) * 10) / 10;
+      // Emotes are drawn at the flame's frame rate, like the rest of the candle's animation.
+      const emoteMs = Math.floor(expression.moodMs / (1000 / FLAME_FPS)) * (1000 / FLAME_FPS);
+      const emotes = emotePixels(expression.mood, emoteMs, look.reducedMotion);
       const lean = flameLean(cue);
       const sparks = flightSparks(genome, cue, flameFrame, look.reducedMotion);
-      const key = `${look.ember}|${look.corruptedEmber}|${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}|${JSON.stringify(face)}`;
+      const key = `${look.ember}|${look.corruptedEmber}|${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}|${JSON.stringify(face)}|${flare01}|${duck01}|${gather01}|${warmth01}|${JSON.stringify(emotes)}`;
       if (key === drawnKey) return;
       drawnKey = key;
 
       // The flame lights the top of the body; a glowing wick barely does.
-      const body = rasterCandle(genome, shape, look.growth, tracker.facingLeft, { face, glow01: lit ? 0.35 + 0.65 * size01 : 0.08 });
+      const body = rasterCandle(genome, shape, look.growth, tracker.facingLeft, { face, glow01: lit ? 0.35 + 0.65 * size01 : 0.08, warmth01 });
       // The flame is drawn from the frame's own time so it matches the frame index above.
-      const flame = rasterFlame(genome, { size01, timeMs: (flameFrame * 1000) / FLAME_FPS, reducedMotion: look.reducedMotion, lean, fall01 });
+      const flame = rasterFlame(genome, { size01, timeMs: (flameFrame * 1000) / FLAME_FPS, reducedMotion: look.reducedMotion, lean, fall01, flare01, duck01, gather01 });
       graphics.clear();
       for (const p of body.pixels) {
         graphics.fillStyle(p.color, 1);
         graphics.fillRect(p.x * px, p.y * px, px, px);
       }
-      const light = look.ember ? [{ x: 0, y: -1, color: look.corruptedEmber ? 0xb74038 : 0xd58138 }] : [...sparks, ...flame];
+      // A dead wick keeps a glowing tip and lets off smoke.
+      const light = look.ember ? [{ x: 0, y: -1, color: look.corruptedEmber ? 0xb74038 : 0xd58138 }, ...wickSmoke(genome, (flameFrame * 1000) / FLAME_FPS, look.reducedMotion)]
+        : [...sparks, ...flame];
       for (const p of light) {
         graphics.fillStyle(p.color, 1);
         graphics.fillRect((body.wickTip.x + p.x) * px, (body.wickTip.y + p.y) * px, px, px);
+      }
+      // Beside the flame, always on the right, so the glyphs (a z, an exclamation mark) are never mirrored.
+      for (const p of emotes) {
+        graphics.fillStyle(p.color, 1);
+        graphics.fillRect((body.wickTip.x + EMOTE_OFFSET_X + p.x) * px, (body.wickTip.y + p.y) * px, px, px);
       }
     },
     destroy(): void { graphics.destroy(); },

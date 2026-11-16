@@ -9,6 +9,8 @@ import { bodyShape, INITIAL_POSE } from './../candle/candle-pose.ts';
 import { rasterCandle } from './../candle/candle-raster.ts';
 import { rasterFlame } from './../candle/flame.ts';
 import { faceFor, INITIAL_EXPRESSION } from './../candle/expression.ts';
+import { emotePixels } from './../candle/emotes.ts';
+import { wickSmoke } from './../candle/flame.ts';
 const SEEDS=[1,2,3,40,500,6006];
 // Each column: a mood, the pose that goes with it, and overrides for the input.
 const base={pose:'idle',charge01:0,fall01:0,aim:0,facingLeft:false,fuel01:1,lit:true,reducedMotion:true};
@@ -18,19 +20,19 @@ const COLS=[
   {label:'run',mood:'content',pose:'run'},
   {label:'blink',mood:'content',face:{eyes:'closed'}},
   {label:'focused',mood:'focused',pose:'charge',input:{charge01:0.5,aim:1}},
-  {label:'full charge',mood:'focused',pose:'charge',input:{charge01:1,aim:0}},
+  {label:'full charge',mood:'focused',pose:'charge',input:{charge01:1,aim:0},flame:{gather01:1}},
   {label:'soaring',mood:'soaring',pose:'rise'},
   {label:'alarmed',mood:'alarmed',pose:'fall',input:{fall01:0.9}},
-  {label:'ouch',mood:'ouch',pose:'land'},
-  {label:'delighted',mood:'delighted'},
+  {label:'ouch',mood:'ouch',pose:'land',flame:{duck01:1},impact:1},
+  {label:'delighted',mood:'delighted',flame:{flare01:1}},
   {label:'proud',mood:'proud'},
   {label:'worried',mood:'worried',input:{fuel01:0.1},size:0.12},
   {label:'sleepy',mood:'sleepy'},
   {label:'yawn',mood:'sleepy',face:{eyes:'closed',mouth:'open'}},
-  {label:'fading',mood:'fading',input:{lit:false},size:0},
+  {label:'fading',mood:'fading',input:{lit:false},size:0,warmth:0},
   {label:'left',mood:'content',left:true},
 ];
-const P=6,CELL=36,CW=18;
+const P=5,CELL=40,CW=21;
 const canvas=document.querySelector('#c');canvas.width=COLS.length*CW*P;canvas.height=SEEDS.length*CELL*P+16;
 const ctx=canvas.getContext('2d');
 const hex=(n)=>'#'+n.toString(16).padStart(6,'0');
@@ -41,14 +43,15 @@ SEEDS.forEach((seed,row)=>{
   COLS.forEach((col,i)=>{
     const pose=col.pose||'idle';
     const input={...base,pose,...(col.input||{})};
-    const tracker={...INITIAL_POSE,pose,elapsedMs:0,facingLeft:!!col.left};
+    const tracker={...INITIAL_POSE,pose,elapsedMs:pose==='rise'?200:0,facingLeft:!!col.left,impact01:col.impact??0.3};
     const face={...faceFor({...INITIAL_EXPRESSION,mood:col.mood},input,seed),...(col.face||{})};
     const size=col.size??0.7;
-    const body=rasterCandle(g,bodyShape(tracker,input.charge01),1,!!col.left,{face,glow01:input.lit?0.35+0.65*size:0.08});
+    const body=rasterCandle(g,bodyShape(tracker,input.charge01),1,!!col.left,{face,glow01:input.lit?0.35+0.65*size:0.08,warmth01:col.warmth??1});
     const ox=i*CW+CW/2;
     draw(body.pixels,ox,oy);
-    if(input.lit) draw(rasterFlame(g,{size01:size,timeMs:0,reducedMotion:true,lean:0,fall01:input.fall01}),ox+body.wickTip.x,oy+body.wickTip.y);
-    else draw([{x:0,y:-1,color:0xd58138}],ox+body.wickTip.x,oy+body.wickTip.y);
+    if(input.lit) draw(rasterFlame(g,{size01:size,timeMs:0,reducedMotion:true,lean:0,fall01:input.fall01,...(col.flame||{})}),ox+body.wickTip.x,oy+body.wickTip.y);
+    else draw([{x:0,y:-1,color:0xd58138},...wickSmoke(g,700,false)],ox+body.wickTip.x,oy+body.wickTip.y);
+    draw(emotePixels(col.mood,300,false),ox+body.wickTip.x+6,oy+body.wickTip.y);
   });
 });
 ctx.fillStyle='#cfd6e4';ctx.font='11px monospace';
