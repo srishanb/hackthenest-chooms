@@ -45,21 +45,57 @@ export interface CandleGenome {
     /** Colours from the core outward. */
     colors: { core: number; inner: number; outer: number; edge: number };
   };
+  /** What makes this candle's face its own. Expressions come from expression.ts; these are its features. */
+  face: {
+    /** Rows between the top of the wax and the eyes. */
+    eyeRow: number;
+    eyeColor: number;
+    mouthColor: number;
+    /** Always a little pink in the cheeks. */
+    rosy: boolean;
+  };
+  /**
+   * One thing that sets this candle apart at a glance: a coloured band, a base dipped in a second
+   * colour, a tuft of melted wax on one shoulder, or nothing.
+   */
+  trait: { kind: CandleTrait; accent: number; onLeft: boolean };
 }
 
+/** `swirl` is the rare one: soft diagonal stripes of the accent colour, like a twisted party candle. */
+export type CandleTrait = 'plain' | 'band' | 'dipped' | 'tuft' | 'swirl';
+
+/** About one candle in this many is a swirl. */
+export const SWIRL_ONE_IN = 36;
+
 /** Pale wax tones that read against the dark forest; each pick shades and lightens itself. */
-const WAX_BASES = [0xefe6d2, 0xf2dcc0, 0xe9d4d8, 0xdfe6ef, 0xf0e2b6, 0xe2ead6];
+const WAX_BASES = [0xefe6d2, 0xf2dcc0, 0xe9d4d8, 0xdfe6ef, 0xf0e2b6, 0xe2ead6, 0xe6dcf0, 0xf3d9c8, 0xd9ece6, 0xf4ecc4];
 const FLAMES = [
   { core: 0xfffbe8, inner: 0xffe27a, outer: 0xffa23a, edge: 0xd9542b },
   { core: 0xfff8f0, inner: 0xffd36a, outer: 0xff8a3d, edge: 0xc4402c },
   { core: 0xfffde0, inner: 0xfff09a, outer: 0xffb84a, edge: 0xe0702e },
 ];
 
+/** Rare flames: cool colours that only a few candles burn with. Core outward, like `FLAMES`. */
+const RARE_FLAMES = [
+  { core: 0xf0f8ff, inner: 0x9fd0ff, outer: 0x4f8fe8, edge: 0x2b4fb0 },
+  { core: 0xf2ffe8, inner: 0xb6f08a, outer: 0x5fc25a, edge: 0x2e7d46 },
+  { core: 0xfbeeff, inner: 0xd9a6ff, outer: 0x9a62e0, edge: 0x5a36a8 },
+];
+/** About one candle in this many burns with a rare flame colour. */
+export const RARE_FLAME_ONE_IN = 12;
+
 /** Multiply each RGB channel by `factor` (darker below 1, lighter above), clamped to 0..255. */
 export function scaleColor(color: number, factor: number): number {
   const channel = (shift: number): number => Math.min(255, Math.max(0, Math.round(((color >> shift) & 0xff) * factor)));
   return (channel(16) << 16) | (channel(8) << 8) | channel(0);
 }
+
+/** Accent colours for a band or a dipped base: muted, so they sit with the pale wax. */
+const ACCENTS = [0xc9584f, 0x4f9fa8, 0xd9a441, 0x7a6fb5, 0x5c9a63];
+const TRAITS: readonly CandleTrait[] = ['plain', 'plain', 'band', 'dipped', 'tuft'];
+
+/** Dark, warm eye colours that read on every wax tone. */
+const EYES = [0x2a1d1a, 0x1f2430, 0x33221c, 0x241a2a];
 
 const pick = <T>(random: () => number, list: readonly T[]): T => list[Math.floor(random() * list.length)]!;
 const between = (random: () => number, min: number, max: number): number => min + Math.floor(random() * (max - min + 1));
@@ -76,21 +112,24 @@ export function createCandleGenome(seed: number): CandleGenome {
     if (drips.some((d) => Math.abs(d.x - x) < 2)) continue;
     drips.push({ x, length: between(random, 2, Math.max(3, Math.floor(height / 2))) });
   }
-  return {
-    seed,
-    width,
-    height,
-    wax: { base, shade: scaleColor(base, 0.78), light: scaleColor(base, 1.08) },
-    drips,
-    wickHeight: between(random, 1, 2),
-    flame: {
-      width: between(random, 5, 7),
-      phaseA: random() * Math.PI * 2,
-      phaseB: random() * Math.PI * 2,
-      turbulence: 0.25 + random() * 0.5,
-      colors: pick(random, FLAMES),
-    },
+  const wickHeight = between(random, 1, 2);
+  const flame = {
+    width: between(random, 5, 7),
+    phaseA: random() * Math.PI * 2,
+    phaseB: random() * Math.PI * 2,
+    turbulence: 0.25 + random() * 0.5,
+    colors: pick(random, FLAMES),
   };
+  // The face is drawn from the generator last, so older fields keep their values for a given seed.
+  const eyeColor = pick(random, EYES);
+  const face = { eyeRow: between(random, 4, 5), eyeColor, mouthColor: scaleColor(eyeColor, 1.9), rosy: random() < 0.4 };
+  // The trait is drawn after the face, for the same reason.
+  const trait = { kind: pick(random, TRAITS), accent: pick(random, ACCENTS), onLeft: random() < 0.5 };
+  // The rare swirl is rolled last of all, so it replaces a trait without shifting any other value.
+  if (random() < 1 / SWIRL_ONE_IN) trait.kind = 'swirl';
+  // The rare flame colour is rolled after that, for the same reason.
+  if (random() < 1 / RARE_FLAME_ONE_IN) flame.colors = pick(random, RARE_FLAMES);
+  return { seed, width, height, wax: { base, shade: scaleColor(base, 0.78), light: scaleColor(base, 1.08) }, drips, wickHeight, flame, face, trait };
 }
 
 /** A seed for a new run, or the dev override from `?candleSeed=<integer>`. */

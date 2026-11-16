@@ -4,3 +4,10 @@
 .finish-screen p { color: var(--color-text-dim); }
 .finish-screen .finish-screen__play { border-color: var(--color-accent); color: var(--color-accent); font-size: var(--text-md); width: 100%; }
 .finish-screen .finish-screen__hint { font-size: var(--text-sm); }
+/* Endless run result: label and value pairs in two columns. */
+.finish-screen .finish-screen__result { display: grid; grid-template-columns: auto auto; gap: var(--space-1, 6px) var(--space-3, 18px); margin: 0; justify-content: center; text-align: left; }
+.finish-screen .finish-screen__result dt { color: var(--color-text-dim); }
+.finish-screen .finish-screen__result dd { margin: 0; color: var(--color-text); font-weight: 600; text-align: right; }
+.finish-screen .finish-screen__new-best { margin: 0; color: var(--color-accent); font-weight: 600; }
+/* The run's candle, flame out, above the title. */
+.finish-screen .finish-screen__candle { width: 120px; height: 120px; image-rendering: pixelated; border-radius: 50%; background: #101b2b; border: 2px solid var(--color-accent); }

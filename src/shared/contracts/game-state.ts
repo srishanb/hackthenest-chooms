@@ -30,7 +30,24 @@ export interface NavigationSnapshot {
   checkpoints: readonly { id: string; x: number; y: number }[];
 }
 
+/** One endless run, for the HUD and the end screen. Heights are world px climbed above the start. */
+export interface RunSnapshot {
+  mode: 'endless';
+  /** The seed the platforms were generated from; the same seed gives the same climb. */
+  seed: number;
+  /** Highest point reached in this run. */
+  heightPx: number;
+  /** Best height on this device, including this run. A personal record, never a ranking. */
+  bestPx: number;
+  /** True once this run has passed the best height it started with. */
+  newBest: boolean;
+  /** Seed of the candle played in this run, so the end screen can show it. Optional for older writers. */
+  candleSeed?: number;
+}
+
 export interface GameSnapshot {
+  /** Present only in endless mode (game-only variant). The authored climb leaves it out. */
+  run?: RunSnapshot;
   /** Actual candle resource, not a composure score. Optional for older snapshot writers. */
   lanternFuel01?: number;
   navigation?: NavigationSnapshot;

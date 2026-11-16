@@ -1,0 +1,87 @@
+{
+  "name": "lighten-up-game-only",
+  "version": "0.2.1",
+  "private": true,
+  "description": "Lighten Up (game-only) desktop app: the built game in an Electron window that updates itself",
+  "author": "Lighten Up team",
+  "main": "main.cjs",
+  "scripts": {
+    "copy-game": "node copy-game.cjs",
+    "start": "npm run copy-game && electron .",
+    "dist": "npm run copy-game && electron-builder --publish never"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.11"
+  },
+  "devDependencies": {
+    "electron": "45.3.2",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "org.hackthenest.lightenup.gameonly",
+    "productName": "Lighten Up Game-Only",
+    "copyright": "Lighten Up team, Hack The Nest 2026",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "icons/**/*",
+      "*.cjs",
+      "package.json"
+    ],
+    "asar": true,
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://github.com/srishanb/lighten-up/releases"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icons/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "artifactName": "Lighten-Up-Game-Only-Setup-${version}.${ext}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Game",
+      "artifactName": "Lighten-Up-Game-Only-${version}.${ext}",
+      "icon": "icons/icon.png"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.games",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "artifactName": "Lighten-Up-Game-Only-${version}-${arch}.${ext}",
+      "icon": "icons/icon.png"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+<!doctype html><html><head><title>Candle close-up</title>
+<style>body{margin:0;background:#101b2b;color:#cfd6e4;font:12px monospace}canvas{image-rendering:pixelated;display:block}</style></head><body>
+<p style="padding:6px 10px">The portrait close-up. Rows: seven seeds. Columns: every mood, then weak light and nearly out. Dev-only visual check.</p>
+<canvas id="c"></canvas>
+<script type="module">
+// Dev-only visual check of the detailed portrait close-up; draws the pure raster with a plain 2D canvas.
+import { createCandleGenome } from './../candle/candle-genome.ts';
+import { bodyShape, INITIAL_POSE } from './../candle/candle-pose.ts';
+import { CLOSE_UP_RADIUS, rasterCloseUp } from './../candle/close-up.ts';
+import { faceFor, INITIAL_EXPRESSION } from './../candle/expression.ts';
+const SEEDS=[1,2,40,6006,23,146,179];
+const base={pose:'idle',charge01:0,fall01:0,aim:0,facingLeft:false,fuel01:1,lit:true,reducedMotion:true};
+const COLS=[
+  {label:'content',mood:'content'},
+  {label:'blink',mood:'content',face:{eyes:'closed'}},
+  {label:'run',mood:'content',pose:'run'},
+  {label:'focused',mood:'focused',pose:'charge',input:{charge01:0.5,aim:1}},
+  {label:'full charge',mood:'focused',pose:'charge',input:{charge01:1}},
+  {label:'soaring',mood:'soaring',pose:'rise'},
+  {label:'alarmed',mood:'alarmed',pose:'fall',input:{fall01:0.9}},
+  {label:'ouch',mood:'ouch',pose:'land',impact:1},
+  {label:'delighted',mood:'delighted'},
+  {label:'relief (breath)',mood:'relieved'},
+  {label:'relief',mood:'relieved',moodMs:600},
+  {label:'proud',mood:'proud'},
+  {label:'worried',mood:'worried',strength:0.2,time:900},
+  {label:'sleepy',mood:'sleepy'},
+  {label:'fading',mood:'fading',strength:0.04,time:1300},
+];
+const P=3,D=CLOSE_UP_RADIUS*2+6;
+const canvas=document.querySelector('#c');canvas.width=COLS.length*D*P;canvas.height=SEEDS.length*D*P+18;
+const ctx=canvas.getContext('2d');
+ctx.fillStyle='#101b2b';ctx.fillRect(0,0,canvas.width,canvas.height);
+SEEDS.forEach((seed,row)=>{
+  const g=createCandleGenome(seed);
+  COLS.forEach((col,i)=>{
+    const pose=col.pose||'idle';
+    const input={...base,pose,...(col.input||{})};
+    const tracker={...INITIAL_POSE,pose,elapsedMs:pose==='rise'?200:0,impact01:col.impact??0.3};
+    const face={...faceFor({...INITIAL_EXPRESSION,mood:col.mood,moodMs:col.moodMs??0},input,seed),...(col.face||{})};
+    const picture=rasterCloseUp(g,{strength01:col.strength??0.75,timeMs:col.time??0,reducedMotion:col.time===undefined,growth:1,shape:bodyShape(tracker,input.charge01),face});
+    const cx=(i*D+D/2)*P,cy=(row*D+D/2)*P;
+    ctx.fillStyle='#16233a';ctx.beginPath();ctx.arc(cx,cy,CLOSE_UP_RADIUS*P,0,Math.PI*2);ctx.fill();
+    for(const p of picture.pixels){ctx.globalAlpha=p.alpha;ctx.fillStyle='#'+p.color.toString(16).padStart(6,'0');ctx.fillRect(cx+p.x*P,cy+p.y*P,P,P);}
+    ctx.globalAlpha=1;ctx.strokeStyle='#ffda70';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,CLOSE_UP_RADIUS*P,0,Math.PI*2);ctx.stroke();
+  });
+});
+ctx.fillStyle='#cfd6e4';ctx.font='11px monospace';
+COLS.forEach((col,i)=>ctx.fillText(col.label,i*D*P+8,canvas.height-5));
+window.galleryReady=true;
+</script></body></html>

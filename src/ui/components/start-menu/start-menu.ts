@@ -4,8 +4,9 @@ import { icon } from '../../icons';
 import { t } from '../../strings';
 import type { UiComponent } from '../../types';
 import { createUiActions } from '../../ui-actions';
-import { canContinue, menuSelection, startStalled, startsOnKey } from './start-menu-state';
+import { canContinue, climbMode, dailySeed, footerText, menuSelection, modeUrl, startStalled, startsOnKey } from './start-menu-state';
 import { createCredits } from './credits';
+import { GAME_ONLY } from '../../../config/ui.config';
 import '../../theme/menus.css';
 import './start-menu.css';
 
@@ -28,9 +29,12 @@ export const startMenu: UiComponent = {
     const emblem = document.createElement('div'); emblem.className = 'launch-emblem'; emblem.setAttribute('aria-hidden', 'true');
     // The game's own candle, animated, when main.ts provides a drawer; otherwise the flame icon.
     let stopEmblem = (): void => {};
+    // The game's emblem reads this one flag off its canvas: "Play has the pointer or the focus".
+    let emblemCanvas: HTMLCanvasElement | null = null;
     if (drawEmblem) {
       const canvas = document.createElement('canvas'); canvas.className = 'launch-emblem__candle'; emblem.append(canvas);
       stopEmblem = drawEmblem(canvas);
+      emblemCanvas = canvas;
     } else emblem.append(icon('flame'));
     const title = document.createElement('h1'); title.textContent = t('start.title');
     const subtitle = document.createElement('p'); subtitle.className = 'launch-subtitle'; subtitle.textContent = t('start.journey');
@@ -54,6 +58,10 @@ export const startMenu: UiComponent = {
       }, stores.settings.get().reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180);
     };
     const play = menuButton(t('start.play'), start); play.className = 'menu-primary'; play.prepend(icon('play'));
+    const eager = (on: boolean): void => { if (emblemCanvas) emblemCanvas.dataset.eager = String(on); };
+    for (const type of ['focus', 'mouseenter'] as const) play.addEventListener(type, () => eager(true));
+    play.addEventListener('blur', () => eager(play.matches(':hover')));
+    play.addEventListener('mouseleave', () => eager(document.activeElement === play));
     const settings = menuButton(t('menu.settings'), () => { if (!pending) { focusReturn = settings; actions.settingsOpen.set(true); } });
     settings.prepend(icon('settings')); settings.hidden = !actions.settingsAvailable;
     const how = menuButton(t('start.how'), () => { if (!pending) { focusReturn = how; actions.tutorialOpen.set(true); } });
@@ -66,16 +74,32 @@ export const startMenu: UiComponent = {
       if (pending) return; pending = true;
       const url = new URL(location.href); url.searchParams.delete('editorTest'); url.searchParams.delete('editorDraft'); url.searchParams.set('editor', '1'); location.assign(url.href);
     });
-    const buttons = [play, settings, how, creditsButton, editor];
+    // Other ways to play, each a change of the page address (the game reads the mode and seed from it at boot).
+    const mode = climbMode(location.search);
+    const go = (href: string): void => { if (pending) return; pending = true; location.assign(href); };
+    const seedNow = new URLSearchParams(location.search).get('seed');
+    const today = String(dailySeed(new Date()));
+    // "Today's climb" is the same for everyone on the same day; pressing it again goes back to a fresh climb each run.
+    const daily = menuButton(t(seedNow === today ? 'start.fresh' : 'start.daily'),
+      () => go(modeUrl(location.href, { climb: 'endless', seed: seedNow === today ? null : Number(today) })));
+    const other = menuButton(t(mode === 'classic' ? 'start.endless' : 'start.classic'),
+      () => go(modeUrl(location.href, { climb: mode === 'classic' ? 'endless' : 'classic' })));
+    daily.hidden = mode === 'classic';
+    const buttons = [play, daily, other, settings, how, creditsButton, editor];
     nav.append(...buttons);
     const hint = document.createElement('p'); hint.className = 'launch-key-hint'; hint.textContent = t('start.keyHint'); nav.append(hint);
     hero.append(copy, nav);
     const credits = createCredits(() => { credits.hidden = true; render(); creditsButton.focus(); });
     const footer = document.createElement('footer'); footer.className = 'launch-footer';
-    const event = document.createElement('span'); event.textContent = t('start.event'); footer.append(status, event);
+    // The footer names the climb the Play button will start.
+    const event = document.createElement('span');
+    event.textContent = footerText(mode, seedNow, today, { endless: t('start.event'), daily: t('start.footer.daily'), seeded: t('start.footer.seeded'), classic: t('start.footer.classic') });
+    footer.append(status, event);
     screen.append(scenery, hero, credits, footer); root.append(screen);
 
     function renderSource(): void {
+      // No signal in the game-only variant: one fixed line instead of a source status.
+      if (GAME_ONLY) { status.textContent = t('start.gameOnly'); status.dataset.ready = 'true'; return; }
       const state = signal.reader.getState();
       const label = state.source === 'SIMULATED' ? 'start.signal.sim' : state.source === 'REPLAY' ? 'start.signal.replay' : state.valid ? 'start.signal.live' : 'start.signal.waiting';
       const value = t(label);
@@ -104,6 +128,8 @@ export const startMenu: UiComponent = {
       const label = t(canContinue(snapshot, played) ? 'start.continue' : 'start.play');
       if (play.dataset.label !== label) { play.replaceChildren(...(iconElement ? [iconElement] : []), document.createTextNode(label)); play.dataset.label = label; }
       for (const button of buttons) button.disabled = pending;
+      // The stage editor edits the authored climb; the endless climb has no stages to edit.
+      editor.hidden = mode === 'endless';
       hero.hidden = actions.settingsOpen.get() || actions.tutorialOpen.get() || actions.calibrationFrom.get() !== null || !credits.hidden;
       if (focusReturn && !hero.hidden) {
         const target = focusReturn; focusReturn = null;

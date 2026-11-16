@@ -29,6 +29,8 @@ import { neutralFrame } from '../effects/effects-engine';
 import { stepForestEffects } from '../forest/forest-effects';
 import type { ForestWorld } from '../forest/forest-world';
 import { WAX_CONFIG } from '../../config/wax.config';
+import { surroundings } from '../candle/awareness';
+import { groundShadow } from '../candle/ground-shadow';
 import { pickCandleSeed } from '../candle/candle-genome';
 import { createCandleView } from '../candle/candle-view';
 import { flameSizeFromRadius } from '../candle/flame';
@@ -98,6 +100,8 @@ export class ClimbScene extends Phaser.Scene {
   private fuel = createLanternFuel();
   private forest!: ForestWorld;
   private candle!: ReturnType<typeof createCandleView>;
+  /** The candle's shadow on the ledge below it (see ground-shadow.ts). */
+  private shadow!: Phaser.GameObjects.Ellipse;
   private portrait!: ReturnType<typeof createPortraitView>;
   /** True while the camera slides back to the start after Play again; the player waits. */
   private sliding = false;
@@ -154,6 +158,7 @@ export class ClimbScene extends Phaser.Scene {
     });
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
     this.player.setVisible(false); // Preserve the camera's original follow target and exact body alignment.
+    this.shadow = this.add.ellipse(0, 0, 10, 4, 0x05060a, 0.3).setDepth(DEPTH.player - 1).setVisible(false);
     this.candle = createCandleView(this, gameConfig.player.height, this.deps.candleSeed ?? pickCandleSeed(window.location.search, import.meta.env.DEV));
     // Bottom-left close-up of the same candle: replaces the lantern strength bar.
     this.portrait = createPortraitView(this, gameConfig.view.height);
@@ -229,7 +234,7 @@ export class ClimbScene extends Phaser.Scene {
     const offAssist = this.deps.bus.on('ember_assist_requested', () => this.returnToEmber(this.ember.assist()));
     const offCancel = this.deps.bus.on('ember_cancel_request', () => this.ember.cancel());
     const offCheckpoint = this.deps.bus.on('checkpoint_restart_requested', () => this.returnToEmber(this.ember.restartAtAnchor()));
-    const offFuelWax = this.deps.bus.on('wax_collected', () => this.fuel.refill());
+    const offFuelWax = this.deps.bus.on('wax_collected', () => { this.fuel.refill(); this.candle.cheer(); });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, offFuelWax);
     const offRestart = this.deps.bus.on('run_restart', () => {
       this.fuel.reset();
@@ -345,6 +350,9 @@ export class ClimbScene extends Phaser.Scene {
       bus.emit({ type: 'precision_window', active: this.precisionActive });
     }
     this.player.setPosition(this.state.x, this.state.y);
+    const shadow = groundShadow({ x: this.state.x, y: this.state.y + gameConfig.player.height / 2 }, gameConfig.player.width, this.platforms);
+    this.shadow.setVisible(shadow !== null);
+    if (shadow) this.shadow.setPosition(shadow.x, shadow.y).setSize(shadow.widthPx, shadow.heightPx).setAlpha(shadow.alpha);
     this.waxView.update(deltaMs, this.phase.isRunning(), settings.reducedMotion);
     this.worldView.update(this.platforms, this.worldTimeMs, settings.reducedMotion, this.state.y);
     const sectionId = sectionAt(sections, this.state.y + gameConfig.player.height / 2);
@@ -382,6 +390,8 @@ export class ClimbScene extends Phaser.Scene {
       this.forestPreview,
     );
     stores.effects.set(frame);
+    // The scenery only looks at where the candle is (birds fly off as it comes near); it changes nothing about it.
+    this.forest.setCandle(this.state.x, this.state.y);
     this.forest.update(frame.forestCorruption, deltaMs, settings.reducedMotion, !this.phase.isRunning(), settings.effectStrength);
     this.darkness.setAlpha(FUEL_VIEW.normalShadowAlpha +
       (FUEL_VIEW.corruptedShadowAlpha - FUEL_VIEW.normalShadowAlpha) * sceneryCorruption(frame.forestCorruption));
@@ -402,6 +412,9 @@ export class ClimbScene extends Phaser.Scene {
       visible: stores.snapshot.get().phase !== 'menu' && settings.hud.showStatus,
       paused: !this.phase.isRunning(),
       shape: this.candle.shape(),
+      face: this.candle.face(),
+      flame: this.candle.reactions(),
+      melting: this.candle.melting(),
     });
     this.candle.update(this.state, deltaMs, !this.phase.isRunning(), {
       ember: !this.fuel.isLit && this.wax.lightPulse01() === 0,
@@ -413,6 +426,10 @@ export class ClimbScene extends Phaser.Scene {
       charge01: this.state.chargeMs / gameConfig.jump.maxChargeMs,
       aim: this.phase.isRunning() ? this.aim : 0,
       reducedMotion: settings.reducedMotion,
+      fuel01: this.fuel.value,
+      // The same eyes as the endless climb: toward the active wax drop, over a ledge edge, uneasy on ice.
+      around: surroundings(this.state, this.wax.drops.filter((drop) => this.wax.isActive(drop.id)),
+        this.platforms.find((p) => p.id === this.state.platformId), gameConfig.view.width),
     });
   }
 }

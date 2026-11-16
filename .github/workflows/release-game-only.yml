@@ -1,0 +1,208 @@
+name: release-game-only
+
+# Publishes GitHub releases for the game-only edition. It runs on pushes to the game-only branch only; the
+# copy of this file on main (the edition was merged there, Decision D-31) never triggers.
+#
+# A release is a notes file: docs/releases/game-only-v<version>.md. When a push to game-only adds one
+# that has no release yet, this workflow:
+#   web      builds the game at that commit, creates the tag game-only-v<version> there and publishes
+#            a pre-release with the zipped game and the file as its notes;
+#   desktop  wraps that same zipped game in the Electron app (desktop/) on Windows, Linux and macOS
+#            and attaches the installers, with the files the app's updater reads (with nothing to
+#            release it still packages the app as a rehearsal and attaches nothing);
+#   verify   builds an older copy of the Linux app and checks that it really updates itself to the
+#            release that was just published.
+# A pre-release never replaces the EEG game's release as "Latest". A release that already exists is
+# left alone, so editing an old notes file changes nothing. One release per run, lowest version first.
+# Srishan asked for the workflow to create the tag (2026-11-16).
+# Type check and tests are not repeated here: ci runs them on every push to the pull request.
+
+on:
+  push:
+    branches: [game-only]
+    paths:
+      - 'docs/releases/game-only-v*.md'
+      - '.github/workflows/release-game-only.yml'
+      - 'desktop/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-game-only
+  cancel-in-progress: false
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  GH_REPO: ${{ github.repository }}
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      tag: ${{ steps.pending.outputs.tag }}
+      version: ${{ steps.pending.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Find the first notes file that has no release yet
+        id: pending
+        run: |
+          tag=""
+          for notes in $(ls docs/releases/game-only-v*.md 2>/dev/null | sort -V); do
+            candidate="$(basename "$notes" .md)"
+            if gh release view "$candidate" >/dev/null 2>&1; then
+              echo "$candidate is already released"
+            else
+              tag="$candidate"
+              break
+            fi
+          done
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#game-only-v}" >> "$GITHUB_OUTPUT"
+          echo "to release: ${tag:-nothing}"
+      - uses: actions/setup-node@v7
+        if: steps.pending.outputs.tag != ''
+        with:
+          node-version: 26
+          cache: npm
+      - name: Build the game
+        if: steps.pending.outputs.tag != ''
+        run: |
+          npm ci
+          npm run build
+      - name: Publish the release with the zipped game
+        if: steps.pending.outputs.tag != ''
+        env:
+          TAG: ${{ steps.pending.outputs.tag }}
+        run: |
+          zip="lighten-up-${TAG}.zip"
+          (cd dist && zip -q -r "../${zip}" .)
+          gh release create "$TAG" "$zip" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Lighten Up (game-only) ${TAG#game-only-}" \
+            --notes-file "docs/releases/${TAG}.md"
+
+  desktop:
+    needs: web
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      TAG: ${{ needs.web.outputs.tag }}
+      VERSION: ${{ needs.web.outputs.version || '0.0.0' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      # The app wraps exactly the game that was just released: the zip is taken from the release itself.
+      - name: Get the released game (Windows)
+        if: env.TAG != '' && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          gh release download $env:TAG --pattern "lighten-up-$env:TAG.zip" --dir .
+          Expand-Archive -Path "lighten-up-$env:TAG.zip" -DestinationPath dist
+      - name: Get the released game
+        if: env.TAG != '' && runner.os != 'Windows'
+        run: |
+          gh release download "$TAG" --pattern "lighten-up-${TAG}.zip" --dir .
+          mkdir dist
+          unzip -q "lighten-up-${TAG}.zip" -d dist
+      # A rehearsal: when this workflow or the app (desktop/) changes and there is nothing to release, the app is still
+      # packaged on all three systems (as version 0.0.0, attached nowhere), so a broken workflow is
+      # found before a version number is spent on it.
+      - name: Build the game here (rehearsal, nothing to release)
+        if: env.TAG == ''
+        shell: bash
+        run: |
+          npm ci --ignore-scripts
+          npm run build
+      - name: Package the app
+        shell: bash
+        working-directory: desktop
+        run: |
+          npm ci
+          npm run dist -- -c.extraMetadata.version="$VERSION"
+      - name: Start the packaged app once (Linux)
+        if: runner.os == 'Linux'
+        working-directory: desktop
+        run: LIGHTEN_SMOKE=1 xvfb-run -a ./release/linux-unpacked/lighten-up-game-only --no-sandbox
+      # Installers first, the updater's channel file last: an installed app only moves to a release
+      # once its channel file is there, so it never sees a release whose installer is still uploading.
+      - name: Attach the installers
+        if: env.TAG != ''
+        shell: bash
+        working-directory: desktop/release
+        run: |
+          shopt -s nullglob
+          installers=( *.exe *.exe.blockmap *.AppImage *.dmg )
+          channel=( latest*.yml )
+          echo "installers: ${installers[*]}"
+          echo "channel files: ${channel[*]}"
+          [ ${#installers[@]} -gt 0 ] || { echo "nothing was built"; exit 1; }
+          gh release upload "$TAG" "${installers[@]}" --clobber
+          if [ ${#channel[@]} -gt 0 ]; then gh release upload "$TAG" "${channel[@]}" --clobber; fi
+
+  verify:
+    needs: [web, desktop]
+    # Runs even when one platform failed to package, so the others are still checked.
+    if: ${{ !cancelled() && needs.web.outputs.tag != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TAG: ${{ needs.web.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Build an older copy of the Linux app (version 0.0.1)
+        run: |
+          gh release download "$TAG" --pattern "lighten-up-${TAG}.zip" --dir .
+          mkdir dist
+          unzip -q "lighten-up-${TAG}.zip" -d dist
+          cd desktop
+          npm ci
+          npm run dist -- -c.extraMetadata.version=0.0.1
+      - name: The older copy updates itself to this release
+        run: |
+          root="$GITHUB_WORKSPACE/e2e"
+          mkdir -p "$root/installed" "$root/run" "$root/new"
+          gh release download "$TAG" --pattern '*.AppImage' --dir "$root/new"
+          attempt() {
+            cp desktop/release/Lighten-Up-Game-Only-0.0.1.AppImage "$root/installed/LightenUp.AppImage"
+            (cd "$root/run" && rm -rf squashfs-root && "$root/installed/LightenUp.AppImage" --appimage-extract >/dev/null)
+            # The app checks, downloads, closes itself and installs on closing. Its exit code is not the test.
+            (cd "$root/run" && APPIMAGE="$root/installed/LightenUp.AppImage" LIGHTEN_QUIT_AFTER_UPDATE_CHECK=1 \
+              timeout 600 xvfb-run -a ./squashfs-root/AppRun --no-sandbox) || true
+            cmp -s "$root/installed/LightenUp.AppImage" "$root"/new/*.AppImage
+          }
+          # First the whole path, as a player's app does it: ask GitHub for the releases, pick, download, install.
+          if attempt; then echo "Updated through the app's own lookup."; exit 0; fi
+          # GitHub limits unsigned-in requests per address, and build machines share addresses. If the
+          # lookup was refused, still prove the download and install from the release's own folder.
+          echo "::warning::The app's own lookup did not update it (often GitHub's request limit on shared build machines). Trying the release's folder directly."
+          export LIGHTEN_UPDATE_FEED="https://github.com/${GH_REPO}/releases/download/${TAG}"
+          attempt || { echo "The older copy did not become the released version."; exit 1; }
+          echo "Updated from the release's folder."
+      - name: The app's own lookup picks this release for every platform
+        run: |
+          gh api "repos/${GH_REPO}/releases?per_page=100" > releases.json
+          node -e '
+            const { newestUpdate } = require("./desktop/update-feed.cjs");
+            const releases = require("./releases.json");
+            for (const platform of ["win32", "linux", "darwin"]) {
+              const update = newestUpdate(releases, platform, "0.0.1");
+              console.log(platform, update ? update.tag : "nothing");
+              if (!update || update.tag !== process.env.TAG) { console.error("expected " + process.env.TAG + " for " + platform); process.exitCode = 1; }
+            }
+          '

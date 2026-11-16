@@ -1,7 +1,7 @@
 /** The procedural candle: unique per seed, same poses as Ruby, flame follows the light, wax growth is tiny. */
 import { describe, expect, it } from 'vitest';
 import { GAME_CONFIG } from '../../config/game.config';
-import { createCandleGenome, pickCandleSeed, seededRandom } from '../candle/candle-genome';
+import { createCandleGenome, pickCandleSeed, scaleColor as scale, seededRandom } from '../candle/candle-genome';
 import { bodyShape, INITIAL_POSE, poseFrame, stepPose, type PoseInput } from '../candle/candle-pose';
 import { grownSize, rasterCandle } from '../candle/candle-raster';
 import { FLAME_MAX_HEIGHT, FLAME_MIN_HEIGHT, flameHeight, flameSizeFromRadius, rasterFlame } from '../candle/flame';
@@ -156,5 +156,73 @@ describe('wax growth is a very small buff', () => {
 
   it('no wax leaves the movement config untouched', () => {
     expect(grownMovement(GAME_CONFIG, 1)).toBe(GAME_CONFIG);
+  });
+});
+
+describe('one trait of its own', () => {
+  const withTrait = (kind: string) => {
+    for (let seed = 1; seed < 400; seed++) { const g = createCandleGenome(seed); if (g.trait.kind === kind) return g; }
+    throw new Error(`no ${kind} candle in the first 400 seeds`);
+  };
+  const raster = (g: ReturnType<typeof createCandleGenome>) => rasterCandle(g, bodyShape(INITIAL_POSE, 0), 1, false);
+
+  it('every kind turns up, and about two candles in five are plain', () => {
+    const kinds = Array.from({ length: 400 }, (_, i) => createCandleGenome(i + 1).trait.kind);
+    expect(new Set(kinds)).toEqual(new Set(['plain', 'band', 'dipped', 'tuft', 'swirl']));
+    // The swirl is rare: a few in four hundred.
+    const swirls = kinds.filter((k) => k === 'swirl').length;
+    expect(swirls).toBeGreaterThan(2);
+    expect(swirls).toBeLessThan(30);
+    const plain = kinds.filter((k) => k === 'plain').length / kinds.length;
+    expect(plain).toBeGreaterThan(0.3);
+    expect(plain).toBeLessThan(0.5);
+  });
+
+  it('a band and a dipped base show the accent colour; a plain candle never does', () => {
+    const tones = (g: ReturnType<typeof createCandleGenome>) => new Set([1.12, 0.76, 0.88, 1].flatMap((f) => [scale(g.trait.accent, f), scale(scale(g.trait.accent, f), 0.88)]));
+    const accentPixels = (g: ReturnType<typeof createCandleGenome>) => raster(g).pixels.filter((p) => tones(g).has(p.color)).length;
+    expect(accentPixels(withTrait('band'))).toBeGreaterThanOrEqual(12);
+    expect(accentPixels(withTrait('dipped'))).toBeGreaterThan(accentPixels(withTrait('band')));
+    expect(accentPixels(withTrait('plain'))).toBe(0);
+  });
+
+  it('a swirl stripes the body softly and leaves the outline alone', () => {
+    const g = withTrait('swirl');
+    const plain = raster({ ...g, trait: { ...g.trait, kind: 'plain' } });
+    const swirled = raster(g);
+    const changed = swirled.pixels.filter((p, i) => p.color !== plain.pixels[i]!.color).length;
+    expect(changed).toBeGreaterThan(15);
+    expect(changed).toBeLessThan(swirled.pixels.length / 2);
+    expect(swirled.pixels.map((p) => `${p.x},${p.y}`)).toEqual(plain.pixels.map((p) => `${p.x},${p.y}`));
+  });
+
+  it('a tuft adds two pixels above one shoulder and keeps the wick on top', () => {
+    const g = withTrait('tuft');
+    const plain = raster({ ...g, trait: { ...g.trait, kind: 'plain' } });
+    const tufted = raster(g);
+    expect(tufted.pixels.length).toBeGreaterThan(plain.pixels.length);
+    expect(tufted.wickTip).toEqual(plain.wickTip);
+    expect(tufted.wickTip.y).toBe(Math.min(...tufted.pixels.map((p) => p.y)));
+  });
+});
+
+describe('rare flame colours', () => {
+  it('about one candle in twelve burns blue, green or violet; the rest keep a warm flame', async () => {
+    const { RARE_FLAME_ONE_IN } = await import('../candle/candle-genome');
+    const warmCores = new Set([0xfffbe8, 0xfff8f0, 0xfffde0]);
+    const cores = Array.from({ length: 1200 }, (_, i) => createCandleGenome(i + 1).flame.colors.core);
+    const rare = cores.filter((core) => !warmCores.has(core));
+    expect(rare.length / cores.length).toBeGreaterThan(0.5 / RARE_FLAME_ONE_IN);
+    expect(rare.length / cores.length).toBeLessThan(1.6 / RARE_FLAME_ONE_IN);
+    expect(new Set(rare).size).toBe(3);
+  });
+
+  it('a rare flame is drawn in its own colours', () => {
+    let genome = createCandleGenome(1);
+    for (let seed = 1; seed < 400 && genome.flame.colors.core !== 0xf0f8ff; seed++) genome = createCandleGenome(seed);
+    expect(genome.flame.colors.core).toBe(0xf0f8ff);
+    const colors = new Set(rasterFlame(genome, { size01: 1, timeMs: 0, reducedMotion: true, lean: 0 }).map((p) => p.color));
+    expect(colors.has(0x4f8fe8)).toBe(true);
+    expect(colors.has(0xffa23a)).toBe(false);
   });
 });

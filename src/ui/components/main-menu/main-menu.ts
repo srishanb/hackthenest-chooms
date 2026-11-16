@@ -12,6 +12,7 @@ const STEPS = [
   { title: 'tutorial.move.title', body: 'tutorial.move.body', keys: 'tutorial.move.keys', tip: 'tutorial.move.tip' },
   { title: 'tutorial.jump.title', body: 'tutorial.jump.body', keys: 'tutorial.jump.keys', tip: 'tutorial.jump.tip' },
   { title: 'tutorial.climb.title', body: 'tutorial.climb.body', keys: 'tutorial.climb.keys', tip: 'tutorial.climb.tip' },
+  { title: 'tutorial.steady.title', body: 'tutorial.steady.body', keys: 'tutorial.steady.keys', tip: 'tutorial.steady.tip' },
   { title: 'tutorial.terrain.title', body: 'tutorial.terrain.body', keys: 'tutorial.terrain.keys', tip: 'tutorial.terrain.tip' },
   { title: 'tutorial.journey.title', body: 'tutorial.journey.body', keys: 'tutorial.journey.keys', tip: 'tutorial.journey.tip' },
 ] as const;

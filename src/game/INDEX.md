@@ -29,6 +29,11 @@ Owner: Ali. Search here before adding a function.
 | `rasterCandle`, `grownSize` | `candle/candle-raster.ts` | Candle body, outline, drips and wick as art pixels. |
 | `rasterFlame`, `flameHeight`, `flameSizeFromRadius`, `fallIntensity`, `flickerRate`, `OXIDISED` | `candle/flame.ts` | Procedural pixel flame sized by the light radius, flickering at 12 fps (none under reduced motion); while falling it flickers faster, stretches, turns blue at the base and sheds licks. |
 | `waxGrowth`, `grownMovement` | `candle/growth.ts` | +2% size per wax; walk x growth, launch speeds x sqrt(growth). Wax count only, never the signal. |
+| `groundShadow`, `GroundShadow`, `SHADOW_REACH_PX` | `candle/ground-shadow.ts` | The candle's shadow on the ledge straight below: largest when standing, smaller and fainter with height. |
+| `coldBreath`, `BREATH_EVERY_MS`, `BREATH_MS`, `CandleLook.cold` | `candle/emotes.ts`, `candle/candle-view.ts` | A puff of breath in the snow. |
+| `RARE_FLAME_ONE_IN` | `candle/candle-genome.ts` | About one candle in twelve burns with a blue, green or violet flame. |
+| `flowNote`, `NOTE_EVERY_MS`, `NOTE_MS`, `CandleLook.flow`, `ExpressionInput.flow` | `candle/emotes.ts`, `candle/candle-view.ts`, `candle/expression.ts` | After four clean jumps in a row the candle hums: a note floats beside the flame and its cheeks colour. |
+| `fullChargeTremble` | `candle/direction-cues.ts` | A one-pixel tremble at full charge, so the cap is visible. |
 | `flameLean`, `wickLean`, `flightSparks`, `CueInput` | `candle/direction-cues.ts` | Jump-direction cues: aim lean while charging, trailing flame and sparks in flight; never bends the body. |
 | `rasterPortrait`, `isGuttered`, `PORTRAIT_RADIUS` | `candle/portrait.ts` | Close-up of the player's candle by light strength: dims, staggers, smokes and gutters out near death. |
 | `createPortraitView` | `candle/portrait-view.ts` | Draws the portrait in a gold-rimmed circle fixed at the bottom left (replaces the lantern strength bar). |
@@ -103,3 +108,64 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 | `Portrait`, `PortraitPixel`, `PortraitInput`, `SMOKE_BELOW`, `GUTTER_BELOW`, `BLUE_BELOW` | `candle/portrait.ts` | Portrait types and the light-strength thresholds for smoke, guttering and blue flame. |
 | `PortraitLook` | `candle/portrait-view.ts` | Input type of the portrait view. |
 | `CandleLook` | `candle/candle-view.ts` | Light, growth and settings the candle draws from each frame. |
+
+## Endless mode (game-only variant)
+
+| Export | File | What it does |
+|---|---|---|
+| `EndlessScene`, `EndlessSceneDeps` | `scenes/endless-scene.ts` | The generated climb: same input, `stepPlayer`, candle and forest as the climb scene, on streamed chunks. Fuel ends the run; no signal. |
+| `traceArc`, `buildArcTable`, `descentAt`, `launch`, `standOn`, `chargeStepsFor`, `JumpArc`, `ArcPoint` | `endless/jump-arcs.ts` | Sample jump arcs traced with the real `stepPlayer`; the generator places ledges under them. |
+| `createEndlessGenerator`, `replayStep`, `difficultyAt`, `EndlessChunk`, `RouteStep`, `WaxSpot`, `EndlessGenerator` | `endless/generator.ts` | Seeded, random-access chunks. Every ledge is reachable by construction and its jump is replayed before it is kept. |
+| `EndlessChunk.sideRoute`, `WaxSpot.ledgeId`, `WaxSpot.ledgeX` | `endless/generator.ts` | The jump to each optional side ledge; wax on a moving side ledge knows which ledge it rides. |
+| `createChunkStream`, `ChunkStream`, `StreamChange` | `endless/chunk-stream.ts` | Keeps a fixed window of chunks alive around the player. |
+| `freshFlame`, `stepFlame`, `addWax`, `burnPerSecond`, `isLit`, `FlameState` | `endless/flame-fuel.ts` | Fuel burns with time, wax refills it, a grace time before the run ends. |
+| `moodIntensity` | `endless/mood.ts` | Composure and fuel to the 0..1 intensity fed to the effects table (the mood follows the candle). |
+| `steadyComposure`, `shake`, `steady`, `stepComposure`, `isSteadying`, `fallShake`, `burnScale`, `Composure` | `endless/composure.ts` | The candle's composure from play: falls shake it, standing still steadies it; drives the forest's corruption and a faster burn. Never movement. |
+| `createEndlessWax` | `endless/endless-wax.ts` | One-time wax pickups at generated spots; same snapshot field and bus event as the classic wax. |
+| `createWaxDropsView` | `endless/wax-drops-view.ts` | Draws the live wax drops; marks come and go with the chunks. |
+| `createRunScore`, `RunScore`, `rememberSeededBest`, `SEEDED_BESTS_KEPT` | `endless/run-score.ts` | Height of the run (ledges stood on) and the best height on this device; seeded climbs keep their own best, the latest 30 of them. |
+| `biomeOf`, `snowAt`, `chunkOfPlatform`, `Biome` | `endless/biome.ts` | Forest and snow bands by height: platform skin per chunk and snowfall that fades in and out. Presentation only. |
+| `nightAt`, `sightRadius`, `candleRadius`, `nightShadowAlpha` | `endless/night.ts` | Night falls with height; in the dark the view is the candle's own circle, sized by its fuel. Presentation only. |
+| `createRouteBot` | `endless/route-bot.ts` | Development-only player that follows the generated route (`?bot=1`), for automated browser checks. |
+| `ForestWorld.addPlatform`, `ForestWorld.removePlatform` | `forest/forest-world.ts` | Platform art added and removed while playing. |
+
+## Candle expression
+
+| Export | File | What it does |
+|---|---|---|
+| `stepExpression`, `faceFor`, `isBlinking`, `idleGlance`, `INITIAL_EXPRESSION`, `EXPRESSION_TIMING`, `CandleMood`, `CandleFace`, `EyeShape`, `MouthShape`, `ExpressionInput`, `ExpressionEvents`, `ExpressionTracker` | `candle/expression.ts` | One mood at a time from the body's state and short events (wax, hard landing, new best); seeded blink and glance. Pure, visual only. |
+| `ExpressionEvents.relit`, mood `relieved`, `createCandleView().relit()` | `candle/expression.ts`, `candle/candle-view.ts` | Wax that relights a glowing wick: a breath out with the eyes shut, then a grateful smile, with a puff of breath beside the flame. |
+| `surroundings`, `AWARENESS`, `Surroundings`, `LookTarget` | `candle/awareness.ts` | What the candle notices: the nearest wax in reach, the edge of its ledge, ice underfoot. The eyes follow it; mood `uneasy` while sliding. |
+| `idleLookUp` | `candle/expression.ts` | An idle candle looks up at its own flame now and then. |
+| `EMBLEM_LOOP_MS`, `EmblemMoment` | `candle/emblem.ts` | The menu candle waits, gathers, hops, lands and looks pleased, on a 5.2 s loop. |
+| `SWIRL_ONE_IN`, `createCandleView().melting()`, `CloseUpInput.melt01`, `.bead01` | `candle/candle-genome.ts`, `candle/candle-view.ts`, `candle/close-up.ts` | The rare swirl candle's odds; the portrait shows the hero's melted drips and running bead. |
+| `CandleGenome.trait`, `CandleTrait` | `candle/candle-genome.ts` | One distinguishing trait per candle: a coloured band, a dipped base, a tuft of wax, the rare swirl, or none. Drawn by the hero raster and the close-up. |
+| `createCandleView().reactions()`, `CloseUpInput.flame` | `candle/candle-view.ts`, `candle/close-up.ts` | The portrait's flame leaps, ducks and gathers with the hero's. |
+| `mountRunCandle`, `spentCandle` | `candle/run-candle.ts` | The finished run's candle, flame out, for the end screen; main.ts hands `mountRunCandle` to the UI. |
+| `facePixels`, `FaceBox` | `candle/face.ts` | Eyes, mouth, blush and a bead of wax as art pixels on the body. |
+| `BodyLook` | `candle/candle-raster.ts` | Optional face and flame glow for `rasterCandle` (rounded shoulders, melt pool, four tones, drip beads are always drawn). |
+| `createCandleView().cheer()`, `.celebrate()`, `.face()` | `candle/candle-view.ts` | The scene reports wax and a new best; the portrait reads the current face. |
+| `CandleGenome.face` | `candle/candle-genome.ts` | Per-candle features: eye row, eye and mouth colour, rosy cheeks. |
+
+| `landingDroplets`, `DROPLET_MS` | `candle/emotes.ts` | Beads of wax knocked off by a hard landing. |
+| `emotePixels`, `EMOTE_MS` | `candle/emotes.ts` | Pixel signs beside the flame for strong moments: sparkles, an exclamation mark, stars, a flying bead, z's. |
+| `slumpShape`, `CandleLook.spent01`, `ExpressionInput.spent` | `candle/candle-pose.ts`, `candle/candle-view.ts`, `candle/expression.ts` | The last moment of a run: the spent candle sinks a little and its eyes close while the scene's veil darkens the world. |
+| `landingImpact` | `candle/candle-pose.ts` | 0..1 how hard a landing was; the landing squash and the flame's duck scale with it. |
+| `wickSmoke`, `FlameInput.flare01`, `.duck01`, `.gather01` | `candle/flame.ts` | Smoke off a dead wick; the flame leaps on a happy moment, is pressed down by a landing and gathers on a charge. |
+| `BodyLook.melt01`, `BodyLook.bead01`, `CandleLook.melt01` | `candle/candle-raster.ts`, `candle/candle-view.ts` | Drips grow as the candle burns through a run, and a bead of wax runs down the longest one now and then. |
+| `NightLight` (wax beacons) | `endless/wax-drops-view.ts` | At night wax glows a little beyond the edge of the light. |
+| `BodyLook.warmth01` | `candle/candle-raster.ts` | The wax dims and turns bluish as the fuel runs out. |
+
+| `rasterCloseUp`, `CLOSE_UP_RADIUS`, `CloseUpInput` | `candle/close-up.ts` | The portrait's detailed bust: the same candle at three times the resolution, with eyes that glint, lids, brows, teeth, cheeks and a bead of wax. Follows portrait.ts's light rules. |
+| `FlameInput.scale` | `candle/flame.ts` | Draws the flame larger for the close-up. |
+
+`createPortraitView` now paints the close-up into a canvas texture only when the picture changes.
+`__tests__/candle-close-up.html` draws the close-up for every mood. `__tests__/candle-faces.html` is a dev page that draws every mood for six seeds.
+
+| `stepBird`, `birdFrame`, `perchedBird`, `isAirborne`, `Bird`, `BirdAct` | `forest/bird-behaviour.ts` | What a bird on a ledge does: stands, pecks, chirps, looks around, and flies off when the candle comes near or the forest turns. Pure, decoration only. |
+| `createPerchingBirds` | `forest/perching-birds.ts` | A pool of three bird sprites seated on ledges above the view. |
+| `createAmbientLife` | `forest/ambient-life.ts` | A far flock now and then, fireflies and spores, single falling leaves that redden with corruption. |
+| `createGrassTufts` | `forest/grass-tufts.ts` | Swaying grass on forest ledges; withers with corruption. |
+| `ForestWorld.setCandle` | `forest/forest-world.ts` | The scenes tell the scenery where the candle is. Read by the birds only. |
+
+Far garden ledges (`forest/backdrop-gardens.ts`) now sometimes spill a waterfall, which freezes in the snow.

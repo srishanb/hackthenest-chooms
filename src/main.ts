@@ -4,6 +4,9 @@
  * It creates the shared objects (event bus, stores), then hands each lane exactly what it
  * needs. Lanes never import each other, so reading this file top to bottom shows how the
  * whole game is wired: signal -> game -> UI and audio.
+ *
+ * Game-only variant: there is no EEG. The signal is the "still" one (always neutral), and the
+ * game plays the endless, generated climb unless the URL says `?climb=classic`.
  */
 import { readLayouts, writeLayouts, validateLayouts, layoutStorageKey, STAGE_LAYOUT_KEY, STAGE_DRAFT_KEY } from './game/editor/layouts';
 import { publishLayout } from './ui/components/stage-editor/publish-layout';
@@ -25,6 +28,7 @@ import { neutralFrame } from './game/effects/effects-engine';
 import { pickCandleSeed } from './game/candle/candle-genome';
 import { mountCandleEmblem } from './game/candle/emblem';
 import { mountWaxBall } from './game/candle/wax-ball';
+import { mountRunCandle } from './game/candle/run-candle';
 import { createGame } from './game/index';
 import { createEventBus } from './shared/bus';
 import type { Stores } from './shared/contracts/app';
@@ -32,7 +36,8 @@ import type { WorldViewSnapshot } from './shared/contracts/world-view';
 import { INITIAL_GAME_SNAPSHOT } from './shared/contracts/game-state';
 import { createMemoryStorage, getLocalStorage } from './shared/safe-storage';
 import { createStore } from './shared/store';
-import { createSignal } from './signal/index';
+import { createStillSignal } from './signal/still-signal';
+import { ENDLESS_CONFIG } from './config/endless.config';
 import { mountUi } from './ui/registry';
 import { createSettingsStore } from './ui/settings-store';
 
@@ -66,8 +71,25 @@ const stores: Stores = {
   settings: createSettingsStore(browserStorage ?? createMemoryStorage()),
 };
 
-// The signal lane is the only one that will ever touch a device.
-const signal = createSignal(bus, SIGNAL_CONFIG, { storage: browserStorage });
+// No device, simulator or recording in this variant: a constant, neutral signal.
+const signal = createStillSignal(SIGNAL_CONFIG.neutralIntensity);
+
+// Endless is the default. `?seed=<number>` replays one climb; `?bot=1` (development only) lets the route bot play.
+const classic = testing || query.get('climb') === 'classic';
+const seedText = query.get('seed');
+const fixedSeed = seedText !== null && /^\d{1,10}$/.test(seedText);
+const endless = classic ? undefined : {
+  config: ENDLESS_CONFIG,
+  seed: fixedSeed ? Number(seedText) >>> 0 : pickCandleSeed('', false),
+  fixedSeed,
+  bot: import.meta.env.DEV && query.has('bot'),
+  // Development only: `?startChunk=4` starts higher up, to look at a later part of the climb.
+  // Development only: `?fuel=0.05` starts the first run nearly out of fuel, to look at the flame going out.
+  startFuel: import.meta.env.DEV && query.has('fuel') ? Math.max(0, Math.min(1, Number(query.get('fuel')) || 0)) : undefined,
+  // Development only: `?shaken=0.8` starts the first run with a shaken candle, to look at the forest turning.
+  startShaken: import.meta.env.DEV && query.has('shaken') ? Math.max(0, Math.min(1, Number(query.get('shaken')) || 0)) : undefined,
+  startChunk: import.meta.env.DEV ? Math.max(0, Math.min(500, Math.floor(Number(query.get('startChunk')) || 0))) : 0,
+};
 
 // One candle seed for the first run: the menu emblem and the player are the same candle.
 const candleSeed = pickCandleSeed(window.location.search, import.meta.env.DEV);
@@ -84,6 +106,7 @@ const game = createGame({
   emberConfig: EMBER_CONFIG,
   storage: testing ? createMemoryStorage() : browserStorage,
   candleSeed,
+  endless,
   startAt: testing ? { ...runtimeStages[testIndex]!.spawn, platformId: runtimeStages[testIndex]!.platforms[0]!.id } : undefined,
 });
 
@@ -92,11 +115,17 @@ mountUi(requireElement('ui'), {
   worldCanvas: game.canvas,
   bus, stores, signal,
   drawEmblem: (canvas) => mountCandleEmblem(canvas, candleSeed, () => stores.settings.get().reducedMotion),
+  drawRunCandle: (canvas, seed) => mountRunCandle(canvas, seed, () => stores.settings.get().reducedMotion),
   drawWaxBall: (canvas) => mountWaxBall(canvas, candleSeed,
     () => (stores.snapshot.get().navigation?.checkpoints.length ?? 0) > 0, () => stores.settings.get().reducedMotion),
 }, UI_CONFIG);
 
-createAudio({ bus, stores, config: AUDIO_CONFIG, narratorLines: NARRATOR_LINES });
+// The recorded welcome explains the ember and the signal, and the stage and finish lines talk about
+// stages and a summit. None of those exist in the endless climb, so it keeps only the lines that fit.
+const narratorLines = endless
+  ? NARRATOR_LINES.filter((line) => line.moment === undefined || ['fall', 'height', 'low-fuel'].includes(line.moment))
+  : NARRATOR_LINES;
+createAudio({ bus, stores, config: AUDIO_CONFIG, narratorLines });
 }
 const route = (editor: boolean): void => { const url = new URL(location.href); url.searchParams.delete('editorTest'); url.searchParams.delete('editorDraft'); if (editor && testing) url.searchParams.set('editorDraft', '1'); if (editor) url.searchParams.set('editor','1'); else url.searchParams.delete('editor'); location.assign(url.href); };
 if (query.has('editor')) {

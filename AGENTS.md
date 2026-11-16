@@ -32,6 +32,10 @@ Srishan's merge.
 
 ## Project
 
+**Since Decision D-31 (16 Nov 2026) `main` holds the game-only edition** ([docs/GAME_ONLY.md](docs/GAME_ONLY.md)): no EEG,
+an endless climb. The paragraph and rules below were written for the EEG game (tag `demo-ready`) and still bind
+wherever they apply.
+
 **Lighten Up**: a 2D charge-jump climbing game for Hack The Nest 2026 (Nov 14–15, 24-hour build),
 Mind and Machine (BCI) track. A PiEEG Octopus 16 EEG board drives the lantern, fog and music, and gates a recovery
 mechanic. It never changes the controls or physics.
@@ -53,8 +57,12 @@ mechanic. It never changes the controls or physics.
    the lockfile; assets and narrator clips are files in the repo.
 4. **Secrets.** Keys live only in `.env.local`. Never commit them, never print them, never give a key a `VITE_`
    prefix (Vite ships those to the browser).
-5. **Art.** Free existing assets only, logged in `CREDITS.md`. No AI-generated textures or models. The narrator
-   uses a stock or designed voice; never clone or imitate a real person.
+5. **No generative AI for art, images or music.** Never use generative AI to make, extend, upscale, recolour or
+   "clean up" art, images, textures, sprites, models or music, and never import an asset that was made with it.
+   Use free existing human-made assets (or art drawn by code), each logged in `CREDITS.md` with its licence and
+   the evidence that it is human-made: the page's no-AI disclosure, the author's statement, or a publish date before
+   mid-2022. If that evidence is missing, do not import the asset. **The one exception** is narrator speech made
+   with ElevenLabs (Decision D-29); it uses a stock or designed voice and never clones or imitates a real person.
 6. **Accuracy.** Do not invent an API name, version, config key or event rule. Verify it in the official docs or the
    pinned source, or mark it "unverified" in your report.
 7. **Things that stay off.** Never build the three items marked "stays off" under "Considered, not scheduled" in
@@ -162,7 +170,7 @@ their own branch and open a pull request.
      another person's work.
   2. **It goes against the ethos:** the binding rules at the top of this file (composure framing with no medical
      or mood claims, the signal never changes controls or physics, nothing on the demo path uses the network, no
-     secrets, no AI-generated art, nothing that "stays off") and rule one (never delete git history).
+     secrets, no generative-AI art, images or music, nothing that "stays off") and rule one (never delete git history).
 - Everything else is advice, not a gate: lanes, plans and approvals, the feature list, claims, the pre-code check
   and the after-job report. The reviewer may note what is missing in its review, and then it merges. It never
   deletes your branch.

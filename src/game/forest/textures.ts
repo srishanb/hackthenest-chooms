@@ -1,6 +1,7 @@
 /** Selected local forest textures, loaded once through BootScene; no CDN or source-pack loading. */
 import type { Scene } from 'phaser';
 import { FOREST_CONFIG } from '../../config/forest.config';
+import { WILDLIFE_CONFIG as W } from '../../config/wildlife.config';
 
 export const FOREST_IMAGES = {
   'hanging-vine': 'winter/vine_hanging.png',
@@ -36,6 +37,19 @@ export function preloadForest(scene: Scene): void {
   }
   for (const [key, file] of [['snow', 'snow_medium'], ['leaves', 'leaves_autumn'], ['fog', 'fog_thin']]) {
     if (!scene.textures.exists('weather-' + key)) scene.load.spritesheet('weather-' + key, 'assets/weather/' + file + '.png', { frameWidth: 128, frameHeight: 128 });
+  }
+  // Background life (public/assets/wildlife): single images, then animated sheets with their cell sizes.
+  for (const name of ['firefly', 'spore', 'leaf-green-1', 'leaf-green-2', 'leaf-autumn-orange-1', 'leaf-autumn-red-1']) {
+    if (!scene.textures.exists('wildlife-' + name)) scene.load.image('wildlife-' + name, 'assets/wildlife/' + name + '.png');
+  }
+  const sheets: Array<[string, number, number]> = [
+    ['bird', W.bird.frame.width, W.bird.frame.height], ['birb', W.flock.frame, W.flock.frame],
+    ['grass-1', W.grass.frame.width, W.grass.frame.height], ['grass-3', W.grass.frame.width, W.grass.frame.height],
+    ['waterfall-top', W.waterfall.frame, W.waterfall.frame], ['waterfall-middle', W.waterfall.frame, W.waterfall.frame],
+    ['waterfall-bottom', W.waterfall.frame, W.waterfall.frame],
+  ];
+  for (const [name, frameWidth, frameHeight] of sheets) {
+    if (!scene.textures.exists('wildlife-' + name)) scene.load.spritesheet('wildlife-' + name, 'assets/wildlife/' + name + '.png', { frameWidth, frameHeight });
   }
   for (let i = 1; i <= 16; i++) if (!scene.textures.exists('wind-gust-' + i)) scene.load.image('wind-gust-' + i, 'assets/wind/W401-' + i + '.png');
   for (const state of Object.keys(RUBY_FRAMES)) {
