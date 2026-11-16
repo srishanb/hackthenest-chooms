@@ -106,6 +106,8 @@ export class EndlessScene extends Phaser.Scene {
   private bot = createRouteBot();
   /** True while the camera slides back to the start after Play again; the player waits. */
   private sliding = false;
+  /** Fuel burned so far in this run (in candles): the more that has burned, the longer the candle's drips. */
+  private burnt = 0;
   /** Time into the last moment of a run (the wick has gone cold), or null while the run is alive. */
   private endingMs: number | null = null;
   /** A dark sheet over the world, under the candle, that closes in during the last moment. */
@@ -141,6 +143,7 @@ export class EndlessScene extends Phaser.Scene {
     this.flame = { ...freshFlame(config), fuel01: firstRun ? this.deps.startFuel ?? 1 : 1 };
     this.worldTimeMs = 0;
     this.endingMs = null;
+    this.burnt = 0;
     const spawn = this.spawn();
     this.state = teleportPlayer(spawn.x, spawn.y);
     this.accumulatorMs = 0;
@@ -339,7 +342,9 @@ export class EndlessScene extends Phaser.Scene {
       this.state = out.state;
       this.syncWorld();
 
+      const before = this.flame.fuel01;
       this.flame = stepFlame(this.flame, stepMs, this.stream.indexAt(this.feetY()), config);
+      this.burnt += Math.max(0, before - this.flame.fuel01);
       const wasLit = isLit(this.flame);
       const taken = this.wax.update(this.state, this.stream.wax());
       for (let i = 0; i < taken.length; i++) this.flame = addWax(this.flame, config);
@@ -377,7 +382,6 @@ export class EndlessScene extends Phaser.Scene {
       bus.emit({ type: 'precision_window', active: this.precisionActive });
     }
     this.player.setPosition(this.state.x, this.state.y);
-    this.waxView.update(deltaMs, this.phase.isRunning(), settings.reducedMotion);
     this.forest.syncPlatforms(this.platforms);
     // Weather follows the height: snow fades in before a snowy band and out after it. There is no wind.
     const snow01 = snowAt(this.feetY(), config);
@@ -419,6 +423,8 @@ export class EndlessScene extends Phaser.Scene {
     // Never let the sheet shrink so far that its edge shows on screen.
     updateDarkness(this.darkness, this.state.x, this.state.y, Math.max(radius, 1));
     this.candleLighting.update(this.state.x, this.state.y, this.flame.fuel01, frame.forestCorruption);
+    this.waxView.update(deltaMs, this.phase.isRunning(), settings.reducedMotion,
+      { x: this.state.x, y: this.state.y, radiusPx: radius, night01: nightAt(this.feetY(), config) * (1 - spent01) });
     // Ledge outlines fade with the light in the last moment.
     this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius * (1 - spent01), this.platforms);
 
@@ -450,6 +456,8 @@ export class EndlessScene extends Phaser.Scene {
       reducedMotion: settings.reducedMotion,
       fuel01: this.flame.fuel01,
       spent01,
+      // Fully melted-looking after about two and a half candles' worth of burning.
+      melt01: Math.min(1, this.burnt / 2.5),
       // What the candle notices: wax in reach, the edge of its ledge, ice underfoot. Eyes only.
       around: surroundings(this.state, this.stream.wax().filter((drop) => !this.wax.isCollected(drop.id)),
         this.platforms.find((p) => p.id === this.state.platformId), gameConfig.view.width),

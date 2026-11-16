@@ -139,3 +139,30 @@ describe('the last moment of a run', () => {
     expect(faceFor(fading, { ...input, spent: true }, 3).eyes).toBe('closed');
   });
 });
+
+describe('melting over a run', () => {
+  const shape = bodyShape(INITIAL_POSE, 0);
+  const count = (pixels: { color: number }[], color: number) => pixels.filter((p) => p.color === color).length;
+  const cells = (pixels: { x: number; y: number }[]) => pixels.map((p) => p.x * 1000 + p.y).sort((a, b) => a - b).join(',');
+
+  it('drips grow longer as the candle melts, and the outline does not change', () => {
+    const fresh = rasterCandle(genome, shape, 1, false, { melt01: 0 });
+    const melted = rasterCandle(genome, shape, 1, false, { melt01: 1 });
+    expect(count(melted.pixels, genome.wax.light)).toBeGreaterThan(count(fresh.pixels, genome.wax.light));
+    expect(cells(melted.pixels)).toBe(cells(fresh.pixels));
+    expect(rasterCandle(genome, shape, 1, false, { melt01: 9 })).toEqual(melted);
+  });
+
+  it('a bead runs down the longest drip, one bright pixel that moves', () => {
+    const top = rasterCandle(genome, shape, 1, false, { bead01: 0 });
+    const low = rasterCandle(genome, shape, 1, false, { bead01: 1 });
+    const none = rasterCandle(genome, shape, 1, false);
+    const beadY = (pixels: { y: number; color: number }[], reference: { color: number }[]) => {
+      const index = pixels.findIndex((p, i) => p.color !== reference[i]!.color);
+      return index < 0 ? null : pixels[index]!.y;
+    };
+    expect(beadY(top.pixels, none.pixels)).not.toBeNull();
+    expect(beadY(low.pixels, none.pixels)!).toBeGreaterThan(beadY(top.pixels, none.pixels)!);
+    expect(cells(low.pixels)).toBe(cells(none.pixels));
+  });
+});

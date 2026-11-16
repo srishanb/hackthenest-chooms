@@ -144,6 +144,8 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 | `slumpShape`, `CandleLook.spent01`, `ExpressionInput.spent` | `candle/candle-pose.ts`, `candle/candle-view.ts`, `candle/expression.ts` | The last moment of a run: the spent candle sinks a little and its eyes close while the scene's veil darkens the world. |
 | `landingImpact` | `candle/candle-pose.ts` | 0..1 how hard a landing was; the landing squash and the flame's duck scale with it. |
 | `wickSmoke`, `FlameInput.flare01`, `.duck01`, `.gather01` | `candle/flame.ts` | Smoke off a dead wick; the flame leaps on a happy moment, is pressed down by a landing and gathers on a charge. |
+| `BodyLook.melt01`, `BodyLook.bead01`, `CandleLook.melt01` | `candle/candle-raster.ts`, `candle/candle-view.ts` | Drips grow as the candle burns through a run, and a bead of wax runs down the longest one now and then. |
+| `NightLight` (wax beacons) | `endless/wax-drops-view.ts` | At night wax glows a little beyond the edge of the light. |
 | `BodyLook.warmth01` | `candle/candle-raster.ts` | The wax dims and turns bluish as the fuel runs out. |
 
 | `rasterCloseUp`, `CLOSE_UP_RADIUS`, `CloseUpInput` | `candle/close-up.ts` | The portrait's detailed bust: the same candle at three times the resolution, with eyes that glint, lids, brows, teeth, cheeks and a bead of wax. Follows portrait.ts's light rules. |

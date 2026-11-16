@@ -43,7 +43,14 @@ export interface CandleLook {
   spent01?: number;
   /** What the candle notices around it (awareness.ts): where to look, and whether it is sliding on ice. */
   around?: Surroundings;
+  /** 0..1 how much the candle has melted over the run (its drips grow). Optional: not melted by default. */
+  melt01?: number;
 }
+
+/** A bead of wax runs down a drip for `BEAD_RUN_MS` once every `BEAD_EVERY_MS`, in `BEAD_STEPS` steps. */
+const BEAD_EVERY_MS = 5200;
+const BEAD_RUN_MS = 1300;
+const BEAD_STEPS = 6;
 
 /** Landing faster than this (px/s, downward) makes the candle wince. */
 const HARD_LANDING_PX_S = 620;
@@ -154,14 +161,18 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       const size = { halfWidth: Math.ceil((genome.width * Math.max(1, look.growth)) / 2), height: Math.round(genome.height * Math.max(1, look.growth)) };
       const droplets = landingDroplets(genome.seed, Math.floor(sinceLandMs / (1000 / FLAME_FPS / 2)) * (1000 / FLAME_FPS / 2), landImpact,
         size.halfWidth, size.height, genome.wax.light, look.reducedMotion);
+      // Melting: drips lengthen in a few steps over the run, and now and then a bead runs down one (not under reduced motion).
+      const melt01 = Math.round(Math.min(Math.max(look.melt01 ?? 0, 0), 1) * 3) / 3;
+      const beadAt = clockMs % BEAD_EVERY_MS;
+      const bead01 = lit && !look.reducedMotion && beadAt < BEAD_RUN_MS ? Math.floor((beadAt / BEAD_RUN_MS) * BEAD_STEPS) / (BEAD_STEPS - 1) : undefined;
       const lean = flameLean(cue);
       const sparks = flightSparks(genome, cue, flameFrame, look.reducedMotion);
-      const key = `${look.ember}|${look.corruptedEmber}|${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}|${JSON.stringify(face)}|${flare01}|${duck01}|${gather01}|${warmth01}|${JSON.stringify(emotes)}|${JSON.stringify(droplets)}|${spent01}`;
+      const key = `${look.ember}|${look.corruptedEmber}|${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}|${JSON.stringify(face)}|${flare01}|${duck01}|${gather01}|${warmth01}|${JSON.stringify(emotes)}|${JSON.stringify(droplets)}|${spent01}|${melt01}|${bead01}`;
       if (key === drawnKey) return;
       drawnKey = key;
 
       // The flame lights the top of the body; a glowing wick barely does.
-      const body = rasterCandle(genome, shape, look.growth, tracker.facingLeft, { face, glow01: lit ? 0.35 + 0.65 * size01 : 0.08, warmth01 });
+      const body = rasterCandle(genome, shape, look.growth, tracker.facingLeft, { face, glow01: lit ? 0.35 + 0.65 * size01 : 0.08, warmth01, melt01, bead01 });
       // The flame is drawn from the frame's own time so it matches the frame index above.
       const flame = rasterFlame(genome, { size01, timeMs: (flameFrame * 1000) / FLAME_FPS, reducedMotion: look.reducedMotion, lean, fall01, flare01, duck01, gather01 });
       graphics.clear();

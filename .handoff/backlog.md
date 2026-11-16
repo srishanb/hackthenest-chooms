@@ -42,7 +42,7 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [ ] #26 Check the frame rate on real hardware: the headless check runs at 13 to 24 fps with software rendering
 - [ ] #27 A wind band (third biome) only if wind can be made part of the route replay
 - [x] #28 Candle idle fidgets: looks up at its own flame now and then (no hop: a hop without a jump would mislead)
-- [ ] #29 Drips that slowly grow over a run and fall as the candle burns down
+- [x] #29 Drips that slowly grow over a run, with a bead of wax running down one now and then
 - [ ] #30 Height markers every 25 m and a marker at the personal best (needs a UI component id, or a game-drawn mark with no text)
 - [x] #31 Close-up portrait reacts to the flame events too (flare on wax, duck on landing), like the hero
 - [x] #32 Each candle gets one trait of its own (a coloured band, a dipped base or a tuft of wax) so candles are told apart at a glance
@@ -56,4 +56,6 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #40 An uneasy look while sliding on ice (wide eyes on the ground, wavering mouth, a bead of wax)
 - [x] #41 Give the classic climb (`?climb=classic`) the same awareness and cheer calls, so both modes have the full candle
 - [ ] #42 Srishan to judge by playing: is the night too dark at low fuel (radius 130 px empty, 330 px full, full night from chunk 10)?
-- [ ] #43 Wax drops glow in the dark a little beyond the light, so the player can plan toward them at night
+- [x] #43 Wax drops glow in the dark a little beyond the light, so the player can plan toward them at night (not yet seen in a screenshot: no drop was past the edge)
+- [ ] #44 Capture a screenshot that shows a wax beacon past the edge of the light, and tune its size and brightness
+- [ ] #45 The close-up portrait shows the melted drips and the running bead too

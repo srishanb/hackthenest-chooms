@@ -36,6 +36,10 @@ export interface BodyLook {
   glow01?: number;
   /** 0 (cold wax, the flame is out) to 1 (warm). Optional: warm by default. The wax dims and turns bluish as it cools. */
   warmth01?: number;
+  /** 0..1 how much the candle has melted over the run: its drips grow up to three pixels longer. */
+  melt01?: number;
+  /** 0..1 along the longest drip: a bright bead of wax running down it. Leave out for no bead. */
+  bead01?: number;
 }
 
 const WICK_COLOR = 0x2b2118;
@@ -69,8 +73,16 @@ export function rasterCandle(genome: CandleGenome, shape: BodyShape, growth: num
   const midShade = scaleColor(base, 0.9);
   const pool = mix(scaleColor(base, 0.92), genome.flame.colors.inner, 0.3 + 0.25 * glow);
   const pixels: Pixel[] = [];
-  // Drip columns follow the body when it squashes or grows.
-  const dripAt = new Map(genome.drips.map((d) => [Math.round((d.x * (w - 1)) / Math.max(1, genome.width - 1)), d.length]));
+  // Drip columns follow the body when it squashes or grows. Melting makes each drip longer, never past the face of the ground row.
+  const melt = Math.min(Math.max(look.melt01 ?? 0, 0), 1);
+  const dripAt = new Map(genome.drips.map((d) => [Math.round((d.x * (w - 1)) / Math.max(1, genome.width - 1)),
+    Math.min(h - 3, d.length + Math.round(3 * melt))]));
+  // A bead of wax runs down the longest drip.
+  let beadCell: { col: number; fromTop: number } | null = null;
+  if (look.bead01 !== undefined && dripAt.size > 0) {
+    const [col, length] = [...dripAt.entries()].sort((a, b) => b[1] - a[1])[0]!;
+    beadCell = { col, fromTop: 1 + Math.round(Math.min(Math.max(look.bead01, 0), 1) * (length - 1)) };
+  }
   const { kind, accent, onLeft } = genome.trait;
   // A tuft: two pixels of melted wax piled on one shoulder, above the rim.
   const tuftFrom = onLeft ? 1 : w - 3;
@@ -97,6 +109,7 @@ export function rasterCandle(genome: CandleGenome, shape: BodyShape, growth: num
       // A band two rows tall low on the body; a dipped base with an uneven edge, like wax that ran.
       else if (kind === 'band' && (fromTop === bandRow || fromTop === bandRow + 1)) color = accentAt(col);
       else if (kind === 'dipped' && fromTop >= h - dipRows + (col % 3 === 1 ? 1 : 0)) color = accentAt(col);
+      else if (beadCell && beadCell.col === col && beadCell.fromTop === fromTop) color = scaleColor(light, 1.12);
       else if (drip !== undefined && fromTop <= drip) color = light;
       // A bead at the end of each drip: one darker pixel under the pale streak.
       else if (drip !== undefined && fromTop === drip + 1) color = scaleColor(base, 0.84);
