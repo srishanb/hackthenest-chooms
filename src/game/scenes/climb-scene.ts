@@ -390,6 +390,8 @@ export class ClimbScene extends Phaser.Scene {
       this.forestPreview,
     );
     stores.effects.set(frame);
+    // The scenery only looks at where the candle is (birds fly off as it comes near); it changes nothing about it.
+    this.forest.setCandle(this.state.x, this.state.y);
     this.forest.update(frame.forestCorruption, deltaMs, settings.reducedMotion, !this.phase.isRunning(), settings.effectStrength);
     this.darkness.setAlpha(FUEL_VIEW.normalShadowAlpha +
       (FUEL_VIEW.corruptedShadowAlpha - FUEL_VIEW.normalShadowAlpha) * sceneryCorruption(frame.forestCorruption));

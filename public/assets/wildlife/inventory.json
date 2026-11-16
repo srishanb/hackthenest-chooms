@@ -1,0 +1,119 @@
+[
+  {
+    "pack": "Bird, Small (inmenus)",
+    "sourceFile": "Bird_v002_blue_and_yellow_small.png",
+    "file": "assets/wildlife/bird.png",
+    "width": 320,
+    "height": 189,
+    "crop": null,
+    "sha256": "1935850180784c2f6703ad7a7d96a918d8da8d31f14285720c32585d993fcaab"
+  },
+  {
+    "pack": "lil birb (Casual Garage Coder)",
+    "sourceFile": "birb.png",
+    "file": "assets/wildlife/birb.png",
+    "width": 32,
+    "height": 32,
+    "crop": null,
+    "sha256": "32e16ad764f8233ffdcb513a2bdc71d6e39ad444574595a2a9d9502abb6a25b4"
+  },
+  {
+    "pack": "Pixel Weather & Nature FX 1.0 (reodesuxz)",
+    "sourceFile": "PNG/particles/16x16/firefly.png",
+    "file": "assets/wildlife/firefly.png",
+    "width": 16,
+    "height": 16,
+    "crop": null,
+    "sha256": "5aa82e97b0570032e2d6f92af2f35026fddc5930f1579158f3847b1648f5d4cd"
+  },
+  {
+    "pack": "Pixel Weather & Nature FX 1.0 (reodesuxz)",
+    "sourceFile": "PNG/particles/16x16/spore.png",
+    "file": "assets/wildlife/spore.png",
+    "width": 16,
+    "height": 16,
+    "crop": null,
+    "sha256": "970c93a4fba92a14b6ba0d735fd88088eb2bd7ceb1db95b9ae5ba0b996e0a2b7"
+  },
+  {
+    "pack": "Pixel Weather & Nature FX 1.0 (reodesuxz)",
+    "sourceFile": "PNG/particles/16x16/leaf_green_1.png",
+    "file": "assets/wildlife/leaf-green-1.png",
+    "width": 16,
+    "height": 16,
+    "crop": null,
+    "sha256": "ec7b11044852076b61afc0d12cfdccf24f3ca204c7f0265da643cc8e421847c3"
+  },
+  {
+    "pack": "Pixel Weather & Nature FX 1.0 (reodesuxz)",
+    "sourceFile": "PNG/particles/16x16/leaf_green_2.png",
+    "file": "assets/wildlife/leaf-green-2.png",
+    "width": 16,
+    "height": 16,
+    "crop": null,
+    "sha256": "a61537e091c73a6ab3f92fee3ea371364c714348117865a806dd7b359c9d8028"
+  },
+  {
+    "pack": "Pixel Weather & Nature FX 1.0 (reodesuxz)",
+    "sourceFile": "PNG/particles/16x16/leaf_autumn_orange_1.png",
+    "file": "assets/wildlife/leaf-autumn-orange-1.png",
+    "width": 16,
+    "height": 16,
+    "crop": null,
+    "sha256": "58bbd631187d753b034bd8c0c0d92166531ca25583b25ad46d821be3f4fe43f9"
+  },
+  {
+    "pack": "Pixel Weather & Nature FX 1.0 (reodesuxz)",
+    "sourceFile": "PNG/particles/16x16/leaf_autumn_red_1.png",
+    "file": "assets/wildlife/leaf-autumn-red-1.png",
+    "width": 16,
+    "height": 16,
+    "crop": null,
+    "sha256": "085bb81f318ceb1cc0999397b1a193bcdaf88a40d7722670d3cde3fd320e00d4"
+  },
+  {
+    "pack": "Critters - Lazy River Tileset 1.0 (Foozle)",
+    "sourceFile": "Animated Tiles/Plants/PNGs/Grass 01.png",
+    "file": "assets/wildlife/grass-1.png",
+    "width": 128,
+    "height": 32,
+    "crop": null,
+    "sha256": "cd960ef21e9e1bf5322271e041834d70687d7ba0343e5d15ac73c421da1813d0"
+  },
+  {
+    "pack": "Critters - Lazy River Tileset 1.0 (Foozle)",
+    "sourceFile": "Animated Tiles/Plants/PNGs/Grass 03.png",
+    "file": "assets/wildlife/grass-3.png",
+    "width": 128,
+    "height": 32,
+    "crop": null,
+    "sha256": "adf1e2b5bba021ed950fe455f79e1f0f89a98ef6ce66ae2521bd682527384ea2"
+  },
+  {
+    "pack": "Critters - Lazy River Tileset 1.0 (Foozle)",
+    "sourceFile": "Animated Tiles/Water/Desaturated - background/PNGs/WaterFall Tile Top.png",
+    "file": "assets/wildlife/waterfall-top.png",
+    "width": 128,
+    "height": 16,
+    "crop": null,
+    "sha256": "22e3ebe5283c43c0e303d7dd324c93c63864bcac988fb5f4cd5431e517d3d31b"
+  },
+  {
+    "pack": "Critters - Lazy River Tileset 1.0 (Foozle)",
+    "sourceFile": "Animated Tiles/Water/Desaturated - background/PNGs/WaterFall Tile Middle.png",
+    "file": "assets/wildlife/waterfall-middle.png",
+    "width": 128,
+    "height": 16,
+    "crop": null,
+    "sha256": "f4d1cb5de70012c06cc6a2511cc7a60233ea8a5bfdc0d23d646a18a9ecc695b4"
+  },
+  {
+    "pack": "Critters - Lazy River Tileset 1.0 (Foozle)",
+    "sourceFile": "Animated Tiles/Water/Desaturated - background/PNGs/WaterFall Tile Bottom.png",
+    "file": "assets/wildlife/waterfall-bottom.png",
+    "width": 128,
+    "height": 16,
+    "crop": null,
+    "sha256": "36cb062a2ed0831c6ea1f2159bfff864ab61af3ba5ca54ce3df72438eb58f229"
+  }
+]

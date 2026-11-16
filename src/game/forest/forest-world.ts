@@ -15,11 +15,16 @@ import { createVerticalForest } from './vertical-forest';
 import { createAtmosphere } from './atmosphere';
 import { createBackdropGardens } from './backdrop-gardens';
 import { createCorruptionScreen } from './corruption-screen';
+import { createAmbientLife } from './ambient-life';
+import { createGrassTufts } from './grass-tufts';
+import { createPerchingBirds } from './perching-birds';
 import { fitPropScale, mixColor, reveal, stableUnit } from './presentation';
 
 export interface ForestWorld {
   update(corruption: number, deltaMs: number, reducedMotion: boolean, paused: boolean, strength?: number): void;
   setEnvironment(value: Partial<VisualEnvironment>): void;
+  /** Tell the scenery where the candle is, so the birds on the ledges can fly off as it comes near. */
+  setCandle(x: number, y: number): void;
   syncPlatforms(platforms: readonly PlatformBox[]): void;
   /** Draw a platform that appeared after the world was built (endless mode). `winter` picks the snowy skin. */
   addPlatform(platform: PlatformBox, winter: boolean): void;
@@ -34,6 +39,10 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
   const background = createVerticalForest(scene);
   const atmosphere = createAtmosphere(scene);
   const gardens = createBackdropGardens(scene);
+  const life = createAmbientLife(scene);
+  const grass = createGrassTufts(scene);
+  const birds = createPerchingBirds(scene);
+  let candle: { x: number; y: number } | null = null;
   let snowMix = 0;
   const screen = createCorruptionScreen(scene);
   const mist = scene.add.tileSprite(0, 0, width, height, 'forest-mist').setOrigin(0).setScrollFactor(0)
@@ -46,7 +55,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
     terrain: GameObjects.TileSprite[];
     redTerrain: Array<{ normal: GameObjects.TileSprite; red: GameObjects.TileSprite }>;
     props: Array<{ healthy: GameObjects.Image; decayed: GameObjects.Image; threshold: number }>;
-    marks: Array<{ image: GameObjects.Image | GameObjects.TileSprite | GameObjects.Rectangle; x: number; y: number }>;
+    marks: Array<{ image: GameObjects.Image | GameObjects.Sprite | GameObjects.TileSprite | GameObjects.Rectangle; x: number; y: number }>;
   }
   const skins = new Map<string, PlatformSkin>();
   const rims: GameObjects.Rectangle[] = [];
@@ -126,8 +135,11 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
         ice.push(scene.add.rectangle(x + 1, top + 5 + length, 2, 3, 0xcfefff, 0.9).setOrigin(0).setDepth(0.5));
       }
     }
+    // Swaying grass on forest ledges, and maybe a bird. Snowy ledges keep their bare look, but birds still visit.
+    const tufts = winter ? [] : grass.plant(platform.id, platform.x, top, platform.width);
+    birds.addPerch(platform.id, platform.x, top, platform.width);
     // Follow authored moving ledges using simulation positions, never signal values.
-    const images = [...vines, ...terrain, ...ice, ...props.flatMap((prop) => [prop.healthy, prop.decayed])];
+    const images = [...vines, ...terrain, ...ice, ...tufts, ...props.flatMap((prop) => [prop.healthy, prop.decayed])];
     skins.set(platform.id, { id: platform.id, x: platform.x, y: platform.y, drawnX: platform.x, drawnY: platform.y, terrain, redTerrain, props,
       marks: images.map((image) => ({ image, x: image.x, y: image.y })) });
   }
@@ -135,6 +147,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
     const skin = skins.get(id);
     if (!skin) return;
     propCount -= skin.props.length;
+    birds.removePerch(id);
     for (const mark of skin.marks) mark.image.destroy();
     skins.delete(id);
   }
@@ -160,7 +173,9 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       atmosphere.setEnvironment(value);
       background.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
       gardens.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
+      life.setSnow(value.snowEnabled ? value.snow01 ?? 0 : 0);
     },
+    setCandle(x, y) { candle = { x, y }; },
     addPlatform,
     removePlatform,
     syncPlatforms(platforms) {
@@ -169,6 +184,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
         // Only a ledge that moved since the last call needs its art moved.
         if (!group || (position.x === group.drawnX && position.y === group.drawnY)) continue;
         group.drawnX = position.x; group.drawnY = position.y;
+        birds.movePerch(position.id, position.x, position.y - position.height / 2);
         for (const mark of group.marks) {
           mark.image.setPosition(mark.x + position.x - group.x, mark.y + position.y - group.y);
         }
@@ -183,7 +199,11 @@ export function createForestWorld(scene: Scene, world: LoadedWorld): ForestWorld
       if (!reducedMotion && !paused) clock += Math.min(deltaMs, 100);
       sky.setFillStyle(mixColor(mixColor(C.sky.calm, 0x263a4d, snowMix), C.sky.corrupted, c));
       background.update(c);
-      gardens.update(c);
+      gardens.update(c, clock);
+      const paintCorruption = sceneryCorruption(c);
+      life.update(paintCorruption, deltaMs, reducedMotion, paused);
+      grass.update(clock, paintCorruption);
+      birds.update(deltaMs, candle, paintCorruption, reducedMotion, paused);
       atmosphere.update(c, deltaMs, reducedMotion, paused, strength);
       screen.update(c, deltaMs, reducedMotion, paused, strength);
       sky.setSize(camera.width, camera.height);

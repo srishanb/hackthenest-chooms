@@ -161,3 +161,11 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 
 `createPortraitView` now paints the close-up into a canvas texture only when the picture changes.
 `__tests__/candle-close-up.html` draws the close-up for every mood. `__tests__/candle-faces.html` is a dev page that draws every mood for six seeds.
+
+| `stepBird`, `birdFrame`, `perchedBird`, `isAirborne`, `Bird`, `BirdAct` | `forest/bird-behaviour.ts` | What a bird on a ledge does: stands, pecks, chirps, looks around, and flies off when the candle comes near or the forest turns. Pure, decoration only. |
+| `createPerchingBirds` | `forest/perching-birds.ts` | A pool of three bird sprites seated on ledges above the view. |
+| `createAmbientLife` | `forest/ambient-life.ts` | A far flock now and then, fireflies and spores, single falling leaves that redden with corruption. |
+| `createGrassTufts` | `forest/grass-tufts.ts` | Swaying grass on forest ledges; withers with corruption. |
+| `ForestWorld.setCandle` | `forest/forest-world.ts` | The scenes tell the scenery where the candle is. Read by the birds only. |
+
+Far garden ledges (`forest/backdrop-gardens.ts`) now sometimes spill a waterfall, which freezes in the snow.

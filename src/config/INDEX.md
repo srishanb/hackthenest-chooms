@@ -20,4 +20,5 @@ Every tunable number lives here. Search here before adding a constant. Lane owne
 | `LANDING_PUFF_CONFIG` | `landing-puff.config.ts` | Not in the Lanes table | Landing dust and snow particles. Renderer only. |
 | `LANTERN_FUEL_CONFIG`, `waxBenefit01` | `lantern-fuel.config.ts` | Not in the Lanes table (header: requested by Neil) | Candle fuel: full radius, burn times, wax refill. Does not alter movement or recovery. |
 | `STAGES_CONFIG` | `stages.config.ts` | Game presentation (header) | Stage preview, blend span and snow settings, in logical pixels and seconds. |
+| `WILDLIFE_CONFIG`, `WildlifeConfig`, `BirdClip` | `wildlife.config.ts` | Not in the Lanes table | Background life: birds, far flocks, fireflies, falling leaves, grass and far waterfalls. Decoration only. |
 | `WAX_CONFIG` | `wax.config.ts` | Not in the Lanes table | Optional wax rewards: growth cap, respawn delay, light bonus. |

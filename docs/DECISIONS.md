@@ -36,6 +36,7 @@ One line per decision. Only the integrator edits this file. A **Decision** was c
 | D-27 | 15 Nov 2026 | Srishan | The project's own code and docs are released under the MIT licence (`LICENSE`). Third-party assets keep their own licences, listed in `CREDITS.md`. |
 | D-28 | 15 Nov 2026 | Srishan | The game is hosted for free on GitHub Pages, built from `main` by the `.github/workflows/pages.yml` workflow, instead of being packaged with Electron. |
 | D-29 | 16 Nov 2026 | Srishan | Project-wide: no generative AI is used to make art, images or music, and no asset made with it is imported. Each new asset needs licence and human-made evidence in `CREDITS.md`. The only exception is narrator speech made with ElevenLabs (stock or designed voice, never a clone). AGENTS.md rule 5 carries the wording. |
+| D-30 | 16 Nov 2026 | Srishan | One-time exception to rule one, for cleanup only: remote branches whose pull request is merged (and one empty claim branch) may be deleted. Branches with unmerged commits, open pull requests, `main`, `game-only` and all tags stay. The Claude Code hook still blocks deletion from agent sessions, so Srishan runs it himself. The rule itself is unchanged. |
 
 ## Recommendations in force (overrule by adding a Decision row)
 
