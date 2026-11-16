@@ -103,6 +103,9 @@ export function mountCandleEmblem(canvas: HTMLCanvasElement, seed: number, reduc
   if (!context) return () => {};
   const genome = createCandleGenome(seed);
   let lastFrame = -1;
+  /** When the canvas was last asked whether it is on screen, and the answer. */
+  let checkedTick = -1;
+  let visible = false;
   let lastEager = false;
   let raf = 0;
   const start = performance.now();
@@ -113,7 +116,15 @@ export function mountCandleEmblem(canvas: HTMLCanvasElement, seed: number, reduc
     const frame = Math.floor((timeMs / 1000) * FLAME_FPS);
     // The menu marks the canvas while Play has the pointer or the focus (see start-menu.ts); nothing else is shared.
     const eager = canvas.dataset.eager === 'true';
-    if (frame !== lastFrame || eager !== lastEager) {
+    // The menu is hidden for the whole run: skip the drawing then (measured at 12 redraws a second for
+    // nothing). Visibility is looked up once per flame frame (four times a second under reduced motion),
+    // so the candle draws again within a moment of the menu coming back.
+    const tick = still ? Math.floor(now / 250) : frame;
+    if (tick !== checkedTick) {
+      checkedTick = tick;
+      visible = canvas.getClientRects().length > 0;
+    }
+    if (visible && (frame !== lastFrame || eager !== lastEager)) {
       lastFrame = frame;
       lastEager = eager;
       context.clearRect(0, 0, canvas.width, canvas.height);
@@ -122,7 +133,9 @@ export function mountCandleEmblem(canvas: HTMLCanvasElement, seed: number, reduc
         context.fillRect(p.x * PX, p.y * PX, PX, PX);
       }
     }
-    if (!still) raf = requestAnimationFrame(draw);
+    // The loop keeps ticking under reduced motion too (it draws nothing new), so the candle moves again
+    // if the player turns reduced motion off without reloading.
+    raf = requestAnimationFrame(draw);
   };
   raf = requestAnimationFrame(draw);
   return () => cancelAnimationFrame(raf);

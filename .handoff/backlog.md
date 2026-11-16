@@ -5,17 +5,19 @@
 > items below stay open and wait for him; do not start them. When a pass finds nothing worth fixing, stop the loop
 > and wait.
 
+**State on 2026-11-16, 13:00 UTC: the fix list below is done and the loop has stopped. It is waiting for Srishan.**
+
 While the freeze holds, a loop tick is: look for a real bug or a measured slow spot in what exists, fix it with a
 test, run `npm run check` and `npm run build`, check it in the browser where it can be seen, commit, push. New ideas
 still go at the end of this list, as ideas only.
 
 ## Fixes and optimization (allowed during the freeze)
 
-- [ ] #F1 Play a few ledges of the classic climb (`?climb=classic`) by keyboard in the browser and fix anything broken (was #63)
-- [ ] #F2 Remove the old unused `rasterPortrait` if nothing uses it (was #25)
-- [ ] #F3 Time the test suite and keep every sweep test under one second (was #37)
+- [x] #F1 Play a few ledges of the classic climb (`?climb=classic`) by keyboard in the browser and fix anything broken (was #63). Done: eight jumps, falls, walking, pause and resume; the candle, ember panel and hints all show; no errors. Nothing to fix.
+- [x] #F2 Remove the old unused `rasterPortrait` if nothing uses it (was #25). Closed without a change: it is `main`'s code, its file still supplies types and constants in use, it has its own test and gallery, and the bundler already drops it from the build.
+- [x] #F3 Time the test suite and keep every sweep test under one second (was #37). Done: the wax-ball sweep went from 1.8 s to a few ms (one check per picture). The generator sweep (1.5 s) already has its own 60 s limit. The two slow signal tests are `main`'s and untouched.
 - [x] #F4 Review the composure change for bugs: restart, pause, moving ledges, ice, the bot, the flame-out moment (read through: restart resets it, pause freezes it, a moving ledge counts as standing still, sliding on ice does not, the flame-out look wins; nothing to fix)
-- [ ] #F5 Profile a frame in the endless scene and remove avoidable per-frame work (lists rebuilt every frame, repeated lookups)
+- [x] #F5 Profile a frame in the endless scene and remove avoidable per-frame work. Measured with a CPU profile of the route bot: about 89% of the time is the browser drawing, and no game function is above 0.5%, so the scene code was left alone. One waste found and fixed: the menu candle kept redrawing 12 times a second while hidden during a run. Also fixed: the menu candle and the end-screen candle stayed frozen if reduced motion was switched off without a reload.
 
 ## Candle (the focus)
 

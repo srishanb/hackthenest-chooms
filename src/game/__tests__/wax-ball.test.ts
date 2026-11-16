@@ -11,17 +11,18 @@ const flameRows = (lit: boolean) => {
 };
 
 it('stays inside its box for any candle and moment', () => {
+  const stray: string[] = [];
   for (let seed = 0; seed < 20; seed++) {
     const g = createCandleGenome(seed * 101 + 7);
     for (const lit of [true, false]) {
       for (let t = 0; t < 2000; t += 83) {
-        for (const p of waxBallPixels(g, t, lit, false)) {
-          expect(p.x).toBeGreaterThanOrEqual(0); expect(p.x).toBeLessThan(BALL_W);
-          expect(p.y).toBeGreaterThanOrEqual(0); expect(p.y).toBeLessThan(BALL_H);
-        }
+        // One check per picture, not per pixel: thousands of `expect` calls made this the slowest game test.
+        const outside = waxBallPixels(g, t, lit, false).filter((p) => p.x < 0 || p.x >= BALL_W || p.y < 0 || p.y >= BALL_H);
+        if (outside.length > 0) stray.push(`seed ${seed * 101 + 7}, lit ${lit}, ${t} ms: ${JSON.stringify(outside[0])}`);
       }
     }
   }
+  expect(stray).toEqual([]);
 });
 
 it('burns tall with an ember placed and low without one', () => {

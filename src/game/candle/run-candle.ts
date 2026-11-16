@@ -51,7 +51,8 @@ export function mountRunCandle(canvas: HTMLCanvasElement, seed: number, reducedM
       }
       context.globalAlpha = 1;
     }
-    if (!still) raf = requestAnimationFrame(draw);
+    // Keeps ticking under reduced motion too (it draws nothing new), so a change of that setting shows at once.
+    raf = requestAnimationFrame(draw);
   };
   raf = requestAnimationFrame(draw);
   return () => cancelAnimationFrame(raf);
