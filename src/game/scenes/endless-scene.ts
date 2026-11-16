@@ -485,6 +485,12 @@ export class EndlessScene extends Phaser.Scene {
       data.endlessLedges = String(this.stream.platforms().length);
       data.endlessObjects = String(this.children.length);
       data.endlessSeed = String(this.seed);
+      // The first moving ledge on screen and its wax, in screen px, so a check can watch them move together.
+      const camera = this.cameras.main;
+      const mover = this.platforms.find((p) => p.type === 'moving' && p.y > camera.scrollY + 40 && p.y < camera.scrollY + camera.height - 40);
+      const rider = mover ? this.stream.wax().find((drop) => drop.ledgeId === mover.id) : undefined;
+      data.endlessMover = mover ? JSON.stringify({ id: mover.id, x: Math.round(mover.x - camera.scrollX), y: Math.round(mover.y - camera.scrollY),
+        waxX: rider && !this.wax.isCollected(rider.id) ? Math.round(this.waxX(rider) - camera.scrollX) : null }) : '';
     }
   }
 }

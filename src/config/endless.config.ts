@@ -15,6 +15,11 @@ export const ENDLESS_CONFIG = {
   /** Chunks kept alive below and above the one the player is in. */
   keepBelow: 1,
   keepAbove: 1,
+  /**
+   * The chunk below is kept only while the player is within this height (px) of the current landing:
+   * higher than that it is off screen, and the landing catches every fall, so its ledges are not needed.
+   */
+  belowViewPx: 440,
   /** Difficulty reaches 1 after this many chunks (about 30 m each). */
   rampChunks: 14,
   /** Ledge width in px at difficulty 0 and 1; each ledge varies by +/- `widthJitter01`. */

@@ -43,6 +43,18 @@ describe('chunk stream', () => {
     const bounds = s.bounds();
     expect(bounds.bottom).toBeGreaterThan(bounds.top);
   });
+  it('drops the chunk below once the player has climbed out of sight of it, and brings it back on a fall', () => {
+    const s = stream();
+    const landing = C.baseFloorTopPx - 3 * C.chunkHeightPx;
+    s.update(landing - 10);
+    expect(s.chunks().map((c) => c.index)).toEqual([2, 3, 4]);
+    const up = s.update(landing - C.belowViewPx - 20)!;
+    expect(up.removed.map((c) => c.index)).toEqual([2]);
+    expect(s.chunks().map((c) => c.index)).toEqual([3, 4]);
+    const back = s.update(landing - 40)!;
+    expect(back.added.map((c) => c.index)).toEqual([2]);
+  });
+
   it('never reports a chunk below the first one', () => {
     const s = stream();
     expect(s.indexAt(C.baseFloorTopPx + 5000)).toBe(0);

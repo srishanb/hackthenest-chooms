@@ -31,7 +31,7 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #18 Flame-out sequence: light closes in, ember glows and smokes, HUD hint, relight on wax
 - [ ] #19 Narrator lines for endless moments (new height band, low flame, new best) from existing clips only
 - [x] #20 Tutorial hints for the first chunk in endless
-- [ ] #21 Performance check: object counts and frame time after ten minutes of climbing
+- [x] #21 Performance check over a 144 s bot climb: 1,000 to 1,600 live objects, heap flat at 81 MB, no errors. Frame rate in the headless browser is 13 to 21 fps and tracks the snow layer, not the object count; real hardware still unmeasured (#26)
 - [x] #22 README and docs for the hands-only branch (`docs/HANDS_ONLY.md`)
 
 ## Added during the loop
@@ -59,7 +59,8 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #43 Wax drops glow in the dark a little beyond the light, so the player can plan toward them at night (not yet seen in a screenshot: no drop was past the edge)
 - [x] #44 Capture a screenshot that shows a wax beacon past the edge of the light (seen at the edge of the light at chunk 12; left as it is)
 - [x] #45 The close-up portrait shows the melted drips and the running bead too
-- [ ] #46 See a moving side ledge in motion in the browser (two frames a second apart) and check its wax rides with it
+- [x] #46 See a moving side ledge in motion in the browser and check its wax rides with it (sampled eight times: the wax x equals the ledge x every time)
 - [ ] #47 Let the route bot optionally detour to side ledges, so par.ts measures a wax-hungry run too
 - [ ] #48 The end screen names what was special about the run's candle only through its picture: check the swirl shows there too
 - [ ] #49 Candle voice without words: tiny pitch-shifted sfx for hop, land and relief, from the sfx already in the repo only
+- [ ] #50 The snow weather layer is the slowest thing in the headless check: measure it on a real GPU before changing it

@@ -43,7 +43,10 @@ export function createChunkStream(generator: EndlessGenerator, config: EndlessCo
     indexAt,
     update(feetY) {
       const centre = indexAt(feetY);
-      const from = Math.max(0, centre - config.keepBelow);
+      // The chunk below matters only while it can be seen: near the current landing.
+      const aboveLanding = config.baseFloorTopPx - centre * config.chunkHeightPx - feetY;
+      const below = aboveLanding <= config.belowViewPx ? config.keepBelow : 0;
+      const from = Math.max(0, centre - below);
       const to = centre + config.keepAbove;
       if (from === first && to === last) return null;
       const next: EndlessChunk[] = [];
