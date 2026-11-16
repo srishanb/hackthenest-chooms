@@ -19,7 +19,6 @@ import { createAmbientLife } from './ambient-life';
 import { createGrassTufts } from './grass-tufts';
 import { createPerchingBirds } from './perching-birds';
 import { createBackdrop, type BackdropSource } from '../backdrop/backdrop-view';
-import { BACKDROP_CONFIG } from '../../config/backdrop.config';
 import { fitPropScale, mixColor, reveal, stableUnit } from './presentation';
 
 export interface ForestWorld {
@@ -45,6 +44,8 @@ export function createForestWorld(scene: Scene, world: LoadedWorld, backdrop?: B
   const width = scene.scale.width, height = scene.scale.height;
   const sky = scene.add.rectangle(0, 0, width, height, C.sky.calm).setOrigin(0).setScrollFactor(0).setDepth(-40);
   const generated = backdrop ? createBackdrop(scene, backdrop) : null;
+  // A generated backdrop draws its own gradient sky over the whole screen, so the flat one would only cost fill.
+  sky.setVisible(!generated);
   const background = generated ? null : createVerticalForest(scene);
   const atmosphere = createAtmosphere(scene);
   const gardens = generated ? null : createBackdropGardens(scene);
@@ -207,13 +208,13 @@ export function createForestWorld(scene: Scene, world: LoadedWorld, backdrop?: B
         scene.game.canvas.dataset.forestFps = scene.game.loop.actualFps.toFixed(1);
       }
       if (!reducedMotion && !paused) clock += Math.min(deltaMs, 100);
-      // Behind a generated backdrop the sky is the colour its far layer fades toward, so the two always meet.
+      // Behind a generated backdrop the sky is the colour its far layers fade toward (its own gradient is drawn over it).
       const skyCalm = generated
-        ? mixColor(BACKDROP_CONFIG.sky.forest, BACKDROP_CONFIG.sky.cold, generated.coldAtCamera())
+        ? generated.fogAtCamera()
         : mixColor(C.sky.calm, 0x263a4d, snowMix);
       sky.setFillStyle(mixColor(skyCalm, C.sky.corrupted, c));
       background?.update(c);
-      generated?.update(sceneryCorruption(c));
+      generated?.update(sceneryCorruption(c), clock, c);
       gardens?.update(c, clock);
       const paintCorruption = sceneryCorruption(c);
       life.update(paintCorruption, deltaMs, reducedMotion, paused);

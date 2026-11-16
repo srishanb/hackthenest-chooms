@@ -15,8 +15,19 @@ export const TONE = {
   snow0: 13, snow1: 14,
   cap0: 15, cap1: 16, cap2: 17,
   stem0: 18, stem1: 19,
+  /** Lit rock face, falling water (dark, light), foam, and a drifting petal or falling leaf. */
+  rock3: 20, water0: 21, water1: 22, foam: 23, petal: 24,
+  /**
+   * Horizon ridges, dark to light: shade, lit face, back ridge, snow cap or highlight, far water.
+   * Two families, A and B, because neighbouring ranges can stand in different biomes: even ranges
+   * use A and odd ranges use B, so each is coloured by its own biome on the same row.
+   */
+  farA0: 25, farA1: 26, farA2: 27, farA3: 28, farA4: 29,
+  farB0: 30, farB1: 31, farB2: 32, farB3: 33, farB4: 34,
+  /** Mist: the fog colour, see-through (thin, thicker). The only slots that are not opaque. */
+  mist0: 35, mist1: 36,
 } as const;
-export const TONE_COUNT = 20;
+export const TONE_COUNT = 37;
 
 export interface PixelGrid { width: number; height: number; cells: Uint8Array }
 
@@ -45,6 +56,15 @@ export function noise1(seed: number, t: number): number {
 }
 
 /** A new seed for a named part of the same thing, so its numbers do not echo the parent's. */
+/** Pick a key from relative weights with `unit` (0..1). Falls back to `fallback` when every weight is zero. */
+export function pickWeighted<K extends string>(weights: Partial<Record<K, number>>, unit: number, fallback: K): K {
+  const entries = Object.entries(weights) as Array<[K, number]>;
+  const total = entries.reduce((sum, [, weight]) => sum + Math.max(0, weight), 0);
+  let left = unit * total;
+  for (const [key, weight] of entries) { left -= Math.max(0, weight); if (left < 0) return key; }
+  return fallback;
+}
+
 export function subSeed(seed: number, part: number): number {
   return (Math.imul(seed ^ 0x9e3779b9, 2654435761) + Math.imul(part | 0, 40503)) >>> 0;
 }

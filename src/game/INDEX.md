@@ -172,16 +172,36 @@ Far garden ledges (`forest/backdrop-gardens.ts`) now sometimes spill a waterfall
 
 ## Generated backdrop (`backdrop/`)
 
-The forest behind the endless climb is painted from the run's seed. `__tests__/backdrop-gallery.html` is a dev page
-that shows it at several heights (`?seed=`, `?heights=`, `?zoom=`, `?layer=`).
+The scenery behind the endless climb is painted from the run's seed. Back to front: a gradient sky, a horizon layer
+of far ridges (snowy peaks, rolling hills, jungle table mountains), then far, middle and near forest layers, with mist
+bands between them and animated water over the painted waterfalls. Each forest flavour has a recipe in
+`config/backdrop.config.ts` (crown styles, tree kinds, lianas, waterfalls, petals). `__tests__/backdrop-gallery.html`
+is a dev page that shows it at several heights (`?seed=`, `?heights=`, `?zoom=`, `?layer=`, `?flavour=`, `?falls=1`).
 
 | Export | File | What it does |
 |---|---|---|
-| `TONE`, `TONE_COUNT`, `PixelGrid`, `createGrid`, `put`, `hash`, `noise1`, `subSeed` | `backdrop/pixel-grid.ts` | A grid of colour slots to paint into, and repeatable seeded numbers. |
-| `paintClump`, `paintLimb`, `paintBroadleaf`, `paintPine`, `paintMushroom`, `paintIsland`, `Surface` | `backdrop/shapes.ts` | The pieces: leaves, limbs, three kinds of tree and a floating island, as pixel art from a seed. |
-| `paintChunk`, `trunkLanes`, `ChunkRequest`, `BackdropBiome`, `TrunkLane` | `backdrop/paint-chunk.ts` | One chunk of one layer: full-height trunks, islands with trees, branches and vines, the forest floor. Chunks join exactly. |
-| `colourChunk` | `backdrop/palette.ts` | Slots to colours, row by row: the flavour's palette mixed toward the cold one by height, then toward the sky by the layer's fog. |
-| `createBackdrop`, `BackdropSource` | `backdrop/backdrop-view.ts` | Keeps a few painted chunks per layer on canvas textures and scrolls them with the camera. |
+| `TONE`, `TONE_COUNT`, `PixelGrid`, `createGrid`, `put`, `hash`, `noise1`, `subSeed`, `pickWeighted` | `backdrop/pixel-grid.ts` | A grid of colour slots to paint into, repeatable seeded numbers, and a weighted pick. |
+| `Surface`, `plot`, `misses`, `rowsOf` | `backdrop/surface.ts` | The surface painters draw on, in whole-forest coordinates. |
+| `BackdropBiome`, `ChunkRequest`, `Waterfall` | `backdrop/chunk-types.ts` | Shared types (also re-exported from `paint-chunk.ts`). |
+| `paintClump`, `paintPads`, `paintWeeping`, `paintSparse`, `paintCrown`, `paintPetals` | `backdrop/foliage.ts` | Crown styles: lumpy clump, cedar tiers, umbrella, willow, column, airy twigs; petals or falling leaves. |
+| `paintFronds`, `paintBigLeaves`, `paintBoughs` | `backdrop/foliage-shapes.ts` | Palm fronds and broad jungle leaves; drooping snow-laden boughs. |
+| `crownStyleAt` | `backdrop/crowns.ts` | The crown style for a biome and seed (the cold's styles more often the colder it is). |
+| `paintLimb`, `paintBroadleaf`, `paintPine`, `paintMushroom`, `paintPalm`, `paintShelfFungus`, `paintSmallMushroom`, `paintFern` | `backdrop/trees.ts` | Trees and the small things that grow on islands and trunks. |
+| `paintIsland`, `islandColumn`, `paintCrag`, `cragColumn` | `backdrop/terrain.ts` | A grassy island with roots and vines; a rock crag with strata and snowy ledges. |
+| `paintWaterfall`, `isFrozen`, `fallMistRows` | `backdrop/water.ts` | A painted fall: pool and mossy lip, water (or ice), mist at its foot. |
+| `islandsBetween`, `chunkWaterfalls`, `longestFall`, `recipeOf`, `IslandPlan` | `backdrop/layout.ts` | Where islands are and which spill a fall, from the seed and height only. The painter and the view share it. |
+| `paintIslands` | `backdrop/islands.ts` | Paints island plans: ground or crag, trees by recipe, plants, then the fall. |
+| `trunkLanes`, `paintTrunk`, `paintLedgePines`, `TrunkLane` | `backdrop/trunks.ts` | Full-height trunks; rocky lanes become stepped cliffs with snowy ledges in the cold. |
+| `paintBranches`, `paintVine` | `backdrop/branches.ts` | Branches with recipe crowns, vines, petals, and shelf fungi on the trunk. |
+| `paintLianas` | `backdrop/lianas.ts` | Lianas sagging between trunks (loops at the edges in the near layer). |
+| `paintMist`, `ditherAt` | `backdrop/mist.ts` | See-through mist bands in a layer's empty air; a 4 by 4 ordered dither. |
+| `paintHorizon`, `horizonRangeAt`, `horizonFarBiome`, `rangeKindOf` | `backdrop/horizon.ts` | The horizon layer's ranges, two ridge lines each, coloured per range by its own biome. |
+| `paintChunk`, `renderChunk`, `chunkFarBiome` | `backdrop/paint-chunk.ts` | One chunk of one layer, and paint + colour + waterfall list in one call. Chunks join exactly. |
+| `colourChunk`, `waterColour` | `backdrop/palette.ts` | Slots to colours, row by row: flavour palette mixed toward the cold one, then toward the fog by the layer's fog. |
+| `skyAt`, `mixRgb` | `backdrop/sky.ts` | Top and fog colour of the sky for a biome. |
+| `createSkyGradient` | `backdrop/sky-view.ts` | The banded gradient sky (Phaser). |
+| `createWaterfallStrips`, `StripPlacement` | `backdrop/waterfall-view.ts` | A fixed pool of animated water strips over painted falls (Phaser, the waterfall sheets in CREDITS.md). |
+| `createBackdrop`, `BackdropSource` | `backdrop/backdrop-view.ts` | Keeps a few painted chunks per layer on canvas textures and scrolls them with the camera; `update(corruption, clockMs, skyCorruption)`, `fogAtCamera()`. |
 | `backdropBiomeAt`, `flavourOfBand` | `endless/backdrop-biome.ts` | How cold a height is (smooth, following the snow bands) and each forest band's seeded flavour. |
 | `createForestWorld(scene, world, backdrop?)`, `ForestWorld.reseedBackdrop` | `forest/forest-world.ts` | With a `backdrop` the generated forest replaces the repeating trunks and far garden ledges. |
 
