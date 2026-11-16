@@ -1,5 +1,5 @@
 /** Faint candle halo and persistent soft falloff, even when full fuel reveals the whole screen. */
-import type { Scene } from 'phaser';
+import { BlendModes, type Scene } from 'phaser';
 import { FUEL_VISIBILITY_CONFIG as C, sceneryCorruption } from '../../config/fuel-visibility.config';
 export function createCandleLighting(scene: Scene) {
   for (const halo of [true, false]) {
@@ -13,7 +13,9 @@ export function createCandleLighting(scene: Scene) {
     gradient.addColorStop(1, halo ? 'rgba(255,191,100,0)' : 'rgba(5,6,10,1)');
     context.fillStyle = gradient; context.fillRect(0, 0, 256, 256); texture.refresh();
   }
-  const halo = scene.add.image(0, 0, 'candle-soft-halo').setDepth(99);
+  // Additive: the halo brightens what it falls on (leaves, soil) like real light, instead of
+  // laying a flat orange wash over it.
+  const halo = scene.add.image(0, 0, 'candle-soft-halo').setDepth(99).setBlendMode(BlendModes.ADD);
   const shade = scene.add.image(0, 0, 'candle-soft-shade').setDepth(101);
   return {
     update(x: number, y: number, fuel: number, corruption: number): void {
