@@ -7,6 +7,11 @@
  * redraws only when the picture changes (pose frame, flame frame, facing, size or growth).
  * Reads only player state, the light radius and the wax growth: it never feeds movement.
  *
+ * What leaves the candle (landing droplets, breath, wick smoke, flight sparks) goes into a second
+ * Graphics object that never moves: each is pinned to the world point it was shed at (detached.ts),
+ * so it falls and fades there while the candle moves on. The body, flame, hanging drips and the
+ * emote signs stay in the first object and follow the candle.
+ *
  * The view also keeps the candle's expression (expression.ts): it notices hard landings itself and
  * the scene reports wax pickups and new best heights through `cheer()` and `celebrate()`.
  */
@@ -16,12 +21,13 @@ import { snapToGrid } from '../forest/pixel-grid-snap';
 import type { PlayerState } from '../player/types';
 import { createCandleGenome, type CandleGenome } from './candle-genome';
 import { bodyShape, INITIAL_POSE, poseFrame, slumpShape, stepPose, type BodyShape, type PoseTracker } from './candle-pose';
-import { rasterCandle } from './candle-raster';
+import { rasterCandle, type Pixel } from './candle-raster';
+import { makeAnchor, pinPerCycle, stepShed, toWorld, type Anchor, type Pinned, type Shed, type WorldPixel } from './detached';
 import { type Aim, flameLean, flightSparks, fullChargeTremble, wickLean } from './direction-cues';
 import type { Surroundings } from './awareness';
-import { coldBreath, DROPLET_MS, emotePixels, flowNote, landingDroplets } from './emotes';
+import { BREATH_EVERY_MS, BREATH_MS, coldBreath, DROPLET_MS, emotePixels, flowNote, landingDroplets } from './emotes';
 import { faceFor, INITIAL_EXPRESSION, stepExpression, type CandleFace, type ExpressionEvents, type ExpressionTracker } from './expression';
-import { fallIntensity, FLAME_FPS, flameSizeFromRadius, flickerRate, rasterFlame, wickSmoke } from './flame';
+import { fallIntensity, FLAME_FPS, flameSizeFromRadius, flickerRate, rasterFlame, wickSmoke, wickSmokePuffs } from './flame';
 
 /** The light, the wax growth and the settings the candle draws from this frame. */
 export interface CandleLook {
@@ -79,9 +85,18 @@ const EMOTE_OFFSET_X = 6;
 /** Size steps for the flame: enough to look smooth in pixel art, few enough to redraw rarely. */
 const SIZE_STEPS = 24;
 const DEPTH = 210;
+/** Flight sparks are shed once per flame frame and linger this long (two flame frames), pinned where they were shed. */
+const SPARK_LIFE_MS = (2 * 1000) / FLAME_FPS;
+
+/** What a landing knocked off: how hard, and the candle's size and wax colour at that moment. */
+interface Landing { impact: number; halfWidth: number; height: number; color: number }
+/** A puff of cold breath: the candle's facing and size when it was breathed out. */
+interface Breath { cycle: number; anchor: Anchor; facingLeft: boolean; halfWidth: number; height: number }
 
 export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: number) {
   const graphics = scene.add.graphics().setDepth(DEPTH);
+  /** Everything shed by the candle, drawn in world px and never moved. Added after the candle so it draws over it. */
+  const shedGraphics = scene.add.graphics().setDepth(DEPTH);
   const px = FOREST_CONFIG.pixelScale;
   let genome: CandleGenome = createCandleGenome(seed);
   let tracker: PoseTracker = INITIAL_POSE;
@@ -101,8 +116,14 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
   /** Time since the latest landing, for the wax droplets it knocks off. */
   let lastReactions = { flare01: 0, duck01: 0, gather01: 0 };
   let lastMelting: { melt01: number; bead01: number | undefined } = { melt01: 0, bead01: undefined };
-  let sinceLandMs = DROPLET_MS;
-  let landImpact = 0;
+  let landings: Shed<Landing>[] = [];
+  let sparkShed: Shed<Pixel[]>[] = [];
+  let lastSparkFrame = -1;
+  let breath: Breath | undefined;
+  const smokeAnchors = new Map<number, Pinned>();
+  /** The wick tip of the last drawn body, art px from the feet; it only changes when the body is redrawn. */
+  let wickTip = { x: 0, y: 0 };
+  let shedKey = '';
 
   return {
     /** A new candle (a new run). */
@@ -112,6 +133,8 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       expression = INITIAL_EXPRESSION;
       pending = {};
       drawnKey = '';
+      landings = []; sparkShed = []; breath = undefined; smokeAnchors.clear(); lastSparkFrame = -1;
+      shedKey = ''; shedGraphics.clear();
     },
     /** Wax was picked up: a short delighted look. */
     cheer(): void { pending.wax = true; },
@@ -139,7 +162,10 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       // At full charge the whole candle trembles an art pixel either way: the picture is not redrawn, only moved.
       const tremble = fullChargeTremble(state.charging, look.charge01, look.reducedMotion ? 0 : Math.floor((clockMs / 1000) * FLAME_FPS), look.reducedMotion);
       // Drawn on the art grid (pixel-grid-snap.ts), like the ledges it stands on; the body's own position stays exact.
-      graphics.setPosition(snapToGrid(state.x) + tremble * px, snapToGrid(state.y + bodyHeight / 2));
+      const gx = snapToGrid(state.x) + tremble * px;
+      const gy = snapToGrid(state.y + bodyHeight / 2);
+      graphics.setPosition(gx, gy);
+      const feet = makeAnchor(gx, gy);
 
       const size01 = Math.round(flameSizeFromRadius(look.radiusPx, look.minRadiusPx, look.maxRadiusPx) * SIZE_STEPS) / SIZE_STEPS;
       const flameFrame = look.reducedMotion ? 0 : Math.floor((clockMs / 1000) * FLAME_FPS);
@@ -155,8 +181,7 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       }
       const dt = paused ? 0 : Math.max(0, deltaMs);
       if (pending.wax || pending.newBest) flareMs = FLARE_MS;
-      if (landedNow) { duckMs = DUCK_MS; duckStrength = 0.35 + 0.65 * (tracker.impact01 ?? 0); sinceLandMs = 0; landImpact = tracker.impact01 ?? 0; }
-      else sinceLandMs = Math.min(DROPLET_MS, sinceLandMs + dt);
+      if (landedNow) { duckMs = DUCK_MS; duckStrength = 0.35 + 0.65 * (tracker.impact01 ?? 0); }
       flareMs = Math.max(0, flareMs - dt);
       duckMs = Math.max(0, duckMs - dt);
       const steps = (value: number): number => Math.round(Math.min(Math.max(value, 0), 1) * REACTION_STEPS) / REACTION_STEPS;
@@ -184,51 +209,83 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       const emotes = moodEmotes.length === 0 && look.flow && !look.shaken && !look.steadying && lit && expression.mood !== 'fading'
         ? flowNote(Math.floor(clockMs / (1000 / FLAME_FPS)) * (1000 / FLAME_FPS), look.reducedMotion) : moodEmotes;
       const size = { halfWidth: Math.ceil((genome.width * Math.max(1, look.growth)) / 2), height: Math.round(genome.height * Math.max(1, look.growth)) };
-      const droplets = landingDroplets(genome.seed, Math.floor(sinceLandMs / (1000 / FLAME_FPS / 2)) * (1000 / FLAME_FPS / 2), landImpact,
-        size.halfWidth, size.height, genome.wax.light, look.reducedMotion);
+      // A landing sheds its droplets at the feet where it happened; each landing keeps its own anchor.
+      landings = stepShed(landings, dt, DROPLET_MS, landedNow
+        ? { anchor: feet, data: { impact: tracker.impact01 ?? 0, halfWidth: size.halfWidth, height: size.height, color: genome.wax.light } } : undefined);
+      const world: WorldPixel[] = [];
+      const halfFrame = 1000 / FLAME_FPS / 2;
+      for (const l of landings) {
+        world.push(...toWorld(l.anchor, landingDroplets(genome.seed, Math.floor(l.ageMs / halfFrame) * halfFrame, l.data.impact,
+          l.data.halfWidth, l.data.height, l.data.color, look.reducedMotion), px));
+      }
       // Melting: drips lengthen in a few steps over the run, and now and then a bead runs down one (not under reduced motion).
       const melt01 = Math.round(Math.min(Math.max(look.melt01 ?? 0, 0), 1) * 3) / 3;
       const beadAt = clockMs % BEAD_EVERY_MS;
       const bead01 = lit && !look.reducedMotion && beadAt < BEAD_RUN_MS ? Math.floor((beadAt / BEAD_RUN_MS) * BEAD_STEPS) / (BEAD_STEPS - 1) : undefined;
       if (lastMelting.melt01 !== melt01 || lastMelting.bead01 !== bead01) lastMelting = { melt01, bead01 };
-      // Breath in the cold, only while standing or walking with the flame lit (drawn with the droplets, from the feet).
-      const breath = look.cold && lit && state.grounded && !state.charging
-        ? coldBreath(Math.floor(clockMs / 100) * 100, tracker.facingLeft, size.halfWidth, size.height, look.reducedMotion) : [];
+      // Breath in the cold, only breathed out while standing or walking with the flame lit; it then stays where it left the mouth.
+      const breathCycle = Math.floor(clockMs / BREATH_EVERY_MS);
+      const breathing = clockMs % BREATH_EVERY_MS < BREATH_MS;
+      if (look.cold && lit && state.grounded && !state.charging && breathing && breath?.cycle !== breathCycle) {
+        breath = { cycle: breathCycle, anchor: feet, facingLeft: tracker.facingLeft, halfWidth: size.halfWidth, height: size.height };
+      }
+      if (breath && breath.cycle === breathCycle && breathing) {
+        world.push(...toWorld(breath.anchor, coldBreath(Math.floor(clockMs / 100) * 100, breath.facingLeft, breath.halfWidth, breath.height, look.reducedMotion), px));
+      }
       const lean = flameLean(cue);
-      const sparks = flightSparks(genome, cue, flameFrame, look.reducedMotion);
-      const key = `${look.ember}|${look.corruptedEmber}|${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}|${JSON.stringify(face)}|${flare01}|${duck01}|${gather01}|${warmth01}|${JSON.stringify(emotes)}|${JSON.stringify(droplets)}|${spent01}|${melt01}|${bead01}|${JSON.stringify(breath)}`;
-      if (key === drawnKey) return;
-      drawnKey = key;
+      const key = `${look.ember}|${look.corruptedEmber}|${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(face)}|${flare01}|${duck01}|${gather01}|${warmth01}|${JSON.stringify(emotes)}|${spent01}|${melt01}|${bead01}`;
+      if (key !== drawnKey) {
+        drawnKey = key;
+        // The flame lights the top of the body; a glowing wick barely does.
+        const body = rasterCandle(genome, shape, look.growth, tracker.facingLeft, { face, glow01: lit ? 0.35 + 0.65 * size01 : 0.08, warmth01, melt01, bead01 });
+        // The flame is drawn from the frame's own time so it matches the frame index above.
+        const flame = rasterFlame(genome, { size01, timeMs: (flameFrame * 1000) / FLAME_FPS, reducedMotion: look.reducedMotion, lean, fall01, flare01, duck01, gather01 });
+        graphics.clear();
+        for (const p of body.pixels) {
+          graphics.fillStyle(p.color, 1);
+          graphics.fillRect(p.x * px, p.y * px, px, px);
+        }
+        // A dead wick keeps a glowing tip and lets off smoke.
+        // The glow on the wick dies halfway through the last moment; the smoke goes on.
+        const emberTip = spent01 > 0.5 ? [] : [{ x: 0, y: -1, color: look.corruptedEmber ? 0xb74038 : spent01 > 0 ? 0x8a3f22 : 0xd58138 }];
+        // Smoke is shed into the world (below); only the one still wisp of reduced motion stays on the wick.
+        const light = look.ember ? [...emberTip, ...(look.reducedMotion ? wickSmoke(genome, 0, true) : [])] : flame;
+        for (const p of light) {
+          graphics.fillStyle(p.color, 1);
+          graphics.fillRect((body.wickTip.x + p.x) * px, (body.wickTip.y + p.y) * px, px, px);
+        }
+        // Beside the flame, always on the right, so the glyphs (a z, an exclamation mark) are never mirrored.
+        for (const p of emotes) {
+          graphics.fillStyle(p.color, 1);
+          graphics.fillRect((body.wickTip.x + EMOTE_OFFSET_X + p.x) * px, (body.wickTip.y + p.y) * px, px, px);
+        }
+        wickTip = body.wickTip;
+      }
+      // The wick tip's world point: where smoke and sparks are let go.
+      const tip = makeAnchor(gx + wickTip.x * px, gy + wickTip.y * px);
 
-      // The flame lights the top of the body; a glowing wick barely does.
-      const body = rasterCandle(genome, shape, look.growth, tracker.facingLeft, { face, glow01: lit ? 0.35 + 0.65 * size01 : 0.08, warmth01, melt01, bead01 });
-      // The flame is drawn from the frame's own time so it matches the frame index above.
-      const flame = rasterFlame(genome, { size01, timeMs: (flameFrame * 1000) / FLAME_FPS, reducedMotion: look.reducedMotion, lean, fall01, flare01, duck01, gather01 });
-      graphics.clear();
-      for (const p of body.pixels) {
-        graphics.fillStyle(p.color, 1);
-        graphics.fillRect(p.x * px, p.y * px, px, px);
-      }
-      // A dead wick keeps a glowing tip and lets off smoke.
-      // The glow on the wick dies halfway through the last moment; the smoke goes on.
-      const emberTip = spent01 > 0.5 ? [] : [{ x: 0, y: -1, color: look.corruptedEmber ? 0xb74038 : spent01 > 0 ? 0x8a3f22 : 0xd58138 }];
-      const light = look.ember ? [...emberTip, ...wickSmoke(genome, (flameFrame * 1000) / FLAME_FPS, look.reducedMotion)]
-        : [...sparks, ...flame];
-      for (const p of light) {
-        graphics.fillStyle(p.color, 1);
-        graphics.fillRect((body.wickTip.x + p.x) * px, (body.wickTip.y + p.y) * px, px, px);
-      }
-      // Wax knocked off by a landing, relative to the feet.
-      for (const p of [...droplets, ...breath]) {
-        graphics.fillStyle(p.color, 1);
-        graphics.fillRect(p.x * px, p.y * px, px, px);
-      }
-      // Beside the flame, always on the right, so the glyphs (a z, an exclamation mark) are never mirrored.
-      for (const p of emotes) {
-        graphics.fillStyle(p.color, 1);
-        graphics.fillRect((body.wickTip.x + EMOTE_OFFSET_X + p.x) * px, (body.wickTip.y + p.y) * px, px, px);
+      // Sparks left behind in flight: shed once per flame frame, each set pinned where it was shed.
+      const shedSparks = !look.ember && flameFrame !== lastSparkFrame ? flightSparks(genome, cue, flameFrame, look.reducedMotion) : [];
+      lastSparkFrame = flameFrame;
+      sparkShed = stepShed(sparkShed, dt, SPARK_LIFE_MS, shedSparks.length > 0 ? { anchor: tip, data: shedSparks } : undefined);
+      for (const s of sparkShed) world.push(...toWorld(s.anchor, s.data, px));
+      // Smoke off a dead wick: each puff is pinned where it was born at the wick and drifts up from there.
+      if (look.ember && !look.reducedMotion) {
+        for (const puff of wickSmokePuffs(genome, (flameFrame * 1000) / FLAME_FPS)) {
+          world.push(...toWorld(pinPerCycle(smokeAnchors, puff.index, puff.cycle, tip), [puff.pixel], px));
+        }
+      } else smokeAnchors.clear();
+
+      const nextShedKey = JSON.stringify(world);
+      if (nextShedKey !== shedKey) {
+        shedKey = nextShedKey;
+        shedGraphics.clear();
+        for (const p of world) {
+          shedGraphics.fillStyle(p.color, 1);
+          shedGraphics.fillRect(p.x, p.y, px, px);
+        }
       }
     },
-    destroy(): void { graphics.destroy(); },
+    destroy(): void { graphics.destroy(); shedGraphics.destroy(); },
   };
 }
