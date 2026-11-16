@@ -14,7 +14,7 @@ still go at the end of this list, as ideas only.
 - [ ] #F1 Play a few ledges of the classic climb (`?climb=classic`) by keyboard in the browser and fix anything broken (was #63)
 - [ ] #F2 Remove the old unused `rasterPortrait` if nothing uses it (was #25)
 - [ ] #F3 Time the test suite and keep every sweep test under one second (was #37)
-- [ ] #F4 Review the composure change for bugs: restart, pause, moving ledges, ice, the bot, the flame-out moment
+- [x] #F4 Review the composure change for bugs: restart, pause, moving ledges, ice, the bot, the flame-out moment (read through: restart resets it, pause freezes it, a moving ledge counts as standing still, sliding on ice does not, the flame-out look wins; nothing to fix)
 - [ ] #F5 Profile a frame in the endless scene and remove avoidable per-frame work (lists rebuilt every frame, repeated lookups)
 
 ## Candle (the focus)
