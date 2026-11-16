@@ -74,6 +74,11 @@ export const ENDLESS_CONFIG = {
     firstSnow01: 0.55,
     snowStep01: 0.15,
   },
+  /**
+   * The last moment of a run: after the wick goes cold the candle slumps and the world goes dark for
+   * `ms` before the end screen opens. `veilAlpha` is how dark the world gets (0..1); the candle stays visible.
+   */
+  ending: { ms: 1700, veilAlpha: 0.88 },
   /** Camera shake after a fall, only when the player turns the setting on. Intensity is a fraction of the view. */
   landingShake: { minFallPx: 120, fullFallPx: 700, maxIntensity: 0.006, durationMs: 140 },
   /** Storage key for the best height in px. */

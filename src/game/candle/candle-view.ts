@@ -14,7 +14,7 @@ import type * as Phaser from 'phaser';
 import { FOREST_CONFIG } from '../../config/forest.config';
 import type { PlayerState } from '../player/types';
 import { createCandleGenome, type CandleGenome } from './candle-genome';
-import { bodyShape, INITIAL_POSE, poseFrame, stepPose, type BodyShape, type PoseTracker } from './candle-pose';
+import { bodyShape, INITIAL_POSE, poseFrame, slumpShape, stepPose, type BodyShape, type PoseTracker } from './candle-pose';
 import { rasterCandle } from './candle-raster';
 import { type Aim, flameLean, flightSparks, wickLean } from './direction-cues';
 import { DROPLET_MS, emotePixels, landingDroplets } from './emotes';
@@ -38,6 +38,8 @@ export interface CandleLook {
   reducedMotion: boolean;
   /** 0..1 fuel left, for the worried look. Optional: a full candle by default. */
   fuel01?: number;
+  /** 0..1 through the last moment of a run, after the wick has gone cold: the candle slumps and its eyes close. */
+  spent01?: number;
 }
 
 /** Landing faster than this (px/s, downward) makes the candle wince. */
@@ -113,7 +115,9 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       const flameFrame = look.reducedMotion ? 0 : Math.floor((clockMs / 1000) * FLAME_FPS);
       const cue = { charging: state.charging, charge01: look.charge01, aim: look.aim, grounded: state.grounded, vx: state.vx, vy: state.vy };
       // Direction cues never bend the body: only the wick tilts, the flame leans and sparks trail.
-      const shape = { ...bodyShape(tracker, look.charge01), lean: wickLean(cue) };
+      // Five steps are plenty for a two-pixel slump, and keep the redraws few.
+      const spent01 = Math.round(Math.min(Math.max(look.spent01 ?? 0, 0), 1) * 5) / 5;
+      const shape = slumpShape({ ...bodyShape(tracker, look.charge01), lean: wickLean(cue) }, spent01);
       lastShape = shape;
       if (landedNow && airVy > HARD_LANDING_PX_S) pending.hardLanding = true;
       const dt = paused ? 0 : Math.max(0, deltaMs);
@@ -131,7 +135,7 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       airVy = state.grounded ? 0 : state.vy;
       const lit = !look.ember;
       const mood = { pose: tracker.pose, charge01: look.charge01, fall01, aim: look.aim, facingLeft: tracker.facingLeft,
-        fuel01: look.fuel01 ?? 1, lit, reducedMotion: look.reducedMotion };
+        fuel01: look.fuel01 ?? 1, lit, reducedMotion: look.reducedMotion, spent: spent01 > 0 };
       expression = stepExpression(expression, mood, pending, deltaMs, paused);
       pending = {};
       const face = faceFor(expression, mood, genome.seed);
@@ -146,7 +150,7 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
         size.halfWidth, size.height, genome.wax.light, look.reducedMotion);
       const lean = flameLean(cue);
       const sparks = flightSparks(genome, cue, flameFrame, look.reducedMotion);
-      const key = `${look.ember}|${look.corruptedEmber}|${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}|${JSON.stringify(face)}|${flare01}|${duck01}|${gather01}|${warmth01}|${JSON.stringify(emotes)}|${JSON.stringify(droplets)}`;
+      const key = `${look.ember}|${look.corruptedEmber}|${tracker.pose}|${poseFrame(tracker)}|${JSON.stringify(shape)}|${tracker.facingLeft}|${look.growth}|${size01}|${flameFrame}|${lean}|${fall01}|${JSON.stringify(sparks)}|${JSON.stringify(face)}|${flare01}|${duck01}|${gather01}|${warmth01}|${JSON.stringify(emotes)}|${JSON.stringify(droplets)}|${spent01}`;
       if (key === drawnKey) return;
       drawnKey = key;
 
@@ -160,7 +164,9 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
         graphics.fillRect(p.x * px, p.y * px, px, px);
       }
       // A dead wick keeps a glowing tip and lets off smoke.
-      const light = look.ember ? [{ x: 0, y: -1, color: look.corruptedEmber ? 0xb74038 : 0xd58138 }, ...wickSmoke(genome, (flameFrame * 1000) / FLAME_FPS, look.reducedMotion)]
+      // The glow on the wick dies halfway through the last moment; the smoke goes on.
+      const emberTip = spent01 > 0.5 ? [] : [{ x: 0, y: -1, color: look.corruptedEmber ? 0xb74038 : spent01 > 0 ? 0x8a3f22 : 0xd58138 }];
+      const light = look.ember ? [...emberTip, ...wickSmoke(genome, (flameFrame * 1000) / FLAME_FPS, look.reducedMotion)]
         : [...sparks, ...flame];
       for (const p of light) {
         graphics.fillStyle(p.color, 1);

@@ -48,4 +48,6 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #32 Each candle gets one trait of its own (a coloured band, a dipped base or a tuft of wax) so candles are told apart at a glance
 - [x] #33 The end screen shows the run's candle (its close-up, cold) so the player sees who they played
 - [ ] #34 More wax tones and a rare special candle (two-tone swirl), kept pale enough to read in the dark
-- [ ] #35 A short moment between the flame going out and the end screen (the candle slumps, the smoke rises) instead of a cut
+- [x] #35 A short moment between the flame going out and the end screen (the candle slumps, its eyes close, the world goes dark) instead of a cut
+- [ ] #36 Relight moment: when wax saves a glowing wick, the flame bursts back with a flare and the candle looks relieved
+- [ ] #37 Keep sweep tests under one second each so the slower CI runner never times out (time them after any candle change)

@@ -71,7 +71,8 @@ export interface EndlessSceneDeps {
   startFuel?: number;
 }
 
-const DEPTH = { player: 10, darkness: 100, alwaysReadable: 200 } as const;
+/** The veil sits above the darkness and the ledge outlines but below the candle (210) and the portrait (300). */
+const DEPTH = { player: 10, darkness: 100, alwaysReadable: 200, veil: 205 } as const;
 /** Never simulate more than this many steps in one frame (a long pause must not spiral). */
 const MAX_STEPS_PER_FRAME = 8;
 /** The camera may scroll this far up (px). Large enough to never be reached; the floor is the only real bound. */
@@ -103,6 +104,10 @@ export class EndlessScene extends Phaser.Scene {
   private bot = createRouteBot();
   /** True while the camera slides back to the start after Play again; the player waits. */
   private sliding = false;
+  /** Time into the last moment of a run (the wick has gone cold), or null while the run is alive. */
+  private endingMs: number | null = null;
+  /** A dark sheet over the world, under the candle, that closes in during the last moment. */
+  private veil!: Phaser.GameObjects.Rectangle;
   /** Direction held in the latest physics step, for the candle's aim cue (visual only). */
   private aim: -1 | 0 | 1 = 0;
 
@@ -133,6 +138,7 @@ export class EndlessScene extends Phaser.Scene {
     // Only the very first run of a development session may start short of fuel.
     this.flame = { ...freshFlame(config), fuel01: firstRun ? this.deps.startFuel ?? 1 : 1 };
     this.worldTimeMs = 0;
+    this.endingMs = null;
     const spawn = this.spawn();
     this.state = teleportPlayer(spawn.x, spawn.y);
     this.accumulatorMs = 0;
@@ -190,6 +196,8 @@ export class EndlessScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
 
     this.darkness = createDarkness(this, DEPTH.darkness);
+    this.veil = this.add.rectangle(0, 0, width, gameConfig.view.height, 0x05060a).setOrigin(0).setScrollFactor(0)
+      .setDepth(DEPTH.veil).setAlpha(0);
     this.candleLighting = createCandleLighting(this);
     this.landingPuff = createLandingPuff(this);
     // Above the darkness: the ledge underfoot and the ledges a real jump reaches stay readable.
@@ -300,7 +308,7 @@ export class EndlessScene extends Phaser.Scene {
   override update(_time: number, deltaMs: number): void {
     const { stores, gameConfig, effectsTable, bus, emberConfig, config } = this.deps;
     const settings = stores.settings.get();
-    const running = (): boolean => this.phase.isRunning() && !this.sliding;
+    const running = (): boolean => this.phase.isRunning() && !this.sliding && this.endingMs === null;
     this.landingPuff.update(deltaMs, this.phase.isRunning(), settings.reducedMotion);
     const stepMs = 1000 / gameConfig.stepHz;
     if (!this.phase.isRunning()) {
@@ -346,8 +354,16 @@ export class EndlessScene extends Phaser.Scene {
           stores.snapshot.set({ ...stores.snapshot.get(), run });
         }
       }
-      if (this.flame.out) { this.endRun(); break; }
+      // The wick has gone cold. The body stops here; the end screen opens after a last moment (below).
+      if (this.flame.out) { this.endingMs = 0; this.controls.clear(); break; }
     }
+    // The last moment: the candle slumps and the world goes dark, then the end screen opens.
+    if (this.endingMs !== null && this.phase.isRunning()) {
+      this.endingMs += Math.max(0, deltaMs);
+      if (this.endingMs >= config.ending.ms) this.endRun();
+    }
+    const spent01 = this.endingMs === null ? 0 : Math.min(1, this.endingMs / config.ending.ms);
+    this.veil.setAlpha(config.ending.veilAlpha * spent01 * spent01 * (3 - 2 * spent01));
 
     if (this.state.charging !== this.precisionActive) {
       this.precisionActive = this.state.charging;
@@ -395,7 +411,8 @@ export class EndlessScene extends Phaser.Scene {
     // Never let the sheet shrink so far that its edge shows on screen.
     updateDarkness(this.darkness, this.state.x, this.state.y, Math.max(radius, 1));
     this.candleLighting.update(this.state.x, this.state.y, this.flame.fuel01, frame.forestCorruption);
-    this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius, this.platforms);
+    // Ledge outlines fade with the light in the last moment.
+    this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius * (1 - spent01), this.platforms);
 
     const lantern = effectsTable.find((rule) => rule.id === 'lanternRadius');
     const minRadius = lantern?.min ?? 90, maxRadius = lantern?.max ?? 280;
@@ -424,6 +441,7 @@ export class EndlessScene extends Phaser.Scene {
       aim: this.phase.isRunning() ? this.aim : 0,
       reducedMotion: settings.reducedMotion,
       fuel01: this.flame.fuel01,
+      spent01,
     });
 
     if (import.meta.env.DEV) {

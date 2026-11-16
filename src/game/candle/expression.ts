@@ -56,6 +56,8 @@ export interface ExpressionInput {
   /** False once the fuel is gone and only the wick glows. */
   lit: boolean;
   reducedMotion: boolean;
+  /** True in the last moment of a run, once the wick has gone cold: the eyes close. */
+  spent?: boolean;
 }
 
 /** One-off moments the scene reports; each starts a short reaction. */
@@ -172,7 +174,8 @@ export function faceFor(tracker: ExpressionTracker, input: ExpressionInput, seed
   const base = { mood: tracker.mood, gazeX: 0 as -1 | 0 | 1, gazeY: 0 as -1 | 0 | 1, blush: false, sweat: false, turned };
   switch (tracker.mood) {
     case 'fading':
-      return { ...base, eyes: 'half', mouth: 'frown', gazeY: 1 };
+      // Heavy lids while the wick still glows; eyes shut once it has gone cold.
+      return input.spent ? { ...base, eyes: 'closed', mouth: 'small' } : { ...base, eyes: 'half', mouth: 'frown', gazeY: 1 };
     case 'ouch':
       return { ...base, eyes: 'closed', mouth: 'wobble' };
     case 'alarmed':

@@ -138,6 +138,7 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 
 | `landingDroplets`, `DROPLET_MS` | `candle/emotes.ts` | Beads of wax knocked off by a hard landing. |
 | `emotePixels`, `EMOTE_MS` | `candle/emotes.ts` | Pixel signs beside the flame for strong moments: sparkles, an exclamation mark, stars, a flying bead, z's. |
+| `slumpShape`, `CandleLook.spent01`, `ExpressionInput.spent` | `candle/candle-pose.ts`, `candle/candle-view.ts`, `candle/expression.ts` | The last moment of a run: the spent candle sinks a little and its eyes close while the scene's veil darkens the world. |
 | `landingImpact` | `candle/candle-pose.ts` | 0..1 how hard a landing was; the landing squash and the flame's duck scale with it. |
 | `wickSmoke`, `FlameInput.flare01`, `.duck01`, `.gather01` | `candle/flame.ts` | Smoke off a dead wick; the flame leaps on a happy moment, is pressed down by a landing and gathers on a charge. |
 | `BodyLook.warmth01` | `candle/candle-raster.ts` | The wax dims and turns bluish as the fuel runs out. |

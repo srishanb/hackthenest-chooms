@@ -119,3 +119,23 @@ describe('wax droplets from a landing', () => {
     expect(drops(120, 1)).toEqual(drops(120, 1));
   });
 });
+
+describe('the last moment of a run', () => {
+  it('the candle slumps a little as it is spent, and not at all before', async () => {
+    const { slumpShape } = await import('../candle/candle-pose');
+    const rest = { dWidth: 0, dHeight: 0, lean: 1, lift: 1 };
+    expect(slumpShape(rest, 0)).toBe(rest);
+    expect(slumpShape(rest, 1)).toEqual({ dWidth: 1, dHeight: -2, lean: 1, lift: 0 });
+    expect(slumpShape(rest, 0.4).dHeight).toBe(-1);
+    expect(slumpShape(rest, Number.NaN)).toBe(rest);
+    expect(slumpShape(rest, 7)).toEqual(slumpShape(rest, 1));
+  });
+
+  it('its eyes close once the wick has gone cold', async () => {
+    const { faceFor, INITIAL_EXPRESSION } = await import('../candle/expression');
+    const input = { pose: 'idle' as const, charge01: 0, fall01: 0, aim: 0 as const, facingLeft: false, fuel01: 0, lit: false, reducedMotion: true };
+    const fading = { ...INITIAL_EXPRESSION, mood: 'fading' as const };
+    expect(faceFor(fading, input, 3).eyes).toBe('half');
+    expect(faceFor(fading, { ...input, spent: true }, 3).eyes).toBe('closed');
+  });
+});

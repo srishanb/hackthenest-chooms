@@ -90,6 +90,16 @@ export interface BodyShape {
   lift: number;
 }
 
+/**
+ * The slump of a candle whose wick has gone cold: it sinks and spreads a little as `spent01`
+ * goes from 0 to 1. Applied on top of whatever shape the pose gave.
+ */
+export function slumpShape(shape: BodyShape, spent01: number): BodyShape {
+  const s = Math.min(Math.max(Number.isFinite(spent01) ? spent01 : 0, 0), 1);
+  if (s === 0) return shape;
+  return { ...shape, dHeight: shape.dHeight - Math.round(2 * s), dWidth: shape.dWidth + (s > 0.5 ? 1 : 0), lift: 0 };
+}
+
 /** `charge01` is 0..1 of a full jump charge (only used by the charge pose). */
 export function bodyShape(tracker: PoseTracker, charge01: number): BodyShape {
   const frame = poseFrame(tracker);
