@@ -1,6 +1,6 @@
 <!doctype html><html><head><title>Candle close-up</title>
 <style>body{margin:0;background:#101b2b;color:#cfd6e4;font:12px monospace}canvas{image-rendering:pixelated;display:block}</style></head><body>
-<p style="padding:6px 10px">The portrait close-up. Rows: four seeds. Columns: every mood, then weak light and nearly out. Dev-only visual check.</p>
+<p style="padding:6px 10px">The portrait close-up. Rows: seven seeds. Columns: every mood, then weak light and nearly out. Dev-only visual check.</p>
 <canvas id="c"></canvas>
 <script type="module">
 // Dev-only visual check of the detailed portrait close-up; draws the pure raster with a plain 2D canvas.
@@ -8,7 +8,7 @@ import { createCandleGenome } from './../candle/candle-genome.ts';
 import { bodyShape, INITIAL_POSE } from './../candle/candle-pose.ts';
 import { CLOSE_UP_RADIUS, rasterCloseUp } from './../candle/close-up.ts';
 import { faceFor, INITIAL_EXPRESSION } from './../candle/expression.ts';
-const SEEDS=[1,2,40,6006];
+const SEEDS=[1,2,40,6006,7,11,23];
 const base={pose:'idle',charge01:0,fall01:0,aim:0,facingLeft:false,fuel01:1,lit:true,reducedMotion:true};
 const COLS=[
   {label:'content',mood:'content'},

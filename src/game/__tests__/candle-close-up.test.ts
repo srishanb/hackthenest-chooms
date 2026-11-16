@@ -76,3 +76,11 @@ describe('candle close-up', () => {
     expect(topOfWax({ dWidth: -1, dHeight: 2, lean: 0, lift: 0 })).toBeLessThan(resting);
   });
 });
+
+it('the close-up flame leaps, ducks and gathers with the hero flame', () => {
+  const flameTop = (flame: object) => Math.min(...closeUp(0.7, 0, true, { flame }).pixels.map((p) => p.y));
+  const resting = flameTop({});
+  expect(flameTop({ flare01: 1 })).toBeLessThan(resting);
+  expect(flameTop({ duck01: 1 })).toBeGreaterThan(resting);
+  expect(flameTop({ gather01: 1 })).toBeLessThan(resting);
+});

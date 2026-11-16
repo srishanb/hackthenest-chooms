@@ -26,6 +26,8 @@ const K = 3;
 const BODY_TOP = -3;
 /** The flame is drawn this much larger than the hero's, so it fits above the bust. */
 const FLAME_SCALE = 1.7;
+/** The lowest row (from the top of the wax) at which a band or a dipped base may start: just below the mouth. */
+const TRAIT_ROW_MAX = 26;
 const OUTLINE = 0x241c24;
 const WICK = 0x2b2118;
 const WICK_GLOW = 0xff9a3c;
@@ -47,6 +49,8 @@ export interface CloseUpInput {
   shape?: BodyShape;
   /** The hero's face this frame. Faceless without it. */
   face?: CandleFace;
+  /** The hero flame's reactions this frame (see flame.ts), so the close-up flame leaps, ducks and gathers with it. */
+  flame?: { flare01?: number; duck01?: number; gather01?: number };
 }
 
 function hash01(seed: number, frame: number, k: number): number {
@@ -197,10 +201,26 @@ export function rasterCloseUp(genome: CandleGenome, input: CloseUpInput): Portra
     for (let col = cut - 1; col <= width - cut; col++) canvas.put(left + col, top + row, OUTLINE);
   }
   const pool = mix(scaleColor(base, 0.9), genome.flame.colors.inner, 0.3 + 0.3 * s);
+  // The candle's own trait, at this scale: a band, a dipped base or a tuft on one shoulder.
+  const { kind, accent, onLeft } = genome.trait;
+  const heroHeight = Math.round(genome.height * Math.max(1, input.growth));
+  // The bust shows only the top of a tall candle, so a band or a dip is drawn no lower than just under the face.
+  const bandTop = Math.min(TRAIT_ROW_MAX, (heroHeight - 5) * K);
+  const dipTop = Math.min(TRAIT_ROW_MAX, (heroHeight - Math.max(3, Math.round(heroHeight * 0.3))) * K);
+  const accentAt = (col: number): number => scaleColor(accent, col < 2 ? 1.12 : col >= width - 2 ? 0.76 : col >= width - 5 ? 0.88 : 1);
+  const tuftLeft = left + (onLeft ? 3 : width - 9);
+  if (kind === 'tuft') {
+    // Its outline first; the wax goes on after the body.
+    for (let col = 0; col < 6; col++) canvas.put(tuftLeft + col, top - 4, OUTLINE);
+    for (let row = -3; row <= -1; row++) for (let col = -1; col <= 6; col++) canvas.put(tuftLeft + col, top + row, OUTLINE);
+  }
   for (let row = 0; top + row < bottom; row++) {
     const cut = inset(row);
     for (let col = cut; col < width - cut; col++) {
       let color = col < 2 ? light : col === 2 ? mix(light, base, 0.5) : col >= width - 2 ? shade : col >= width - 5 ? midShade : base;
+      if (kind === 'band' && row >= bandTop && row < bandTop + 2 * K) color = accentAt(col);
+      // The dipped edge wanders by a pixel or two, like wax that ran before it set.
+      if (kind === 'dipped' && row >= dipTop + Math.round(Math.sin(col * 0.9) * 1.5)) color = accentAt(col);
       // The top surface: a pale rim round a pool of melted wax.
       if (row === 0) color = light;
       else if (row === 1) color = col >= 4 && col < width - 4 ? pool : light;
@@ -208,6 +228,11 @@ export function rasterCloseUp(genome: CandleGenome, input: CloseUpInput): Portra
       // Warm light from the flame falls on the upper rows and fades by the tenth.
       if (row >= 1 && row <= 10) color = mix(color, genome.flame.colors.inner, 0.4 * s * (1 - (row - 1) / 10));
       canvas.put(left + col, top + row, scaleColor(color, dim));
+    }
+  }
+  if (kind === 'tuft') {
+    for (let row = -3; row <= -1; row++) for (let col = row === -3 ? 1 : 0; col < (row === -3 ? 5 : 6); col++) {
+      canvas.put(tuftLeft + col, top + row, scaleColor(col < 2 ? scaleColor(light, 1.05) : col >= 4 ? base : light, dim));
     }
   }
   // A glint on the melted wax while the flame burns.
@@ -248,7 +273,7 @@ export function rasterCloseUp(genome: CandleGenome, input: CloseUpInput): Portra
     canvas.put(tipX, tipY, WICK_GLOW); canvas.put(tipX + 1, tipY, WICK_GLOW);
     // A weak flame staggers: its lean jumps around more the closer it is to going out.
     const stagger = motion * (1 - s) * (hash01(genome.seed, frame, 2) * 6 - 3);
-    const flame = rasterFlame(genome, { size01: Math.pow(s, 0.8), timeMs: input.timeMs, reducedMotion: input.reducedMotion, lean: stagger, scale: FLAME_SCALE });
+    const flame = rasterFlame(genome, { size01: Math.pow(s, 0.8), timeMs: input.timeMs, reducedMotion: input.reducedMotion, lean: stagger, scale: FLAME_SCALE, ...input.flame });
     // A starving flame loses its yellow: the last of it burns a dim blue.
     const starving = s < BLUE_BELOW ? (BLUE_BELOW - s) / BLUE_BELOW : 0;
     const starved = new Map<number, number>([[genome.flame.colors.core, OXIDISED.core], [genome.flame.colors.inner, OXIDISED.inner],

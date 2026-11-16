@@ -128,6 +128,8 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 | `stepExpression`, `faceFor`, `isBlinking`, `idleGlance`, `INITIAL_EXPRESSION`, `EXPRESSION_TIMING`, `CandleMood`, `CandleFace`, `EyeShape`, `MouthShape`, `ExpressionInput`, `ExpressionEvents`, `ExpressionTracker` | `candle/expression.ts` | One mood at a time from the body's state and short events (wax, hard landing, new best); seeded blink and glance. Pure, visual only. |
 | `idleLookUp` | `candle/expression.ts` | An idle candle looks up at its own flame now and then. |
 | `EMBLEM_LOOP_MS`, `EmblemMoment` | `candle/emblem.ts` | The menu candle waits, gathers, hops, lands and looks pleased, on a 5.2 s loop. |
+| `CandleGenome.trait`, `CandleTrait` | `candle/candle-genome.ts` | One distinguishing trait per candle: a coloured band, a dipped base, a tuft of wax, or none. Drawn by the hero raster and the close-up. |
+| `createCandleView().reactions()`, `CloseUpInput.flame` | `candle/candle-view.ts`, `candle/close-up.ts` | The portrait's flame leaps, ducks and gathers with the hero's. |
 | `facePixels`, `FaceBox` | `candle/face.ts` | Eyes, mouth, blush and a bead of wax as art pixels on the body. |
 | `BodyLook` | `candle/candle-raster.ts` | Optional face and flame glow for `rasterCandle` (rounded shoulders, melt pool, four tones, drip beads are always drawn). |
 | `createCandleView().cheer()`, `.celebrate()`, `.face()` | `candle/candle-view.ts` | The scene reports wax and a new best; the portrait reads the current face. |

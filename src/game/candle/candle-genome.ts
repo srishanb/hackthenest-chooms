@@ -54,7 +54,14 @@ export interface CandleGenome {
     /** Always a little pink in the cheeks. */
     rosy: boolean;
   };
+  /**
+   * One thing that sets this candle apart at a glance: a coloured band, a base dipped in a second
+   * colour, a tuft of melted wax on one shoulder, or nothing.
+   */
+  trait: { kind: CandleTrait; accent: number; onLeft: boolean };
 }
+
+export type CandleTrait = 'plain' | 'band' | 'dipped' | 'tuft';
 
 /** Pale wax tones that read against the dark forest; each pick shades and lightens itself. */
 const WAX_BASES = [0xefe6d2, 0xf2dcc0, 0xe9d4d8, 0xdfe6ef, 0xf0e2b6, 0xe2ead6];
@@ -69,6 +76,10 @@ export function scaleColor(color: number, factor: number): number {
   const channel = (shift: number): number => Math.min(255, Math.max(0, Math.round(((color >> shift) & 0xff) * factor)));
   return (channel(16) << 16) | (channel(8) << 8) | channel(0);
 }
+
+/** Accent colours for a band or a dipped base: muted, so they sit with the pale wax. */
+const ACCENTS = [0xc9584f, 0x4f9fa8, 0xd9a441, 0x7a6fb5, 0x5c9a63];
+const TRAITS: readonly CandleTrait[] = ['plain', 'plain', 'band', 'dipped', 'tuft'];
 
 /** Dark, warm eye colours that read on every wax tone. */
 const EYES = [0x2a1d1a, 0x1f2430, 0x33221c, 0x241a2a];
@@ -99,7 +110,9 @@ export function createCandleGenome(seed: number): CandleGenome {
   // The face is drawn from the generator last, so older fields keep their values for a given seed.
   const eyeColor = pick(random, EYES);
   const face = { eyeRow: between(random, 4, 5), eyeColor, mouthColor: scaleColor(eyeColor, 1.9), rosy: random() < 0.4 };
-  return { seed, width, height, wax: { base, shade: scaleColor(base, 0.78), light: scaleColor(base, 1.08) }, drips, wickHeight, flame, face };
+  // The trait is drawn after the face, for the same reason.
+  const trait = { kind: pick(random, TRAITS), accent: pick(random, ACCENTS), onLeft: random() < 0.5 };
+  return { seed, width, height, wax: { base, shade: scaleColor(base, 0.78), light: scaleColor(base, 1.08) }, drips, wickHeight, flame, face, trait };
 }
 
 /** A seed for a new run, or the dev override from `?candleSeed=<integer>`. */

@@ -75,6 +75,7 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
   /** How hard the landing that started the current duck was, 0..1. */
   let duckStrength = 0;
   /** Time since the latest landing, for the wax droplets it knocks off. */
+  let lastReactions = { flare01: 0, duck01: 0, gather01: 0 };
   let sinceLandMs = DROPLET_MS;
   let landImpact = 0;
 
@@ -93,6 +94,8 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
     celebrate(): void { pending.newBest = true; },
     /** The face drawn this frame, so the portrait shows the same expression. */
     face: (): CandleFace | undefined => lastFace,
+    /** The flame's reactions this frame, so the portrait's flame leaps, ducks and gathers with the hero's. */
+    reactions: (): { flare01: number; duck01: number; gather01: number } => lastReactions,
     seed: (): number => genome.seed,
     /** The current candle's genome, so the portrait draws the same candle. */
     genome: (): CandleGenome => genome,
@@ -124,6 +127,7 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
       const flare01 = look.reducedMotion ? 0 : steps(flareMs / FLARE_MS);
       const duck01 = look.reducedMotion ? 0 : steps((duckMs / DUCK_MS) * duckStrength);
       const gather01 = state.charging ? steps(look.charge01) : 0;
+      if (lastReactions.flare01 !== flare01 || lastReactions.duck01 !== duck01 || lastReactions.gather01 !== gather01) lastReactions = { flare01, duck01, gather01 };
       airVy = state.grounded ? 0 : state.vy;
       const lit = !look.ember;
       const mood = { pose: tracker.pose, charge01: look.charge01, fall01, aim: look.aim, facingLeft: tracker.facingLeft,

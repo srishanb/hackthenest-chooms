@@ -40,6 +40,8 @@ export interface PortraitLook {
   shape?: BodyShape;
   /** The hero candle's current face (see candle-view.ts). */
   face?: CandleFace;
+  /** The hero flame's current reactions (see candle-view.ts). */
+  flame?: { flare01: number; duck01: number; gather01: number };
 }
 
 const TEXTURE_KEY = 'candle-portrait';
@@ -66,11 +68,11 @@ export function createPortraitView(scene: Phaser.Scene, viewHeight: number) {
       const strength = Math.round(Math.min(Math.max(look.strength01, 0), 1) * STEPS) / STEPS;
       // The smoke drifts smoothly, so redraw at the flame's frame rate rather than every frame.
       const frame = look.reducedMotion ? 0 : Math.floor((clockMs / 1000) * FLAME_FPS);
-      const key = `${genome.seed}|${strength}|${frame}|${look.growth}|${look.reducedMotion}|${JSON.stringify(look.shape ?? null)}|${JSON.stringify(look.face ?? null)}`;
+      const key = `${genome.seed}|${strength}|${frame}|${look.growth}|${look.reducedMotion}|${JSON.stringify(look.shape ?? null)}|${JSON.stringify(look.face ?? null)}|${JSON.stringify(look.flame ?? null)}`;
       if (key === drawnKey) return;
       drawnKey = key;
 
-      const portrait = rasterCloseUp(genome, { strength01: strength, timeMs: (frame * 1000) / FLAME_FPS, reducedMotion: look.reducedMotion, growth: look.growth, shape: look.shape, face: look.face });
+      const portrait = rasterCloseUp(genome, { strength01: strength, timeMs: (frame * 1000) / FLAME_FPS, reducedMotion: look.reducedMotion, growth: look.growth, shape: look.shape, face: look.face, flame: look.flame });
       const context = texture.context;
       context.clearRect(0, 0, size, size);
       context.globalAlpha = 0.94;

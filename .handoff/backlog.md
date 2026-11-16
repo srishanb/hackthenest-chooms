@@ -44,5 +44,7 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #28 Candle idle fidgets: looks up at its own flame now and then (no hop: a hop without a jump would mislead)
 - [ ] #29 Drips that slowly grow over a run and fall as the candle burns down
 - [ ] #30 Height markers every 25 m and a marker at the personal best (needs a UI component id, or a game-drawn mark with no text)
-- [ ] #31 Close-up portrait reacts to the flame events too (flare on wax, duck on landing), like the hero
-- [ ] #32 Each candle gets one small trait of its own (a tuft of wax, a freckle, a tilted wick) so candles are told apart at a glance
+- [x] #31 Close-up portrait reacts to the flame events too (flare on wax, duck on landing), like the hero
+- [x] #32 Each candle gets one trait of its own (a coloured band, a dipped base or a tuft of wax) so candles are told apart at a glance
+- [ ] #33 The end screen shows the run's candle (its close-up, cold) so the player sees who they played
+- [ ] #34 More wax tones and a rare special candle (two-tone swirl), kept pale enough to read in the dark

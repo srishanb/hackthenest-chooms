@@ -403,6 +403,7 @@ export class ClimbScene extends Phaser.Scene {
       paused: !this.phase.isRunning(),
       shape: this.candle.shape(),
       face: this.candle.face(),
+      flame: this.candle.reactions(),
     });
     this.candle.update(this.state, deltaMs, !this.phase.isRunning(), {
       ember: !this.fuel.isLit && this.wax.lightPulse01() === 0,

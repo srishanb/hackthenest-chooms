@@ -9,7 +9,8 @@
  * What gives the body its detail, from the top down: rounded shoulders, a rim around a pool of
  * melted wax where the wick stands, warm light from the flame on the upper rows, a face
  * (face.ts), drips that end in a bead, four tones across the width so it reads as round, and a
- * darker row where it meets the ground.
+ * darker row where it meets the ground. Each candle may also carry one trait of its own (a
+ * coloured band, a dipped base or a tuft of wax on a shoulder), so two candles are told apart.
  */
 import { scaleColor, type CandleGenome } from './candle-genome';
 import type { BodyShape } from './candle-pose';
@@ -70,20 +71,32 @@ export function rasterCandle(genome: CandleGenome, shape: BodyShape, growth: num
   const pixels: Pixel[] = [];
   // Drip columns follow the body when it squashes or grows.
   const dripAt = new Map(genome.drips.map((d) => [Math.round((d.x * (w - 1)) / Math.max(1, genome.width - 1)), d.length]));
+  const { kind, accent, onLeft } = genome.trait;
+  // A tuft: two pixels of melted wax piled on one shoulder, above the rim.
+  const tuftFrom = onLeft ? 1 : w - 3;
+  const tuft = (col: number, fromTop: number): boolean => kind === 'tuft' && fromTop === -1 && (col === tuftFrom || col === tuftFrom + 1);
   // The two top corners are cut off, so the shoulders read as rounded.
-  const inside = (col: number, fromTop: number): boolean =>
-    col >= 0 && col < w && fromTop >= 0 && fromTop < h && !(fromTop === 0 && (col === 0 || col === w - 1));
+  const inside = (col: number, fromTop: number): boolean => tuft(col, fromTop) ||
+    (col >= 0 && col < w && fromTop >= 0 && fromTop < h && !(fromTop === 0 && (col === 0 || col === w - 1)));
+  // The accent colour in the same four tones as the wax, so a band or a dipped base still reads as round.
+  const accentAt = (col: number): number => scaleColor(accent, col === 0 ? 1.12 : col === w - 1 ? 0.76 : col === w - 2 ? 0.88 : 1);
+  const bandRow = h - 5;
+  const dipRows = Math.max(3, Math.round(h * 0.3));
 
   // The face goes in first: the first pixel in a cell wins (see dedupe), so wax never covers it.
   if (look.face) pixels.push(...facePixels(genome, look.face, { x0, width: w, topY, height: h }));
 
-  for (let fromTop = 0; fromTop < h; fromTop++) {
+  for (let fromTop = -1; fromTop < h; fromTop++) {
     const y = topY + fromTop;
     for (let col = 0; col < w; col++) {
       if (!inside(col, fromTop)) continue;
       const drip = dripAt.get(col);
       let color = col === 0 ? light : col === w - 1 ? shade : col === w - 2 ? midShade : base;
-      if (fromTop === 0) color = col >= 2 && col <= w - 3 ? pool : light;
+      if (fromTop === -1) color = light;
+      else if (fromTop === 0) color = col >= 2 && col <= w - 3 ? pool : light;
+      // A band two rows tall low on the body; a dipped base with an uneven edge, like wax that ran.
+      else if (kind === 'band' && (fromTop === bandRow || fromTop === bandRow + 1)) color = accentAt(col);
+      else if (kind === 'dipped' && fromTop >= h - dipRows + (col % 3 === 1 ? 1 : 0)) color = accentAt(col);
       else if (drip !== undefined && fromTop <= drip) color = light;
       // A bead at the end of each drip: one darker pixel under the pale streak.
       else if (drip !== undefined && fromTop === drip + 1) color = scaleColor(base, 0.84);
@@ -95,7 +108,7 @@ export function rasterCandle(genome: CandleGenome, shape: BodyShape, growth: num
     }
   }
   // Outline: every empty cell beside or above the body.
-  for (let fromTop = 0; fromTop < h; fromTop++) {
+  for (let fromTop = -1; fromTop < h; fromTop++) {
     for (let col = 0; col < w; col++) {
       if (!inside(col, fromTop)) continue;
       for (const [dc, dr] of [[-1, 0], [1, 0], [0, -1]] as const) {

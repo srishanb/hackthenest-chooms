@@ -1,7 +1,7 @@
 /** The procedural candle: unique per seed, same poses as Ruby, flame follows the light, wax growth is tiny. */
 import { describe, expect, it } from 'vitest';
 import { GAME_CONFIG } from '../../config/game.config';
-import { createCandleGenome, pickCandleSeed, seededRandom } from '../candle/candle-genome';
+import { createCandleGenome, pickCandleSeed, scaleColor as scale, seededRandom } from '../candle/candle-genome';
 import { bodyShape, INITIAL_POSE, poseFrame, stepPose, type PoseInput } from '../candle/candle-pose';
 import { grownSize, rasterCandle } from '../candle/candle-raster';
 import { FLAME_MAX_HEIGHT, FLAME_MIN_HEIGHT, flameHeight, flameSizeFromRadius, rasterFlame } from '../candle/flame';
@@ -156,5 +156,38 @@ describe('wax growth is a very small buff', () => {
 
   it('no wax leaves the movement config untouched', () => {
     expect(grownMovement(GAME_CONFIG, 1)).toBe(GAME_CONFIG);
+  });
+});
+
+describe('one trait of its own', () => {
+  const withTrait = (kind: string) => {
+    for (let seed = 1; seed < 400; seed++) { const g = createCandleGenome(seed); if (g.trait.kind === kind) return g; }
+    throw new Error(`no ${kind} candle in the first 400 seeds`);
+  };
+  const raster = (g: ReturnType<typeof createCandleGenome>) => rasterCandle(g, bodyShape(INITIAL_POSE, 0), 1, false);
+
+  it('every kind turns up, and about two candles in five are plain', () => {
+    const kinds = Array.from({ length: 400 }, (_, i) => createCandleGenome(i + 1).trait.kind);
+    expect(new Set(kinds)).toEqual(new Set(['plain', 'band', 'dipped', 'tuft']));
+    const plain = kinds.filter((k) => k === 'plain').length / kinds.length;
+    expect(plain).toBeGreaterThan(0.3);
+    expect(plain).toBeLessThan(0.5);
+  });
+
+  it('a band and a dipped base show the accent colour; a plain candle never does', () => {
+    const tones = (g: ReturnType<typeof createCandleGenome>) => new Set([1.12, 0.76, 0.88, 1].flatMap((f) => [scale(g.trait.accent, f), scale(scale(g.trait.accent, f), 0.88)]));
+    const accentPixels = (g: ReturnType<typeof createCandleGenome>) => raster(g).pixels.filter((p) => tones(g).has(p.color)).length;
+    expect(accentPixels(withTrait('band'))).toBeGreaterThanOrEqual(12);
+    expect(accentPixels(withTrait('dipped'))).toBeGreaterThan(accentPixels(withTrait('band')));
+    expect(accentPixels(withTrait('plain'))).toBe(0);
+  });
+
+  it('a tuft adds two pixels above one shoulder and keeps the wick on top', () => {
+    const g = withTrait('tuft');
+    const plain = raster({ ...g, trait: { ...g.trait, kind: 'plain' } });
+    const tufted = raster(g);
+    expect(tufted.pixels.length).toBeGreaterThan(plain.pixels.length);
+    expect(tufted.wickTip).toEqual(plain.wickTip);
+    expect(tufted.wickTip.y).toBe(Math.min(...tufted.pixels.map((p) => p.y)));
   });
 });
