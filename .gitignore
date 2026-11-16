@@ -20,8 +20,17 @@ build/
 # agent-local state
 .claude/settings.local.json
 
+# agent worktrees made by Claude Code's worktree isolation; never commit them
+.claude/worktrees/
+
 # agent-local preview config (the port differs per worktree)
 .claude/launch.json
 
 # desktop app packaging output
 desktop/release/
+
+# hand-off notes between harness agents (the lighten-up-orchestrator skill); local working files, never committed
+_agents_workspace/
+
+# developer tools cloned and built locally (scripts/mcp/setup-spector.sh puts Spector.js here)
+.tools/
