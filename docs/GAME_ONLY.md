@@ -108,10 +108,10 @@ blinking, bouncing and drifting parts stop and the still parts remain.
 
 ## Releases
 
-A release of this variant is a tag named `game-only-v<version>` on this branch. Pushing such a tag runs
-`.github/workflows/release-game-only.yml`, which builds the game, zips `dist/` and publishes a GitHub pre-release
-with the zip attached. The notes are `docs/releases/<tag>.md`, so write that file before tagging. Tags are never
-moved or deleted: a fix is a new version.
+A release of this variant is a notes file: `docs/releases/game-only-v<version>.md` on this branch. When a push adds
+one that has no release yet, `.github/workflows/release-game-only.yml` builds the game at that commit, zips `dist/`,
+creates the tag `game-only-v<version>` there and publishes a GitHub pre-release with the zip attached and the file as
+its notes. Tags are never moved or deleted: a fix is a new version with its own notes file.
 
 ## Rules that still hold
 
