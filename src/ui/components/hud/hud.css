@@ -1,13 +1,13 @@
 /* Corner HUD follows the reference without covering the central play area. */
 [data-component='hud'] { position: absolute; inset: 0; overflow: visible !important; pointer-events: none !important; }
 .hud { position: absolute; inset: 0; pointer-events: none; font-size: var(--hud-text-s); }
-/* Top right: the stats card (22u wide, 3u rows) and the pause button (4.4u), on the shared top line. */
-.hud__metrics { position: absolute; right: calc(var(--hud-corner) + 4.4 * var(--hud-u) + var(--hud-gap)); top: var(--hud-corner); padding: calc(.5 * var(--hud-u)) calc(1.5 * var(--hud-u)); border: 2px solid var(--color-panel-border); border-radius: var(--radius); background: var(--color-panel); width: calc(22 * var(--hud-u)); box-sizing: border-box; font-size: var(--hud-text-m); box-shadow: var(--panel-shadow); }
+/* Top right: the stats (22u wide, 3u rows) sit in the corner with no card, just a drop shadow on the text;
+   the pause button (4.4u) is one gap to their left, on the shared top line. */
+.hud__metrics { position: absolute; right: var(--hud-corner); top: var(--hud-corner); padding: 0; width: calc(22 * var(--hud-u)); box-sizing: border-box; font-size: var(--hud-text-m); text-shadow: var(--hud-text-shadow); }
 .hud__metrics > div { display: flex; gap: var(--hud-gap); align-items: center; min-height: calc(3 * var(--hud-u)); }
-.hud__metrics > div + div { border-top: 1px solid var(--color-panel-border); }
 .hud__metrics strong { margin-left: auto; color: var(--color-accent); white-space: nowrap; }
-.hud__metrics .ui-icon { color: var(--color-accent); width: calc(1.8 * var(--hud-u)); height: calc(1.8 * var(--hud-u)); }
-.hud__pause { position: absolute; right: var(--hud-corner); top: var(--hud-corner); width: calc(4.4 * var(--hud-u)); height: calc(4.4 * var(--hud-u)); border: 2px solid var(--color-panel-border); border-radius: var(--radius); color: var(--color-text); background: var(--color-panel); pointer-events: auto; cursor: pointer; }
+.hud__metrics .ui-icon { color: var(--color-accent); filter: var(--hud-icon-shadow); width: calc(1.8 * var(--hud-u)); height: calc(1.8 * var(--hud-u)); }
+.hud__pause { position: absolute; right: calc(var(--hud-corner) + 22 * var(--hud-u) * var(--ui-stats-scale, 1) + var(--hud-gap)); top: var(--hud-corner); width: calc(4.4 * var(--hud-u)); height: calc(4.4 * var(--hud-u)); border: 2px solid var(--color-panel-border); border-radius: var(--radius); color: var(--color-text); background: var(--color-panel); pointer-events: auto; cursor: pointer; }
 .hud__pause:hover { color: var(--color-accent); border-color: var(--color-accent); box-shadow: var(--gold-glow); }
 /* Bottom right: the 9u compass on its own; a ball of flaming wax sits over its centre. */
 .hud__checkpoint { position: absolute; bottom: var(--hud-corner); right: var(--hud-corner); display: flex; align-items: flex-end; gap: var(--hud-gap); color: var(--color-accent); }
