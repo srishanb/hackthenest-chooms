@@ -4,7 +4,7 @@ import { icon } from '../../icons';
 import { t } from '../../strings';
 import type { UiComponent } from '../../types';
 import { createUiActions } from '../../ui-actions';
-import { canContinue, climbMode, dailySeed, menuSelection, modeUrl, startStalled, startsOnKey } from './start-menu-state';
+import { canContinue, climbMode, dailySeed, footerText, menuSelection, modeUrl, startStalled, startsOnKey } from './start-menu-state';
 import { createCredits } from './credits';
 import { HANDS_ONLY } from '../../../config/ui.config';
 import '../../theme/menus.css';
@@ -91,7 +91,10 @@ export const startMenu: UiComponent = {
     hero.append(copy, nav);
     const credits = createCredits(() => { credits.hidden = true; render(); creditsButton.focus(); });
     const footer = document.createElement('footer'); footer.className = 'launch-footer';
-    const event = document.createElement('span'); event.textContent = t('start.event'); footer.append(status, event);
+    // The footer names the climb the Play button will start.
+    const event = document.createElement('span');
+    event.textContent = footerText(mode, seedNow, today, { endless: t('start.event'), daily: t('start.footer.daily'), seeded: t('start.footer.seeded'), classic: t('start.footer.classic') });
+    footer.append(status, event);
     screen.append(scenery, hero, credits, footer); root.append(screen);
 
     function renderSource(): void {

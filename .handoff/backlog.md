@@ -68,6 +68,7 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [x] #52 Each new landing reached is a small milestone: the candle looks proud, once per landing
 - [x] #53 A longer daze after a very long fall (stars keep circling for up to 1.1 s more, eyes half open), still with no death and no lost control
 - [x] #54 The menu candle is eager (grins toward the menu) while Play has the pointer or the focus
-- [ ] #55 The menu footer still says "Endless climb" in classic mode; say which climb is selected
-- [ ] #56 Keep a separate best height for today's climb, shown on its end screen
+- [x] #55 The menu footer says which climb is selected (endless, today's, a numbered climb, or classic)
+- [x] #56 A climb picked by its seed (today's climb or `?seed=`) keeps its own best height
 - [ ] #57 A screenshot of the eager menu face and of the daze: both are covered by tests only so far
+- [ ] #58 Old per-seed best heights pile up in local storage, one small entry a day: prune entries older than a month

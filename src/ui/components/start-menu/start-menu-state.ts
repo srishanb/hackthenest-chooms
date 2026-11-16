@@ -59,6 +59,17 @@ export function modeUrl(href: string, change: { climb?: 'endless' | 'classic'; s
   return url.href;
 }
 
+/**
+ * The footer line that says which climb Play will start: the classic one, today's, one particular
+ * numbered climb, or a fresh endless climb. `labels` are the already-translated phrases.
+ */
+export function footerText(mode: 'endless' | 'classic', seed: string | null, today: string,
+  labels: { endless: string; daily: string; seeded: string; classic: string }): string {
+  if (mode === 'classic') return labels.classic;
+  if (seed === null || !/^\d{1,10}$/.test(seed)) return labels.endless;
+  return seed === today ? labels.daily : `${labels.seeded} #${seed}`;
+}
+
 export interface StartKeyInput {
   code: string;
   repeat: boolean;

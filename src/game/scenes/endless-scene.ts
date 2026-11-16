@@ -205,7 +205,8 @@ export class EndlessScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.waxView.destroy());
     // Height is measured from where the run starts (the first landing, or a later one in a development run).
     this.score = createRunScore({ seed: this.deps.seed, originFeetY: this.spawn().y + gameConfig.player.height / 2, storage: this.deps.storage,
-      key: config.bestKey, persist: !this.deps.bot && !this.deps.startChunk });
+      // A climb picked by its seed (today's climb, or `?seed=`) keeps its own best, apart from fresh climbs.
+      key: this.deps.fixedSeed ? `${config.bestKey}.seed-${this.deps.seed}` : config.bestKey, persist: !this.deps.bot && !this.deps.startChunk });
     this.startRun(this.deps.seed);
 
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);

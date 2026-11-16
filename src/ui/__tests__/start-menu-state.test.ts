@@ -1,6 +1,6 @@
 /** Start menu rules: shown only before the climb, steps aside for settings, Enter starts Play. */
 import { describe, expect, it } from 'vitest';
-import { canContinue, climbMode, dailySeed, menuSelection, modeUrl, startStalled, startMenuVisible, startsOnKey, type StartKeyInput } from '../components/start-menu/start-menu-state';
+import { canContinue, climbMode, dailySeed, footerText, menuSelection, modeUrl, startStalled, startMenuVisible, startsOnKey, type StartKeyInput } from '../components/start-menu/start-menu-state';
 import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state';
 
 describe('ways to play', () => {
@@ -16,6 +16,15 @@ describe('ways to play', () => {
     expect(dailySeed(new Date(2026, 10, 16, 23, 59))).toBe(20261116);
     expect(dailySeed(new Date(2026, 10, 17, 0, 0))).toBe(20261117);
     expect(dailySeed(new Date(2027, 0, 3))).toBe(20270103);
+  });
+
+  it('the footer names the climb that Play will start', () => {
+    const labels = { endless: 'E', daily: 'D', seeded: 'S', classic: 'C' };
+    expect(footerText('endless', null, '20261116', labels)).toBe('E');
+    expect(footerText('endless', '20261116', '20261116', labels)).toBe('D');
+    expect(footerText('endless', '77', '20261116', labels)).toBe('S #77');
+    expect(footerText('endless', 'abc', '20261116', labels)).toBe('E');
+    expect(footerText('classic', '77', '20261116', labels)).toBe('C');
   });
 
   it('switching mode or seed changes only that part of the address', () => {
