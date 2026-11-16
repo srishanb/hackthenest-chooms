@@ -58,7 +58,9 @@ export function islandsBetween(request: ChunkRequest, top: number, bottom: numbe
       if (hash(seed, 50) < chance) {
         const side = hash(seed, 51) < 0.5 ? -1 : 1, spread = 0.2 + 0.2 * hash(seed, 52);
         const fallWidth = Math.max(2, Math.round(lerp(recipe.waterfallWidth, hash(seed, 53)) * layer.scale));
-        const length = Math.round((crag ? lerp(config.cold.icefallLength, hash(seed, 54)) : lerp(recipe.waterfallLength, hash(seed, 54))) * layer.scale);
+        const wanted = Math.round((crag ? lerp(config.cold.icefallLength, hash(seed, 54)) : lerp(recipe.waterfallLength, hash(seed, 54))) * layer.scale);
+        // A fall never runs into the ground: it stops above the highest the floor's ripple can reach (paintGround).
+        const length = Math.max(2, Math.min(wanted, request.groundY - Math.ceil(4 * layer.scale) - topY));
         fall = { id: seed, layerIndex: request.layerIndex, x: Math.round(cx + side * spread * width), topY, width: fallWidth, length, cold01: biome.cold01, biome };
       }
       plans.push({ seed, cx, topY, width, depth, biome, crag, fall });

@@ -1,7 +1,8 @@
 /**
  * Paints the floating islands of one chunk from their plans (layout.ts): the ground or rock crag,
- * the trees the flavour's recipe calls for, small plants and mushrooms on top, and the waterfall
- * last, so the water falls in front of its island.
+ * the trees the flavour's recipe calls for and small plants and mushrooms on top. The waterfalls
+ * are painted apart (paintFalls), after the layer's branches and crowns, so the water falls in
+ * front of the foliage and the moving strips of the view agree with the picture.
  * Pure: slots into a grid, no canvas, no Phaser.
  */
 import { BACKDROP_CONFIG, type BackdropConfig, type BackdropLayer, type IslandTreeKind } from '../../config/backdrop.config';
@@ -13,7 +14,7 @@ import { paintCrag, paintIsland } from './terrain';
 import { paintBroadleaf, paintFern, paintMushroom, paintPalm, paintPine, paintSmallMushroom } from './trees';
 import { paintClump, paintPetals } from './foliage';
 import { crownStyleAt } from './crowns';
-import { paintWaterfall } from './water';
+import { paintWaterfalls } from './water';
 
 function paintTree(surface: Surface, plan: IslandPlan, layer: BackdropLayer, t: number, config: BackdropConfig): void {
   const treeSeed = subSeed(plan.seed, 40 + t), recipe = recipeOf(plan.biome, config);
@@ -46,7 +47,7 @@ function paintIslandLife(surface: Surface, plan: IslandPlan, layer: BackdropLaye
 }
 
 /** Paint every island that shows in the surface: islands above it hang roots and falls into it, islands below grow trees up into it. */
-export function paintIslands(surface: Surface, request: ChunkRequest, config: BackdropConfig = BACKDROP_CONFIG): void {
+export function paintIslands(surface: Surface, request: ChunkRequest, config: BackdropConfig = BACKDROP_CONFIG): IslandPlan[] {
   const layer = config.layers[request.layerIndex]!;
   const above = Math.max(longestFall(layer, config), 160 * layer.scale), below = 290 * layer.scale;
   const plans = islandsBetween(request, surface.originY - above, surface.originY + surface.grid.height + below, config);
@@ -56,6 +57,11 @@ export function paintIslands(surface: Surface, request: ChunkRequest, config: Ba
     const trees = 1 + Math.floor(hash(plan.seed, 5) * Math.min(3, plan.width / (34 * layer.scale)));
     for (let t = 0; t < trees; t++) paintTree(surface, plan, layer, t, config);
     paintIslandLife(surface, plan, layer, config);
-    if (plan.fall) paintWaterfall(surface, plan.fall);
   }
+  return plans;
+}
+
+/** Paint the falls of the islands `paintIslands` returned, in front of everything else in the layer but the ground. */
+export function paintFalls(surface: Surface, plans: readonly IslandPlan[]): void {
+  paintWaterfalls(surface, plans.flatMap((plan) => plan.fall ? [plan.fall] : []));
 }

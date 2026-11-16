@@ -9,6 +9,8 @@ import { paintCrown } from '../backdrop/foliage';
 import { horizonRangeAt } from '../backdrop/horizon';
 import { skyAt } from '../backdrop/sky';
 import { backdropBiomeAt, flavourOfBand } from '../endless/backdrop-biome';
+import { isFrozen } from '../backdrop/water';
+import { fallFrame, fallPace, snapToArt, stripRect, type StripRect } from '../backdrop/strip-layout';
 
 const C = BACKDROP_CONFIG, E = ENDLESS_CONFIG;
 const HORIZON = 0, FAR = 1, MID = 2, NEAR = C.layers.length - 1;
@@ -126,16 +128,75 @@ it('lists exactly the waterfalls it paints, the same for the same seed', () => {
       const x = i % C.chunkWidth, y = originY + Math.floor(i / C.chunkWidth);
       expect(falls.some((fall) => Math.abs(x - fall.x) <= fall.width / 2 + 4 && y >= fall.topY - 2 && y <= fall.topY + fall.length), `${flavour} ${layer} ${chunk} (${x}, ${y})`).toBe(true);
     }
-    // ...and every listed fall shows somewhere in the chunk.
+    // ...and every listed fall is painted: the next test checks its water cell by cell.
     for (const fall of falls) expect(fall.layerIndex).toBe(layer);
   }
   const ask = request(MID, -4, 5, steady('jungle', 0));
   expect(chunkWaterfalls({ ...ask, seed: 6 })).not.toEqual(chunkWaterfalls(ask));
-  // A fall that crosses a chunk edge is the same fall in both chunks.
+  // A fall that crosses a chunk edge is the same fall in both chunks (and at least one does).
+  let twins = 0;
   for (let chunk = -12; chunk < -2; chunk++) {
     const here = chunkWaterfalls(request(MID, chunk, 5, steady('jungle', 0))), below = chunkWaterfalls(request(MID, chunk + 1, 5, steady('jungle', 0)));
-    for (const fall of here) { const twin = below.find((other) => other.id === fall.id); if (twin) expect(twin).toEqual(fall); }
+    for (const fall of here) { const twin = below.find((other) => other.id === fall.id); if (twin) { expect(twin).toEqual(fall); twins++; } }
   }
+  expect(twins).toBeGreaterThan(0);
+});
+
+/** The request the view makes for a layer on the real endless climb (same sums as backdrop-view.ts). */
+function viewRequest(seed: number, layerIndex: number, chunk: number): ChunkRequest {
+  const layer = C.layers[layerIndex]!, view = 540, start = -20;
+  return {
+    seed, layerIndex, chunk, groundY: ((E.baseFloorTopPx - start) + start * layer.parallax) / C.pixelScale,
+    biomeAt: (y) => backdropBiomeAt((y * C.pixelScale - view / 2) / layer.parallax + view / 2, seed, E),
+  };
+}
+
+it('paints water under every moving strip: foliage never covers a fall, and a fall never reaches the ground', () => {
+  let strips = 0, frozen = 0;
+  for (const seed of [5, 16, 42]) for (let layer = FAR; layer <= NEAR; layer++) for (let chunk = -45; chunk < 1; chunk++) {
+    const ask = viewRequest(seed, layer, chunk), { grid, waterfalls } = renderChunk(ask, new Uint8ClampedArray(C.chunkWidth * C.chunkHeight * 4));
+    const originY = chunk * C.chunkHeight;
+    for (const fall of waterfalls) {
+      if (isFrozen(fall.cold01)) { frozen++; continue; }
+      strips++;
+      const left = Math.round(fall.x - fall.width / 2), cells = Math.max(2, Math.round(fall.width));
+      for (let y = fall.topY + 1; y < fall.topY + fall.length; y++) {
+        if (y < originY || y >= originY + C.chunkHeight) continue;
+        for (let x = Math.max(0, left); x < Math.min(C.chunkWidth, left + cells); x++) {
+          const tone = grid.cells[(y - originY) * C.chunkWidth + x]!;
+          expect([TONE.water0, TONE.water1, TONE.foam], `seed ${seed} layer ${layer} chunk ${chunk} (${x}, ${y})`).toContain(tone);
+        }
+      }
+      expect(fall.topY + fall.length, 'fall stops above the ground').toBeLessThan(ask.groundY);
+    }
+  }
+  expect(strips).toBeGreaterThan(50); expect(frozen).toBeGreaterThan(0);
+});
+
+it('places a strip on the art pixel grid by the same sums as the painter, and runs the water by cold', () => {
+  const rect: StripRect = { x: 0, y: 0, width: 0, length: 0, frame: 0 };
+  const fall = { id: 1, layerIndex: MID, x: 101, topY: -400, width: 7.4, length: 90, cold01: 0, biome: { cold01: 0, flavour: 'jungle' as const } };
+  const ps = C.pixelScale;
+  // Columns: the painter's rounded left edge and cell count.
+  const out = stripRect(fall, 1000.7, 0, rect);
+  expect(out.width).toBe(7 * ps); expect(out.x - out.width / 2).toBe(Math.round(101 - 3.7) * ps);
+  // Rows: one art pixel below the lip, one short of the length, on the grid, and moving with the scroll one art pixel at a time.
+  expect(out.length).toBe(90 * ps - ps);
+  for (const scroll of [0, 0.4, 1, 1.6, 333.3, -812.9]) {
+    const y = stripRect(fall, scroll, 0, rect).y;
+    expect(Math.abs((y - ps) % ps), `scroll ${scroll}`).toBe(0);
+    expect(y - ps).toBe(snapToArt(-400 * ps - scroll));
+    // A strip lies where the chunk picture's own row lands: chunk origin rounded the same way.
+    const chunk = -2, imageY = snapToArt(chunk * C.chunkHeight * ps - scroll);
+    expect(y).toBe(imageY + (-400 - chunk * C.chunkHeight) * ps + ps);
+  }
+  // Pace: 1 warm, 0 at and above the freeze cold, falling steadily between.
+  expect(fallPace(0)).toBe(1); expect(fallPace(C.cold.freezeAt01)).toBe(0); expect(fallPace(1)).toBe(0);
+  expect(fallPace(C.cold.freezeAt01 / 2)).toBeCloseTo(0.5);
+  expect(isFrozen(C.cold.freezeAt01)).toBe(true); expect(isFrozen(C.cold.freezeAt01 - 0.01)).toBe(false);
+  expect(fallFrame(10000, 0)).toBe(0);
+  expect(fallFrame(C.waterfallView.frameMs * 3, 1)).toBe(3);
+  expect(stripRect({ ...fall, cold01: 1 }, 0, 99999, rect).frame).toBe(0);
 });
 
 it('freezes waterfalls where it is cold', () => {

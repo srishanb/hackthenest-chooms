@@ -21,6 +21,6 @@ export function createSkyGradient(scene: Scene, depth: number, bands: number) {
       // Most of the change happens low down, so the upper sky stays deep and the haze sits near the bottom.
       for (const [i, rect] of rects.entries()) rect.setFillStyle(mixRgb(top, bottom, (i / (bands - 1)) ** 1.6));
     },
-    resize(width: number) { for (const rect of rects) rect.width = width; },
+    resize(width: number) { for (const rect of rects) rect.setSize(width, rect.height); },
   };
 }

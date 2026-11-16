@@ -18,6 +18,7 @@ import { renderChunk, type BackdropBiome, type Waterfall } from './paint-chunk';
 import { mixRgb, skyAt } from './sky';
 import { createSkyGradient } from './sky-view';
 import { createWaterfallStrips, type StripPlacement } from './waterfall-view';
+import { snapToArt, stripRect, type StripRect } from './strip-layout';
 import { isFrozen } from './water';
 
 export interface BackdropSource {
@@ -31,13 +32,10 @@ export interface BackdropSource {
 
 interface Slot { image: GameObjects.Image; texture: Textures.CanvasTexture; pixels: ImageData; chunk: number | null; waterfalls: Waterfall[] }
 
-/** Bands in the sky gradient. */
-const SKY_BANDS = 14;
-
 export function createBackdrop(scene: Scene, source: BackdropSource) {
   let seed = source.seed;
   const viewHeight = scene.scale.height, chunkPx = C.chunkHeight * C.pixelScale;
-  const sky = createSkyGradient(scene, -39, SKY_BANDS);
+  const sky = createSkyGradient(scene, -39, C.skyBands);
   const layers = C.layers.map((layer, layerIndex) => {
     const slots: Slot[] = Array.from({ length: C.chunksPerLayer }, (_, i) => {
       const key = `backdrop-${layerIndex}-${i}`;
@@ -54,6 +52,8 @@ export function createBackdrop(scene: Scene, source: BackdropSource) {
       : null;
     return {
       layer, layerIndex, slots, strips,
+      // Which fall (by id, -1 for none) holds each strip, and this frame's candidates: both reused, so nothing is allocated.
+      holders: Array.from({ length: strips?.size ?? 0 }, () => -1), used: Array.from({ length: strips?.size ?? 0 }, () => false), candidates: [] as Waterfall[],
       // Where the starting ground sits in this layer, so every layer's floor meets the real one at the start.
       groundY: ((source.floorWorldY - source.startScrollY) + source.startScrollY * layer.parallax) / C.pixelScale,
       // The world height whose view has this layer row at the middle of the screen.
@@ -69,35 +69,44 @@ export function createBackdrop(scene: Scene, source: BackdropSource) {
   };
 
   // Reused every frame, so drawing the water allocates nothing.
-  const seen: number[] = [];
+  const rect: StripRect = { x: 0, y: 0, width: 0, length: 0, frame: 0 };
   const placement: StripPlacement = { x: 0, y: 0, width: 0, length: 0, frame: 0, tint: 0, alpha: 0 };
 
-  /** Lay the layer's moving strips over the falls in its shown chunks, nearest the screen's middle first. */
+  /**
+   * Lay the layer's moving strips over the falls in its shown chunks. A fall that already has a strip
+   * keeps it while it is on screen (so nothing pops); a free strip goes to the unserved fall nearest
+   * the screen's middle first. Falls left without a strip stay painted and still.
+   */
   const drawWater = (entry: (typeof layers)[number], scroll: number, clockMs: number, corruption: number): void => {
     const strips = entry.strips;
     if (!strips || strips.size === 0) return;
-    const camera = scene.cameras.main;
-    seen.length = 0;
-    let used = 0;
+    const camera = scene.cameras.main, { candidates, holders, used } = entry, ps = C.pixelScale;
+    candidates.length = 0;
     for (const slot of entry.slots) {
       if (slot.chunk === null || !slot.image.visible) continue;
       for (const fall of slot.waterfalls) {
-        if (used >= strips.size || seen.includes(fall.id) || isFrozen(fall.cold01)) continue;
-        const y = fall.topY * C.pixelScale - scroll, length = fall.length * C.pixelScale;
+        if (isFrozen(fall.cold01)) continue;
+        const y = snapToArt(fall.topY * ps - scroll), length = fall.length * ps;
         if (y > camera.height || y + length < 0) continue;
-        seen.push(fall.id);
-        // A cold fall slows toward a standstill before it freezes.
-        const pace = 1 - fall.cold01 / 0.6;
-        // The same columns water.ts paints: `cells` wide from the rounded left edge.
-        const cells = Math.max(2, Math.round(fall.width)), left = Math.round(fall.x - fall.width / 2);
-        placement.x = (left + cells / 2) * C.pixelScale; placement.y = y + C.pixelScale; placement.width = cells * C.pixelScale; placement.length = length - C.pixelScale;
-        placement.frame = Math.floor(clockMs * pace / C.waterfallView.frameMs) % 8;
-        placement.tint = mixColor(waterColour(fall.biome, entry.layer.fog01), 0x8f6a9c, corruption);
-        placement.alpha = C.waterfallView.alpha01 * (1 - entry.layer.fog01 * 0.4);
-        strips.place(used++, placement);
+        if (!candidates.some((other) => other.id === fall.id)) candidates.push(fall);
       }
     }
-    for (let i = used; i < strips.size; i++) strips.place(i, null);
+    const middle = camera.height / 2;
+    const distance = (fall: Waterfall): number => Math.abs(fall.topY * ps - scroll + fall.length * ps / 2 - middle);
+    candidates.sort((a, b) => distance(a) - distance(b));
+    // A strip whose fall left the screen (or was repainted away) is free again.
+    for (let i = 0; i < holders.length; i++) { used[i] = false; if (holders[i] !== -1 && !candidates.some((fall) => fall.id === holders[i])) holders[i] = -1; }
+    for (const fall of candidates) {
+      let index = holders.indexOf(fall.id);
+      if (index < 0) { index = holders.indexOf(-1); if (index < 0) continue; holders[index] = fall.id; }
+      stripRect(fall, scroll, clockMs, rect);
+      placement.x = rect.x; placement.y = rect.y; placement.width = rect.width; placement.length = rect.length; placement.frame = rect.frame;
+      placement.tint = mixColor(waterColour(fall.biome, entry.layer.fog01), C.waterfallView.corruptionTint, corruption);
+      placement.alpha = C.waterfallView.alpha01 * (1 - entry.layer.fog01 * C.waterfallView.fogFade01);
+      strips.place(index, placement);
+      used[index] = true;
+    }
+    for (let i = 0; i < strips.size; i++) if (!used[i]) strips.place(i, null);
   };
 
   return {
@@ -105,7 +114,7 @@ export function createBackdrop(scene: Scene, source: BackdropSource) {
     reseed(next: number) {
       if (next === seed) return;
       seed = next;
-      for (const entry of layers) for (const slot of entry.slots) { slot.chunk = null; slot.waterfalls = []; }
+      for (const entry of layers) { for (const slot of entry.slots) { slot.chunk = null; slot.waterfalls = []; } entry.holders.fill(-1); }
     },
     /** How cold it is where the camera is looking (0..1). */
     coldAtCamera(): number {
@@ -126,7 +135,7 @@ export function createBackdrop(scene: Scene, source: BackdropSource) {
       const colours = skyAt(source.biomeAt(camera.scrollY + camera.height / 2));
       sky.resize(camera.width);
       sky.update(mixRgb(colours.top, C.skyCorrupted, skyCorruption), mixRgb(colours.fog, C.skyCorrupted, skyCorruption * 0.8));
-      const tint = mixColor(0xffffff, 0x9a6a96, corruption);
+      const tint = mixColor(0xffffff, C.layerCorruptionTint, corruption);
       let painted = 0;
       for (const entry of layers) {
         const scroll = camera.scrollY * entry.layer.parallax;
@@ -149,7 +158,7 @@ export function createBackdrop(scene: Scene, source: BackdropSource) {
         for (const slot of entry.slots) {
           const shown = slot.chunk !== null && wanted(slot.chunk);
           slot.image.setVisible(shown);
-          if (shown) slot.image.setPosition(0, Math.round(slot.chunk! * chunkPx - scroll)).setTint(tint);
+          if (shown) slot.image.setPosition(0, snapToArt(slot.chunk! * chunkPx - scroll)).setTint(tint);
         }
         drawWater(entry, scroll, clockMs, corruption);
       }

@@ -8,7 +8,8 @@
  *
  * The horizon layer holds far ridges (horizon.ts). A forest layer holds, back to front: trunks
  * that run the whole height (or rock cliffs where it is cold), lianas between them, floating islands
- * with trees, plants and waterfalls, branches with crowns and vines, the forest floor, and last
+ * with trees and plants, branches with crowns and vines, the waterfalls (in front of them),
+ * the forest floor, and last
  * the mist bands in whatever air is left. What grows follows the height's biome and its recipe.
  * Pure: slots into a grid (pixel-grid.ts); palette.ts turns the slots into colours.
  */
@@ -19,7 +20,7 @@ import type { BackdropBiome, ChunkRequest, Waterfall } from './chunk-types';
 import { paintLedgePines, paintTrunk, trunkLanes } from './trunks';
 import { paintBranches } from './branches';
 import { paintLianas } from './lianas';
-import { paintIslands } from './islands';
+import { paintFalls, paintIslands } from './islands';
 import { paintClump } from './foliage';
 import { paintMist } from './mist';
 import { horizonFarBiome, paintHorizon } from './horizon';
@@ -75,8 +76,10 @@ export function paintChunk(request: ChunkRequest, config: BackdropConfig = BACKD
   for (const lane of lanes) paintTrunk(surface, lane, coldAt);
   for (const lane of lanes) paintLedgePines(surface, lane, coldAt, layer, config);
   paintLianas(surface, lanes, request, coldAt, config);
-  paintIslands(surface, request, config);
+  const islands = paintIslands(surface, request, config);
   for (const lane of lanes) paintBranches(surface, lane, request, coldAt, config);
+  // Water in front of the layer's foliage, so the view's moving strips lie over water only; the ground still covers the foot.
+  paintFalls(surface, islands);
   paintGround(surface, request, layer);
   paintMist(surface, request, config);
   return grid;

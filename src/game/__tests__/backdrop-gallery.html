@@ -9,6 +9,7 @@
 import { BACKDROP_CONFIG as B } from './../../config/backdrop.config.ts';
 import { ENDLESS_CONFIG as E } from './../../config/endless.config.ts';
 import { renderChunk } from './../backdrop/paint-chunk.ts';
+import { isFrozen } from './../backdrop/water.ts';
 import { mixRgb, skyAt } from './../backdrop/sky.ts';
 import { backdropBiomeAt } from './../endless/backdrop-biome.ts';
 const query = new URLSearchParams(location.search);
@@ -29,9 +30,9 @@ heights.forEach((height, i) => {
   const ox = (i % COLS) * VIEW_W * zoom, oy = Math.floor(i / COLS) * VIEW_H * zoom;
   const here = biomeOf(scrollY + SCREEN_H / 2), sky = skyAt(here);
   // Same bands as sky-view.ts.
-  for (let band = 0; band < 14; band++) {
-    ctx.fillStyle = hex(mixRgb(sky.top, sky.fog, (band / 13) ** 1.6));
-    ctx.fillRect(ox, oy + Math.floor(band * VIEW_H / 14) * zoom, VIEW_W * zoom, Math.ceil(VIEW_H / 14 + 1) * zoom);
+  for (let band = 0; band < B.skyBands; band++) {
+    ctx.fillStyle = hex(mixRgb(sky.top, sky.fog, (band / (B.skyBands - 1)) ** 1.6));
+    ctx.fillRect(ox, oy + Math.floor(band * VIEW_H / B.skyBands) * zoom, VIEW_W * zoom, Math.ceil(VIEW_H / B.skyBands + 1) * zoom);
   }
   ctx.save(); ctx.beginPath(); ctx.rect(ox, oy, VIEW_W * zoom, VIEW_H * zoom); ctx.clip();
   const outlines = [];
@@ -50,7 +51,7 @@ heights.forEach((height, i) => {
       if (paints > 8) { warmMs += took; warm++; slowest = Math.max(slowest, took); }
       sctx.putImageData(image, 0, 0);
       ctx.drawImage(scratch, ox, oy + Math.round(chunk * B.chunkHeight - top) * zoom, B.chunkWidth * zoom, B.chunkHeight * zoom);
-      for (const fall of waterfalls) outlines.push([fall.x - fall.width / 2, fall.topY - top, fall.width, fall.length, fall.cold01 >= 0.6]);
+      for (const fall of waterfalls) outlines.push([fall.x - fall.width / 2, fall.topY - top, fall.width, fall.length, isFrozen(fall.cold01)]);
     }
   });
   fallCount += outlines.length;

@@ -55,6 +55,8 @@ export interface ColdRecipe {
   /** Chance that a crag spills a frozen fall (an icefall), and its length range. */
   icefall01: number; icefallLength: readonly [number, number];
   sky: { top: number; fog: number };
+  /** A fall at or above this cold (0..1) is frozen: painted as ice with no moving water, and slowing toward it. The one source of this number. */
+  freezeAt01: number;
 }
 
 /** One depth layer of the backdrop. */
@@ -112,10 +114,18 @@ export interface BackdropConfig {
   flavours: ReadonlyArray<{ flavour: BackdropFlavour; weight: number }>;
   recipes: Readonly<Record<BackdropFlavour, FlavourRecipe>>;
   cold: ColdRecipe;
-  /** Animated waterfall strips drawn over the painted falls: how many per layer, and how opaque (0..1). */
-  waterfallView: { pool: number; alpha01: number; frameMs: number };
+  /**
+   * Animated waterfall strips drawn over the painted falls: how many per layer, how opaque (0..1),
+   * milliseconds per frame, the share of that opacity kept by the fainter foot strip, how much a layer's
+   * fog (0..1) fades its strips, and the colour a fall is pulled toward as the forest goes wrong.
+   */
+  waterfallView: { pool: number; alpha01: number; frameMs: number; footAlpha01: number; fogFade01: number; corruptionTint: number };
   /** Sky colour the whole sky is pulled toward as the forest goes wrong (see sceneryCorruption). */
   skyCorrupted: number;
+  /** Flat bands in the sky gradient. */
+  skyBands: number;
+  /** Colour the forest layers are pulled toward as the forest goes wrong. */
+  layerCorruptionTint: number;
 }
 
 export const BACKDROP_CONFIG: BackdropConfig = {
@@ -195,7 +205,10 @@ export const BACKDROP_CONFIG: BackdropConfig = {
   cold: {
     crowns: { boughs: 4, column: 1 }, crag01: 0.75, icefall01: 0.22, icefallLength: [30, 70],
     sky: { top: 0x121d33, fog: 0x354b63 },
+    freezeAt01: 0.6,
   },
-  waterfallView: { pool: 5, alpha01: 0.62, frameMs: 120 },
+  waterfallView: { pool: 5, alpha01: 0.62, frameMs: 120, footAlpha01: 0.55, fogFade01: 0.4, corruptionTint: 0x8f6a9c },
   skyCorrupted: 0x24192f,
+  skyBands: 14,
+  layerCorruptionTint: 0x9a6a96,
 };
