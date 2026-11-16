@@ -1,6 +1,6 @@
 name: pages
 
-# Builds the game and publishes dist/ to GitHub Pages (https://srishanb.github.io/hackthenest-chooms/).
+# Builds the game and publishes dist/ to GitHub Pages (https://srishanb.github.io/lighten-up/).
 # Needs Settings > Pages > Source: GitHub Actions. vite.config.ts uses base './', so the sub-path works.
 
 on:

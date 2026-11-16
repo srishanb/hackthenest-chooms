@@ -14,7 +14,7 @@ a medical device, and it does not diagnose anything. **The signal never touches 
 
 ## Play online
 
-https://srishanb.github.io/hackthenest-chooms/
+https://srishanb.github.io/lighten-up/
 
 Use Chrome or Edge if you want to connect the real board: it needs Web Bluetooth, which only Chromium browsers have.
 The simulator and the replay presets need no board (untested in Safari and Firefox).
@@ -71,8 +71,8 @@ The game always shows which input is active (`LIVE EEG`, `SIMULATED INPUT` or `R
 You need Git, Node.js 22.12 or newer (npm comes with it) and Chrome or Edge.
 
 ```bash
-git clone https://github.com/srishanb/hackthenest-chooms.git
-cd hackthenest-chooms
+git clone https://github.com/srishanb/lighten-up.git
+cd lighten-up
 npm ci
 node run.mjs doctor   # checks Node, dependencies and the history guard
 node run.mjs dev      # starts the game and opens it

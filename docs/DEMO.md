@@ -19,7 +19,7 @@ Every key, label and command here was checked against `main` (`src/ui/strings.ts
 
 ## Two ways to run
 
-**1. Hosted page:** https://srishanb.github.io/hackthenest-chooms/
+**1. Hosted page:** https://srishanb.github.io/lighten-up/
 Open it once before the demo so the browser has it loaded. Unverified by this runbook's author: that the
 latest `main` is deployed there. Check the start menu loads before 1:15.
 
