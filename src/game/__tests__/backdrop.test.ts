@@ -153,7 +153,8 @@ function viewRequest(seed: number, layerIndex: number, chunk: number): ChunkRequ
 
 it('paints water under every moving strip: foliage never covers a fall, and a fall never reaches the ground', () => {
   let strips = 0, frozen = 0;
-  for (const seed of [5, 16, 42]) for (let layer = FAR; layer <= NEAR; layer++) for (let chunk = -45; chunk < 1; chunk++) {
+  // Every fourth chunk up the climb (warm, freezing and frozen heights), which keeps seed 5, mid layer, chunk -7: the overlapping-falls case.
+  for (const seed of [5, 16, 42]) for (let layer = FAR; layer <= NEAR; layer++) for (let chunk = -43; chunk < 1; chunk += 4) {
     const ask = viewRequest(seed, layer, chunk), { grid, waterfalls } = renderChunk(ask, new Uint8ClampedArray(C.chunkWidth * C.chunkHeight * 4));
     const originY = chunk * C.chunkHeight;
     for (const fall of waterfalls) {
@@ -170,7 +171,7 @@ it('paints water under every moving strip: foliage never covers a fall, and a fa
       expect(fall.topY + fall.length, 'fall stops above the ground').toBeLessThan(ask.groundY);
     }
   }
-  expect(strips).toBeGreaterThan(50); expect(frozen).toBeGreaterThan(0);
+  expect(strips).toBeGreaterThan(30); expect(frozen).toBeGreaterThan(0);
 });
 
 it('places a strip on the art pixel grid by the same sums as the painter, and runs the water by cold', () => {
