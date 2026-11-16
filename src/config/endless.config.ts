@@ -6,27 +6,36 @@
  * changes gravity, walking or jump strength: the generator only chooses WHERE ledges go.
  */
 export const ENDLESS_CONFIG = {
-  /** World y (px, grows downward) of the top surface of the very first landing. */
+  /** World y (px, grows downward) of the top surface of the ground the run starts on (chunk 0's anchor). */
   baseFloorTopPx: 500,
-  /** Height of one chunk in px: a full-width landing, then generated ledges up to the next landing. */
+  /**
+   * Height of one chunk in px: an anchor ledge, then generated ledges up to the next chunk's anchor.
+   * Only chunk 0's anchor (the ground) spans the screen; nothing else catches a fall (Decision D-33).
+   */
   chunkHeightPx: 960,
-  /** Thickness of every generated ledge and landing in px. */
+  /** Thickness of every generated ledge and anchor in px. */
   ledgeHeightPx: 20,
-  /** Chunks kept alive below and above the one the player is in. */
+  /**
+   * Chunks kept alive below and above the one the player is in, always. With no full-width landings a
+   * fall can go through any number of chunks, so the chunk below is never dropped while the player is
+   * in this one; the window moves down with a fall, one chunk at a time.
+   */
   keepBelow: 1,
   keepAbove: 1,
   /**
-   * The chunk below is kept only while the player is within this height (px) of the current landing:
-   * higher than that it is off screen, and the landing catches every fall, so its ledges are not needed.
+   * Each chunk above the ground starts on an anchor: an ordinary main-path ledge at the chunk's known
+   * height, placed from the seed alone so any chunk can be rebuilt by itself. `widthScale` times the
+   * average main-path width at that height (`width.easyPx`..`width.hardPx`); keep it at 1 or below so
+   * an anchor is never wider than an ordinary ledge. `wallMarginPx` is the least gap to a wall (px).
    */
-  belowViewPx: 440,
+  anchor: { widthScale: 1, wallMarginPx: 2 },
   /** Difficulty reaches 1 after this many chunks (about 30 m each). */
   rampChunks: 14,
   /** Ledge width in px at difficulty 0 and 1; each ledge varies by +/- `widthJitter01`. */
   width: { easyPx: 176, hardPx: 88, minPx: 72, widthJitter01: 0.16 },
   /** Vertical step between ledges in px. The top end grows with difficulty. */
   rise: { minPx: 64, easyMaxPx: 104, hardMaxPx: 148 },
-  /** The last ledge of a chunk sits this far below the next landing (px). */
+  /** The last ledge of a chunk's path sits this far below the next chunk's anchor (px). */
   finalRise: { minPx: 56, maxPx: 140 },
   /** Jump charges are sampled in this many levels (the same count the reach check uses). */
   chargeLevels: 12,
