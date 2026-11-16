@@ -1,4 +1,4 @@
-# Backlog: hands-only endless Lighten Up
+# Backlog: game-only endless Lighten Up
 
 Ordered. The loop takes the first open item, builds it, runs `npm run check` and `npm run build`, takes a browser
 screenshot where the change is visible, commits, pushes, then moves on. Add new ideas at the end.
@@ -32,7 +32,7 @@ screenshot where the change is visible, commits, pushes, then moves on. Add new 
 - [ ] #19 Narrator lines for endless moments (new height band, low flame, new best) from existing clips only
 - [x] #20 Tutorial hints for the first chunk in endless
 - [x] #21 Performance check over a 144 s bot climb: 1,000 to 1,600 live objects, heap flat at 81 MB, no errors. Frame rate in the headless browser is 13 to 21 fps and tracks the snow layer, not the object count; real hardware still unmeasured (#26)
-- [x] #22 README and docs for the hands-only branch (`docs/HANDS_ONLY.md`)
+- [x] #22 README and docs for the game-only branch (`docs/GAME_ONLY.md`)
 
 ## Added during the loop
 

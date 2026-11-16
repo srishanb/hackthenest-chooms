@@ -109,7 +109,7 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 | `PortraitLook` | `candle/portrait-view.ts` | Input type of the portrait view. |
 | `CandleLook` | `candle/candle-view.ts` | Light, growth and settings the candle draws from each frame. |
 
-## Endless mode (hands-only variant)
+## Endless mode (game-only variant)
 
 | Export | File | What it does |
 |---|---|---|

@@ -1,4 +1,4 @@
-# Lighten Up, hands-only: endless climb and an expressive candle
+# Lighten Up, game-only: endless climb and an expressive candle
 
 > Created: 2026-11-16
 > Author: plan skill
@@ -7,7 +7,7 @@
 
 Srishan asked for a version of Lighten Up with no EEG ("non mind control"), on its own branch, with procedurally
 generated platforms, an endless mode, and a more expressive and detailed candle. The work then continues in an
-unattended loop. The branch is `claude/keen-keller-my69oo`; it is a long-lived variant and is **not** meant to merge
+unattended loop. The branch is `game-only`; it is a long-lived variant and is **not** meant to merge
 into `main` (the pull request stays a draft with `no-automerge`).
 
 Decisions made without asking (low-maintenance request), each easy to reverse:
@@ -23,7 +23,7 @@ Decisions made without asking (low-maintenance request), each easy to reverse:
 
 ## Phases
 
-- [x] Phase 1: Hands-only boot and endless core  — completed 2026-11-16
+- [x] Phase 1: Game-only boot and endless core  — completed 2026-11-16
 - [x] Phase 2: Expressive, detailed candle (face, expressions, body detail)  — completed 2026-11-16
 - [🔄] Phase 3: Iteration loop from `.handoff/backlog.md` (variety, juice, tuning, polish)  — current
 

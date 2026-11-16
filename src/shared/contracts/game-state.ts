@@ -46,7 +46,7 @@ export interface RunSnapshot {
 }
 
 export interface GameSnapshot {
-  /** Present only in endless mode (hands-only variant). The authored climb leaves it out. */
+  /** Present only in endless mode (game-only variant). The authored climb leaves it out. */
   run?: RunSnapshot;
   /** Actual candle resource, not a composure score. Optional for older snapshot writers. */
   lanternFuel01?: number;

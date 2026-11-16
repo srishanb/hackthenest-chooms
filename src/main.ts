@@ -5,7 +5,7 @@
  * needs. Lanes never import each other, so reading this file top to bottom shows how the
  * whole game is wired: signal -> game -> UI and audio.
  *
- * Hands-only variant: there is no EEG. The signal is the "still" one (always neutral), and the
+ * Game-only variant: there is no EEG. The signal is the "still" one (always neutral), and the
  * game plays the endless, generated climb unless the URL says `?climb=classic`.
  */
 import { readLayouts, writeLayouts, validateLayouts, layoutStorageKey, STAGE_LAYOUT_KEY, STAGE_DRAFT_KEY } from './game/editor/layouts';

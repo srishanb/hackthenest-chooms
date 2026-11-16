@@ -6,7 +6,7 @@ import type { UiComponent } from '../../types';
 import { createUiActions } from '../../ui-actions';
 import { canContinue, climbMode, dailySeed, footerText, menuSelection, modeUrl, startStalled, startsOnKey } from './start-menu-state';
 import { createCredits } from './credits';
-import { HANDS_ONLY } from '../../../config/ui.config';
+import { GAME_ONLY } from '../../../config/ui.config';
 import '../../theme/menus.css';
 import './start-menu.css';
 
@@ -98,8 +98,8 @@ export const startMenu: UiComponent = {
     screen.append(scenery, hero, credits, footer); root.append(screen);
 
     function renderSource(): void {
-      // No signal in the hands-only variant: one fixed line instead of a source status.
-      if (HANDS_ONLY) { status.textContent = t('start.handsOnly'); status.dataset.ready = 'true'; return; }
+      // No signal in the game-only variant: one fixed line instead of a source status.
+      if (GAME_ONLY) { status.textContent = t('start.gameOnly'); status.dataset.ready = 'true'; return; }
       const state = signal.reader.getState();
       const label = state.source === 'SIMULATED' ? 'start.signal.sim' : state.source === 'REPLAY' ? 'start.signal.replay' : state.valid ? 'start.signal.live' : 'start.signal.waiting';
       const value = t(label);

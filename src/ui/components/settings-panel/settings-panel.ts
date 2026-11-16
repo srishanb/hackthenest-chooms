@@ -8,7 +8,7 @@ import { t, type StringKey } from '../../strings';
 import type { UiComponent } from '../../types';
 import { createUiActions } from '../../ui-actions';
 import { mountSignalPresetsControl } from '../signal-presets/signal-presets';
-import { HANDS_ONLY } from '../../../config/ui.config';
+import { GAME_ONLY } from '../../../config/ui.config';
 import { mountNarratorVoiceControl } from './narrator-voice-control';
 import { remapAllowed, remapKey } from './settings-editor';
 import { keyLabel } from '../world-tutorial/layout';
@@ -39,8 +39,8 @@ export const settingsPanel: UiComponent = {
     const removeNarratorVoices = mountNarratorVoiceControl(panel, actions.settingsOpen, bus);
     range('settings.captionSize', CAPTION_SCALE_RANGE.min, CAPTION_SCALE_RANGE.max, 0.05,
       (s) => s.captions.scale, (s, scale) => ({ ...s, captions: { ...s.captions, scale } }));
-    // Replay presets pick a signal source; the hands-only variant has none.
-    const removeSignalPresets = HANDS_ONLY ? () => {} : mountSignalPresetsControl(panel, signal);
+    // Replay presets pick a signal source; the game-only variant has none.
+    const removeSignalPresets = GAME_ONLY ? () => {} : mountSignalPresetsControl(panel, signal);
     const removeForestPreview = mountForestPreview(panel);
     range('settings.effects', 0, 1, 0.05, (s) => s.effectStrength, (s, effectStrength) => ({ ...s, effectStrength }));
     function checkbox(labelKey: StringKey, read: (s: Settings) => boolean, write: (s: Settings, value: boolean) => Settings): void {
@@ -54,7 +54,7 @@ export const settingsPanel: UiComponent = {
     checkbox('settings.reducedMotion', (s) => s.reducedMotion, (s, reducedMotion) => ({ ...s, reducedMotion }));
     checkbox('settings.landingShake', (s) => s.landingShake, (s, landingShake) => ({ ...s, landingShake }));
     for (const key of ['showSignal', 'showEmber', 'showStatus', 'showStageDetails'] as const) {
-      if (HANDS_ONLY && key === 'showSignal') continue;
+      if (GAME_ONLY && key === 'showSignal') continue;
       checkbox(`settings.${key}`, (s) => s.hud[key], (s, value) => ({ ...s, hud: { ...s.hud, [key]: value } }));
     }
     let listening: keyof KeyBindings | null = null;

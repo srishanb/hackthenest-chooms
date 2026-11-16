@@ -1,7 +1,7 @@
 /**
  * The "still" signal: a `SignalHandle` that never reads a device, a simulator or a recording.
  *
- * Why: the hands-only variant of the game has no EEG at all, but the game and UI are typed to
+ * Why: the game-only variant of the game has no EEG at all, but the game and UI are typed to
  * receive a signal handle. This one always reports the neutral, fixed-mode state, so every
  * consumer takes the path it already has for "no usable signal": effects sit at neutral and
  * nothing waits on calibration. No pipeline runs, no Bluetooth or network code is loaded.

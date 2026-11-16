@@ -1,7 +1,7 @@
-# Lighten Up, hands-only edition
+# Lighten Up, game-only edition
 
 A variant of Lighten Up with **no EEG**: no headset, no simulator, no calibration. It lives on the branch
-`claude/keen-keller-my69oo` and is not meant to merge into `main`, where the EEG game stays as it is.
+`game-only` and is not meant to merge into `main`, where the EEG game stays as it is.
 
 What is different from `main`:
 

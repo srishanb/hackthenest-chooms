@@ -6,7 +6,7 @@
  */
 import type { UiConfig } from '../shared/contracts/config';
 
-// Hands-only variant: the three signal-only components (source badge, calibration, debug overlay) are off.
+// Game-only variant: the three signal-only components (source badge, calibration, debug overlay) are off.
 export const UI_CONFIG: UiConfig = {
   components: {
     'world-tutorial': { enabled: true, slot: 'full' },
@@ -25,10 +25,10 @@ export const UI_CONFIG: UiConfig = {
 };
 
 /**
- * Hands-only variant: there is no EEG input, so the UI hides everything about a signal
+ * Game-only variant: there is no EEG input, so the UI hides everything about a signal
  * (source line on the menu, replay presets, the "show signal" toggle).
  */
-export const HANDS_ONLY = true;
+export const GAME_ONLY = true;
 
 /** Presentation scale: 32 world pixels represent one metre in the HUD. */
 export const HUD_WORLD_PIXELS_PER_METRE = 32;

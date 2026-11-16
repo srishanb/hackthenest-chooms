@@ -1,4 +1,4 @@
-/** The hands-only build's signal: always neutral, always fixed, never a device. */
+/** The game-only build's signal: always neutral, always fixed, never a device. */
 import { expect, it } from 'vitest';
 import { createStillSignal } from '../still-signal';
 

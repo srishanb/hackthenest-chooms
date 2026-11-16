@@ -33,7 +33,7 @@ export interface GameDeps {
   /** Seed of the first run's candle, so the menu emblem shows the same candle. Optional: random by default. */
   candleSeed?: number;
   /**
-   * Set to play the endless, generated climb instead of the authored sections (hands-only variant).
+   * Set to play the endless, generated climb instead of the authored sections (game-only variant).
    * `seed` picks the climb; `fixedSeed` keeps it for every run; `bot` is the development route bot.
    */
   endless?: { config: EndlessConfig; seed: number; fixedSeed: boolean; bot: boolean; startChunk?: number; startFuel?: number };
