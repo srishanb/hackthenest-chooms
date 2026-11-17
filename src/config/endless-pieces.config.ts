@@ -104,11 +104,17 @@ export const ENDLESS_PIECES_CONFIG = {
    */
   ledgeKinds: { bounceFromChunk: 5, crumbleFromChunk: 6, updraftFromChunk: 7 },
   /**
-   * Time the route keeps in hand on a crumbling ledge (ms): the walk from the landing plus the charge
-   * must fit in the ledge's hold time (game.config.ts `ledgeKinds.crumble.holdMs`, 400 ms) less this, so
-   * a person (and the bot, which may stop up to 1.5 px early) has a few frames of slack.
+   * Time the route keeps in hand on a crumbling ledge (ms): the reaction allowance, then the walk from the
+   * landing, then the charge, must fit in the ledge's hold time (game.config.ts `ledgeKinds.crumble.holdMs`,
+   * 600 ms) less this, so a person (and the bot, which may stop up to 1.5 px early) has a few frames of slack.
    */
   crumbleMarginMs: 60,
+  /**
+   * How long a person may take to react to landing on a crumbling ledge before pressing jump (ms). A key held
+   * through the landing does nothing (the jump latch), so every step off a crumbling ledge is proved with the
+   * candle standing still this long first, then walking, then charging.
+   */
+  crumbleReactionMs: 250,
   /**
    * A jump through an updraft column, off a bounce cap or off a crumbling ledge must land from every takeoff
    * `takeoffSamplePx` apart across +-`takeoffTolerancePx` of the stored one (px). 0.25 px is the narrowest
@@ -130,11 +136,11 @@ export const ENDLESS_PIECES_CONFIG = {
   mushroomLaunch: { weight: 1.6, fromChunk: 5, demanding: true, capWidthPx: [80, 104] as const, capRisePx: [-50, 10] as const,
     risePx: [240, 330] as const, levels: [3, 9] as const },
   /**
-   * Crumbling run: `ledges` crumbling ledges in a row, each a small hop (charge `levels`, at most 6 of 12,
-   * which fits the hold time) of `risePx`, at least `minHopPx` sideways. There is no time to wait: each
-   * one falls 400 ms after you land on it.
+   * Crumbling run: `ledges` crumbling ledges in a row, each a small hop (charge `levels`, at most 5 of 12,
+   * which fits the hold time after a 250 ms reaction) of `risePx`, at least `minHopPx` sideways. There is no
+   * time to wait: each one falls 600 ms after you land on it.
    */
-  crumblingRun: { weight: 2.4, fromChunk: 6, demanding: true, ledges: [2, 4] as const, risePx: [-10, 46] as const, levels: [3, 6] as const,
+  crumblingRun: { weight: 2.4, fromChunk: 6, demanding: true, ledges: [2, 4] as const, risePx: [-10, 40] as const, levels: [3, 5] as const,
     minHopPx: 60, widthScale: 0.85 },
   /**
    * Updraft rise: a rise column (`widthPx` x `heightPx`) beside the takeoff ledge, `gapPx` from its edge;

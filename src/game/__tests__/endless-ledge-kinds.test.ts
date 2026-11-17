@@ -160,6 +160,41 @@ describe('each new piece has its shape and needs its kind', () => {
     expect(checked).toBeGreaterThan(30);
   });
 
+  it('every step off a crumbling ledge can be made by a person who reacts 250 ms after landing, then walks and charges', () => {
+    // QA finding 10: with a 250 ms reaction 56 of 88 crumbling steps could not be made at all.
+    const stepMs = 1000 / G.stepHz;
+    let checked = 0;
+    for (const { seed, chunk, prev, next } of samples) {
+      const world = [...prev.platforms, ...chunk.platforms, ...next.platforms];
+      if (world.some((p) => p.motion)) continue;
+      const columns = [...prev.updrafts, ...chunk.updrafts, ...next.updrafts];
+      for (const step of chunk.route) {
+        if (world.find((p) => p.id === step.fromId)?.type !== 'crumbling') continue;
+        const incoming = chunk.route.find((other) => other.toId === step.fromId)!;
+        const from = world.find((p) => p.id === incoming.fromId)!;
+        let state: PlayerState = { ...teleportPlayer(incoming.takeoffX, topOf(from) - G.player.height / 2), grounded: true, platformId: from.id, jumpLatch: false };
+        let crumble = NO_CRUMBLE;
+        const go = (input: { left: boolean; right: boolean; jump: boolean }): void => {
+          const out = stepWorld(state, crumble, input, world, columns, WIDTH, G, stepMs);
+          state = out.player; crumble = out.crumble;
+        };
+        const idle = { left: false, right: false, jump: false };
+        for (let i = 0; i < incoming.chargeSteps; i++) go({ ...idle, jump: true });
+        go({ left: incoming.direction < 0, right: incoming.direction > 0, jump: false });
+        for (let i = 0; i < 2000 && !state.grounded; i++) go(idle);
+        expect(state.platformId).toBe(step.fromId);
+        for (let i = 0; i < Math.ceil(T.crumbleReactionMs / stepMs); i++) go(idle);
+        for (let i = 0; i < 300 && Math.abs(state.x - step.takeoffX) > 1; i++) go({ left: state.x > step.takeoffX, right: state.x < step.takeoffX, jump: false });
+        for (let i = 0; i < step.chargeSteps; i++) go({ ...idle, jump: true });
+        go({ left: step.direction < 0, right: step.direction > 0, jump: false });
+        for (let i = 0; i < 3000 && !state.grounded; i++) go(idle);
+        expect(state.platformId, `seed ${seed} ${step.fromId}->${step.toId}`).toBe(step.toId);
+        checked++;
+      }
+    }
+    expect(checked).toBeGreaterThan(15);
+  });
+
   it('a jump through a column, off a cap or off a crumbling ledge lands from every takeoff 0.25 px apart within 2 px', () => {
     // QA finding 6/7 and the fixer's seed 4 chunk 18 case: misses 0.25 to 1 px from the stored takeoff while both ends landed.
     const cases: Array<[number, number]> = [[4, 18], [136, 11], [297, 15], [409, 16], [486, 18], [493, 22]];

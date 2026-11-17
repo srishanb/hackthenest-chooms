@@ -20,8 +20,9 @@
  *     step is meant to use);
  *   - a crumbling ledge limits how long the route may stand on it: a step from one is replayed with the
  *     world stepper (player/world-step.ts, the game's own) starting from the time the candle has already
- *     stood there, walking from where the step before it landed (`arriveX`) to `takeoffX`, and charging
- *     step by step; if the ledge falls first, the step misses.
+ *     stood there: a reaction allowance (a held key does nothing on landing, so a person presses after it;
+ *     endless-pieces.config.ts `crumbleReactionMs`), then the walk from where the step before it landed
+ *     (`arriveX`) to `takeoffX`, then the charge step by step; if the ledge falls first, the step misses.
  */
 import type { GameConfig } from '../../shared/contracts/config';
 import type { PlatformData } from '../../shared/contracts/content';
@@ -118,7 +119,9 @@ export interface Flight {
 export function flyStep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: number, config: GameConfig,
   options: { shiftPx?: number; stopPastTarget?: boolean; updrafts?: readonly UpdraftBox[]; onState?: (state: PlayerState) => void;
     /** Give up after this many physics steps in the air (default 6000, 50 s). */
-    maxSteps?: number } = {}): Flight {
+    maxSteps?: number;
+    /** Off a crumbling ledge: time the candle stands still after landing before it walks (ms; default the config's reaction allowance). */
+    reactionMs?: number } = {}): Flight {
   const updrafts = options.updrafts ?? [];
   const environment = { updrafts };
   const from = platforms.find((platform) => platform.id === step.fromId);
@@ -154,8 +157,9 @@ export function flyStep(step: RouteStep, platforms: readonly PlatformBox[], worl
     for (let i = 0; i < MAX_WALK_STEPS && state.grounded; i++) advance(walk);
     if (state.grounded) return missed(state, bounces);
   } else if (from.type === CRUMBLING_TYPE && config.ledgeKinds) {
+    // A person first reacts to the landing (the latch ignores a key held through it), then walks, then charges.
     const walkMs = standMsBefore(step, config, options.shiftPx ?? 0) - (step.chargeSteps + 1) * stepMs;
-    crumble = new Map([[from.id, { heldMs: walkMs, goneMs: null }]]);
+    crumble = new Map([[from.id, { heldMs: (options.reactionMs ?? ENDLESS_PIECES_CONFIG.crumbleReactionMs) + walkMs, goneMs: null }]]);
     for (let i = 0; i < step.chargeSteps; i++) advance({ ...IDLE, jump: true });
     advance({ left: step.direction < 0, right: step.direction > 0, jump: false });
     // The ledge fell during the charge: the jump never left it.

@@ -129,9 +129,9 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
   const allSteps = (run: PieceRun): RouteStep[] => [...run.steps, ...run.altSteps, ...committed.steps, ...committed.altSteps];
   const columns = (run: PieceRun): UpdraftData[] => [...committed.updrafts, ...run.updrafts];
   const stepMs = 1000 / game.stepHz;
-  /** Time a step from a crumbling ledge may take, walk and charge (ms); Infinity elsewhere. */
+  /** Time a step from a crumbling ledge may take, walk and charge, after the reaction allowance (ms); Infinity elsewhere. */
   const crumbleBudgetMs = (ledge: PlatformData): number => ledge.type === CRUMBLING_TYPE && game.ledgeKinds
-    ? game.ledgeKinds.crumble.holdMs - tuning.crumbleMarginMs : Number.POSITIVE_INFINITY;
+    ? game.ledgeKinds.crumble.holdMs - tuning.crumbleMarginMs - tuning.crumbleReactionMs : Number.POSITIVE_INFINITY;
   /**
    * Where the candle lands on `ledge` when it arrives by the route, in the world given (default: as placed
    * now), or null. Null also when more than one step arrives on it, or the one that does leaves a moving

@@ -34,11 +34,13 @@ export const GAME_CONFIG: GameConfig = {
       impactGain: 0.12, // extra launch px/s per px/s of landing speed (a hard landing bounces a little higher)
       maxLaunchSpeed: 1100, // px/s; the cap on that extra
     },
-    // 400 ms after first standing on it: enough to charge 8 of the 12 charge levels (a small jump), never a
-    // full 600 ms charge, so the hop must be planned before landing. Gone for at least 3 s, so a fall below
-    // it costs a real climb back, but a second try is never locked out.
+    // 600 ms after first standing on it: exactly a full charge's time, so a full jump off it is never
+    // possible (the charge and the release step take 608 ms). A held key does nothing on landing (the latch),
+    // so the press comes after it: a person who reacts in 250 ms still has time for the small hop the route
+    // asks (charge level 3 to 5 of 12, endless-pieces.config.ts `crumbleReactionMs`). Gone for at least 3 s, so a fall below it costs a real climb back,
+    // but a second try is never locked out. (It was 400 ms; QA: with a 250 ms reaction 56 of 88 steps failed.)
     crumble: {
-      holdMs: 400, // ms it holds after the candle first stands on it
+      holdMs: 600, // ms it holds after the candle first stands on it
       regrowMs: 3000, // ms after it fell before it may grow back
       clearancePx: 48, // the candle's body must be at least this far from its box for it to grow back (px)
     },
