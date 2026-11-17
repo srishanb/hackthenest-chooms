@@ -44,6 +44,7 @@ The menu has **Today's climb** (the same ledges for everyone on the same day, fr
 | `?candleSeed=7` | Development builds only: pick the candle |
 | `?fuel=0.05` | Development builds only: the first run starts nearly out of fuel, to look at the flame going out |
 | `?shaken=0.9` | Development builds only: the first run starts with a shaken candle, to look at the forest turning |
+| `?walls=1` | Prototype, **in production builds too**: wall slide and wall jump pieces from chunk 1 (Decision D-37). Never saves a best height |
 
 Dev pages for looking at the candle: `/src/game/__tests__/candle-faces.html` (every mood on the hero) and
 `/src/game/__tests__/candle-close-up.html` (every mood in the portrait close-up).
@@ -149,6 +150,43 @@ Chunks are built ahead of need (up to 4 below, one per frame at most) and the pi
 20,000 replayed physics steps (a count, so chunks are identical on any machine). Every column stays inside its chunk, so neighbouring chunks never change each other's
 routes. In the dark each kind keeps a small accent above the darkness, faded with the light like the ledge
 outlines, and the outlines' reach search goes through the columns, so a ledge reached by riding one is outlined. Reduced motion: no shake, no falling bits, still streaks.
+
+### Wall slide and wall jump (Decision D-37, a prototype behind `?walls=1`)
+
+Off by default. With the switch off every chunk for every seed is byte-for-byte what it was before walls existed,
+and the classic climb never meets a wall. With `?walls=1` (it works in a production build too, so it can be tried on
+the preview deployment) two pieces may appear from chunk 1, and such a run never saves a best height. Try
+`?walls=1&seed=36`: its chunk 1 (the first screen above the ground) holds a wall kick and a chimney.
+
+- **Wall** (a grey stone pillar of block courses, lit on one face, mossy or snow-capped on top; at night dashed
+  lavender lines up both faces). Solid: its sides stop the body, its underside stops a head, its top can be stood
+  on. Only walls grip; the edges of the world never do, or every fall could be saved.
+- **Grip** (`game.config.ts` `wallMoves.gripBelowTakeoffPx`, 96 px). A wall grips only while the feet are at most
+  96 px below where the candle last took off or kicked. A longer fall slides straight past at full speed, and a
+  press does nothing: **a wall never catches a fall** (D-33). It also caps a slide at about a second.
+- **Slide.** In the air, pressed against a gripping wall and holding toward it, the fall eases (16/s) to 90 px/s.
+- **Kick.** A fresh jump press (the key released since takeoff: the jump latch is unchanged) within 6 px of a
+  gripping wall throws the candle up and away at 620 px/s, 58 degrees above level: about 100 px of climb, less than
+  half a full charge jump (217 px), so a wall is a tool and not a shortcut. There is no ground to charge on, so the
+  kick is fixed. For 160 ms after it, held direction is ignored, so you cannot steer straight back. The same wall
+  cannot be kicked twice in a row (`sameWallTwice: false`): it needs a landing or another wall first, so one wall
+  is no ladder and two facing walls are a chimney.
+- **Wall kick** (piece). A wall stands 40 to 110 px beyond the edge of the entry ledge; the next ledge is 222 to
+  300 px up, higher than any charge jump lifts the feet, and the wall's top stands higher still, so only the kick
+  gets there. Jump at the wall, press, come down on the ledge. Nothing is under the gap.
+- **Chimney** (piece). Two facing walls 64 to 96 px apart above the entry ledge; three or four kicks from one to
+  the other, then out over the shorter wall onto a ledge outside, higher than any jump reaches.
+
+How the route proves them: a wall is a platform of type `wall`, so every replay, reach search and later piece meets
+it. A wall step stores, besides its takeoff and charge, how many physics steps to wait within reach of each wall
+before pressing (`kicks`) and the walls it must kick (`walls`). The replay, the route bot and the night outlines
+press the same keys (`src/game/endless/wall-kicks.ts`: hold toward the wall, press a set time after reaching it,
+then hold the other way). Every wall step must land from every takeoff 0.25 px apart within 2 px either side and
+with every kick pressed up to 6 physics steps (50 ms) early or late, and the kit puts its ledge only where all of
+those flights come down. A drop may never touch a wall. Walls keep clear of other ledges by their whole box and stay
+inside their chunk. The chunk map tool shows them with `--walls` (`|` for a wall, `K` and `H` for the pieces'
+ledges). The numbers to tune by feel are in `game.config.ts` `wallMoves` (rules) and `endless-pieces.config.ts`
+`walls`, `wallKick`, `chimney` (pieces); each has a comment saying what it changes in the hand.
 
 ## Composure without a headset
 
