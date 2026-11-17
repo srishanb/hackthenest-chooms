@@ -81,10 +81,16 @@ const SENSITIVE_SHIFTS: readonly number[] = (() => {
   return shifts;
 })();
 const END_SHIFTS: readonly number[] = [-ENDLESS_PIECES_CONFIG.takeoffTolerancePx, ENDLESS_PIECES_CONFIG.takeoffTolerancePx];
-/** Press-time offsets a wall step must also land from (physics steps): the ends and the middles of +-`kickTimingSteps`. */
+/**
+ * Press-time offsets a wall step must also land from (physics steps): every one in +-`kickTimingSteps`. Every one,
+ * not the ends: where a kick flight lands is not monotonic in the press time (an early press can carry it on to a
+ * higher ledge).
+ */
 const KICK_OFFSETS: readonly number[] = (() => {
   const range = ENDLESS_PIECES_CONFIG.walls.kickTimingSteps;
-  return [-range, -Math.round(range / 2), Math.round(range / 2), range].filter((offset, i, all) => offset !== 0 && all.indexOf(offset) === i);
+  const offsets: number[] = [];
+  for (let k = 1; k <= range; k++) offsets.push(-k, k);
+  return offsets;
 })();
 /** The longest flight followed (physics steps, 50 s): a slow sink in a drift column is long, but never this long. */
 const MAX_FLIGHT_STEPS = 6000;
