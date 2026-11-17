@@ -34,6 +34,32 @@ describe('reachableLedges', () => {
   });
 });
 
+describe('reachableLedges with a lower reach (the endless climb at night)', () => {
+  // From `a` (top 385): `level` is level with it, `low` is 50 px lower, both a short hop to the right.
+  const level: PlatformBox = { id: 'level', x: 620, y: 395, width: 240, height: 20 };
+  const low: PlatformBox = { id: 'low', x: 620, y: 445, width: 240, height: 20 };
+  // Separate worlds: a ledge above another would catch the jump first.
+  const withLevel = [floor, a, level], withLow = [floor, a, low];
+
+  it('lists only higher ledges by default, as the authored climb does', () => {
+    expect(reachableLedges(a, withLevel, world, GAME_CONFIG)).not.toContain('level');
+    expect(reachableLedges(a, withLow, world, GAME_CONFIG)).not.toContain('low');
+  });
+
+  it('also lists a reachable ledge level with or a little below the one underfoot', () => {
+    expect(reachableLedges(a, withLevel, world, GAME_CONFIG, 60)).toContain('level');
+    expect(reachableLedges(a, withLow, world, GAME_CONFIG, 60)).toContain('low');
+  });
+
+  it('still never lists the ledge underfoot or anything deeper than the reach (the ground 103 px down stays dark)', () => {
+    const ids = reachableLedges(a, withLow, world, GAME_CONFIG, 60);
+    expect(ids).not.toContain('a');
+    expect(ids).not.toContain('floor');
+    // The ground is reachable (a drop), so only the reach keeps it dark.
+    expect(reachableLedges(a, withLow, world, GAME_CONFIG, 120)).toContain('floor');
+  });
+});
+
 describe('outlineSegments', () => {
   it('outlines the current platform on four sides and only the top edge of a reachable one', () => {
     const segments = outlineSegments(platforms, 'floor', ['a']);

@@ -7,8 +7,11 @@
  * steering) is duplicated from tools/levels/reach.ts so both agree; it is conservative, so a ledge
  * reachable only with steering may stay dark.
  *
- * Only ledges strictly higher than the current one count: falling is always possible, and lighting
- * every lower ledge would undo the darkness. Platforms and physics only, never the signal.
+ * Only ledges strictly higher than the current one count by default (the authored climb): falling is
+ * always possible, and lighting every lower ledge would undo the darkness. The endless climb's set
+ * pieces put the next route ledge level with or a little below the takeoff (detour drops, big leaps,
+ * pillars, traverses), so it passes `lowerPx`: a ledge that much lower still counts, and nothing
+ * deeper does, so the ledges already climbed past stay dark. Platforms and physics only, never the signal.
  */
 import type { GameConfig } from '../../shared/contracts/config';
 import { createPlayer, stepPlayer } from '../player/movement';
@@ -27,8 +30,12 @@ export interface WorldBounds {
 
 const topOf = (platform: PlatformBox): number => platform.y - platform.height / 2;
 
-/** Ids of ledges higher than `source` that a sampled jump from `source` lands on, in `platforms` order. */
-export function reachableLedges(source: PlatformBox, platforms: readonly PlatformBox[], world: WorldBounds, config: GameConfig): string[] {
+/**
+ * Ids of ledges higher than `source` (or at most `lowerPx` lower, default 0: strictly higher only) that a
+ * sampled jump from `source` lands on, in `platforms` order.
+ */
+export function reachableLedges(source: PlatformBox, platforms: readonly PlatformBox[], world: WorldBounds, config: GameConfig,
+  lowerPx = 0): string[] {
   const { width: bodyW, height: bodyH } = config.player;
   const stepMs = 1000 / config.stepHz;
   // Long enough to rise and then fall to the world floor, even from the top ledge.
@@ -63,7 +70,7 @@ export function reachableLedges(source: PlatformBox, platforms: readonly Platfor
       }
     }
   }
-  return platforms.filter((p) => p.id !== source.id && landed.has(p.id) && topOf(p) < sourceTop).map((p) => p.id);
+  return platforms.filter((p) => p.id !== source.id && landed.has(p.id) && topOf(p) < sourceTop + lowerPx).map((p) => p.id);
 }
 
 export interface Segment {
