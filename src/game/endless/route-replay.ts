@@ -198,12 +198,15 @@ export function chargeDriftPx(ledge: PlatformData, chargeSteps: number, config: 
 /**
  * One step lands on its target with `ledges` as they are; from a moving ledge, from every shifted takeoff
  * too. A flight that bounces or passes through a column is sensitive to where it starts (a column's edge
- * is sharp, and a bounce doubles any error), so it must also land from takeoffs `DRIFT_TOLERANCE_PX`
- * either side: the bot starts charging within 1.5 px of the takeoff, and a person is never exact.
+ * is sharp, and a bounce doubles any error), so a jump must also land from takeoffs `DRIFT_TOLERANCE_PX`
+ * either side (the bot starts charging within 1.5 px of the takeoff, and a person is never exact), and a
+ * drop may not do either at all.
  */
 function stepLands(step: RouteStep, ledges: readonly PlatformData[], worldWidth: number, config: GameConfig, updrafts: readonly UpdraftBox[]): boolean {
   const flight = flyStep(step, ledges, worldWidth, config, { stopPastTarget: true, updrafts });
   if (flight.landedId !== step.toId || (step.via && !flight.bounces.includes(step.via))) return false;
+  // A walk-off starts its fall wherever the walk's last step happens to end, so it may not cross a column or a cap.
+  if (step.kind === 'drop' && (flight.bounces.length || flight.inColumn)) return false;
   if ((flight.bounces.length || flight.inColumn) && step.kind !== 'drop'
     && ![-DRIFT_TOLERANCE_PX, DRIFT_TOLERANCE_PX].every((shift) => replayStep(step, ledges, worldWidth, config, shift, true, updrafts) === step.toId)) return false;
   const from = ledges.find((ledge) => ledge.id === step.fromId);
