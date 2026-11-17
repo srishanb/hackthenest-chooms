@@ -7,7 +7,9 @@
  * `growth`, the same as the candle's size and walking speed (+2% per wax, at most +6%).
  * The growth comes from the wax count only, never from the signal (binding rule 2). The
  * collision body keeps its size, and the level checker and LAN-3 outlines keep using the
- * base config, so a buff can only make a ledge easier, never mark an unreachable one.
+ * base config, so the buff never marks an unreachable ledge. For a person it only widens what a
+ * jump can reach, though the same hold now goes a little farther (and may overshoot a tight
+ * landing, so the route bot re-picks its hold under the current growth: endless/route-bot.ts).
  */
 import type { GameConfig } from '../../shared/contracts/config';
 

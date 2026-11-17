@@ -37,6 +37,8 @@ export function createProtectedVisibility(
   platformSource: readonly PlatformBox[] | (() => readonly PlatformBox[]),
   worldSource: WorldBounds | (() => WorldBounds),
   config: GameConfig,
+  /** How much lower than the ledge underfoot a reachable ledge may be and still be outlined (px; 0 = only higher ones). */
+  lowerReachPx = 0,
 ): ProtectedVisibility {
   const graphics = scene.add.graphics().setDepth(depth);
   const cache = new Map<string, string[]>();
@@ -57,7 +59,7 @@ export function createProtectedVisibility(
       drawnFor = platformId;
       let reachable = cache.get(platformId);
       if (!reachable) {
-        reachable = reachableLedges(source, platforms, worldNow(), config);
+        reachable = reachableLedges(source, platforms, worldNow(), config, lowerReachPx);
         cache.set(platformId, reachable);
         // A streamed world never stops handing out new ids; keep only the recent ones.
         if (cache.size > 200) cache.delete(cache.keys().next().value!);

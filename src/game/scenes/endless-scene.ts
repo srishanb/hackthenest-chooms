@@ -291,7 +291,7 @@ export class EndlessScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.ledgeKinds.destroy());
     // Above the darkness: the ledge underfoot and the ledges a real jump reaches stay readable.
     this.visibility = createProtectedVisibility(this, DEPTH.alwaysReadable, () => this.stream.platforms(),
-      () => ({ width, ...this.stream.bounds() }), gameConfig);
+      () => ({ width, ...this.stream.bounds() }), gameConfig, this.deps.config.outlineLowerReachPx);
 
     // Native events reach the buffer immediately; do not let Space/arrows scroll the page.
     this.controls = createKeyboardInput(() => stores.settings.get().keys);
@@ -425,7 +425,7 @@ export class EndlessScene extends Phaser.Scene {
       }
       const input = this.deps.bot && !this.botTakenOver
         ? this.bot.input(this.state, this.stream.chunks().flatMap((chunk) => chunk.route), (id) => this.platforms.find((p) => p.id === id),
-          { base: gameConfig, current: movement })
+          { base: gameConfig, current: movement, platforms: this.platforms, updrafts: this.stream.updrafts() })
         : keys;
       this.aim = ((input.right ? 1 : 0) - (input.left ? 1 : 0)) as -1 | 0 | 1;
       // One step of the candle and the world: crumbling ledges hold or fall, updraft columns lift (Decision D-36).

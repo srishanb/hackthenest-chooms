@@ -48,8 +48,8 @@ describe('long falls through the streamed climb', () => {
     let longest = 0;
     let falls = 0;
     let ground = 0;
-    for (const seed of [3, 42, 1234, 98765]) {
-      for (const startChunk of [1, 4, 7, 11]) {
+    for (const seed of [3, 42, 1234, 98765, 209, 379]) {
+      for (const startChunk of [1, 2, 4, 7, 11]) {
         for (const direction of [-1, 1] as const) {
           const generator = createEndlessGenerator(seed, G, C);
           const anchor = generator.floor(startChunk);
@@ -71,19 +71,23 @@ describe('long falls through the streamed climb', () => {
           // Bounded cost: the window never grows past the player's chunk and its neighbours.
           expect(streamed.mostChunks).toBeLessThanOrEqual(C.keepBelow + C.keepAbove + 1);
           longest = Math.max(longest, streamed.dropPx);
-          if (streamed.landedOn === 'e0:floor') ground++;
+          // Only a fall that started two or more chunks up shows the ground can catch a long fall.
+          if (streamed.landedOn === 'e0:floor' && startChunk >= 2) ground++;
           falls++;
         }
       }
     }
     expect(falls).toBeGreaterThanOrEqual(18);
     // A slip can cost more than two whole chunks. (Before set pieces, D-35, one of these falls passed
-    // through about nine; traverses and pillar rows now catch more falls, but a fall is still unbounded.)
+    // through about nine; traverses and pillar rows now catch more falls: measured longest 2.6 chunks.)
+    // The stricter guard against a cap on every fall is the straight-drop test below (more than 3 chunks).
     expect(longest).toBeGreaterThan(2 * C.chunkHeightPx);
+    // The ground still catches a fall that began two or more chunks up (seeds 209 and 379 from chunk 2;
+    // measured over 78 walk-offs from chunk 2 with 40 other seeds: 2 reach the ground, none from chunk 3 or up).
     expect(ground).toBeGreaterThan(0);
   });
 
-  it('a candle dropped from high up at many places falls as far as it must, sometimes more than a whole chunk', () => {
+  it('a candle dropped from high up at many places falls as far as it must, sometimes through more than three chunks', () => {
     let longest = 0;
     for (const seed of [42, 7, 98765]) {
       const generator = createEndlessGenerator(seed, G, C);
@@ -107,8 +111,10 @@ describe('long falls through the streamed climb', () => {
         longest = Math.max(longest, streamed.dropPx);
       }
     }
-    // Some straight drops pass through more than one whole chunk: a fall is no longer bounded.
-    expect(longest).toBeGreaterThan(C.chunkHeightPx);
+    // Some straight drops pass through more than three whole chunks: a fall is not bounded. Measured on
+    // these seeds from chunk 6: the longest is 3.9 chunks (20 other seeds: 2.6 to 3.9), so a safety net
+    // that caps every fall near two chunks fails here.
+    expect(longest).toBeGreaterThan(3 * C.chunkHeightPx);
   });
 
   it('loads every chunk that a very fast fall can reach before the next update', () => {
