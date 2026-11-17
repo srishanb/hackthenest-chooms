@@ -111,3 +111,17 @@ export function kickVelocity(side: -1 | 1, rules: WallMovesConfig): { vx: number
   const angle = (rules.kickAngleDeg * Math.PI) / 180;
   return { vx: -side * rules.kickSpeed * Math.cos(angle), vy: -rules.kickSpeed * Math.sin(angle) };
 }
+
+/**
+ * Is the candle sliding now: in the air, pressed against a gripping wall and holding toward it? The same test
+ * `stepPlayer` makes, for the drawing and the dev readout (they never change movement).
+ */
+export function isSliding(state: { x: number; y: number; grounded: boolean; takeoffBottomY: number },
+  input: { left: boolean; right: boolean }, platforms: readonly PlatformBox[], config: { player: Body; wallMoves?: WallMovesConfig }): boolean {
+  const rules = config.wallMoves;
+  const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+  if (!rules || state.grounded || dir === 0) return false;
+  const walls = wallsIn(platforms);
+  return walls.length > 0 && touchingWall(walls, state.x, state.y, config.player, dir as -1 | 1) !== null
+    && gripHolds(state.y + config.player.height / 2, state.takeoffBottomY, rules);
+}

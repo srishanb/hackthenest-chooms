@@ -16,11 +16,18 @@
  * one lands on the route's target, as a person adjusts by eye. A jump that still lands somewhere else
  * is remembered, and the same hold is never tried again for that step until it succeeds, so the bot
  * cannot repeat one failing jump for ever.
+ *
+ * A wall step (Decision D-37) goes on after the launch: in the air the bot presses the keys wall-kicks.ts gives
+ * for that step (hold toward the wall, press jump a set time after reaching it, then hold the other way), the
+ * same keys the generator's replay proved the step with.
  */
 import type { GameConfig } from '../../shared/contracts/config';
+import { GAME_CONFIG } from '../../config/game.config';
 import type { PlatformBox, PlayerInput, PlayerState, UpdraftBox } from '../player/types';
 import type { RouteStep } from './generator';
+import { wallsIn } from '../player/wall';
 import { flyStep } from './route-replay';
+import { createKickPolicy, type KickPolicy } from './wall-kicks';
 
 const IDLE: PlayerInput = { left: false, right: false, jump: false };
 /** Close enough to the takeoff point to start charging (px). One walking step is under 2 px. */
@@ -86,6 +93,8 @@ export function createRouteBot() {
   let launched: { step: RouteStep; hold: number } | null = null;
   /** Holds that landed somewhere other than the target, by step: never tried again until that step succeeds. */
   const failed = new Map<string, Set<number>>();
+  /** The keys of the wall step in flight, if it is one. */
+  let kicking: KickPolicy | null = null;
   return {
     /**
      * The input for this physics step, given the live route steps and the platforms' edges. `movement`
@@ -93,7 +102,11 @@ export function createRouteBot() {
      */
     input(state: PlayerState, steps: readonly RouteStep[], ledgeOf: (id: string) => { x: number; width: number } | undefined,
       movement?: BotWorld): PlayerInput {
-      if (!state.grounded) { held = 0; pending = null; return IDLE; }
+      if (!state.grounded) {
+        held = 0; pending = null;
+        return kicking ? kicking.input(state, wallsIn(movement?.platforms ?? [])) : IDLE;
+      }
+      kicking = null;
       if (launched) {
         // Landed again: a jump that reached its target forgets its failures; one that did not remembers its hold.
         const key = keyOf(launched.step);
@@ -128,6 +141,7 @@ export function createRouteBot() {
       // Release while holding the stored direction: this is the launch step.
       launched = { step, hold };
       held = 0; pending = null;
+      if (step.kicks) kicking = createKickPolicy(step.kicks, step.direction, movement?.current ?? GAME_CONFIG);
       return { left: step.direction < 0, right: step.direction > 0, jump: false };
     },
   };

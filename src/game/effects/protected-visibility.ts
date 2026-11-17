@@ -14,7 +14,7 @@
 import type * as Phaser from 'phaser';
 import type { GameConfig } from '../../shared/contracts/config';
 import type { PlatformBox, UpdraftBox } from '../player/types';
-import { outlineSegments, reachableLedges, type WorldBounds } from '../world/reachable-ledges';
+import { outlineSegments, reachableLedges, type KickSample, type WorldBounds } from '../world/reachable-ledges';
 import { fadeSegments } from './outline-fade';
 import { snapToGrid } from '../forest/pixel-grid-snap';
 
@@ -41,6 +41,8 @@ export function createProtectedVisibility(
   lowerReachPx = 0,
   /** The updraft columns in reach (the endless climb), so ledges reached through one are outlined too. */
   updraftSource: () => readonly UpdraftBox[] = () => [],
+  /** The route's wall steps from a ledge (Decision D-37, `?walls=1`), so a ledge reached only by a kick is outlined too. */
+  kickSource: (platformId: string) => readonly KickSample[] = () => [],
 ): ProtectedVisibility {
   const graphics = scene.add.graphics().setDepth(depth);
   const cache = new Map<string, string[]>();
@@ -61,7 +63,7 @@ export function createProtectedVisibility(
       drawnFor = platformId;
       let reachable = cache.get(platformId);
       if (!reachable) {
-        reachable = reachableLedges(source, platforms, worldNow(), config, lowerReachPx, updraftSource());
+        reachable = reachableLedges(source, platforms, worldNow(), config, lowerReachPx, updraftSource(), kickSource(platformId));
         cache.set(platformId, reachable);
         // A streamed world never stops handing out new ids; keep only the recent ones.
         if (cache.size > 200) cache.delete(cache.keys().next().value!);

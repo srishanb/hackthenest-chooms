@@ -53,8 +53,9 @@ import { createLedgeKindsView, type LedgeKindsView } from '../forest/ledge-kinds
 import { NO_CRUMBLE, solidLedges, type CrumbleState } from '../player/crumble';
 import { teleportPlayer } from '../player/movement';
 import { updraftAt } from '../player/updraft';
+import { isSliding } from '../player/wall';
 import { stepWorld } from '../player/world-step';
-import type { PlatformBox, PlayerState } from '../player/types';
+import type { PlatformBox, PlayerInput, PlayerState } from '../player/types';
 import { platformsAt } from '../world/environment';
 import { bounceEvents, landingEvents } from '../world/fall-tracker';
 import { createPhaseController, type PhaseController } from '../world/phase-controller';
@@ -83,6 +84,11 @@ export interface EndlessSceneDeps {
   startFuel?: number;
   /** Development only: how shaken (0..1) the candle starts the first run. */
   startShaken?: number;
+  /**
+   * Prototype switch (`?walls=1`, in production builds too): wall slide and wall jump pieces (Decision D-37).
+   * Off, every chunk is as without them. A wall run never saves a best height.
+   */
+  walls?: boolean;
 }
 
 /** The veil sits above the darkness and the ledge outlines but below the candle (210) and the portrait (300). */
@@ -148,6 +154,10 @@ export class EndlessScene extends Phaser.Scene {
   private crumbledIds: string[] = [];
   /** Development counters for the automated browser check (bounces, ledges fallen, physics steps inside a column). */
   private kindCounts = { bounces: 0, crumbled: 0, updraftSteps: 0 };
+  /** Wall kicks and sliding physics steps so far (Decision D-37), for the dev readout. */
+  private wallCounts = { kicks: 0, slideSteps: 0 };
+  /** The keys of the last physics step (for the dev readout's sliding flag). */
+  private lastInput: PlayerInput = { left: false, right: false, jump: false };
   /** Development: the keyboard took over from the route bot (any game key pressed during a bot run). */
   private botTakenOver = false;
 
@@ -194,7 +204,7 @@ export class EndlessScene extends Phaser.Scene {
     for (const platform of this.stream?.platforms() ?? []) this.forest.removePlatform(platform.id);
     this.seed = seed;
     this.forest.reseedBackdrop(seed);
-    this.generator = createEndlessGenerator(seed, gameConfig, config);
+    this.generator = createEndlessGenerator(seed, gameConfig, config, undefined, undefined, { walls: this.deps.walls === true });
     this.stream = createChunkStream(this.generator, config);
     // Only the very first run of a development session may start short of fuel.
     this.flame = { ...freshFlame(config), fuel01: firstRun ? this.deps.startFuel ?? 1 : 1 };
@@ -265,7 +275,7 @@ export class EndlessScene extends Phaser.Scene {
     this.score = createRunScore({ seed: this.deps.seed, originFeetY: this.spawn().y + gameConfig.player.height / 2, storage: this.deps.storage,
       // A climb picked by its seed (today's climb, or `?seed=`) keeps its own best, apart from fresh climbs.
       key: this.deps.fixedSeed ? `${config.bestKey}.seed-${this.deps.seed}` : config.bestKey,
-      indexKey: this.deps.fixedSeed ? `${config.bestKey}.seeds` : undefined, persist: !this.deps.bot && !this.deps.startChunk });
+      indexKey: this.deps.fixedSeed ? `${config.bestKey}.seeds` : undefined, persist: !this.deps.bot && !this.deps.startChunk && !this.deps.walls });
     this.startRun(this.deps.seed);
 
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
@@ -292,7 +302,10 @@ export class EndlessScene extends Phaser.Scene {
     // Above the darkness: the ledge underfoot and the ledges a real jump reaches stay readable.
     this.visibility = createProtectedVisibility(this, DEPTH.alwaysReadable, () => this.stream.platforms(),
       () => ({ width, ...this.stream.bounds() }), gameConfig, this.deps.config.outlineLowerReachPx,
-      () => this.stream.updrafts());
+      () => this.stream.updrafts(),
+      // The route's wall steps from the ledge underfoot (Decision D-37), so a ledge reached only by a kick is outlined.
+      (platformId) => this.stream.chunks().flatMap((chunk) => chunk.route).filter((step) => step.fromId === platformId && step.kicks)
+        .map((step) => ({ takeoffX: step.takeoffX, chargeSteps: step.chargeSteps, direction: step.direction, kicks: step.kicks! })));
 
     // Native events reach the buffer immediately; do not let Space/arrows scroll the page.
     this.controls = createKeyboardInput(() => stores.settings.get().keys);
@@ -429,6 +442,7 @@ export class EndlessScene extends Phaser.Scene {
           { base: gameConfig, current: movement, platforms: this.platforms, updrafts: this.stream.updrafts() })
         : keys;
       this.aim = ((input.right ? 1 : 0) - (input.left ? 1 : 0)) as -1 | 0 | 1;
+      this.lastInput = input;
       // One step of the candle and the world: crumbling ledges hold or fall, updraft columns lift (Decision D-36).
       const out = stepWorld(this.state, this.crumble, input, this.platforms, this.stream.updrafts(), gameConfig.view.width, movement, stepMs);
       this.state = out.player;
@@ -448,6 +462,8 @@ export class EndlessScene extends Phaser.Scene {
         this.kindCounts.bounces++;
       }
       this.kindCounts.crumbled += out.crumbled.length;
+      if (out.events.wallKicked) { this.wallCounts.kicks++; bus.emit({ type: 'jump', charge01: 0 }); }
+      if (this.deps.walls && isSliding(this.state, input, this.platforms, gameConfig)) this.wallCounts.slideSteps++;
       if (!this.state.grounded && updraftAt(this.stream.updrafts(), this.state.x, this.state.y)) this.kindCounts.updraftSteps++;
       this.syncWorld();
 
@@ -624,6 +640,9 @@ export class EndlessScene extends Phaser.Scene {
       data.endlessSeed = String(this.seed);
       data.endlessPlayer = JSON.stringify({ x: Math.round(this.state.x), y: Math.round(this.state.y), grounded: this.state.grounded,
         on: this.state.platformId, charging: this.state.charging, bot: this.deps.bot && !this.botTakenOver });
+      // Wall slide and wall jump (Decision D-37): whether the switch is on, kicks and sliding steps so far.
+      data.endlessWalls = JSON.stringify({ on: this.deps.walls === true, ...this.wallCounts,
+        live: this.platforms.filter((p) => p.type === 'wall').length, sliding: isSliding(this.state, this.lastInput, this.platforms, gameConfig) });
       data.endlessKinds = JSON.stringify({ ...this.kindCounts, crumbling: [...this.crumble.keys()].length,
         inUpdraft: !this.state.grounded && updraftAt(this.stream.updrafts(), this.state.x, this.state.y) !== null });
       // The first moving ledge on screen and its wax, in screen px, so a check can watch them move together.
