@@ -291,7 +291,8 @@ export class EndlessScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.ledgeKinds.destroy());
     // Above the darkness: the ledge underfoot and the ledges a real jump reaches stay readable.
     this.visibility = createProtectedVisibility(this, DEPTH.alwaysReadable, () => this.stream.platforms(),
-      () => ({ width, ...this.stream.bounds() }), gameConfig, this.deps.config.outlineLowerReachPx);
+      () => ({ width, ...this.stream.bounds() }), gameConfig, this.deps.config.outlineLowerReachPx,
+      () => this.stream.updrafts());
 
     // Native events reach the buffer immediately; do not let Space/arrows scroll the page.
     this.controls = createKeyboardInput(() => stores.settings.get().keys);
