@@ -25,6 +25,20 @@ export interface PlatformBox {
   height: number;
 }
 
+/**
+ * A column of rising air (an updraft), passed to `stepPlayer` with the step's environment. Centre and
+ * size in world px. While the body's centre is inside it and the candle is airborne, the column's rule
+ * (updraft.ts) replaces plain gravity. It is a zone, never something to stand on.
+ */
+export interface UpdraftBox {
+  id: string;
+  kind: 'drift' | 'rise';
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface PlayerState {
   /** Environmental drift, independent of input and never driven by the signal. */
   windVx?: number;
@@ -53,4 +67,6 @@ export interface StepEvents {
   jumped: { charge01: number } | null;
   /** The body touched a platform from above. `fallHeightPx` is how far below takeoff (0 if not lower). */
   landed: { platformId: string; fallHeightPx: number } | null;
+  /** The body came down on a bounce cap and was launched upward at `launchSpeed` px/s (bounce.ts). */
+  bounced?: { platformId: string; launchSpeed: number } | null;
 }

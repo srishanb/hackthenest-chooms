@@ -1,14 +1,24 @@
 /**
- * Fixed-step player physics: gravity, walking, charge jump, air steering, one-way platforms.
+ * Fixed-step player physics: gravity, walking, charge jump, air steering, one-way platforms, and the
+ * special ledges of the endless climb (Decision D-36): bounce caps (bounce.ts), updraft columns
+ * (updraft.ts, passed in `environment.updrafts`) and crumbling ledges (crumble.ts: the caller passes only
+ * the ledges solid now; world-step.ts does that and advances their timers).
  *
- * Why our own and not Arcade: the level checker (P4.2) runs this exact function in Node, so a
- * level it calls reachable is reachable in the game. `stepPlayer` is pure: same state, input and
- * config always give the same result. Movement must never read the signal (binding rule 2).
+ * Why our own and not Arcade: the level checker (P4.2) and the endless generator's route replay run this
+ * exact function in Node, so a route they call reachable is reachable in the game. `stepPlayer` is pure:
+ * same state, input, platforms, environment and config always give the same result. Movement must never
+ * read the signal (binding rule 2).
+ *
+ * Bounce: coming down onto a bounce cap never lands; the feet are put on its top and the candle is thrown
+ * upward (bounce.ts), keeping its horizontal speed as the new launch speed, so normal air steering goes
+ * on from there. The fall height is measured from the cap afterwards.
  */
 import type { GameConfig } from '../../shared/contracts/config';
 import { charge01, launchVelocity, steeredVx } from './charge-jump';
+import { BOUNCE_TYPE, bounceSpeed } from './bounce';
 import { clampToWalls, findLanding, findSupport } from './collide';
-import type { PlatformBox, PlayerInput, PlayerState, StepEvents } from './types';
+import type { PlatformBox, PlayerInput, PlayerState, StepEvents, UpdraftBox } from './types';
+import { updraftAt, updraftVy } from './updraft';
 
 const direction = (input: PlayerInput): -1 | 0 | 1 => ((input.right ? 1 : 0) - (input.left ? 1 : 0)) as -1 | 0 | 1;
 
@@ -24,14 +34,26 @@ export function teleportPlayer(x: number, y: number): PlayerState {
 
 const NO_EVENTS: StepEvents = { jumped: null, landed: null };
 
+/** What surrounds the body this step, apart from the ledges. Never signal-driven. */
+export interface StepEnvironment {
+  /** Sideways wind acceleration (px/s^2), applied only in the air. */
+  windAccelerationX?: number;
+  /** Updraft columns in reach (updraft.ts). */
+  updrafts?: readonly UpdraftBox[];
+}
+
+/** Nothing can be stood on but a ledge: a bounce cap throws you instead. */
+const standable = (platform: PlatformBox): boolean => platform.type !== BOUNCE_TYPE;
+
 export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: readonly PlatformBox[], worldWidth: number, config: GameConfig, dtMs: number,
-  environment: { windAccelerationX?: number } = {}): { state: PlayerState; events: StepEvents } {
+  environment: StepEnvironment = {}): { state: PlayerState; events: StepEvents } {
   const dt = dtMs / 1000;
   const { width, height } = config.player;
   const dir = direction(input);
   let { x, y, vx, vy, grounded, platformId, charging, chargeMs, jumpLatch, launchVx, takeoffBottomY } = state;
   let jumped: StepEvents['jumped'] = null;
   let landed: StepEvents['landed'] = null;
+  let bounced: StepEvents['bounced'] = null;
   let windVx = state.windVx ?? 0;
   const support = grounded ? platforms.find((platform) => platform.id === platformId) : undefined;
   if (support) { x += support.dx ?? 0; y += support.dy ?? 0; }
@@ -96,18 +118,22 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
   if (wall.hit) vx = 0;
 
   if (grounded) {
-    // Walked off the edge: start falling with the walking speed as the launch value.
-    if (!findSupport(platforms, x, width, prevBottom)) {
+    // Walked off the edge (or the ledge fell away): start falling with the walking speed as the launch value.
+    if (!findSupport(platforms.filter(standable), x, width, prevBottom)) {
       grounded = false;
       platformId = null;
       launchVx = vx;
       windVx = 0;
       takeoffBottomY = prevBottom;
+      // A charge cannot go on without ground (a crumbling ledge gone mid-charge): it is lost, and a held
+      // key waits for a release like any press in the air.
+      if (charging) { charging = false; chargeMs = 0; jumpLatch = input.jump; }
     }
   }
 
   if (!grounded) {
-    vy += config.gravityY * dt;
+    const column = config.ledgeKinds ? updraftAt(environment.updrafts, x, y) : null;
+    vy = column && config.ledgeKinds ? updraftVy(vy, column.kind, config.ledgeKinds.updraft, config.gravityY, dt) : vy + config.gravityY * dt;
     const newBottom = prevBottom + vy * dt;
     let platform = vy >= 0 ? findLanding(platforms, x, width, prevBottom, newBottom) : null;
     if (!platform && state.vy > 0 && config.falling) {
@@ -120,7 +146,16 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
         x = clampToWalls(Math.max(platform.x - edge, Math.min(platform.x + edge, x)), width, worldWidth).x;
       }
     }
-    if (platform) {
+    if (platform && platform.type === BOUNCE_TYPE && config.ledgeKinds) {
+      // Thrown back up: feet on the cap, horizontal speed carried on as the launch speed.
+      const top = platform.y - platform.height / 2;
+      const launchSpeed = bounceSpeed(vy, config.ledgeKinds.bounce);
+      y = top - height / 2;
+      vy = -launchSpeed;
+      launchVx = vx - windVx;
+      takeoffBottomY = top;
+      bounced = { platformId: platform.id, launchSpeed };
+    } else if (platform) {
       const top = platform.y - platform.height / 2;
       y = top - height / 2;
       vy = 0;
@@ -135,5 +170,5 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
   }
 
   const next: PlayerState = { x, y, vx, vy, grounded, platformId, charging, chargeMs, jumpLatch, launchVx, takeoffBottomY, windVx };
-  return { state: next, events: jumped || landed ? { jumped, landed } : NO_EVENTS };
+  return { state: next, events: bounced ? { jumped, landed, bounced } : jumped || landed ? { jumped, landed } : NO_EVENTS };
 }

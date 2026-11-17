@@ -17,7 +17,7 @@ export interface PlatformData {
   y: number;
   width: number;
   height: number;
-  /** Registry id: static, moving or slippery. */
+  /** Registry id: static, moving, slippery, bounce (a mushroom cap that launches) or crumbling. */
   type: string;
   /** Deterministic tutorial motion; distance is the maximum offset from the authored centre. */
   motion?: { axis: 'x' | 'y'; distance: number; periodMs: number };
@@ -29,6 +29,15 @@ export interface AreaData {
   y: number;
   width: number;
   height: number;
+}
+
+/**
+ * A column of rising air (endless climb). Centre and size in world pixels. `drift` slows a fall to a
+ * gentle sink; `rise` carries the candle up. The rules are in GameConfig `ledgeKinds.updraft`.
+ */
+export interface UpdraftData extends AreaData {
+  id: string;
+  kind: 'drift' | 'rise';
 }
 
 export interface SectionData {

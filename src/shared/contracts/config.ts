@@ -62,6 +62,28 @@ export interface GameConfig {
   fallSteer01?: number;
   /** Descent-only horizontal control after activationDelayMs from the apex; px/s² toward a px/s target. */
   falling?: { accelerationX: number; speedX: number; ledgeReachPx: number; activationDelayMs: number };
+  /** Bounce caps, crumbling ledges and updraft columns (game mechanics of the endless climb; never signal-driven). */
+  ledgeKinds?: LedgeKindsConfig;
+}
+
+/**
+ * Rules of the special ledges and zones. Speeds in px/s (y grows downward), times in ms, rates in 1/s.
+ * Absent from a config: those kinds behave as plain ledges and the columns do nothing.
+ */
+export interface LedgeKindsConfig {
+  /** Landing on a bounce cap launches upward at `launchSpeed + impactGain x landing speed`, at most `maxLaunchSpeed`. */
+  bounce: { launchSpeed: number; impactGain: number; maxLaunchSpeed: number };
+  /**
+   * A crumbling ledge holds `holdMs` after the candle first stands on it, then is gone. It grows back
+   * `regrowMs` after it fell, once the candle's body is at least `clearancePx` from where it was.
+   */
+  crumble: { holdMs: number; regrowMs: number; clearancePx: number };
+  /**
+   * Inside an updraft column, while rising faster than the column's terminal speed, gravity is scaled by
+   * `gravity01`; slower than it, vertical speed eases toward it at `brakePerS`. Terminal speed: `driftVy`
+   * (a gentle sink, positive) or `riseVy` (a rise, negative).
+   */
+  updraft: { gravity01: number; brakePerS: number; driftVy: number; riseVy: number };
 }
 
 export interface EmberConfig {
