@@ -563,6 +563,7 @@ export class EndlessScene extends Phaser.Scene {
     // Ledge outlines fade with the light in the last moment.
     this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius * (1 - spent01), solid);
     this.ledgeKinds.update({ platforms: this.platforms, updrafts: this.stream.updrafts(), crumble: this.crumble,
+      snowy: (column) => biomeOf(chunkOfPlatform(column.id), config) === 'snow',
       bounced: this.bouncedIds, crumbled: this.crumbledIds, candleX: this.state.x, candleY: this.state.y, radiusPx: radius * (1 - spent01),
       deltaMs, paused: !this.phase.isRunning(), reducedMotion: settings.reducedMotion });
     this.bouncedIds = [];

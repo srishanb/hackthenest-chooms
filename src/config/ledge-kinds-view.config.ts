@@ -32,6 +32,12 @@ export const LEDGE_KINDS_VIEW_CONFIG = {
     /** How fast the streaks rise (px/s) in a rise column and in a drift column: faster means stronger lift. */
     riseSpeed: 150, driftSpeed: 55,
   },
+  /**
+   * Updraft columns in the snow bands: pale streaks vanish against snow (QA finding 8), so there the column
+   * is drawn in a deep blue that reads against pale snow by day and the lit trunks at night, with each streak
+   * given a pale 2 px core beside it so it still reads against dark rock. Elsewhere the pale look stays.
+   */
+  updraftSnow: { fill: 0x2c5f8c, fillAlpha: 0.16, streak: 0x1b5f9e, core: 0xe4f7ff, streakAlpha: 0.85, edge: 0x1b5f9e, edgeAlpha: 0.75 },
   /** Accents drawn above the darkness, faded with the light like the ledge outlines (outline-fade.ts). */
   night: { cap: 0xff9fb4, crumble: 0xffb15c, updraft: 0x9fe6ff, alpha: 0.85 },
 } as const;

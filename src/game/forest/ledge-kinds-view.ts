@@ -26,6 +26,8 @@ export interface LedgeKindsFrame {
   /** Every live ledge at its position now (fallen crumbling ledges included). */
   platforms: readonly PlatformBox[];
   updrafts: readonly UpdraftBox[];
+  /** True for a column in a snow band (drawn in the snow palette, which reads against pale snow). */
+  snowy: (column: UpdraftBox) => boolean;
   crumble: CrumbleState;
   /** Caps that threw the candle and crumbling ledges that fell since the last frame. */
   bounced: readonly string[];
@@ -118,11 +120,12 @@ export function createLedgeKindsView(scene: Phaser.Scene, depths: { world: numbe
     for (let x = left; x < left + width - 4; x += 10) rect(readable, x, top - 4, 6, 2, V.night.crumble, V.night.alpha * fade * (gone ? 0.3 : 1));
   }
 
-  function drawColumn(column: UpdraftBox, fade: number, reducedMotion: boolean): void {
+  function drawColumn(column: UpdraftBox, fade: number, reducedMotion: boolean, snowy: boolean): void {
     const u = V.updraft;
+    const S = V.updraftSnow;
     const left = snapToGrid(column.x - column.width / 2), top = snapToGrid(column.y - column.height / 2);
     const width = snapToGrid(column.width), height = snapToGrid(column.height);
-    rect(air, left, top, width, height, u.fill, u.fillAlpha);
+    rect(air, left, top, width, height, snowy ? S.fill : u.fill, snowy ? S.fillAlpha : u.fillAlpha);
     const streaks = Math.max(u.minStreaks, Math.round(width * height / u.pxPerStreak));
     const speed = column.kind === 'rise' ? u.riseSpeed : u.driftSpeed;
     const time = reducedMotion ? 0 : clockMs / 1000;
@@ -133,11 +136,15 @@ export function createLedgeKindsView(scene: Phaser.Scene, depths: { world: numbe
       const sy = top + height - travel - length;
       // Fade in at the bottom and out at the top of the column.
       const ends = Math.min(1, travel / 40, (height - travel - length) / 40);
-      if (ends > 0) rect(readable, sx, Math.max(top, sy), 2, length, u.streak, u.streakAlpha * ends * fade);
+      if (ends > 0 && snowy) {
+        rect(readable, sx, Math.max(top, sy), 2, length, S.streak, S.streakAlpha * ends * fade);
+        rect(readable, sx + 2, Math.max(top, sy) + 2, 2, length - 4, S.core, S.streakAlpha * 0.6 * ends * fade);
+      } else if (ends > 0) rect(readable, sx, Math.max(top, sy), 2, length, u.streak, u.streakAlpha * ends * fade);
     }
     for (let y = top; y < top + height - 6; y += 18) {
-      rect(readable, left, y, 2, 8, V.night.updraft, V.night.alpha * 0.5 * fade);
-      rect(readable, left + width - 2, y, 2, 8, V.night.updraft, V.night.alpha * 0.5 * fade);
+      const edge = snowy ? S.edge : V.night.updraft, edgeAlpha = snowy ? S.edgeAlpha : V.night.alpha * 0.5;
+      rect(readable, left, y, snowy ? 4 : 2, 8, edge, edgeAlpha * fade);
+      rect(readable, left + width - (snowy ? 4 : 2), y, snowy ? 4 : 2, 8, edge, edgeAlpha * fade);
     }
   }
 
@@ -166,7 +173,7 @@ export function createLedgeKindsView(scene: Phaser.Scene, depths: { world: numbe
             vx: (u - 0.5) * 60, vy: -40 + u * 60, ageMs: 0, size: u < 0.5 ? 4 : 6, color: i % 3 === 0 ? V.crumble.crack : 0x6b4f3a });
         }
       }
-      for (const column of frame.updrafts) if (near(column)) drawColumn(column, fadeOf(column), frame.reducedMotion);
+      for (const column of frame.updrafts) if (near(column)) drawColumn(column, fadeOf(column), frame.reducedMotion, frame.snowy(column));
       for (const platform of frame.platforms) {
         if (platform.type === BOUNCE_TYPE && near(platform)) drawCap(platform, fadeOf(platform));
         else if (platform.type === CRUMBLING_TYPE && near(platform)) drawCrumbling(platform, frame.crumble, fadeOf(platform), frame.reducedMotion);
