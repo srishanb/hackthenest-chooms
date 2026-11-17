@@ -165,6 +165,32 @@ export const ENDLESS_PIECES_CONFIG = {
    */
   updraftCrossing: { weight: 1.4, fromChunk: 8, demanding: true, widthPx: [170, 240] as const, heightPx: [240, 320] as const,
     risePx: [-40, 100] as const, levels: [8, 12] as const, beyondJumpPx: 24, gapPx: [30, 90] as const },
+  /**
+   * Walls for wall slide and wall jump (Decision D-37), a prototype that exists only with `?walls=1`. With the
+   * switch off no wall piece is ever chosen, so every chunk is the same as without them.
+   *   fromChunk        with the switch on, wall pieces may appear from this chunk (early, so they are quick to find)
+   *   widthPx          how thick a wall is (px; even, on the 2x pixel grid)
+   *   kickTimingSteps  a wall step must land when each kick is pressed up to this many physics steps (120 a
+   *                    second) earlier or later than stored: 6 is 50 ms either way, a person's spread in timing
+   *   kickDelaySteps   how long a stored route waits within reach of a wall before pressing (physics steps)
+   */
+  walls: { fromChunk: 1, widthPx: 32, kickTimingSteps: 6, kickDelaySteps: [7, 10] as const },
+  /**
+   * Wall kick: a wall stands beside a gap next to the entry ledge. Jump at it (charge `levels`), kick back off it,
+   * and come down on a ledge `risePx` above the takeoff: higher than any charge jump reaches (217 px straight up),
+   * so only the kick gets there. `gapPx` is the air between the ledge's edge and the wall; the wall's top stands
+   * `topAbovePx` above the new ledge, so it cannot be climbed onto instead. Nothing is under the gap.
+   */
+  wallKick: { weight: 2.2, fromChunk: 1, demanding: true, gapPx: [40, 110] as const, levels: [7, 12] as const,
+    risePx: [222, 300] as const, topAbovePx: [40, 90] as const, bottomBelowPx: [20, 60] as const },
+  /**
+   * Chimney: two facing walls `innerGapPx` apart (between their faces), climbed by `kicks` kicks from one to the
+   * other, then out over the lower wall's top onto a ledge `risePx` above the takeoff. The entry ledge is under
+   * the chimney's mouth; the walls start `mouthPx` above it. The far wall is `lowerByPx` shorter, so the last kick
+   * clears it.
+   */
+  chimney: { weight: 2.2, fromChunk: 1, demanding: true, innerGapPx: [64, 96] as const, kicks: [3, 4] as const, levels: [6, 11] as const,
+    mouthPx: [50, 80] as const, heightPx: [300, 420] as const, lowerByPx: [70, 130] as const, risePx: [230, 520] as const },
 } as const;
 
 export type EndlessPiecesConfig = typeof ENDLESS_PIECES_CONFIG;

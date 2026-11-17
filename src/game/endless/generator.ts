@@ -7,7 +7,8 @@
  * with a shape you can recognise, a staircase, a zigzag shaft, a traverse, a detour down, pillar hops,
  * a big leap, a fork, an ice run, a moving crossing, or a plain ladder; and from chunk 5 up a mushroom launch
  * off a bounce cap, a crumbling run, an updraft rise and an updraft crossing (Decision D-36, whose columns are
- * kept in `chunk.updrafts` and act on every step's replay). pieces/pacing.ts picks them by
+ * kept in `chunk.updrafts` and act on every step's replay); with the `?walls=1` switch (Decision D-37, a prototype)
+ * also a wall kick and a chimney, whose walls are platforms of type `wall`. pieces/pacing.ts picks them by
  * the seed. When the next anchor is close (`approachPx`), a plain approach ladder climbs the rest and
  * its last jump lands on the next anchor.
  *
@@ -33,6 +34,7 @@ import type { GameConfig } from '../../shared/contracts/config';
 import type { PlatformData, UpdraftData } from '../../shared/contracts/content';
 import { BOUNCE_TYPE } from '../player/bounce';
 import { CRUMBLING_TYPE } from '../player/crumble';
+import { WALL_TYPE } from '../player/wall';
 import type { EndlessConfig } from '../../config/endless.config';
 import { ENDLESS_PIECES_CONFIG, type EndlessPiecesConfig } from '../../config/endless-pieces.config';
 import { seededRandom } from '../candle/candle-genome';
@@ -139,8 +141,11 @@ interface Assembled {
   waxOn: string[];
 }
 
+/** Switches of a climb. `walls`: wall slide and wall jump pieces (Decision D-37, a prototype); off, every chunk is as without them. */
+export interface GeneratorOptions { walls?: boolean }
+
 export function createEndlessGenerator(seed: number, gameConfig: GameConfig, config: EndlessConfig,
-  tuning: EndlessPiecesConfig = ENDLESS_PIECES_CONFIG, pieces: readonly PieceEntry[] = PIECES): EndlessGenerator {
+  tuning: EndlessPiecesConfig = ENDLESS_PIECES_CONFIG, pieces: readonly PieceEntry[] = PIECES, options: GeneratorOptions = {}): EndlessGenerator {
   const arcs = buildArcTable(gameConfig, config.chargeLevels);
   const dropTrace = traceDrop(gameConfig, config.chunkHeightPx);
   const worldWidth = gameConfig.view.width;
@@ -233,7 +238,7 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
     const base = floor(index);
     const nextFloor = floor(index + 1);
     const committed: Committed = { ledges: [base], steps: [], altSteps: [], updrafts: [] };
-    const features = featuresAt(index, config, tuning);
+    const features = featuresAt(index, config, tuning, options.walls === true);
     const kit = createPieceKit({ random, index, difficulty: difficultyAt(index, config), features, game: gameConfig, config, tuning,
       arcs, dropTrace, committed, floorTopPx: floorTopPx(index), nextFloor });
     const assembled: Assembled = { kit, committed, spans: [], waxOn: [] };
@@ -285,8 +290,10 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
     const main = [base, ...route.slice(0, -1).map((step) => byId.get(step.toId)!)];
     const onMain = new Set(main.map((ledge) => ledge.id));
     // Bounce caps are never stood on: no wax, no ice, no side ledges from them.
-    const alt = committed.ledges.filter((ledge) => !onMain.has(ledge.id) && ledge.type !== BOUNCE_TYPE);
+    const alt = committed.ledges.filter((ledge) => !onMain.has(ledge.id) && ledge.type !== BOUNCE_TYPE && ledge.type !== WALL_TYPE);
     const caps = committed.ledges.filter((ledge) => ledge.type === BOUNCE_TYPE);
+    // Walls (Decision D-37) hold no wax and are never icy; they are kept as they are.
+    const walls = committed.ledges.filter((ledge) => ledge.type === WALL_TYPE);
     const columns = committed.updrafts;
     const pathSteps = [...route, ...altRoute];
     const apexLimit = apexLimitTop(nextFloor, config);
@@ -382,7 +389,7 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
       const ice01 = Math.round(lerp(config.ice.min01, config.ice.max01, random()) * 100) / 100;
       return { ...ledge, type: 'slippery', ice01 };
     };
-    const platforms = [base, ...main.slice(1).map(iced), ...alt.map(iced), ...caps, ...sides.map(iced)];
+    const platforms = [base, ...main.slice(1).map(iced), ...alt.map(iced), ...caps, ...walls, ...sides.map(iced)];
     return { index, floorTopPx: floorTopPx(index), platforms, wax, route, altRoute, sideRoute, pieces: spans, updrafts: [...columns] };
   }
 

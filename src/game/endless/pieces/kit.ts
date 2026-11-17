@@ -13,6 +13,11 @@
  * fit in the ledge's hold time, counting the walk from where the candle lands on it (`arriveX`); a traced
  * flight (`fly`) places a ledge wherever the real physics brings the candle down, which is how a bounce
  * or a ride on a column is proved like any other step.
+ *
+ * Walls (Decision D-37, only with `?walls=1`): a wall is kept in the run's ledges (`addWall`), so every later
+ * replay meets it; it must keep clear of the other ledges by its whole box, stay inside the chunk (its
+ * underside clear of the chunk below's highest flights), and leave every earlier step landing where it did. A
+ * traced flight with `kicks` places its ledge only after the last kick.
  */
 import type { GameConfig } from '../../../shared/contracts/config';
 import type { PlatformData, UpdraftData } from '../../../shared/contracts/content';
@@ -21,6 +26,7 @@ import type { EndlessPiecesConfig } from '../../../config/endless-pieces.config'
 import { BOUNCE_TYPE } from '../../player/bounce';
 import { CRUMBLING_TYPE } from '../../player/crumble';
 import { stepPlayer } from '../../player/movement';
+import { WALL_TYPE } from '../../player/wall';
 import { updraftAt } from '../../player/updraft';
 import { chargeStepsFor, descentAt, standOn, type JumpArc } from '../jump-arcs';
 import { createRouteChecker, flyStep, replayStep, standMsBefore, stepsHold, type RouteStep } from '../route-replay';
@@ -98,7 +104,10 @@ export function keepsClear(candidate: PlatformData, placed: readonly PlatformDat
     // A ledge that slides needs its whole travel kept clear, not only where it rests.
     const travel = (other.motion?.distance ?? 0) + (candidate.motion?.distance ?? 0);
     const gapX = Math.abs(candidate.x - other.x) - (candidate.width + other.width) / 2 - travel;
-    const gapY = Math.abs(topOf(candidate) - topOf(other));
+    // A wall is tall: what matters is the gap between the two boxes, not between their tops.
+    const gapY = candidate.type === WALL_TYPE || other.type === WALL_TYPE
+      ? 2 * (Math.abs(candidate.y - other.y) - (candidate.height + other.height) / 2)
+      : Math.abs(topOf(candidate) - topOf(other));
     if (gapX < config.sideClearancePx && gapY < config.stackClearancePx) return false;
   }
   return true;
@@ -122,6 +131,11 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
   const ceilingTopPx = nextTop + config.finalRise.minPx;
   const floorTopPx = setup.floorTopPx - config.rise.minPx;
   const apexLimitTopPx = apexLimitTop(nextFloor, config);
+  /** A wall's underside may come no lower than this (world y): clear of the heads of the chunk below's highest flights. */
+  const wallFloorPx = setup.floorTopPx - config.rise.minPx + config.apexClearancePx - body.height - 2;
+  /** The highest any charge jump lifts the feet (px): a full straight-up jump. */
+  let plainApexPx = 0;
+  for (const arc of arcs.up) plainApexPx = Math.max(plainApexPx, arc.apexPx);
 
   const checker = createRouteChecker(worldWidth, game);
   const between = (range: readonly [number, number]): number => lerp(range[0], range[1], random());
@@ -195,7 +209,7 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
     ];
   };
 
-  const nextId = (run: PieceRun, kind: 'p' | 'a' | 'b'): string => {
+  const nextId = (run: PieceRun, kind: 'p' | 'a' | 'b' | 'w'): string => {
     const prefix = `e${index}:${kind}`;
     const used = others(run).filter((ledge) => ledge.id.startsWith(prefix)).length;
     return `${prefix}${used + 1}`;
@@ -226,7 +240,7 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
 
   const kit: GeneratorKit = {
     random, index, difficulty: setup.difficulty, features: setup.features, game, config, tuning, worldWidth,
-    maxRisePx, ceilingTopPx, floorTopPx,
+    maxRisePx, ceilingTopPx, floorTopPx, plainApexPx, wallFloorPx,
     between,
     count: (range) => Math.min(range[1], Math.floor(between([range[0], range[1] + 1]))),
     ledgeWidth: (scale = 1) => Math.max(config.width.minPx,
@@ -429,6 +443,23 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
       return true;
     },
 
+    wallId: (run) => nextId(run, 'w'),
+
+    addWall(run, wall) {
+      const top = wall.y - wall.height / 2, bottom = wall.y + wall.height / 2;
+      if (wall.type !== WALL_TYPE || wall.x - wall.width / 2 < 0 || wall.x + wall.width / 2 > worldWidth) return false;
+      if (top < ceilingTopPx || bottom > wallFloorPx || wall.height < body.height) return false;
+      const placed = [...others(run), nextFloor];
+      if (!clear(wall, placed)) return false;
+      if (columns(run).some((c) => Math.abs(c.x - wall.x) < (c.width + wall.width) / 2 && Math.abs(c.y - wall.y) < (c.height + wall.height) / 2)) return false;
+      const touched = checker.affected(allSteps(run), wall, placed, columns(run));
+      if (!stepsHold(touched, [...placed, wall], worldWidth, game, columns(run))) return false;
+      if (!arrivalsHold(run, [...placed, wall], columns(run))) return false;
+      checker.forget(touched);
+      run.ledges.push(wall);
+      return true;
+    },
+
     fly(run, from, spec, fixed) {
       const placedNow = (): PlatformData[] => [...others(run), nextFloor];
       for (let attempt = 0; attempt < tuning.flightAttempts; attempt++) {
@@ -460,11 +491,15 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
         // Trace the flight through everything placed; note where it may come down onto a new ledge.
         const column = spec.ride ? columns(run).find((c) => c.id === spec.ride) : undefined;
         let bounced = !spec.via, entered = false, left = !column, topFeet = topOf(from);
+        // A wall step comes down onto its ledge only after its last kick.
+        let kicksLeft = probe.kicks?.length ?? 0;
+        // Highest feet since the last kick: a ledge is put only where the flight arrives falling after it.
+        let topSince = topFeet;
         let previousVy: number | null = null;
         let previousFeet = topFeet;
         // `feet` is a whole-pixel ledge top the feet cross on this physics step (from `previousFeet` down to theirs).
         const spots: Array<{ x: number; feet: number; top: number }> = [];
-        const flight = flyStep(probe, placedNow(), worldWidth, game, { updrafts: columns(run), maxSteps: tuning.flightSteps, onState: (state) => {
+        const flight = flyStep(probe, placedNow(), worldWidth, game, { updrafts: columns(run), maxSteps: tuning.flightSteps, onKick: () => { kicksLeft--; topSince = Infinity; }, onState: (state) => {
           const feet = state.y + body.height / 2;
           // Only a bounce turns a fall into a rise in mid-air (the first state is the launch itself).
           if (!bounced && previousVy !== null && previousVy >= 0 && state.vy < 0 && !state.grounded) bounced = true;
@@ -474,14 +509,16 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
             if (inside) entered = true; else if (entered) left = true;
           }
           topFeet = Math.min(topFeet, feet);
+          topSince = Math.min(topSince, feet);
           const crossed = Math.ceil(previousFeet);
           previousFeet = feet;
           // Like a traced arc (jump-arcs.ts `descentAt`): only once it peaked `apexClearancePx` above, so it arrives falling.
-          if (bounced && left && state.vy > 0 && !state.grounded && crossed <= feet && topFeet <= crossed - config.apexClearancePx) {
+          if (bounced && left && kicksLeft <= 0 && state.vy > 0 && !state.grounded && crossed <= feet && topSince <= crossed - config.apexClearancePx) {
             spots.push({ x: state.x, feet: crossed, top: topFeet });
           }
         } });
         if (spec.via && !flight.bounces.includes(spec.via)) continue;
+        if (probe.walls && !(flight.kicks.length === probe.walls.length && flight.kicks.every((id, i) => id === probe.walls![i]))) { if (fixed) return null; continue; }
         const rise = (feet: number): number => topOf(from) - feet;
         const width = Math.round(spec.widthPx);
         const slack = width / 2 - body.width / 2 - config.landingInsetPx;

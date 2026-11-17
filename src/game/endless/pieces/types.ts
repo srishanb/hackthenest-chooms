@@ -21,10 +21,10 @@ import type { RouteStep } from '../route-replay';
 /**
  * Something a piece may need that is not available everywhere in the climb. `snow`: the chunk is in a
  * snow band (ice is allowed). `moving`: sliding ledges have unlocked. `bounce`, `crumble`, `updraft`:
- * bounce caps, crumbling ledges and updraft columns have unlocked (Decision D-36). Later tasks add their
- * own (for example walls for a wall jump).
+ * bounce caps, crumbling ledges and updraft columns have unlocked (Decision D-36). `walls`: wall slide and
+ * wall jump are switched on (`?walls=1`, Decision D-37) and the chunk is high enough for them.
  */
-export type PieceFeature = 'snow' | 'moving' | 'bounce' | 'crumble' | 'updraft';
+export type PieceFeature = 'snow' | 'moving' | 'bounce' | 'crumble' | 'updraft' | 'walls';
 
 /** A ledge laid by a piece, with the step that reaches it and where that step lands (world x). */
 export interface Candidate {
@@ -119,6 +119,10 @@ export interface PieceKit {
   readonly ceilingTopPx: number;
   /** No ledge of a piece may have its top below this (world y): keeps clear of the chunk below. */
   readonly floorTopPx: number;
+  /** The highest any charge jump lifts the feet above its takeoff (px): a full straight-up jump. */
+  readonly plainApexPx: number;
+  /** No wall's underside may be lower than this (world y): clear of the heads of the chunk below's flights. */
+  readonly wallFloorPx: number;
   /** A random number in [a, b]. */
   between(range: readonly [number, number]): number;
   /** A whole number in [a, b]. */
@@ -160,6 +164,13 @@ export interface PieceKit {
   columns(): UpdraftData[];
   /** Keep an updraft column if it fits in the chunk and every step so far still lands through it. */
   addColumn(run: PieceRun, column: UpdraftData): boolean;
+  /** A fresh id for a wall of this chunk (Decision D-37). */
+  wallId(run: PieceRun): string;
+  /**
+   * Keep a wall (a platform of type `wall`) if it fits in the chunk, keeps clear of every ledge by its whole
+   * box and every step so far still lands with it there. It joins the run's ledges, so later replays meet it.
+   */
+  addWall(run: PieceRun, wall: PlatformData): boolean;
   /**
    * Trace a jump through everything placed and keep a new ledge where it comes down (see `FlightSpec`).
    * `fixed` pins the takeoff and charge (a jump already aimed at a cap). Tries up to the configured number.
