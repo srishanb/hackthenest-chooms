@@ -12,7 +12,7 @@ import { GAME_CONFIG as G } from '../../config/game.config';
 import type { PlatformData } from '../../shared/contracts/content';
 import { createEndlessGenerator, replayStep, stepsHold, type EndlessChunk, type PieceSpan } from '../endless/generator';
 import { createRouteBot } from '../endless/route-bot';
-import { standMsBefore } from '../endless/route-replay';
+import { flyStep, standMsBefore } from '../endless/route-replay';
 import { PIECES } from '../endless/pieces/registry';
 import { NO_CRUMBLE } from '../player/crumble';
 import { teleportPlayer } from '../player/movement';
@@ -132,6 +132,30 @@ describe('each new piece has its shape and needs its kind', () => {
       for (const step of chunk.sideRoute) expect(chunk.platforms.find((p) => p.id === step.fromId)?.type).not.toBe('crumbling');
     }
     expect(checked).toBeGreaterThan(15);
+  });
+
+  it('crumbling timing invariant: each step off a crumbling ledge is timed from where the step onto it really lands', () => {
+    // QA finding 1: a column placed later bent the hop onto a crumbling ledge (seed 780 chunk 24, seed 829 chunk 26),
+    // so the stored walk was 30 px short and the ledge fell during the charge. Checked with the chunks on both sides.
+    const extra = [[780, 24], [829, 26]].map(([seed, index]) => {
+      const g = createEndlessGenerator(seed!, G, C);
+      return { seed: seed!, chunk: g.chunk(index!), prev: g.chunk(index! - 1), next: g.chunk(index! + 1), nextFloor: g.floor(index! + 1) };
+    });
+    let checked = 0;
+    for (const { seed, chunk, prev, next } of [...samples, ...extra]) {
+      const world = [...prev.platforms, ...chunk.platforms, ...next.platforms];
+      const columns = [...prev.updrafts, ...chunk.updrafts, ...next.updrafts];
+      for (const step of [...chunk.route, ...chunk.altRoute]) {
+        if (step.arriveX === undefined) continue;
+        const incoming = [...chunk.route, ...chunk.altRoute].filter((other) => other.toId === step.fromId);
+        expect(incoming.length, `seed ${seed} ${step.fromId}`).toBe(1);
+        const flight = flyStep(incoming[0]!, world, WIDTH, G, { updrafts: columns });
+        expect(flight.landedId).toBe(step.fromId);
+        expect(Math.abs(flight.state.x - step.arriveX), `seed ${seed} ${step.fromId} lands at ${flight.state.x}, timed from ${step.arriveX}`).toBeLessThan(0.02);
+        checked++;
+      }
+    }
+    expect(checked).toBeGreaterThan(30);
   });
 
   it('updraft rise and crossing: the step rides its column, and without the column it does not get there', () => {

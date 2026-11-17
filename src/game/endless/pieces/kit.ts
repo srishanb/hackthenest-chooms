@@ -132,12 +132,36 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
   /** Time a step from a crumbling ledge may take, walk and charge (ms); Infinity elsewhere. */
   const crumbleBudgetMs = (ledge: PlatformData): number => ledge.type === CRUMBLING_TYPE && game.ledgeKinds
     ? game.ledgeKinds.crumble.holdMs - tuning.crumbleMarginMs : Number.POSITIVE_INFINITY;
-  /** Where the candle lands on `ledge` when it arrives by the route (the first step onto it), or null. */
-  const arrivalX = (run: PieceRun, ledge: PlatformData): number | null => {
-    const incoming = [...committed.steps, ...run.steps, ...committed.altSteps, ...run.altSteps].find((step) => step.toId === ledge.id);
-    if (!incoming) return null;
-    const flight = flyStep(incoming, [...others(run), nextFloor], worldWidth, game, { updrafts: columns(run) });
+  /**
+   * Where the candle lands on `ledge` when it arrives by the route, in the world given (default: as placed
+   * now), or null. Null also when more than one step arrives on it, or the one that does leaves a moving
+   * ledge: then there is no single landing point to time the next step from, so nothing may leave it.
+   */
+  const arrivalX = (run: PieceRun, ledge: PlatformData, ledges?: readonly PlatformData[], updrafts?: readonly UpdraftData[]): number | null => {
+    const incoming = allSteps(run).filter((step) => step.toId === ledge.id);
+    if (incoming.length !== 1) return null;
+    const world = ledges ?? [...others(run), nextFloor];
+    if (world.find((other) => other.id === incoming[0]!.fromId)?.motion) return null;
+    const flight = flyStep(incoming[0]!, world, worldWidth, game, { updrafts: updrafts ?? columns(run) });
     return flight.landedId === ledge.id ? flight.state.x : null;
+  };
+  /**
+   * The timing invariant of crumbling ledges: every stored step that leaves a crumbling ledge was timed from
+   * `arriveX`, where the step onto that ledge lands. Anything added later that can bend a flight without
+   * making it miss (a bounce cap, an updraft column) could move that landing and make the stored timing
+   * wrong, so such an addition is kept only if, in the world with it, every such landing is still where it
+   * was (to 0.01 px, the stored precision). A plain ledge can only catch a flight, which the replay already
+   * refuses.
+   */
+  const arrivalsHold = (run: PieceRun, ledges: readonly PlatformData[], updrafts: readonly UpdraftData[]): boolean => {
+    for (const step of allSteps(run)) {
+      if (step.arriveX === undefined) continue;
+      const from = ledges.find((ledge) => ledge.id === step.fromId);
+      if (!from) continue;
+      const x = arrivalX(run, from, ledges, updrafts);
+      if (x === null || Math.abs(Math.round(x * 100) / 100 - step.arriveX) > 0.011) return false;
+    }
+    return true;
   };
   /** The takeoffs a step from a crumbling ledge may use: within walking reach of the landing in the time left. */
   const crumbleReach = (run: PieceRun, ledge: PlatformData, chargeSteps: number): { arriveX: number; walkPx: number } | null => {
@@ -354,6 +378,8 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
       if (at < 0 || ledge.motion || !game.ledgeKinds) return null;
       // Nothing may leave it yet: later steps from it are held to the crumble time as they are placed.
       if ([...run.steps, ...run.altSteps].some((step) => step.fromId === ledge.id)) return null;
+      // There must be one landing point to time the steps from it by (see `arrivalX`).
+      if (arrivalX(run, ledge) === null) return null;
       const crumbling: PlatformData = { ...ledge, type: CRUMBLING_TYPE };
       run.ledges[at] = crumbling;
       return crumbling;
@@ -370,6 +396,7 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
         const placed = [...others(run), nextFloor];
         const earlier = checker.affected(allSteps(run), cap, placed, columns(run));
         if (!stepsHold(earlier, [...placed, cap], worldWidth, game, columns(run))) continue;
+        if (!arrivalsHold(run, [...placed, cap], columns(run))) continue;
         checker.forget(earlier);
         run.ledges.push(cap);
         return { cap, step };
@@ -387,6 +414,7 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
       const placed = [...others(run), nextFloor];
       const touched = checker.affectedByColumn(allSteps(run), column, placed, columns(run));
       if (!stepsHold(touched, placed, worldWidth, game, [...columns(run), column])) return false;
+      if (!arrivalsHold(run, placed, [...columns(run), column])) return false;
       checker.forget(touched);
       run.updrafts.push(column);
       return true;
