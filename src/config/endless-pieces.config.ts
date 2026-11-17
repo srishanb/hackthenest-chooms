@@ -109,8 +109,10 @@ export const ENDLESS_PIECES_CONFIG = {
    * a person (and the bot, which may stop up to 1.5 px early) has a few frames of slack.
    */
   crumbleMarginMs: 60,
-  /** Physics steps a traced flight (`fly`) is followed before it counts as lost (120 per second). */
-  flightSteps: 1200,
+  /** Physics steps a traced flight (`fly`) is followed before it counts as lost (120 per second, so 5 s). */
+  flightSteps: 600,
+  /** Takeoffs and charges tried for one traced flight (`fly`) before the piece gives up (bounds the cost). */
+  flightAttempts: 10,
   /**
    * Mushroom launch: an ordinary jump (charge `levels`, 1..12) down or across onto a bounce cap
    * (`capWidthPx` wide, its top `capRisePx` above the takeoff: negative is lower), whose throw carries the

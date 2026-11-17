@@ -394,7 +394,7 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
 
     fly(run, from, spec, fixed) {
       const placedNow = (): PlatformData[] => [...others(run), nextFloor];
-      for (let attempt = 0; attempt < tuning.attemptsPerLedge; attempt++) {
+      for (let attempt = 0; attempt < tuning.flightAttempts; attempt++) {
         let probe: RouteStep;
         if (fixed) probe = { ...fixed };
         else {
