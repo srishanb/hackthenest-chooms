@@ -28,7 +28,9 @@
  * may mean dropping down. Nothing here reads the signal or changes how the candle moves.
  */
 import type { GameConfig } from '../../shared/contracts/config';
-import type { PlatformData } from '../../shared/contracts/content';
+import type { PlatformData, UpdraftData } from '../../shared/contracts/content';
+import { BOUNCE_TYPE } from '../player/bounce';
+import { CRUMBLING_TYPE } from '../player/crumble';
 import type { EndlessConfig } from '../../config/endless.config';
 import { ENDLESS_PIECES_CONFIG, type EndlessPiecesConfig } from '../../config/endless-pieces.config';
 import { seededRandom } from '../candle/candle-genome';
@@ -68,6 +70,8 @@ export interface PieceSpan {
   ledgeIds: string[];
   /** Steps of its alternative branch (a fork's risky way), also in the chunk's `altRoute`. */
   altSteps: RouteStep[];
+  /** Ids of the updraft columns it placed. */
+  updraftIds: string[];
 }
 
 export interface EndlessChunk {
@@ -85,6 +89,8 @@ export interface EndlessChunk {
   sideRoute: RouteStep[];
   /** The set pieces of this chunk, from the anchor up, ending with the approach. */
   pieces: PieceSpan[];
+  /** Updraft columns (Decision D-36). Every stored step is replayed through them. */
+  updrafts: UpdraftData[];
 }
 
 export interface EndlessGenerator {
@@ -155,8 +161,10 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
   function commit(assembled: Assembled, id: string, entry: PlatformData, run: PieceRun): void {
     const { committed } = assembled;
     assembled.spans.push({ id, entryId: entry.id, exitId: run.steps.at(-1)!.toId, firstStep: committed.steps.length,
-      stepCount: run.steps.length, ledgeIds: run.ledges.map((ledge) => ledge.id), altSteps: run.altSteps });
+      stepCount: run.steps.length, ledgeIds: run.ledges.map((ledge) => ledge.id), altSteps: run.altSteps,
+      updraftIds: run.updrafts.map((column) => column.id) });
     committed.ledges.push(...run.ledges);
+    committed.updrafts.push(...run.updrafts);
     committed.steps.push(...run.steps);
     committed.altSteps.push(...run.altSteps);
     assembled.waxOn.push(...run.waxOn);
@@ -215,8 +223,8 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
     const random = seededRandom(attempt === 0 ? chunkSeed(seed, index) : chunkSeed((seed ^ Math.imul(TRY_SALT, attempt)) >>> 0, index));
     const base = floor(index);
     const nextFloor = floor(index + 1);
-    const committed: Committed = { ledges: [base], steps: [], altSteps: [] };
-    const features = featuresAt(index, config);
+    const committed: Committed = { ledges: [base], steps: [], altSteps: [], updrafts: [] };
+    const features = featuresAt(index, config, tuning);
     const kit = createPieceKit({ random, index, difficulty: difficultyAt(index, config), features, game: gameConfig, config, tuning,
       arcs, dropTrace, committed, floorTopPx: floorTopPx(index), nextFloor });
     const assembled: Assembled = { kit, committed, spans: [], waxOn: [] };
@@ -246,6 +254,7 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
       committed.ledges.length -= last.ledgeIds.length;
       committed.steps.length = last.firstStep;
       committed.altSteps.length -= last.altSteps.length;
+      committed.updrafts.length -= last.updraftIds.length;
       assembled.waxOn = assembled.waxOn.filter((id) => !last.ledgeIds.includes(id));
     }
     return null;
@@ -263,7 +272,10 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
     const byId = new Map(committed.ledges.map((ledge) => [ledge.id, ledge]));
     const main = [base, ...route.slice(0, -1).map((step) => byId.get(step.toId)!)];
     const onMain = new Set(main.map((ledge) => ledge.id));
-    const alt = committed.ledges.filter((ledge) => !onMain.has(ledge.id));
+    // Bounce caps are never stood on: no wax, no ice, no side ledges from them.
+    const alt = committed.ledges.filter((ledge) => !onMain.has(ledge.id) && ledge.type !== BOUNCE_TYPE);
+    const caps = committed.ledges.filter((ledge) => ledge.type === BOUNCE_TYPE);
+    const columns = committed.updrafts;
     const pathSteps = [...route, ...altRoute];
     const apexLimit = apexLimitTop(nextFloor, config);
 
@@ -276,6 +288,7 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
       return platform.motion ? { ...spot, ledgeId: platform.id, ledgeX: platform.x } : spot;
     };
     const ledgesWith = (extra: PlatformData): PlatformData[] => [...committed.ledges, ...sides, extra, nextFloor];
+    const affected = (ledge: PlatformData): RouteStep[] => kit.affected(pathSteps, ledge, [...committed.ledges, nextFloor], columns);
     /** Each earlier side jump still lands on its own ledge with `extra` added, wherever a moving one is in its travel. */
     const sideJumpsHold = (extra: PlatformData): boolean => {
       const all = ledgesWith(extra);
@@ -283,7 +296,7 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
         const own = sides[k]!;
         const distance = own.motion?.distance ?? 0;
         return (distance ? [-distance, 0, distance] : [0]).every((offset) => replayStep(step,
-          all.map((p) => (p.id === own.id ? { ...p, x: p.x + offset } : p)), worldWidth, gameConfig) === step.toId);
+          all.map((p) => (p.id === own.id ? { ...p, x: p.x + offset } : p)), worldWidth, gameConfig, 0, false, columns) === step.toId);
       });
     };
     /**
@@ -304,8 +317,8 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
         const shifted = { ...ledge, x: ledge.x + offset };
         if (!keepsClear(shifted, others, config)) return null;
         const all = [...others, shifted, nextFloor];
-        if (replayStep(step, all, worldWidth, gameConfig) !== ledge.id) return null;
-        if (!stepsHold(kit.affected(pathSteps, shifted, [...committed.ledges, nextFloor]), all, worldWidth, gameConfig)) return null;
+        if (replayStep(step, all, worldWidth, gameConfig, 0, false, columns) !== ledge.id) return null;
+        if (!stepsHold(kit.affected(pathSteps, shifted, [...committed.ledges, nextFloor], columns), all, worldWidth, gameConfig, columns)) return null;
         if (!sideJumpsHold(shifted)) return null;
       }
       const periodMs = Math.round(lerp(config.moving.periodMs[0], config.moving.periodMs[1], random()));
@@ -315,7 +328,8 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
     for (let i = 1; i < main.length; i++) {
       const from = main[i]!;
       if (random() < config.pathWaxChance * tuning.pathWaxScale) wax.push(waxAbove(from, `e${index}:wax-p${i}`));
-      if (from.motion || random() >= config.sideLedgeChance * tuning.sideLedgeScale) continue;
+      // Never from a moving or crumbling ledge (a side jump is not held to the crumble time).
+      if (from.motion || from.type === CRUMBLING_TYPE || random() >= config.sideLedgeChance * tuning.sideLedgeScale) continue;
       const mainDirection = route[i]?.direction ?? 0;
       for (let attempt = 0; attempt < 12; attempt++) {
         const direction: -1 | 1 = mainDirection !== 0 ? (-mainDirection as -1 | 1) : random() < 0.5 ? -1 : 1;
@@ -327,8 +341,8 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
         if (topOf(candidate.ledge) < nextTop + config.stackClearancePx) continue;
         if (!keepsClear(candidate.ledge, [...committed.ledges, ...sides], config)) continue;
         const all = ledgesWith(candidate.ledge);
-        if (replayStep(candidate.step, all, worldWidth, gameConfig) !== id
-          || !stepsHold(kit.affected(pathSteps, candidate.ledge, [...committed.ledges, nextFloor]), all, worldWidth, gameConfig)
+        if (replayStep(candidate.step, all, worldWidth, gameConfig, 0, false, columns) !== id
+          || !stepsHold(affected(candidate.ledge), all, worldWidth, gameConfig, columns)
           || !sideJumpsHold(candidate.ledge)) continue;
         const ledge = moving(candidate) ?? candidate.ledge;
         sides.push(ledge);
@@ -351,13 +365,13 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
     // walk off (a drop) is never icy, since walking is the step.
     const dropFrom = new Set(pathSteps.filter((step) => step.kind === 'drop').map((step) => step.fromId));
     const iced = (ledge: PlatformData): PlatformData => {
-      if (ledge.motion || ledge.type === 'slippery' || dropFrom.has(ledge.id)) return ledge;
+      if (ledge.motion || (ledge.type !== undefined && ledge.type !== 'static') || dropFrom.has(ledge.id)) return ledge;
       if (biomeOf(index, config) !== 'snow' || random() >= config.ice.chance) return ledge;
       const ice01 = Math.round(lerp(config.ice.min01, config.ice.max01, random()) * 100) / 100;
       return { ...ledge, type: 'slippery', ice01 };
     };
-    const platforms = [base, ...main.slice(1).map(iced), ...alt.map(iced), ...sides.map(iced)];
-    return { index, floorTopPx: floorTopPx(index), platforms, wax, route, altRoute, sideRoute, pieces: spans };
+    const platforms = [base, ...main.slice(1).map(iced), ...alt.map(iced), ...caps, ...sides.map(iced)];
+    return { index, floorTopPx: floorTopPx(index), platforms, wax, route, altRoute, sideRoute, pieces: spans, updrafts: [...columns] };
   }
 
   function build(index: number): EndlessChunk {

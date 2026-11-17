@@ -7,21 +7,32 @@
  * other ledge, (4) the jump peaks low enough that no ledge of the next chunk can catch it, and (5) every
  * step of the chunk so far, this one included, replays onto its own ledge with `stepPlayer`
  * (route-replay.ts). Pieces only describe shapes; the kit decides what is kept.
+ *
+ * The special ledges (Decision D-36): every replay goes through the chunk's updraft columns; a bounce cap
+ * is kept with the jump that bounces off it (`placeCap`, then `fly`); a step from a crumbling ledge must
+ * fit in the ledge's hold time, counting the walk from where the candle lands on it (`arriveX`); a traced
+ * flight (`fly`) places a ledge wherever the real physics brings the candle down, which is how a bounce
+ * or a ride on a column is proved like any other step.
  */
 import type { GameConfig } from '../../../shared/contracts/config';
-import type { PlatformData } from '../../../shared/contracts/content';
+import type { PlatformData, UpdraftData } from '../../../shared/contracts/content';
 import type { EndlessConfig } from '../../../config/endless.config';
 import type { EndlessPiecesConfig } from '../../../config/endless-pieces.config';
+import { BOUNCE_TYPE } from '../../player/bounce';
+import { CRUMBLING_TYPE } from '../../player/crumble';
 import { stepPlayer } from '../../player/movement';
-import { descentAt, standOn, type JumpArc } from '../jump-arcs';
-import { createRouteChecker, replayStep, stepsHold, type RouteStep } from '../route-replay';
-import type { Candidate, DropSpec, JumpSpec, PieceFeature, PieceKit, PieceRun } from './types';
+import { updraftAt } from '../../player/updraft';
+import { chargeStepsFor, descentAt, standOn, type JumpArc } from '../jump-arcs';
+import { createRouteChecker, flyStep, replayStep, standMsBefore, stepsHold, type RouteStep } from '../route-replay';
+import type { Candidate, DropSpec, FlightSpec, JumpSpec, PieceFeature, PieceKit, PieceRun } from './types';
 
 /** What has been laid in this chunk before the current piece: the anchor first. */
 export interface Committed {
   ledges: PlatformData[];
   steps: RouteStep[];
   altSteps: RouteStep[];
+  /** Updraft columns laid so far in this chunk. */
+  updrafts: UpdraftData[];
 }
 
 export interface KitSetup {
@@ -44,8 +55,8 @@ export interface KitSetup {
 /** The kit, plus what only the generator uses: taking the last ledge back out of a run. */
 export interface GeneratorKit extends PieceKit {
   takeBack(run: PieceRun): void;
-  /** The steps among `steps` that `ledge` could catch, given `ledges` (see route-replay.ts). */
-  affected(steps: readonly RouteStep[], ledge: PlatformData, ledges: readonly PlatformData[]): RouteStep[];
+  /** The steps among `steps` that `ledge` could catch, given `ledges` and the columns (see route-replay.ts). */
+  affected(steps: readonly RouteStep[], ledge: PlatformData, ledges: readonly PlatformData[], updrafts?: readonly UpdraftData[]): RouteStep[];
 }
 
 const IDLE = { left: false, right: false, jump: false };
@@ -54,7 +65,7 @@ const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
 /** An empty run of ledges for one piece. */
 export function emptyRun(): PieceRun {
-  return { ledges: [], steps: [], altSteps: [], waxOn: [] };
+  return { ledges: [], steps: [], altSteps: [], waxOn: [], updrafts: [] };
 }
 
 /**
@@ -116,6 +127,31 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
   const between = (range: readonly [number, number]): number => lerp(range[0], range[1], random());
   const others = (run: PieceRun): PlatformData[] => [...committed.ledges, ...run.ledges];
   const allSteps = (run: PieceRun): RouteStep[] => [...run.steps, ...run.altSteps, ...committed.steps, ...committed.altSteps];
+  const columns = (run: PieceRun): UpdraftData[] => [...committed.updrafts, ...run.updrafts];
+  const stepMs = 1000 / game.stepHz;
+  /** Time a step from a crumbling ledge may take, walk and charge (ms); Infinity elsewhere. */
+  const crumbleBudgetMs = (ledge: PlatformData): number => ledge.type === CRUMBLING_TYPE && game.ledgeKinds
+    ? game.ledgeKinds.crumble.holdMs - tuning.crumbleMarginMs : Number.POSITIVE_INFINITY;
+  /** Where the candle lands on `ledge` when it arrives by the route (the first step onto it), or null. */
+  const arrivalX = (run: PieceRun, ledge: PlatformData): number | null => {
+    const incoming = [...committed.steps, ...run.steps, ...committed.altSteps, ...run.altSteps].find((step) => step.toId === ledge.id);
+    if (!incoming) return null;
+    const flight = flyStep(incoming, [...others(run), nextFloor], worldWidth, game, { updrafts: columns(run) });
+    return flight.landedId === ledge.id ? flight.state.x : null;
+  };
+  /** The takeoffs a step from a crumbling ledge may use: within walking reach of the landing in the time left. */
+  const crumbleReach = (run: PieceRun, ledge: PlatformData, chargeSteps: number): { arriveX: number; walkPx: number } | null => {
+    const budget = crumbleBudgetMs(ledge);
+    if (!Number.isFinite(budget)) return null;
+    const arriveX = arrivalX(run, ledge);
+    const walkMs = budget - (chargeSteps + 1) * stepMs;
+    if (arriveX === null || walkMs < 0) return { arriveX: arriveX ?? ledge.x, walkPx: -1 };
+    // Whole walking steps only (the replay counts them the same way), a little short to be safe.
+    return { arriveX, walkPx: Math.floor(walkMs / stepMs) * game.walkSpeed * stepMs / 1000 - 1 };
+  };
+  /** The step leaves its ledge in time (a crumbling ledge), or the ledge does not crumble. */
+  const inTime = (step: RouteStep, from: PlatformData | undefined): boolean =>
+    !from || from.type !== CRUMBLING_TYPE || standMsBefore(step, game) <= crumbleBudgetMs(from);
 
   /** Where the body can stand on `ledge`, inside the walls, wherever a moving ledge is in its travel. */
   const standRange = (ledge: PlatformData): [number, number] => {
@@ -126,7 +162,7 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
     ];
   };
 
-  const nextId = (run: PieceRun, kind: 'p' | 'a'): string => {
+  const nextId = (run: PieceRun, kind: 'p' | 'a' | 'b'): string => {
     const prefix = `e${index}:${kind}`;
     const used = others(run).filter((ledge) => ledge.id.startsWith(prefix)).length;
     return `${prefix}${used + 1}`;
@@ -157,8 +193,10 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
       const [low, high] = spec.levels ?? [config.minChargeLevel, config.chargeLevels];
       const risePx = Math.round(between(spec.risePx));
       const usable: Array<{ arc: JumpArc; dx: number }> = [];
+      const budget = crumbleBudgetMs(from);
       for (const arc of table) {
         if (arc.level < Math.max(low, config.minChargeLevel) || arc.level > high) continue;
+        if ((arc.chargeSteps + 1) * stepMs > budget) continue;
         const hit = descentAt(arc, risePx, config.apexClearancePx);
         if (hit && hit.after.dx >= (spec.minDxPx ?? 0)) usable.push({ arc, dx: hit.after.dx });
       }
@@ -166,6 +204,13 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
       const pick = usable[Math.floor(random() * usable.length)]!;
       let [minX, maxX] = standRange(from);
       if (minX > maxX) return null;
+      const reach = crumbleReach(run, from, pick.arc.chargeSteps);
+      if (reach) {
+        if (reach.walkPx < 0) return null;
+        minX = Math.max(minX, Math.ceil(reach.arriveX - reach.walkPx));
+        maxX = Math.min(maxX, Math.floor(reach.arriveX + reach.walkPx));
+        if (minX > maxX) return null;
+      }
       if (spec.takeoff === 'front' && direction !== 0) {
         // The last third of the ledge toward the jump: a run-up to the edge.
         const span = (maxX - minX) / 3;
@@ -184,12 +229,13 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
       const id = nextId(run, spec.kind ?? 'p');
       const ledge: PlatformData = { id, x: centre, y: topOf(from) - risePx + config.ledgeHeightPx / 2, width,
         height: config.ledgeHeightPx, type: 'static' };
-      const step: RouteStep = { fromId: from.id, toId: id, takeoffX, chargeSteps: pick.arc.chargeSteps, direction };
+      const step: RouteStep = { fromId: from.id, toId: id, takeoffX, chargeSteps: pick.arc.chargeSteps, direction,
+        ...(reach ? { arriveX: Math.round(reach.arriveX * 100) / 100 } : {}) };
       return { ledge, step, landingX, apexTopPx: topOf(from) - pick.arc.apexPx };
     },
 
     drop(run, from, spec) {
-      if (from.motion || from.type === 'slippery') return null;
+      if (from.motion || (from.type !== undefined && from.type !== 'static')) return null;
       const direction = spec.direction;
       const fallPx = Math.round(between(spec.fallPx));
       const point = setup.dropTrace.find((p) => p.dy >= fallPx);
@@ -214,10 +260,11 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
       if (!inBounds(ledge) || candidate.apexTopPx < apexLimitTopPx) return false;
       const placed = others(run);
       if (!clear(ledge, placed)) return false;
+      if (!inTime(step, placed.find((other) => other.id === step.fromId))) return false;
       const all = [...placed, ledge, nextFloor];
       // The new step first: it is the one most likely to miss. Earlier steps only where the new ledge could catch them.
-      const earlier = checker.affected(allSteps(run), ledge, [...placed, nextFloor]);
-      if (!stepsHold([step, ...earlier], all, worldWidth, game)) return false;
+      const earlier = checker.affected(allSteps(run), ledge, [...placed, nextFloor], columns(run));
+      if (!stepsHold([step, ...earlier], all, worldWidth, game, columns(run))) return false;
       run.ledges.push(ledge);
       (alt ? run.altSteps : run.steps).push(step);
       return true;
@@ -245,6 +292,9 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
       const slack = target.width / 2 - body.width / 2 - config.landingInsetPx - travel;
       const [minX, maxX] = standRange(from);
       if (slack < 0 || minX > maxX) return false;
+      const budget = crumbleBudgetMs(from);
+      const arriveX = Number.isFinite(budget) ? arrivalX(run, from) : null;
+      if (Number.isFinite(budget) && arriveX === null) return false;
       const toward: -1 | 1 = target.x >= from.x ? 1 : -1;
       const away = -toward as -1 | 1;
       const directions: Array<-1 | 0 | 1> = random() < 0.5 ? [toward, 0, away] : [0, toward, away];
@@ -253,6 +303,7 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
       for (const direction of directions) {
         for (const arc of direction === 0 ? arcs.up : arcs.side) {
           if (arc.level < config.minChargeLevel || topOf(from) - arc.apexPx < apexLimitTopPx) continue;
+          if ((arc.chargeSteps + 1) * stepMs > budget) continue;
           const hit = descentAt(arc, risePx, config.apexClearancePx);
           if (!hit) continue;
           const dx = direction * hit.after.dx;
@@ -260,10 +311,12 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
           for (const aim of [(random() * 2 - 1) * slack, 0]) {
             const takeoffX = Math.round(target.x + aim - dx);
             if (takeoffX < minX || takeoffX > maxX) continue;
-            const step: RouteStep = { fromId: from.id, toId: target.id, takeoffX, chargeSteps: arc.chargeSteps, direction };
-            if (replayStep(step, all, worldWidth, game) !== target.id) continue;
+            const step: RouteStep = { fromId: from.id, toId: target.id, takeoffX, chargeSteps: arc.chargeSteps, direction,
+              ...(arriveX !== null ? { arriveX: Math.round(arriveX * 100) / 100 } : {}) };
+            if (!inTime(step, from)) continue;
+            if (replayStep(step, all, worldWidth, game, 0, false, columns(run)) !== target.id) continue;
             // No ledge was added, so only the new step (with any moving ledges at both ends) needs checking.
-            if (!stepsHold([step], all, worldWidth, game)) continue;
+            if (!stepsHold([step], all, worldWidth, game, columns(run))) continue;
             (alt ? run.altSteps : run.steps).push(step);
             return true;
           }
@@ -278,12 +331,117 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
       const moved: PlatformData = { ...ledge, type: 'moving', motion: { axis: 'x', distance: Math.floor(distancePx), periodMs: Math.round(periodMs) } };
       const ledges = others(run).map((other) => (other === ledge ? moved : other));
       if (!inBounds(moved) || !clear(moved, ledges)) return null;
-      if (!stepsHold(allSteps(run), [...ledges, nextFloor], worldWidth, game)) return null;
+      if (!stepsHold(allSteps(run), [...ledges, nextFloor], worldWidth, game, columns(run))) return null;
       run.ledges[at] = moved;
       return moved;
     },
 
-    affected: (steps, ledge, ledges) => checker.affected(steps, ledge, ledges),
+    makeCrumbling(run, ledge) {
+      const at = run.ledges.indexOf(ledge);
+      if (at < 0 || ledge.motion || !game.ledgeKinds) return null;
+      // Nothing may leave it yet: later steps from it are held to the crumble time as they are placed.
+      if ([...run.steps, ...run.altSteps].some((step) => step.fromId === ledge.id)) return null;
+      const crumbling: PlatformData = { ...ledge, type: CRUMBLING_TYPE };
+      run.ledges[at] = crumbling;
+      return crumbling;
+    },
+
+    placeCap(run, from, spec) {
+      for (let attempt = 0; attempt < tuning.attemptsPerLedge; attempt++) {
+        const raw = kit.jump(run, from, spec);
+        if (!raw) continue;
+        const cap: PlatformData = { ...raw.ledge, id: nextId(run, 'b'), type: BOUNCE_TYPE };
+        const step: RouteStep = { ...raw.step, toId: cap.id, via: cap.id };
+        if (!inBounds(cap) || !clear(cap, others(run))) continue;
+        // The cap must not catch (and throw) any earlier step.
+        const placed = [...others(run), nextFloor];
+        const earlier = checker.affected(allSteps(run), cap, placed, columns(run));
+        if (!stepsHold(earlier, [...placed, cap], worldWidth, game, columns(run))) continue;
+        checker.forget(earlier);
+        run.ledges.push(cap);
+        return { cap, step };
+      }
+      return null;
+    },
+
+    addColumn(run, column) {
+      const top = column.y - column.height / 2, bottom = column.y + column.height / 2;
+      // Inside the walls, under the next anchor and clear of the chunk below (whose jumps never rise this far).
+      if (column.x - column.width / 2 < 0 || column.x + column.width / 2 > worldWidth) return false;
+      if (top < ceilingTopPx || bottom > floorTopPx - body.height / 2 - 2) return false;
+      if (columns(run).some((other) => Math.abs(other.x - column.x) < (other.width + column.width) / 2
+        && Math.abs(other.y - column.y) < (other.height + column.height) / 2)) return false;
+      const placed = [...others(run), nextFloor];
+      const touched = checker.affectedByColumn(allSteps(run), column, placed, columns(run));
+      if (!stepsHold(touched, placed, worldWidth, game, [...columns(run), column])) return false;
+      checker.forget(touched);
+      run.updrafts.push(column);
+      return true;
+    },
+
+    fly(run, from, spec, fixed) {
+      const placedNow = (): PlatformData[] => [...others(run), nextFloor];
+      for (let attempt = 0; attempt < tuning.attemptsPerLedge; attempt++) {
+        let probe: RouteStep;
+        if (fixed) probe = { ...fixed };
+        else {
+          const level = Math.max(config.minChargeLevel, Math.round(between([spec.levels[0], spec.levels[1]])));
+          const chargeSteps = chargeStepsFor(level, config.chargeLevels, game);
+          let [minX, maxX] = standRange(from);
+          if (minX > maxX) return null;
+          if (spec.takeoff === 'front' && spec.direction !== 0) {
+            const span = (maxX - minX) / 3;
+            if (spec.direction > 0) minX = maxX - span; else maxX = minX + span;
+          }
+          probe = { fromId: from.id, toId: '', takeoffX: Math.round(lerp(minX, maxX, random())), chargeSteps, direction: spec.direction };
+        }
+        if (spec.via) probe.via = spec.via;
+        if (spec.ride) probe.ride = spec.ride;
+        // Trace the flight through everything placed; note where it may come down onto a new ledge.
+        const column = spec.ride ? columns(run).find((c) => c.id === spec.ride) : undefined;
+        let bounced = !spec.via, entered = false, left = !column, topFeet = topOf(from);
+        let previousVy: number | null = null;
+        const spots: Array<{ x: number; feet: number; top: number }> = [];
+        const flight = flyStep(probe, placedNow(), worldWidth, game, { updrafts: columns(run), maxSteps: tuning.flightSteps, onState: (state) => {
+          const feet = state.y + body.height / 2;
+          // Only a bounce turns a fall into a rise in mid-air (the first state is the launch itself).
+          if (!bounced && previousVy !== null && previousVy >= 0 && state.vy < 0 && !state.grounded) bounced = true;
+          previousVy = state.vy;
+          if (column) {
+            const inside = updraftAt([column], state.x, state.y) !== null;
+            if (inside) entered = true; else if (entered) left = true;
+          }
+          topFeet = Math.min(topFeet, feet);
+          if (bounced && left && state.vy > 0 && !state.grounded) spots.push({ x: state.x, feet, top: topFeet });
+        } });
+        if (spec.via && !flight.bounces.includes(spec.via)) continue;
+        const rise = (feet: number): number => topOf(from) - feet;
+        const usable = spots.filter((spot) => rise(spot.feet) >= spec.risePx[0] && rise(spot.feet) <= spec.risePx[1]
+          && Math.abs(spot.x - probe.takeoffX) >= (spec.minDxPx ?? 0) && spot.top >= apexLimitTopPx);
+        // A pinned takeoff flies the same way every time: if it gives no spot now, it never will.
+        if (!usable.length) { if (fixed) return null; continue; }
+        const spot = usable[Math.floor(random() * usable.length)]!;
+        const width = Math.round(spec.widthPx);
+        const slack = width / 2 - body.width / 2 - config.landingInsetPx;
+        if (slack < 0) continue;
+        const centre = Math.round(Math.min(worldWidth - width / 2 - 2, Math.max(width / 2 + 2,
+          spot.x + (random() * 2 - 1) * slack * (spec.jitter01 ?? 0.6))));
+        if (Math.abs(centre - spot.x) > slack) continue;
+        const id = nextId(run, 'p');
+        // Its top a hair above where the feet passed, so the feet cross it on that step.
+        const top = Math.floor(spot.feet) - 1;
+        const ledge: PlatformData = { id, x: centre, y: top + config.ledgeHeightPx / 2, width, height: config.ledgeHeightPx, type: 'static' };
+        const step: RouteStep = { ...probe, toId: id };
+        if (kit.accept(run, { ledge, step, landingX: spot.x, apexTopPx: spot.top })) {
+          checker.forget([step]);
+          return ledge;
+        }
+      }
+      return null;
+    },
+
+    affected: (steps, ledge, ledges, updrafts) => checker.affected(steps, ledge, ledges, updrafts),
+    columns: () => [...committed.updrafts],
 
     takeBack(run) {
       const ledge = run.ledges.pop();

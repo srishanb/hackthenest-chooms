@@ -119,13 +119,15 @@ describe('endless generator', () => {
         // The guaranteed path: start on this anchor, end on the next, each jump lands where it says,
         // even with the whole next chunk in place (its ledges must not catch the jump onto its anchor).
         const withNext = [...chunk.platforms, ...generator.chunk(index + 1).platforms];
+        // Updraft columns (Decision D-36) of this chunk, and of the next one too, act on every step.
+        const columns = chunk.updrafts, columnsWithNext = [...chunk.updrafts, ...generator.chunk(index + 1).updrafts];
         expect(chunk.route[0]!.fromId).toBe(chunk.platforms[0]!.id);
         expect(chunk.route.at(-1)!.toId).toBe(nextFloor.id);
         for (let i = 0; i < chunk.route.length; i++) {
           const step = chunk.route[i]!;
           if (i > 0) expect(step.fromId).toBe(chunk.route[i - 1]!.toId);
-          expect(replayStep(step, all, WIDTH, GAME_CONFIG), `seed ${seed * 7919} chunk ${index} step ${i}`).toBe(step.toId);
-          expect(replayStep(step, withNext, WIDTH, GAME_CONFIG), `seed ${seed * 7919} chunk ${index} step ${i} with next`).toBe(step.toId);
+          expect(replayStep(step, all, WIDTH, GAME_CONFIG, 0, false, columns), `seed ${seed * 7919} chunk ${index} step ${i}`).toBe(step.toId);
+          expect(replayStep(step, withNext, WIDTH, GAME_CONFIG, 0, false, columnsWithNext), `seed ${seed * 7919} chunk ${index} step ${i} with next`).toBe(step.toId);
         }
         // Wax floats above a ledge of this chunk, and there is always some.
         expect(chunk.wax.length).toBeGreaterThan(0);
@@ -181,7 +183,7 @@ describe('endless generator', () => {
             expect(chunk.pieces.find((span) => span.ledgeIds.includes(ledge.id))?.id).toBe('moving-crossing');
             expect(ledge.motion.distance).toBeGreaterThanOrEqual(T.movingCrossing.distancePx[0]);
             expect(ledge.motion.distance).toBeLessThanOrEqual(T.movingCrossing.distancePx[1]);
-            expect(stepsHold([...chunk.route, ...chunk.altRoute], all, WIDTH, GAME_CONFIG)).toBe(true);
+            expect(stepsHold([...chunk.route, ...chunk.altRoute], all, WIDTH, GAME_CONFIG, chunk.updrafts)).toBe(true);
             continue;
           }
           const { distance, periodMs, axis } = ledge.motion;
@@ -195,8 +197,8 @@ describe('endless generator', () => {
           const jump = chunk.sideRoute.find((step) => step.toId === ledge.id)!;
           for (const offset of [-distance, 0, distance]) {
             const shifted = all.map((p) => (p.id === ledge.id ? { ...p, x: p.x + offset } : p));
-            expect(replayStep(jump, shifted, WIDTH, GAME_CONFIG), `seed ${seed} chunk ${index} ${ledge.id} at ${offset}`).toBe(ledge.id);
-            for (const step of chunk.route) expect(replayStep(step, shifted, WIDTH, GAME_CONFIG)).toBe(step.toId);
+            expect(replayStep(jump, shifted, WIDTH, GAME_CONFIG, 0, false, chunk.updrafts), `seed ${seed} chunk ${index} ${ledge.id} at ${offset}`).toBe(ledge.id);
+            for (const step of chunk.route) expect(replayStep(step, shifted, WIDTH, GAME_CONFIG, 0, false, chunk.updrafts)).toBe(step.toId);
           }
           // Its wax knows which ledge it rides.
           const drop = chunk.wax.find((w) => w.ledgeId === ledge.id)!;

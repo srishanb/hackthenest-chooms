@@ -72,9 +72,11 @@ describe('set pieces: the rules of the generator still hold', () => {
     for (const { seed, chunk, next, nextChunk } of samples) {
       const steps = [...chunk.route, ...chunk.altRoute];
       for (let i = 1; i < chunk.route.length; i++) expect(chunk.route[i]!.fromId).toBe(chunk.route[i - 1]!.toId);
-      expect(stepsHold(steps, [...chunk.platforms, next], WIDTH, G), `seed ${seed} chunk ${chunk.index}`).toBe(true);
-      expect(stepsHold(steps, [...chunk.platforms, ...nextChunk.platforms], WIDTH, G), `seed ${seed} chunk ${chunk.index} with next`).toBe(true);
-      for (const step of chunk.sideRoute) expect(replayStep(step, [...chunk.platforms, next], WIDTH, G)).toBe(step.toId);
+      // Updraft columns (Decision D-36) act on every step: this chunk's, and the next chunk's with it.
+      expect(stepsHold(steps, [...chunk.platforms, next], WIDTH, G, chunk.updrafts), `seed ${seed} chunk ${chunk.index}`).toBe(true);
+      expect(stepsHold(steps, [...chunk.platforms, ...nextChunk.platforms], WIDTH, G, [...chunk.updrafts, ...nextChunk.updrafts]),
+        `seed ${seed} chunk ${chunk.index} with next`).toBe(true);
+      for (const step of chunk.sideRoute) expect(replayStep(step, [...chunk.platforms, next], WIDTH, G, 0, false, chunk.updrafts)).toBe(step.toId);
       drops += chunk.route.filter((step) => step.kind === 'drop').length;
     }
     expect(drops).toBeGreaterThan(20);

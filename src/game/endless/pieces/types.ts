@@ -13,17 +13,18 @@
  * feature, add the feature's name to `PieceFeature` and say in features.ts where it is available.
  */
 import type { GameConfig } from '../../../shared/contracts/config';
-import type { PlatformData } from '../../../shared/contracts/content';
+import type { PlatformData, UpdraftData } from '../../../shared/contracts/content';
 import type { EndlessConfig } from '../../../config/endless.config';
 import type { EndlessPiecesConfig } from '../../../config/endless-pieces.config';
 import type { RouteStep } from '../route-replay';
 
 /**
  * Something a piece may need that is not available everywhere in the climb. `snow`: the chunk is in a
- * snow band (ice is allowed). `moving`: sliding ledges have unlocked. Later tasks add their own
- * (for example bounce mushrooms, crumbling ledges, updrafts, walls).
+ * snow band (ice is allowed). `moving`: sliding ledges have unlocked. `bounce`, `crumble`, `updraft`:
+ * bounce caps, crumbling ledges and updraft columns have unlocked (Decision D-36). Later tasks add their
+ * own (for example walls for a wall jump).
  */
-export type PieceFeature = 'snow' | 'moving';
+export type PieceFeature = 'snow' | 'moving' | 'bounce' | 'crumble' | 'updraft';
 
 /** A ledge laid by a piece, with the step that reaches it and where that step lands (world x). */
 export interface Candidate {
@@ -72,6 +73,31 @@ export interface PieceRun {
   altSteps: RouteStep[];
   /** Ledge ids that should hold wax, whatever the chance (a reward for a risky branch). */
   waxOn: string[];
+  /** Updraft columns the piece placed. Every step of the chunk is replayed through them. */
+  updrafts: UpdraftData[];
+}
+
+/**
+ * What a piece asks of a flight it traces (`fly`): a jump from `from` with these settings is replayed
+ * through everything placed (bounce caps, updraft columns), and a new ledge is put where the flight comes
+ * down at a height in `risePx`, after it has bounced on `via` and/or ridden out of `ride`.
+ */
+export interface FlightSpec {
+  /** Height of the new ledge's top above the takeoff ledge's top (px). */
+  risePx: readonly [number, number];
+  direction: -1 | 0 | 1;
+  widthPx: number;
+  /** Charge levels allowed (1..`chargeLevels`). */
+  levels: readonly [number, number];
+  takeoff?: 'any' | 'front';
+  /** The landing must be at least this far sideways from the takeoff (px). */
+  minDxPx?: number;
+  /** The flight must come down on this bounce cap first (its id; the cap must already be in the run). */
+  via?: string;
+  /** The flight must have been inside this column and left it before it lands. */
+  ride?: string;
+  /** How far (0..1 of the room) the ledge may sit off-centre from the landing point. Default 0.6. */
+  jitter01?: number;
 }
 
 /** The tools a piece builds with. One kit per chunk try; everything random comes from `random`. */
@@ -117,6 +143,26 @@ export interface PieceKit {
   link(run: PieceRun, from: PlatformData, target: PlatformData, alt?: boolean): boolean;
   /** Turn a kept ledge into one that slides left and right, if its steps still hold everywhere in its travel. */
   makeMoving(run: PieceRun, ledge: PlatformData, distancePx: number, periodMs: number): PlatformData | null;
+  /**
+   * Turn a kept ledge that no step leaves yet into a crumbling one. Every later step from it is then held
+   * to the crumble time: the walk from where the candle lands plus the charge must fit in `holdMs` less
+   * the margin, and the replay runs the crumble timer (route-replay.ts).
+   */
+  makeCrumbling(run: PieceRun, ledge: PlatformData): PlatformData | null;
+  /**
+   * A bounce cap reached by an ordinary jump from `from` (`spec`, the cap's rise and width), kept in the run
+   * if it fits and catches no earlier step. Returns the cap and the jump onto it (for `fly` to continue).
+   */
+  placeCap(run: PieceRun, from: PlatformData, spec: JumpSpec): { cap: PlatformData; step: RouteStep } | null;
+  /** The updraft columns already kept in this chunk by earlier pieces. */
+  columns(): UpdraftData[];
+  /** Keep an updraft column if it fits in the chunk and every step so far still lands through it. */
+  addColumn(run: PieceRun, column: UpdraftData): boolean;
+  /**
+   * Trace a jump through everything placed and keep a new ledge where it comes down (see `FlightSpec`).
+   * `fixed` pins the takeoff and charge (a jump already aimed at a cap). Tries up to the configured number.
+   */
+  fly(run: PieceRun, from: PlatformData, spec: FlightSpec, fixed?: RouteStep): PlatformData | null;
 }
 
 /** A set piece. `build` lays its ledges into `run` starting from `entry`; false when it cannot be completed. */
