@@ -171,11 +171,13 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
     const walkMs = budget - (chargeSteps + 1) * stepMs;
     if (arriveX === null || walkMs < 0) return { arriveX: arriveX ?? ledge.x, walkPx: -1 };
     // Whole walking steps only (the replay counts them the same way), a little short to be safe.
-    return { arriveX, walkPx: Math.floor(walkMs / stepMs) * game.walkSpeed * stepMs / 1000 - 1 };
+    // ...and short by the takeoff tolerance, since the step must also work from takeoffs that far either side.
+    return { arriveX, walkPx: Math.floor(walkMs / stepMs) * game.walkSpeed * stepMs / 1000 - 1 - tuning.takeoffTolerancePx };
   };
   /** The step leaves its ledge in time (a crumbling ledge), or the ledge does not crumble. */
   const inTime = (step: RouteStep, from: PlatformData | undefined): boolean =>
-    !from || from.type !== CRUMBLING_TYPE || (step.arriveX !== undefined && standMsBefore(step, game) <= crumbleBudgetMs(from));
+    !from || from.type !== CRUMBLING_TYPE || (step.arriveX !== undefined
+      && Math.max(standMsBefore(step, game, -tuning.takeoffTolerancePx), standMsBefore(step, game, tuning.takeoffTolerancePx)) <= crumbleBudgetMs(from));
 
   /** Where the body can stand on `ledge`, inside the walls, wherever a moving ledge is in its travel. */
   const standRange = (ledge: PlatformData): [number, number] => {

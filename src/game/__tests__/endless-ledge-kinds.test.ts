@@ -12,7 +12,7 @@ import { GAME_CONFIG as G } from '../../config/game.config';
 import type { PlatformData } from '../../shared/contracts/content';
 import { createEndlessGenerator, replayStep, stepsHold, type EndlessChunk, type PieceSpan } from '../endless/generator';
 import { createRouteBot } from '../endless/route-bot';
-import { flyStep, standMsBefore } from '../endless/route-replay';
+import { flyStep, replayStep as replayFrom, standMsBefore } from '../endless/route-replay';
 import { PIECES } from '../endless/pieces/registry';
 import { NO_CRUMBLE } from '../player/crumble';
 import { teleportPlayer } from '../player/movement';
@@ -156,6 +156,31 @@ describe('each new piece has its shape and needs its kind', () => {
       }
     }
     expect(checked).toBeGreaterThan(30);
+  });
+
+  it('a jump through a column, off a cap or off a crumbling ledge lands from every takeoff 0.25 px apart within 2 px', () => {
+    // QA finding 6/7 and the fixer's seed 4 chunk 18 case: misses 0.25 to 1 px from the stored takeoff while both ends landed.
+    const cases: Array<[number, number]> = [[4, 18], [136, 11], [297, 15], [409, 16], [486, 18], [493, 22]];
+    const picked = [...cases.map(([seed, index]) => {
+      const g = createEndlessGenerator(seed, G, C);
+      return { seed, chunk: g.chunk(index), prev: g.chunk(index - 1), next: g.chunk(index + 1) };
+    }), ...samples.slice(0, 60)];
+    let checked = 0;
+    for (const { seed, chunk, prev, next } of picked) {
+      const world = [...prev.platforms, ...chunk.platforms, ...next.platforms];
+      const columns = [...prev.updrafts, ...chunk.updrafts, ...next.updrafts];
+      for (const step of [...chunk.route, ...chunk.altRoute]) {
+        const from = world.find((p) => p.id === step.fromId)!;
+        if (step.kind === 'drop' || from.motion) continue;
+        const flight = flyStep(step, world, WIDTH, G, { updrafts: columns });
+        if (!flight.bounces.length && !flight.inColumn && from.type !== 'crumbling') continue;
+        checked++;
+        for (let shift = -2; shift <= 2 + 1e-9; shift += 0.25) {
+          expect(replayFrom(step, world, WIDTH, G, shift, false, columns), `seed ${seed} ${step.fromId}->${step.toId} at ${shift}`).toBe(step.toId);
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(40);
   });
 
   it('updraft rise and crossing: the step rides its column, and without the column it does not get there', () => {
