@@ -15,7 +15,7 @@
 import type { GameConfig } from '../../shared/contracts/config';
 import type { PlatformData } from '../../shared/contracts/content';
 import { stepPlayer } from '../player/movement';
-import type { PlatformBox } from '../player/types';
+import type { PlatformBox, PlayerState } from '../player/types';
 import { launch, standOn } from './jump-arcs';
 
 /**
@@ -40,11 +40,30 @@ const MAX_WALK_STEPS = 600;
 const DRIFT_TOLERANCE_PX = 2;
 
 /**
+ * Charge on `from` and launch: the same result as `launch` (jump-arcs.ts) step for step, but on a ledge
+ * that does not move charging only counts time (the body stays put, speed 0), so the held steps are
+ * added up the way `stepPlayer` adds them and only the release step is simulated. A moving ledge, or a
+ * takeoff not over the ledge, goes through `launch` itself.
+ */
+function launchFrom(start: PlayerState, from: PlatformBox & { motion?: unknown }, platforms: readonly PlatformBox[], step: RouteStep,
+  worldWidth: number, config: GameConfig): PlayerState {
+  const onLedge = Math.abs(start.x - from.x) < (config.player.width + from.width) / 2 - 1e-6;
+  if (from.motion || (from.dx ?? 0) !== 0 || !onLedge || step.chargeSteps < 1) {
+    return launch(start, platforms, step.chargeSteps, step.direction, worldWidth, config);
+  }
+  const stepMs = 1000 / config.stepHz;
+  let chargeMs = Math.min(stepMs, config.jump.maxChargeMs);
+  for (let i = 1; i < step.chargeSteps; i++) chargeMs = Math.min(chargeMs + stepMs, config.jump.maxChargeMs);
+  const charged: PlayerState = { ...start, vx: 0, charging: true, chargeMs };
+  return stepPlayer(charged, { left: step.direction < 0, right: step.direction > 0, jump: false }, platforms, worldWidth, config, stepMs).state;
+}
+
+/**
  * Replay one route step with the real physics. Returns the id of the ledge it lands on, or null if
  * it falls out of `platforms`. `shiftPx` moves the takeoff point (a jump from a moving ledge).
  */
 export function replayStep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: number, config: GameConfig,
-  shiftPx = 0): string | null {
+  shiftPx = 0, stopPastTarget = false): string | null {
   const from = platforms.find((platform) => platform.id === step.fromId);
   if (!from) return null;
   const stepMs = 1000 / config.stepHz;
@@ -55,14 +74,18 @@ export function replayStep(step: RouteStep, platforms: readonly PlatformBox[], w
     for (let i = 0; i < MAX_WALK_STEPS && state.grounded; i++) state = stepPlayer(state, walk, platforms, worldWidth, config, stepMs).state;
     if (state.grounded) return null;
   } else {
-    state = launch(start, platforms, step.chargeSteps, step.direction, worldWidth, config);
+    state = launchFrom(start, from, platforms, step, worldWidth, config);
   }
   let lowest = -Infinity;
   for (const platform of platforms) lowest = Math.max(lowest, platform.y);
   lowest += 200;
+  // Once the feet are falling below the target's top without having landed, the step has missed it.
+  const target = stopPastTarget ? platforms.find((platform) => platform.id === step.toId) : undefined;
+  const pastPx = target ? target.y - target.height / 2 + 1 : Infinity;
+  const half = config.player.height / 2;
   for (let i = 0; i < 6000; i++) {
     if (state.grounded) return state.platformId;
-    if (state.y > lowest) return null;
+    if (state.y > lowest || (state.vy > 0 && state.y + half > pastPx)) return null;
     state = stepPlayer(state, IDLE, platforms, worldWidth, config, stepMs).state;
   }
   return null;
@@ -81,12 +104,12 @@ export function chargeDriftPx(ledge: PlatformData, chargeSteps: number, config: 
 
 /** One step lands on its target with `ledges` as they are; from a moving ledge, from every shifted takeoff too. */
 function stepLands(step: RouteStep, ledges: readonly PlatformData[], worldWidth: number, config: GameConfig): boolean {
-  if (replayStep(step, ledges, worldWidth, config) !== step.toId) return false;
+  if (replayStep(step, ledges, worldWidth, config, 0, true) !== step.toId) return false;
   const from = ledges.find((ledge) => ledge.id === step.fromId);
   if (!from?.motion) return true;
   if (step.kind === 'drop') return false;
   const drift = chargeDriftPx(from, step.chargeSteps, config);
-  return [-drift, drift].every((shift) => replayStep(step, ledges, worldWidth, config, shift) === step.toId);
+  return [-drift, drift].every((shift) => replayStep(step, ledges, worldWidth, config, shift, true) === step.toId);
 }
 
 /**
@@ -132,7 +155,7 @@ function sweep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: n
     const walk = { left: step.direction < 0, right: step.direction > 0, jump: false };
     for (let i = 0; i < MAX_WALK_STEPS && state.grounded; i++) { state = stepPlayer(state, walk, platforms, worldWidth, config, stepMs).state; grow(); }
   } else {
-    state = launch(state, platforms, step.chargeSteps, step.direction, worldWidth, config);
+    state = launchFrom(state, from, platforms, step, worldWidth, config);
     grow();
   }
   let lowest = -Infinity;

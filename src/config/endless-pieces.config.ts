@@ -23,9 +23,9 @@ export const ENDLESS_PIECES_CONFIG = {
   /** Candidate ledges tried for one ledge of a piece before the piece gives up. */
   attemptsPerLedge: 18,
   /** Candidate ledges tried for one ledge of the approach ladder before it takes a ledge back. */
-  approachAttempts: 40,
+  approachAttempts: 20,
   /** Ledges the approach ladder may take back in one try (bounds the worst case). */
-  approachBacktracks: 24,
+  approachBacktracks: 8,
   /** Pieces that may be taken back, last first, when the approach cannot reach the next anchor from where they ended. */
   approachUndoPieces: 2,
   /**
@@ -40,8 +40,9 @@ export const ENDLESS_PIECES_CONFIG = {
    * the number of side ledges, the safety net they make under a miss, and the wax per chunk near what
    * the plain ladder had (measured with tools/endless/chunk-map.ts --compare).
    */
-  sideLedgeScale: 0.7,
-  pathWaxScale: 0.75,
+  // Typed as plain numbers so a tool can compare against the plain ladder (scale 1).
+  sideLedgeScale: 0.7 as number,
+  pathWaxScale: 0.75 as number,
   /** A piece reaches its full weight this many chunks after it unlocks (it fades in, no unit). */
   fadeInChunks: 3,
   /** The plain ladder: a few ordinary jumps, mostly zigzag, sometimes straight up. Breathing room. */
