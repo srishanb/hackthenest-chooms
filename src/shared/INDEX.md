@@ -11,7 +11,7 @@ Owner: integrator (Srishan). **Frozen after P0:** changes go through an integrat
 | `GameSnapshot`, `GamePhase`, `EmberSnapshot`, `INITIAL_GAME_SNAPSHOT` | `contracts/game-state.ts` | The game's public state. |
 | `EffectId`, `EFFECT_IDS`, `EffectRule`, `EffectsFrame` | `contracts/effects.ts` | Effects as data. |
 | `Settings`, `KeyBindings`, `Volumes`, `DEFAULT_SETTINGS` | `contracts/settings.ts` | Player settings schema and defaults. |
-| `SignalConfig`, `GameConfig`, `EmberConfig`, `UiConfig`, `UiComponentId`, `UiSlot`, `AudioConfig` | `contracts/config.ts` | Types of the files in `src/config/`. |
+| `SignalConfig`, `GameConfig`, `EmberConfig`, `UiConfig`, `UiComponentId`, `UiSlot`, `AudioConfig`, `LedgeKindsConfig`, `WallMovesConfig` | `contracts/config.ts` | Types of the files in `src/config/`. `WallMovesConfig`: wall slide and wall jump (D-37, optional `GameConfig.wallMoves`). |
 | `SectionData` (with `refuge`, `finish`), `PlatformData`, `AreaData`, `NarratorLine` | `contracts/content.ts` | Authored content shapes (starting shape). |
 | `Stores` | `contracts/app.ts` | The three stores `main.ts` creates. |
 | `createEventBus(now?)` | `bus.ts` | Typed event bus. |
