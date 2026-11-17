@@ -245,18 +245,27 @@ export interface StepBox {
   bottom: number;
 }
 
-/** Trace one step as `replayStep` does and return the region its feet sweep, or null if it lands nowhere. */
+/**
+ * Trace one step as `replayStep` does and return the region its feet sweep, or null if it lands nowhere.
+ * A flight that bounces or crosses a column is also traced from the shifted takeoffs `stepLands` checks,
+ * and the region covers all of them (their paths can part widely after the column or the cap).
+ */
 function sweep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: number, config: GameConfig, updrafts: readonly UpdraftBox[]): StepBox | null {
   const from = platforms.find((platform) => platform.id === step.fromId);
   if (!from) return null;
   const half = config.player.height / 2;
   const startX = step.takeoffX, startFeet = from.y - from.height / 2;
   const box: StepBox = { left: startX, right: startX, top: startFeet, bottom: startFeet };
-  const flight = flyStep(step, platforms, worldWidth, config, { updrafts, onState: (state) => {
+  const onState = (state: PlayerState): void => {
     box.left = Math.min(box.left, state.x); box.right = Math.max(box.right, state.x);
     box.top = Math.min(box.top, state.y + half); box.bottom = Math.max(box.bottom, state.y + half);
-  } });
-  return flight.landedId === null ? null : box;
+  };
+  const flight = flyStep(step, platforms, worldWidth, config, { updrafts, onState });
+  if (flight.landedId === null) return null;
+  if ((flight.bounces.length || flight.inColumn) && step.kind !== 'drop') {
+    for (const shiftPx of [-DRIFT_TOLERANCE_PX, DRIFT_TOLERANCE_PX]) flyStep(step, platforms, worldWidth, config, { updrafts, onState, shiftPx });
+  }
+  return box;
 }
 
 /**
