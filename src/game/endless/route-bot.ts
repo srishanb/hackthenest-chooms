@@ -53,6 +53,11 @@ export interface BotWorld {
 
 const keyOf = (step: RouteStep): string => `${step.fromId}>${step.toId}`;
 
+/** The step starts or ends on a ledge that slides (the platforms carry their `motion` at run time). */
+function movesOnStep(step: RouteStep, platforms: readonly PlatformBox[] | undefined): boolean {
+  return !!platforms?.some((platform) => (platform.id === step.fromId || platform.id === step.toId) && 'motion' in platform && !!platform.motion);
+}
+
 /**
  * The hold to use: the first of `nominal`, `nominal`+1, `nominal`-1, +2, -2... (never one in `tried`)
  * that a replay from `fromX` under `current` lands on the step's target. With no world to replay in, or
@@ -110,10 +115,14 @@ export function createRouteBot() {
         return { left: state.x > step.takeoffX, right: state.x < step.takeoffX, jump: false };
       }
       if (held === 0) {
-        // About to charge: pick the hold now. Replay it only when growth has changed the movement or a hold has already failed.
+        // About to charge: pick the hold now, checking it by replay from where the candle really stands. A step
+        // that starts or ends on a moving ledge is replayed only when growth changed the movement or a hold has
+        // already failed (a replay cannot know where the ledge will be); every other step is always replayed,
+        // because a flight through an updraft column or off a bounce cap can miss from a takeoff 1 px off.
         const tried = failed.get(keyOf(step)) ?? new Set<number>();
         const nominal = movement ? heldStepsFor(step.chargeSteps, movement.base, movement.current) : step.chargeSteps;
-        hold = chooseHold(step, nominal, state.x, tried, movement, !!movement && (movement.current.jump !== movement.base.jump || tried.size > 0));
+        const changed = !!movement && (movement.current.jump !== movement.base.jump || tried.size > 0);
+        hold = chooseHold(step, nominal, state.x, tried, movement, changed || !!movement && !movesOnStep(step, movement.platforms));
       }
       if (held < hold) { held++; return { ...IDLE, jump: true }; }
       // Release while holding the stored direction: this is the launch step.

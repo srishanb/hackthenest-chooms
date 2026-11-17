@@ -59,6 +59,16 @@ describe('the route bot with a fully grown candle', () => {
   }
 });
 
+describe('the route bot with no growth', () => {
+  // Seed 4 from chunk 0: the step e18:p1 -> e18:p2 flies through an updraft column and lands on the edge of p2
+  // from the stored takeoff, but missed from 0.5 px beside it (the bot starts within 1.5 px), so the bot fell
+  // three chunks and then went more than 30 s without a new best. It now replays the jump from where it stands.
+  it(`never goes ${STALL_MS / 1000} s without a new best height (seed 4, from chunk 0, 400 s)`, () => {
+    const run = climb(4, 0, 400, G);
+    expect(run.longestWaitMs).toBeLessThan(STALL_MS);
+  });
+});
+
 describe('the bot picks its hold', () => {
   const step = { fromId: 'a', toId: 'b', takeoffX: 100, chargeSteps: 30, direction: 1 as const };
 
