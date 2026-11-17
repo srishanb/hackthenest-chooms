@@ -151,7 +151,7 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
   };
   /** The step leaves its ledge in time (a crumbling ledge), or the ledge does not crumble. */
   const inTime = (step: RouteStep, from: PlatformData | undefined): boolean =>
-    !from || from.type !== CRUMBLING_TYPE || standMsBefore(step, game) <= crumbleBudgetMs(from);
+    !from || from.type !== CRUMBLING_TYPE || (step.arriveX !== undefined && standMsBefore(step, game) <= crumbleBudgetMs(from));
 
   /** Where the body can stand on `ledge`, inside the walls, wherever a moving ledge is in its travel. */
   const standRange = (ledge: PlatformData): [number, number] => {
@@ -406,7 +406,17 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
             const span = (maxX - minX) / 3;
             if (spec.direction > 0) minX = maxX - span; else maxX = minX + span;
           }
-          probe = { fromId: from.id, toId: '', takeoffX: Math.round(lerp(minX, maxX, random())), chargeSteps, direction: spec.direction };
+          // From a crumbling ledge: a charge that fits its hold time, and a takeoff within walking reach of the landing.
+          if ((chargeSteps + 1) * stepMs > crumbleBudgetMs(from)) continue;
+          const reach = crumbleReach(run, from, chargeSteps);
+          if (reach) {
+            if (reach.walkPx < 0) continue;
+            minX = Math.max(minX, Math.ceil(reach.arriveX - reach.walkPx));
+            maxX = Math.min(maxX, Math.floor(reach.arriveX + reach.walkPx));
+            if (minX > maxX) continue;
+          }
+          probe = { fromId: from.id, toId: '', takeoffX: Math.round(lerp(minX, maxX, random())), chargeSteps, direction: spec.direction,
+            ...(reach ? { arriveX: Math.round(reach.arriveX * 100) / 100 } : {}) };
         }
         if (spec.via) probe.via = spec.via;
         if (spec.ride) probe.ride = spec.ride;

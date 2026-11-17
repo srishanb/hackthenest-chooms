@@ -27,6 +27,7 @@ import type { GameConfig } from '../../shared/contracts/config';
 import type { PlatformData } from '../../shared/contracts/content';
 import { CRUMBLING_TYPE, type CrumbleState } from '../player/crumble';
 import { stepPlayer } from '../player/movement';
+import { updraftAt } from '../player/updraft';
 import type { PlatformBox, PlayerInput, PlayerState, UpdraftBox } from '../player/types';
 import { stepWorld } from '../player/world-step';
 import { launch, standOn } from './jump-arcs';
@@ -98,6 +99,8 @@ export interface Flight {
   bounces: string[];
   /** Highest feet y reached (smallest number). */
   topFeetY: number;
+  /** True when the body was inside an updraft column at some point of the flight. */
+  inColumn: boolean;
 }
 
 /**
@@ -112,13 +115,18 @@ export function flyStep(step: RouteStep, platforms: readonly PlatformBox[], worl
   const environment = { updrafts };
   const from = platforms.find((platform) => platform.id === step.fromId);
   const half = config.player.height / 2;
-  const missed = (state: PlayerState, bounces: string[]): Flight => ({ landedId: null, state, bounces, topFeetY: state.y + half });
+  let inColumn = false;
+  const missed = (state: PlayerState, bounces: string[]): Flight => ({ landedId: null, state, bounces, topFeetY: state.y + half, inColumn });
   if (!from) return missed(standOn({ id: '', x: 0, y: 0, width: 0, height: 0 }, 0, config), []);
   const stepMs = 1000 / config.stepHz;
   let state = standOn(from, step.takeoffX + (options.shiftPx ?? 0), config);
   let topFeetY = state.y + half;
   const bounces: string[] = [];
-  const seen = (next: PlayerState): void => { state = next; topFeetY = Math.min(topFeetY, next.y + half); options.onState?.(next); };
+  const seen = (next: PlayerState): void => {
+    state = next; topFeetY = Math.min(topFeetY, next.y + half);
+    if (!inColumn && updrafts.length && !next.grounded && updraftAt(updrafts, next.x, next.y)) inColumn = true;
+    options.onState?.(next);
+  };
   // A crumbling ledge: the world stepper runs the walk-in time, the charge and the flight, as the game does.
   let crumble: CrumbleState | null = null;
   const advance = (input: PlayerInput): void => {
@@ -156,7 +164,7 @@ export function flyStep(step: RouteStep, platforms: readonly PlatformBox[], worl
   const target = options.stopPastTarget && !step.ride ? platforms.find((platform) => platform.id === step.toId) : undefined;
   const pastPx = target ? target.y - target.height / 2 + 1 : Infinity;
   for (let i = 0; i < (options.maxSteps ?? MAX_FLIGHT_STEPS); i++) {
-    if (state.grounded) return { landedId: state.platformId, state, bounces, topFeetY };
+    if (state.grounded) return { landedId: state.platformId, state, bounces, topFeetY, inColumn };
     const past = state.vy > 0 && state.y + half > pastPx && (!step.via || bounces.includes(step.via));
     if (state.y > lowest || past) return missed(state, bounces);
     advance(IDLE);
@@ -187,9 +195,17 @@ export function chargeDriftPx(ledge: PlatformData, chargeSteps: number, config: 
   return Math.min(2 * motion.distance, (2 * Math.PI * motion.distance / motion.periodMs) * chargeMs) + DRIFT_TOLERANCE_PX;
 }
 
-/** One step lands on its target with `ledges` as they are; from a moving ledge, from every shifted takeoff too. */
+/**
+ * One step lands on its target with `ledges` as they are; from a moving ledge, from every shifted takeoff
+ * too. A flight that bounces or passes through a column is sensitive to where it starts (a column's edge
+ * is sharp, and a bounce doubles any error), so it must also land from takeoffs `DRIFT_TOLERANCE_PX`
+ * either side: the bot starts charging within 1.5 px of the takeoff, and a person is never exact.
+ */
 function stepLands(step: RouteStep, ledges: readonly PlatformData[], worldWidth: number, config: GameConfig, updrafts: readonly UpdraftBox[]): boolean {
-  if (replayStep(step, ledges, worldWidth, config, 0, true, updrafts) !== step.toId) return false;
+  const flight = flyStep(step, ledges, worldWidth, config, { stopPastTarget: true, updrafts });
+  if (flight.landedId !== step.toId || (step.via && !flight.bounces.includes(step.via))) return false;
+  if ((flight.bounces.length || flight.inColumn) && step.kind !== 'drop'
+    && ![-DRIFT_TOLERANCE_PX, DRIFT_TOLERANCE_PX].every((shift) => replayStep(step, ledges, worldWidth, config, shift, true, updrafts) === step.toId)) return false;
   const from = ledges.find((ledge) => ledge.id === step.fromId);
   if (!from?.motion) return true;
   if (step.kind === 'drop') return false;
