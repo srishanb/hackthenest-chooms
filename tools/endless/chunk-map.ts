@@ -123,7 +123,7 @@ function botClimb(seconds: number, startChunk: number): string {
   for (let ms = 0; ms <= seconds * 1000; ms += STEP_MS) {
     const platforms = platformsAt(stream.platforms(), ms, STEP_MS);
     const movement = flag('no-growth') !== undefined ? G : grownMovement(G, waxGrowth(taken.size, WAX_CONFIG.growthPerWax, WAX_CONFIG.growthCapWax));
-    const input = bot.input(state, stream.chunks().flatMap((chunk) => chunk.route), (id) => platforms.find((p) => p.id === id), { base: G, current: movement });
+    const input = bot.input(state, stream.chunks().flatMap((chunk) => chunk.route), (id) => platforms.find((p) => p.id === id), { base: G, current: movement, platforms, updrafts: stream.updrafts() });
     // The game's own step: crumbling ledges and updraft columns as in the scene.
     const stepped = stepWorld(state, crumble, input, platforms, stream.updrafts(), G.view.width, movement, STEP_MS);
     state = stepped.player; crumble = stepped.crumble;
