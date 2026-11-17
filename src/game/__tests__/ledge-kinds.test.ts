@@ -154,12 +154,29 @@ describe('updraft columns', () => {
   const RISE: UpdraftBox = { ...DRIFT, id: 'rise', kind: 'rise' };
 
   it('slow a fall to a gentle sink, or turn it into a rise, at their terminal speeds', () => {
-    const falling = { ...createPlayer(480, 700), vy: 700 };
+    // Coming down fast but still above where it took off (a jump from the floor far below): the column holds it.
+    const falling = { ...createPlayer(480, 700), vy: 700, takeoffBottomY: 1500 };
     const drift = trace(falling, [FLOOR], 240, () => IDLE, [DRIFT]);
     expect(drift.states[239]!.vy).toBeCloseTo(K.updraft.driftVy, 0);
     const rise = trace(falling, [FLOOR], 240, () => IDLE, [RISE]);
     expect(rise.states[239]!.vy).toBeCloseTo(K.updraft.riseVy, 0);
     expect(rise.states[200]!.y).toBeLessThan(rise.states[100]!.y);
+  });
+
+  it('never catch a fall: lower than holdBelowTakeoffPx under the takeoff, the candle passes straight through', () => {
+    // QA should-fix 3 (D-33): a column used to brake and lift any fall that crossed it.
+    for (const column of [DRIFT, RISE]) {
+      const falling = { ...createPlayer(480, 220), vy: 300, takeoffBottomY: 220 + G.player.height / 2 - 2 * K.updraft.holdBelowTakeoffPx };
+      const { states } = trace(falling, [FLOOR], 240, () => IDLE, [column]);
+      const inside = states.filter((s) => !s.grounded && updraftAt([column], s.x, s.y));
+      expect(inside.length).toBeGreaterThan(10);
+      for (let i = 1; i < inside.length; i++) expect(inside[i]!.vy).toBeGreaterThan(inside[i - 1]!.vy);
+      expect(states.at(-1)!.platformId).toBe('floor');
+    }
+    // Just under the takeoff height (a jump's own descent) it still holds.
+    const near = { ...createPlayer(480, 600), vy: 300, takeoffBottomY: 600 + G.player.height / 2 };
+    const held = trace(near, [FLOOR], 30, () => IDLE, [RISE]);
+    expect(held.states[29]!.vy).toBeLessThan(near.vy);
   });
 
   it('a jump into a column floats higher than the same jump in still air, with normal steering', () => {

@@ -50,6 +50,10 @@ export const GAME_CONFIG: GameConfig = {
       brakePerS: 4, // 1/s: how fast a fall's extra speed bleeds off toward the terminal speed
       driftVy: 60, // px/s downward: the gentle sink of a drift column
       riseVy: -150, // px/s upward: the climb of a rise column
+      // px: once the candle's feet are this far below where it last took off, it is falling, and a column lets it
+      // fall straight through, so a column never catches a fall (D-33). Every route flight that rides a column
+      // stays within 4 px of its takeoff height while inside (614 measured), so 24 px leaves room for steering.
+      holdBelowTakeoffPx: 24,
     },
   },
 };

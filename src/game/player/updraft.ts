@@ -6,7 +6,8 @@
  *     the column floats higher and longer, but never gains speed from the air;
  *   - otherwise: vertical speed eases toward the terminal speed at `brakePerS`, so a fall slows to a
  *     gentle sink (a drift column) or turns into a steady climb (a rise column).
- * Leaving the column restores plain gravity at once. Horizontal movement is untouched (normal air
+ * Leaving the column restores plain gravity at once. A candle that has fallen more than `holdBelowTakeoffPx`
+ * below its takeoff passes straight through untouched (`updraftHolds`): columns lift jumps, never catch falls. Horizontal movement is untouched (normal air
  * steering). Pure numbers, the same in the game and in the generator's replay; never the signal.
  */
 import type { LedgeKindsConfig } from '../../shared/contracts/config';
@@ -24,6 +25,15 @@ export function updraftAt(columns: readonly UpdraftBox[] | undefined, x: number,
 /** The terminal vertical speed of a column kind (px/s, positive is down). */
 export function terminalVy(kind: UpdraftBox['kind'], rules: LedgeKindsConfig['updraft']): number {
   return kind === 'rise' ? rules.riseVy : rules.driftVy;
+}
+
+/**
+ * Does the column take hold of the candle? Only while its feet (`feetY`) are no more than
+ * `holdBelowTakeoffPx` below where it last took off (`takeoffBottomY`). Lower than that it is falling, and a
+ * fall goes straight through: a column lifts jumps, it is never a safety net under a fall (D-33).
+ */
+export function updraftHolds(feetY: number, takeoffBottomY: number, rules: LedgeKindsConfig['updraft']): boolean {
+  return feetY - takeoffBottomY <= rules.holdBelowTakeoffPx;
 }
 
 /** Vertical speed after one step of `dt` seconds inside a column of `kind`, from `vy` (px/s, down positive). */

@@ -18,7 +18,7 @@ import { charge01, launchVelocity, steeredVx } from './charge-jump';
 import { BOUNCE_TYPE, bounceSpeed } from './bounce';
 import { clampToWalls, findLanding, findSupport } from './collide';
 import type { PlatformBox, PlayerInput, PlayerState, StepEvents, UpdraftBox } from './types';
-import { updraftAt, updraftVy } from './updraft';
+import { updraftAt, updraftHolds, updraftVy } from './updraft';
 
 const direction = (input: PlayerInput): -1 | 0 | 1 => ((input.right ? 1 : 0) - (input.left ? 1 : 0)) as -1 | 0 | 1;
 
@@ -133,7 +133,7 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
 
   if (!grounded) {
     const column = config.ledgeKinds ? updraftAt(environment.updrafts, x, y) : null;
-    vy = column && config.ledgeKinds ? updraftVy(vy, column.kind, config.ledgeKinds.updraft, config.gravityY, dt) : vy + config.gravityY * dt;
+    vy = column && config.ledgeKinds && updraftHolds(y + height / 2, takeoffBottomY, config.ledgeKinds.updraft) ? updraftVy(vy, column.kind, config.ledgeKinds.updraft, config.gravityY, dt) : vy + config.gravityY * dt;
     const newBottom = prevBottom + vy * dt;
     let platform = vy >= 0 ? findLanding(platforms, x, width, prevBottom, newBottom) : null;
     if (!platform && state.vy > 0 && config.falling) {
