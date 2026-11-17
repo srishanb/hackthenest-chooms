@@ -177,22 +177,28 @@ describe('endless generator', () => {
           moving++;
           expect(index).toBeGreaterThanOrEqual(ENDLESS_CONFIG.moving.fromChunk);
           expect(ledge.type).toBe('moving');
+          const { distance, periodMs, axis } = ledge.motion;
+          // Every mover, on the route or off it: slides sideways and keeps inside the walls at both ends.
+          expect(axis).toBe('x');
+          expect(ledge.x - ledge.width / 2 - distance).toBeGreaterThanOrEqual(0);
+          expect(ledge.x + ledge.width / 2 + distance).toBeLessThanOrEqual(WIDTH);
+          const drop = chunk.wax.find((w) => w.ledgeId === ledge.id);
           if (onRoute.has(ledge.id)) {
             // The main path moves only in a moving crossing, and every step holds wherever the ledge is.
             mainMovers++;
             expect(chunk.pieces.find((span) => span.ledgeIds.includes(ledge.id))?.id).toBe('moving-crossing');
-            expect(ledge.motion.distance).toBeGreaterThanOrEqual(T.movingCrossing.distancePx[0]);
-            expect(ledge.motion.distance).toBeLessThanOrEqual(T.movingCrossing.distancePx[1]);
+            expect(distance).toBeGreaterThanOrEqual(T.movingCrossing.distancePx[0]);
+            expect(distance).toBeLessThanOrEqual(T.movingCrossing.distancePx[1]);
+            expect(periodMs).toBeGreaterThanOrEqual(T.movingCrossing.periodMs[0]);
+            expect(periodMs).toBeLessThanOrEqual(T.movingCrossing.periodMs[1]);
             expect(stepsHold([...chunk.route, ...chunk.altRoute], all, WIDTH, GAME_CONFIG, chunk.updrafts)).toBe(true);
+            // Wax on a main-path mover (if the chunk put any there) rides it too.
+            if (drop) expect(drop.ledgeX).toBe(ledge.x);
             continue;
           }
-          const { distance, periodMs, axis } = ledge.motion;
-          expect(axis).toBe('x');
           expect(distance).toBeGreaterThanOrEqual(ENDLESS_CONFIG.moving.minDistancePx);
           expect(distance).toBeLessThanOrEqual(ENDLESS_CONFIG.moving.maxDistancePx);
           expect(periodMs).toBeGreaterThanOrEqual(ENDLESS_CONFIG.moving.periodMs[0]);
-          expect(ledge.x - ledge.width / 2 - distance).toBeGreaterThanOrEqual(0);
-          expect(ledge.x + ledge.width / 2 + distance).toBeLessThanOrEqual(WIDTH);
           // Its own jump lands on it wherever it is in its travel, and the main path is never caught by it.
           const jump = chunk.sideRoute.find((step) => step.toId === ledge.id)!;
           for (const offset of [-distance, 0, distance]) {
@@ -201,8 +207,7 @@ describe('endless generator', () => {
             for (const step of chunk.route) expect(replayStep(step, shifted, WIDTH, GAME_CONFIG, 0, false, chunk.updrafts)).toBe(step.toId);
           }
           // Its wax knows which ledge it rides.
-          const drop = chunk.wax.find((w) => w.ledgeId === ledge.id)!;
-          expect(drop.ledgeX).toBe(ledge.x);
+          expect(drop!.ledgeX).toBe(ledge.x);
         }
       }
     }

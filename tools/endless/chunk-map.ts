@@ -147,7 +147,7 @@ function botClimb(seconds: number, startChunk: number): string {
   return [`route bot, seed ${seed}, from chunk ${startChunk}:`, ...out, `  stalls: ${stalls}`].join('\n');
 }
 
-/** Ledges, jumps and wax per chunk, and the height lost when a jump is held one charge level too short or too long. */
+/** Ledges, jumps and wax per chunk, and the height lost when a jump is held 12 physics steps (two charge levels of 6 steps) too short or too long. */
 function compare(): string {
   const rows: string[] = [];
   const plainTuning = { ...T, sideLedgeScale: 1, pathWaxScale: 1 };
@@ -178,7 +178,7 @@ function compare(): string {
     }
     const perJump = lost / misses;
     rows.push(`${name.padEnd(13)} ledges/chunk ${(ledges / chunks).toFixed(1)}  jumps/chunk ${(steps / chunks).toFixed(1)}  wax/chunk ${(wax / chunks).toFixed(1)}  `
-      + `miss by one charge level: ${perJump.toFixed(0)} px lost per miss, ${(100 * overChunk / misses).toFixed(1)}% over a chunk, `
+      + `miss by 12 steps (two charge levels): ${perJump.toFixed(0)} px lost per miss, ${(100 * overChunk / misses).toFixed(1)}% over a chunk, `
       + `${(perJump * steps / chunks).toFixed(0)} px per chunk if every jump is missed once`);
   }
   return ['12 seeds x chunks 1..10:', ...rows].join('\n');
