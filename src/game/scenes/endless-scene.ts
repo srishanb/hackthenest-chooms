@@ -56,7 +56,7 @@ import { updraftAt } from '../player/updraft';
 import { stepWorld } from '../player/world-step';
 import type { PlatformBox, PlayerState } from '../player/types';
 import { platformsAt } from '../world/environment';
-import { landingEvents } from '../world/fall-tracker';
+import { bounceEvents, landingEvents } from '../world/fall-tracker';
 import { createPhaseController, type PhaseController } from '../world/phase-controller';
 import { CLIMB_SCENE_KEY } from './boot-scene';
 import { writeSnapshot } from './snapshot-writer';
@@ -436,6 +436,14 @@ export class EndlessScene extends Phaser.Scene {
       if (out.events.bounced) {
         this.bouncedIds.push(out.events.bounced.platformId);
         bus.emit({ type: 'bounce', platformId: out.events.bounced.platformId, launchSpeed: out.events.bounced.launchSpeed });
+        // A fall that ends on a cap counts as a fall, at its full height, as a landing would.
+        const fallHeightPx = out.events.bounced.fallHeightPx;
+        if (fallHeightPx > 0) {
+          this.shakeOnLanding(fallHeightPx);
+          this.cleanJumps = 0;
+          this.composure = shake(this.composure, fallHeightPx, config);
+        }
+        for (const event of bounceEvents(out.events.bounced, emberConfig)) bus.emit(event);
         this.kindCounts.bounces++;
       }
       this.kindCounts.crumbled += out.crumbled.length;

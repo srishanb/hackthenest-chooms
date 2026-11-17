@@ -85,8 +85,10 @@ describe('special-ledge pieces keep the generator rules', () => {
         expect(caps.has(step.fromId)).toBe(false);
         expect(caps.has(step.toId)).toBe(false);
       }
-      expect(chunk.wax.every((drop) => !caps.has(drop.ledgeId ?? '') && !chunk.platforms.some((p) => caps.has(p.id)
-        && Math.abs(drop.x - p.x) < p.width / 2 && Math.abs(drop.y - topOf(p)) < 40))).toBe(true);
+      // No wax hovers on a cap (a drop just above its top); wax on a ledge under a cap is fine.
+      const onCap = chunk.wax.filter((drop) => caps.has(drop.ledgeId ?? '') || chunk.platforms.some((p) => caps.has(p.id)
+        && Math.abs(drop.x - p.x) < p.width / 2 && topOf(p) - drop.y > 0 && topOf(p) - drop.y < 40));
+      expect(onCap, JSON.stringify({ onCap, caps: chunk.platforms.filter((p) => caps.has(p.id)) })).toEqual([]);
       for (const column of chunk.updrafts) {
         expect(column.x - column.width / 2).toBeGreaterThanOrEqual(0);
         expect(column.x + column.width / 2).toBeLessThanOrEqual(WIDTH);

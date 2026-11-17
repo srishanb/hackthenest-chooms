@@ -11,7 +11,8 @@
  *
  * Bounce: coming down onto a bounce cap never lands; the feet are put on its top and the candle is thrown
  * upward (bounce.ts), keeping its horizontal speed as the new launch speed, so normal air steering goes
- * on from there. The fall height is measured from the cap afterwards.
+ * on from there. The bounce reports the fall that ended on the cap (`bounced.fallHeightPx`, its full
+ * height, like a landing), and the next fall is measured from the cap.
  */
 import type { GameConfig } from '../../shared/contracts/config';
 import { charge01, launchVelocity, steeredVx } from './charge-jump';
@@ -153,8 +154,9 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
       y = top - height / 2;
       vy = -launchSpeed;
       launchVx = vx - windVx;
+      // The way down counts as a fall of its full height; the throw is a new takeoff from the cap.
+      bounced = { platformId: platform.id, launchSpeed, fallHeightPx: Math.max(0, top - takeoffBottomY) };
       takeoffBottomY = top;
-      bounced = { platformId: platform.id, launchSpeed };
     } else if (platform) {
       const top = platform.y - platform.height / 2;
       y = top - height / 2;

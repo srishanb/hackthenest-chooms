@@ -122,11 +122,12 @@ export const ENDLESS_PIECES_CONFIG = {
   flightAttempts: 10,
   /**
    * Mushroom launch: an ordinary jump (charge `levels`, 1..12) down or across onto a bounce cap
-   * (`capWidthPx` wide, its top `capRisePx` above the takeoff: negative is lower), whose throw carries the
+   * (`capWidthPx` wide, its top `capRisePx` above the takeoff: negative is lower, at most 50 px so the way down
+   * onto it never counts as a fall that shakes the candle, 60 px), whose throw carries the
    * candle to a ledge `risePx` above the takeoff: more than the 217 px a full jump can rise, so the cap is
    * the only way. Nothing is under the gap; a miss falls.
    */
-  mushroomLaunch: { weight: 1.6, fromChunk: 5, demanding: true, capWidthPx: [80, 104] as const, capRisePx: [-70, 10] as const,
+  mushroomLaunch: { weight: 1.6, fromChunk: 5, demanding: true, capWidthPx: [80, 104] as const, capRisePx: [-50, 10] as const,
     risePx: [240, 330] as const, levels: [3, 9] as const },
   /**
    * Crumbling run: `ledges` crumbling ledges in a row, each a small hop (charge `levels`, at most 6 of 12,

@@ -4,7 +4,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { GAME_CONFIG as G } from '../../config/game.config';
+import { EMBER_CONFIG } from '../../config/ember.config';
 import { bounceSpeed } from '../player/bounce';
+import { bounceEvents } from '../world/fall-tracker';
 import { NO_CRUMBLE, solidLedges, type CrumbleState } from '../player/crumble';
 import { createPlayer, stepPlayer } from '../player/movement';
 import type { PlatformBox, PlayerInput, PlayerState, UpdraftBox } from '../player/types';
@@ -65,6 +67,20 @@ describe('bounce caps', () => {
     // A harder landing throws a little higher, never past the cap.
     expect(bounceSpeed(600, K.bounce)).toBeGreaterThan(bounceSpeed(100, K.bounce));
     expect(bounceSpeed(1e6, K.bounce)).toBe(K.bounce.maxLaunchSpeed);
+  });
+
+  it('count the fall that ends on the cap at its full height, and measure the next fall from the cap', () => {
+    // QA should-fix 4: the bounce reset the fall's reference, so a long fall onto a cap was never a fall.
+    const start = { ...createPlayer(CAP.x - 20, topOf(CAP) - 600 - H / 2), vx: 60, launchVx: 60, takeoffBottomY: topOf(CAP) - 600 };
+    const { events } = trace(start, [CAP, FLOOR], 600);
+    const bounce = events.find((e) => e.bounced)!.bounced!;
+    expect(bounce.fallHeightPx).toBeCloseTo(600, 0);
+    const fallEvents = bounceEvents(bounce, EMBER_CONFIG);
+    expect(fallEvents.map((e) => e.type)).toEqual(['fall']);
+    expect(fallEvents[0]).toMatchObject({ heightPx: bounce.fallHeightPx, big: bounce.fallHeightPx >= EMBER_CONFIG.bigFallPx });
+    const landing = events.find((e) => e.landed)!.landed!;
+    expect(landing.platformId).toBe('floor');
+    expect(landing.fallHeightPx).toBeCloseTo(topOf(FLOOR) - topOf(CAP), 0);
   });
 
   it('keep the horizontal speed (the bounce is aimed by how you arrive) and steer normally afterwards', () => {
