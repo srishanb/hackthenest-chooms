@@ -147,6 +147,8 @@ export class EndlessScene extends Phaser.Scene {
   private crumbledIds: string[] = [];
   /** Development counters for the automated browser check (bounces, ledges fallen, physics steps inside a column). */
   private kindCounts = { bounces: 0, crumbled: 0, updraftSteps: 0 };
+  /** Development: the keyboard took over from the route bot (any game key pressed during a bot run). */
+  private botTakenOver = false;
 
   constructor(private readonly deps: EndlessSceneDeps) {
     super(CLIMB_SCENE_KEY);
@@ -413,10 +415,17 @@ export class EndlessScene extends Phaser.Scene {
       this.platforms = platformsAt(this.stream.platforms(), this.worldTimeMs, stepMs);
       // Wax growth (+2% per piece, capped) scales walking and jumping; it comes from the wax count only.
       const movement = grownMovement(gameConfig, waxGrowth(this.wax.count(), WAX_CONFIG.growthPerWax, WAX_CONFIG.growthCapWax));
-      const input = this.deps.bot
+      // Development: a game key pressed during a bot run hands the candle over to the keyboard for the rest of the run.
+      const keys = this.controls.read();
+      if (this.deps.bot && !this.botTakenOver && (keys.left || keys.right || keys.jump)) {
+        // A charge the bot had started is dropped, so the hand-over never fires a jump nobody asked for.
+        this.botTakenOver = true;
+        this.state = { ...this.state, charging: false, chargeMs: 0, jumpLatch: false };
+      }
+      const input = this.deps.bot && !this.botTakenOver
         ? this.bot.input(this.state, this.stream.chunks().flatMap((chunk) => chunk.route), (id) => this.platforms.find((p) => p.id === id),
           { base: gameConfig, current: movement })
-        : this.controls.read();
+        : keys;
       this.aim = ((input.right ? 1 : 0) - (input.left ? 1 : 0)) as -1 | 0 | 1;
       // One step of the candle and the world: crumbling ledges hold or fall, updraft columns lift (Decision D-36).
       const out = stepWorld(this.state, this.crumble, input, this.platforms, this.stream.updrafts(), gameConfig.view.width, movement, stepMs);
@@ -600,6 +609,8 @@ export class EndlessScene extends Phaser.Scene {
       data.endlessLedges = String(this.stream.platforms().length);
       data.endlessObjects = String(this.children.length);
       data.endlessSeed = String(this.seed);
+      data.endlessPlayer = JSON.stringify({ x: Math.round(this.state.x), y: Math.round(this.state.y), grounded: this.state.grounded,
+        on: this.state.platformId, charging: this.state.charging, bot: this.deps.bot && !this.botTakenOver });
       data.endlessKinds = JSON.stringify({ ...this.kindCounts, crumbling: [...this.crumble.keys()].length,
         inUpdraft: !this.state.grounded && updraftAt(this.stream.updrafts(), this.state.x, this.state.y) !== null });
       // The first moving ledge on screen and its wax, in screen px, so a check can watch them move together.
