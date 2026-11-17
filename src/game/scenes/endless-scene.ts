@@ -48,7 +48,11 @@ import { createLandingPuff } from '../forest/landing-puff';
 import { createGridCamera, type GridCamera } from './grid-camera';
 import { snapToGrid } from '../forest/pixel-grid-snap';
 import { createKeyboardInput } from '../keyboard-input';
-import { stepPlayer, teleportPlayer } from '../player/movement';
+import { createLedgeKindsView, type LedgeKindsView } from '../forest/ledge-kinds-view';
+import { NO_CRUMBLE, solidLedges, type CrumbleState } from '../player/crumble';
+import { teleportPlayer } from '../player/movement';
+import { updraftAt } from '../player/updraft';
+import { stepWorld } from '../player/world-step';
 import type { PlatformBox, PlayerState } from '../player/types';
 import { platformsAt } from '../world/environment';
 import { landingEvents } from '../world/fall-tracker';
@@ -134,6 +138,15 @@ export class EndlessScene extends Phaser.Scene {
   private veil!: Phaser.GameObjects.Rectangle;
   /** Direction held in the latest physics step, for the candle's aim cue (visual only). */
   private aim: -1 | 0 | 1 = 0;
+  /** Crumbling ledges' timers (player/crumble.ts), stepped with the candle by `stepWorld`. */
+  private crumble: CrumbleState = NO_CRUMBLE;
+  /** Bounce caps, crumbling ledges and updraft columns as drawn (Decision D-36). */
+  private ledgeKinds!: LedgeKindsView;
+  /** Caps that bounced and ledges that fell since the last frame, for the drawing. */
+  private bouncedIds: string[] = [];
+  private crumbledIds: string[] = [];
+  /** Development counters for the automated browser check (bounces, ledges fallen, physics steps inside a column). */
+  private kindCounts = { bounces: 0, crumbled: 0, updraftSteps: 0 };
 
   constructor(private readonly deps: EndlessSceneDeps) {
     super(CLIMB_SCENE_KEY);
@@ -184,6 +197,7 @@ export class EndlessScene extends Phaser.Scene {
     this.flame = { ...freshFlame(config), fuel01: firstRun ? this.deps.startFuel ?? 1 : 1 };
     this.composure = steadyComposure(firstRun ? this.deps.startShaken ?? 0 : 0);
     this.worldTimeMs = 0;
+    this.crumble = NO_CRUMBLE;
     this.endingMs = null;
     this.burnt = 0;
     this.cleanJumps = 0;
@@ -269,6 +283,9 @@ export class EndlessScene extends Phaser.Scene {
       .setDepth(DEPTH.veil).setAlpha(0);
     this.candleLighting = createCandleLighting(this);
     this.landingPuff = createLandingPuff(this);
+    this.ledgeKinds = createLedgeKindsView(this, { world: 0.7, readable: DEPTH.alwaysReadable }, gameConfig,
+      (id, offsetX, visible) => this.forest.setPlatformLook(id, offsetX, visible));
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.ledgeKinds.destroy());
     // Above the darkness: the ledge underfoot and the ledges a real jump reaches stay readable.
     this.visibility = createProtectedVisibility(this, DEPTH.alwaysReadable, () => this.stream.platforms(),
       () => ({ width, ...this.stream.bounds() }), gameConfig);
@@ -401,8 +418,18 @@ export class EndlessScene extends Phaser.Scene {
           { base: gameConfig, current: movement })
         : this.controls.read();
       this.aim = ((input.right ? 1 : 0) - (input.left ? 1 : 0)) as -1 | 0 | 1;
-      const out = stepPlayer(this.state, input, this.platforms, gameConfig.view.width, movement, stepMs);
-      this.state = out.state;
+      // One step of the candle and the world: crumbling ledges hold or fall, updraft columns lift (Decision D-36).
+      const out = stepWorld(this.state, this.crumble, input, this.platforms, this.stream.updrafts(), gameConfig.view.width, movement, stepMs);
+      this.state = out.player;
+      this.crumble = out.crumble;
+      for (const id of out.crumbled) { this.crumbledIds.push(id); bus.emit({ type: 'ledge_crumbled', platformId: id }); }
+      if (out.events.bounced) {
+        this.bouncedIds.push(out.events.bounced.platformId);
+        bus.emit({ type: 'bounce', platformId: out.events.bounced.platformId, launchSpeed: out.events.bounced.launchSpeed });
+        this.kindCounts.bounces++;
+      }
+      this.kindCounts.crumbled += out.crumbled.length;
+      if (!this.state.grounded && updraftAt(this.stream.updrafts(), this.state.x, this.state.y)) this.kindCounts.updraftSteps++;
       this.syncWorld();
 
       const before = this.flame.fuel01;
@@ -460,7 +487,9 @@ export class EndlessScene extends Phaser.Scene {
       bus.emit({ type: 'precision_window', active: this.precisionActive });
     }
     this.player.setPosition(this.state.x, this.state.y);
-    const shadow = groundShadow({ x: this.state.x, y: this.feetY() }, gameConfig.player.width, this.platforms);
+    // Only what can be stood on now casts the candle's shadow and gets an outline: no fallen ledge, no cap.
+    const solid = solidLedges(this.platforms, this.crumble).filter((p) => p.type !== 'bounce');
+    const shadow = groundShadow({ x: this.state.x, y: this.feetY() }, gameConfig.player.width, solid);
     this.shadow.setVisible(shadow !== null);
     // Drawn on the art grid (pixel-grid-snap.ts); sizes in whole steps of two art pixels so a centred ellipse stays on it.
     if (shadow) this.shadow.setPosition(snapToGrid(shadow.x), snapToGrid(shadow.y)).setSize(snapToGrid(shadow.widthPx, 4), snapToGrid(shadow.heightPx, 4)).setAlpha(shadow.alpha);
@@ -511,7 +540,12 @@ export class EndlessScene extends Phaser.Scene {
     this.waxView.update(deltaMs, this.phase.isRunning(), settings.reducedMotion,
       { x: this.state.x, y: this.state.y, radiusPx: radius, night01: nightAt(this.feetY(), config) * (1 - spent01) }, this.waxX);
     // Ledge outlines fade with the light in the last moment.
-    this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius * (1 - spent01), this.platforms);
+    this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius * (1 - spent01), solid);
+    this.ledgeKinds.update({ platforms: this.platforms, updrafts: this.stream.updrafts(), crumble: this.crumble,
+      bounced: this.bouncedIds, crumbled: this.crumbledIds, candleX: this.state.x, candleY: this.state.y, radiusPx: radius * (1 - spent01),
+      deltaMs, paused: !this.phase.isRunning(), reducedMotion: settings.reducedMotion });
+    this.bouncedIds = [];
+    this.crumbledIds = [];
 
     const lantern = effectsTable.find((rule) => rule.id === 'lanternRadius');
     const minRadius = lantern?.min ?? 90, maxRadius = lantern?.max ?? 280;
@@ -566,6 +600,8 @@ export class EndlessScene extends Phaser.Scene {
       data.endlessLedges = String(this.stream.platforms().length);
       data.endlessObjects = String(this.children.length);
       data.endlessSeed = String(this.seed);
+      data.endlessKinds = JSON.stringify({ ...this.kindCounts, crumbling: [...this.crumble.keys()].length,
+        inUpdraft: !this.state.grounded && updraftAt(this.stream.updrafts(), this.state.x, this.state.y) !== null });
       // The first moving ledge on screen and its wax, in screen px, so a check can watch them move together.
       const camera = this.cameras.main;
       const mover = this.platforms.find((p) => p.type === 'moving' && p.y > camera.scrollY + 40 && p.y < camera.scrollY + camera.height - 40);

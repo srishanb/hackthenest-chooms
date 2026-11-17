@@ -35,6 +35,11 @@ export interface ForestWorld {
   addPlatform(platform: PlatformBox, winter: boolean): void;
   /** Destroy everything drawn for a platform. Unknown ids are ignored. */
   removePlatform(id: string): void;
+  /**
+   * Shake a platform's art sideways by `offsetX` px (snapped to the art grid) or hide it (a crumbling ledge,
+   * ledge-kinds-view.ts). Decorative only; unknown ids are ignored.
+   */
+  setPlatformLook(id: string, offsetX: number, visible: boolean): void;
 }
 
 /**
@@ -66,6 +71,8 @@ export function createForestWorld(scene: Scene, world: LoadedWorld, backdrop?: B
     id: string; x: number; y: number;
     /** Where the art was last drawn, so a still ledge costs nothing per frame. */
     drawnX: number; drawnY: number;
+    /** Extra sideways shake (grid px) and whether it is shown (a crumbling ledge). */
+    lookX: number; shown: boolean;
     terrain: GameObjects.TileSprite[];
     redTerrain: Array<{ normal: GameObjects.TileSprite; red: GameObjects.TileSprite }>;
     props: Array<{ healthy: GameObjects.Image; decayed: GameObjects.Image; threshold: number }>;
@@ -78,6 +85,8 @@ export function createForestWorld(scene: Scene, world: LoadedWorld, backdrop?: B
   let propCount = 0;
   function addPlatform(platform: PlatformBox, winter: boolean): void {
     if (skins.has(platform.id)) return;
+    // A bounce cap is a mushroom, drawn whole by ledge-kinds-view.ts: no soil, plants or birds.
+    if (platform.type === 'bounce') return;
     const skin = winter ? ENVIRONMENT_ASSETS.winter : ENVIRONMENT_ASSETS.forest;
     const terrain: PlatformSkin['terrain'] = [], redTerrain: PlatformSkin['redTerrain'] = [], props: PlatformSkin['props'] = [];
     const left = platform.x - platform.width / 2, top = platform.y - platform.height / 2;
@@ -163,10 +172,11 @@ export function createForestWorld(scene: Scene, world: LoadedWorld, backdrop?: B
     }
     // Swaying grass on forest ledges, and maybe a bird. Snowy ledges keep their bare look, but birds still visit.
     const tufts = winter ? [] : grass.plant(platform.id, platform.x, artTop, platform.width);
-    birds.addPerch(platform.id, platform.x, artTop, platform.width);
+    // No bird perches on a ledge that may fall away.
+    if (platform.type !== 'crumbling') birds.addPerch(platform.id, platform.x, artTop, platform.width);
     // Follow authored moving ledges using simulation positions, never signal values.
     const images = [...vines, ...terrain, ...ice, ...tufts, ...props.flatMap((prop) => [prop.healthy, prop.decayed])];
-    skins.set(platform.id, { id: platform.id, x: platform.x, y: platform.y, drawnX: platform.x, drawnY: platform.y, terrain, redTerrain, props,
+    skins.set(platform.id, { id: platform.id, x: platform.x, y: platform.y, drawnX: platform.x, drawnY: platform.y, lookX: 0, shown: true, terrain, redTerrain, props,
       marks: images.map((image) => ({ image, x: image.x, y: image.y })) });
   }
   function removePlatform(id: string): void {
@@ -218,8 +228,17 @@ export function createForestWorld(scene: Scene, world: LoadedWorld, backdrop?: B
         birds.movePerch(position.id, position.x, position.y - position.height / 2);
         for (const mark of group.marks) {
           // The whole skin moves by one snapped offset, so it stays rigid and on the art grid.
-          mark.image.setPosition(mark.x + snapToGrid(position.x - group.x), mark.y + snapToGrid(position.y - group.y));
+          mark.image.setPosition(mark.x + snapToGrid(position.x - group.x) + group.lookX, mark.y + snapToGrid(position.y - group.y));
         }
+      }
+    },
+    setPlatformLook(id, offsetX, visible) {
+      const group = skins.get(id);
+      const lookX = snapToGrid(offsetX);
+      if (!group || (group.lookX === lookX && group.shown === visible)) return;
+      group.lookX = lookX; group.shown = visible;
+      for (const mark of group.marks) {
+        mark.image.setPosition(mark.x + snapToGrid(group.drawnX - group.x) + lookX, mark.y + snapToGrid(group.drawnY - group.y)).setVisible(visible);
       }
     },
     update(corruption, deltaMs, reducedMotion, paused, strength = 1) {
