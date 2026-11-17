@@ -67,6 +67,7 @@ const SENSITIVE_SHIFTS: readonly number[] = (() => {
   for (let k = 1; k * spacing <= range + 1e-9; k++) shifts.push(-k * spacing, k * spacing);
   return shifts;
 })();
+const END_SHIFTS: readonly number[] = [-ENDLESS_PIECES_CONFIG.takeoffTolerancePx, ENDLESS_PIECES_CONFIG.takeoffTolerancePx];
 /** The longest flight followed (physics steps, 50 s): a slow sink in a drift column is long, but never this long. */
 const MAX_FLIGHT_STEPS = 6000;
 
@@ -116,6 +117,13 @@ export interface Flight {
  * Replay one step and report the whole flight. `onState` sees the candle after every physics step (for
  * the swept region). A step from a crumbling ledge is run with the world stepper (see the header).
  */
+/**
+ * Physics steps simulated by every replay so far (only ever grows). The generator reads it before and
+ * after laying pieces to bound the work of one chunk by a count, never by the clock, so a chunk comes out
+ * the same however fast the machine is.
+ */
+let simulatedSteps = 0;
+export const replayWork = (): number => simulatedSteps;
 export function flyStep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: number, config: GameConfig,
   options: { shiftPx?: number; stopPastTarget?: boolean; updrafts?: readonly UpdraftBox[]; onState?: (state: PlayerState) => void;
     /** Give up after this many physics steps in the air (default 6000, 50 s). */
@@ -142,12 +150,14 @@ export function flyStep(step: RouteStep, platforms: readonly PlatformBox[], worl
   let crumble: CrumbleState | null = null;
   const advance = (input: PlayerInput): void => {
     if (crumble) {
+      simulatedSteps++;
       const out = stepWorld(state, crumble, input, platforms, updrafts, worldWidth, config, stepMs);
       crumble = out.crumble;
       if (out.events.bounced) bounces.push(out.events.bounced.platformId);
       seen(out.player);
       return;
     }
+    simulatedSteps++;
     const out = stepPlayer(state, input, platforms, worldWidth, config, stepMs, environment);
     if (out.events.bounced) bounces.push(out.events.bounced.platformId);
     seen(out.state);
@@ -214,6 +224,15 @@ function sensitive(step: RouteStep, flight: Flight, from: PlatformBox | undefine
 }
 
 /**
+ * The takeoff shifts a sensitive step is checked from. Through a column or off a cap: every
+ * `takeoffSamplePx` (the landing is not monotonic in the takeoff). A plain arc off a crumbling ledge moves
+ * its landing smoothly with the takeoff and only its walk time grows with the distance, so the two ends do.
+ */
+function shiftsFor(flight: Flight): readonly number[] {
+  return flight.bounces.length > 0 || flight.inColumn ? SENSITIVE_SHIFTS : END_SHIFTS;
+}
+
+/**
  * One step lands on its target with `ledges` as they are; from a moving ledge, from every shifted takeoff
  * too. A flight that bounces or passes through a column is sensitive to where it starts (a column's edge
  * is sharp, and a bounce doubles any error), and so is a step off a crumbling ledge (the walk to it is part
@@ -230,7 +249,7 @@ function stepLands(step: RouteStep, ledges: readonly PlatformData[], worldWidth:
   if (step.kind === 'drop' && (flight.bounces.length || flight.inColumn)) return false;
   const from = ledges.find((ledge) => ledge.id === step.fromId);
   if (sensitive(step, flight, from)
-    && !SENSITIVE_SHIFTS.every((shift) => replayStep(step, ledges, worldWidth, config, shift, true, updrafts) === step.toId)) return false;
+    && !shiftsFor(flight).every((shift) => replayStep(step, ledges, worldWidth, config, shift, true, updrafts) === step.toId)) return false;
   if (!from?.motion) return true;
   if (step.kind === 'drop') return false;
   const drift = chargeDriftPx(from, step.chargeSteps, config);
@@ -284,7 +303,7 @@ function sweep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: n
   const flight = flyStep(step, platforms, worldWidth, config, { updrafts, onState });
   if (flight.landedId === null) return null;
   if (sensitive(step, flight, from)) {
-    for (const shiftPx of SENSITIVE_SHIFTS) flyStep(step, platforms, worldWidth, config, { updrafts, onState, shiftPx });
+    for (const shiftPx of shiftsFor(flight)) flyStep(step, platforms, worldWidth, config, { updrafts, onState, shiftPx });
   }
   return box;
 }

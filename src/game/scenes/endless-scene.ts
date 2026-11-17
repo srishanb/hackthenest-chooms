@@ -493,6 +493,8 @@ export class EndlessScene extends Phaser.Scene {
       // The wick has gone cold. The body stops here; the end screen opens after a last moment (below).
       if (this.flame.out) { this.endingMs = 0; this.controls.clear(); break; }
     }
+    // Build at most one chunk ahead of need per frame, so a long fall never builds several in one frame.
+    if (running()) this.stream.prefetch(this.feetY(), this.state.vy);
     // The last moment: the candle slumps and the world goes dark, then the end screen opens.
     if (this.endingMs !== null && this.phase.isRunning()) {
       this.endingMs += Math.max(0, deltaMs);

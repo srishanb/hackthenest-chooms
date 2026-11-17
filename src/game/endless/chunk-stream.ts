@@ -35,6 +35,13 @@ export interface ChunkStream {
   /** Every live updraft column (Decision D-36), for the physics and the drawing. Replaced with `platforms()`. */
   updrafts(): readonly UpdraftData[];
   chunks(): readonly EndlessChunk[];
+  /**
+   * Build at most one chunk that is not needed yet but soon may be (call once per frame, after `update`):
+   * the next few below the window while falling, else the one above and those below. Chunks depend only on
+   * (seed, index), so building early changes nothing but when the work is done: a frame never has to build
+   * a whole run of chunks at once during a long fall. Returns the index built, or null.
+   */
+  prefetch(feetY: number, vy: number): number | null;
   /** Highest and lowest y of the live window, for the reach search and the camera. */
   bounds(): { top: number; bottom: number };
 }
@@ -44,6 +51,8 @@ export function createChunkStream(generator: EndlessGenerator, config: EndlessCo
   let platforms: PlatformData[] = [];
   let wax: WaxSpot[] = [];
   let updrafts: UpdraftData[] = [];
+  /** A chunk was built by `update` since the last `prefetch`: then `prefetch` builds nothing this frame. */
+  let builtSincePrefetch = false;
   let first = -1;
   let last = -1;
 
@@ -62,7 +71,11 @@ export function createChunkStream(generator: EndlessGenerator, config: EndlessCo
       const to = centre + config.keepAbove;
       if (from === first && to === last) return null;
       const next: EndlessChunk[] = [];
-      for (let index = from; index <= to; index++) next.push(live.find((chunk) => chunk.index === index) ?? generator.chunk(index));
+      for (let index = from; index <= to; index++) {
+        const kept = live.find((chunk) => chunk.index === index);
+        if (!kept && !generator.isBuilt(index)) builtSincePrefetch = true;
+        next.push(kept ?? generator.chunk(index));
+      }
       const change: StreamChange = {
         added: next.filter((chunk) => !live.includes(chunk)),
         removed: live.filter((chunk) => !next.includes(chunk)),
@@ -75,6 +88,20 @@ export function createChunkStream(generator: EndlessGenerator, config: EndlessCo
       wax = live.flatMap((chunk) => chunk.wax);
       updrafts = live.flatMap((chunk) => chunk.updrafts);
       return change;
+    },
+    prefetch(feetY, vy) {
+      // One chunk's work per frame at most: none when this frame's update already built one.
+      if (builtSincePrefetch) { builtSincePrefetch = false; return null; }
+      const centre = indexAt(feetY);
+      const above = centre + config.keepAbove + 1;
+      const below = Array.from({ length: config.prefetchBelow }, (_, k) => centre - config.keepBelow - 1 - k);
+      const order = vy > 0 ? [...below, above] : [above, ...below];
+      for (const index of order) {
+        if (index < 0 || generator.isBuilt(index)) continue;
+        generator.chunk(index);
+        return index;
+      }
+      return null;
     },
     platforms: () => platforms,
     wax: () => wax,

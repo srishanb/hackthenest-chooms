@@ -18,6 +18,13 @@
 export const ENDLESS_PIECES_CONFIG = {
   /** Lay pieces until the next anchor is this close (px); a plain approach ladder climbs the rest onto it. */
   approachPx: 240,
+  /**
+   * Physics steps the route replays of one chunk's pieces may simulate before the approach ladder takes over
+   * (a count, not a time, so a chunk is the same on every machine). About 2,000 steps cost 1 ms here; at
+   * 20,000 the slowest chunk of 1,200 took 48 ms (75 without the bound) and pieces per chunk went from 3.32
+   * to 3.21. Half of all chunks use under 9,000.
+   */
+  pieceWorkSteps: 20_000,
   /** Pieces that may fail to fit in one chunk before the approach ladder takes over (bounds the cost). */
   maxPieceFailures: 8,
   /** Candidate ledges tried for one ledge of a piece before the piece gives up. */

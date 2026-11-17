@@ -164,10 +164,17 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
     return true;
   };
   /** The takeoffs a step from a crumbling ledge may use: within walking reach of the landing in the time left. */
+  /** `arrivalX` as placed now, remembered until a ledge or column is added (only a cap or column could move it). */
+  const arrivals = new Map<string, number | null>();
+  const arrivalNow = (run: PieceRun, ledge: PlatformData): number | null => {
+    const key = `${ledge.id}|${others(run).length}|${columns(run).length}|${allSteps(run).length}`;
+    if (!arrivals.has(key)) arrivals.set(key, arrivalX(run, ledge));
+    return arrivals.get(key)!;
+  };
   const crumbleReach = (run: PieceRun, ledge: PlatformData, chargeSteps: number): { arriveX: number; walkPx: number } | null => {
     const budget = crumbleBudgetMs(ledge);
     if (!Number.isFinite(budget)) return null;
-    const arriveX = arrivalX(run, ledge);
+    const arriveX = arrivalNow(run, ledge);
     const walkMs = budget - (chargeSteps + 1) * stepMs;
     if (arriveX === null || walkMs < 0) return { arriveX: arriveX ?? ledge.x, walkPx: -1 };
     // Whole walking steps only (the replay counts them the same way), a little short to be safe.
@@ -332,7 +339,7 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
       const [minX, maxX] = standRange(from);
       if (slack < 0 || minX > maxX) return false;
       const budget = crumbleBudgetMs(from);
-      const arriveX = Number.isFinite(budget) ? arrivalX(run, from) : null;
+      const arriveX = Number.isFinite(budget) ? arrivalNow(run, from) : null;
       if (Number.isFinite(budget) && arriveX === null) return false;
       const toward: -1 | 1 = target.x >= from.x ? 1 : -1;
       const away = -toward as -1 | 1;

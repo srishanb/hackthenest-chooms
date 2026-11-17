@@ -44,7 +44,7 @@ import { choosePiece } from './pieces/pacing';
 import { PIECES, type PieceEntry } from './pieces/registry';
 import { lastLedge } from './pieces/shared';
 import type { Candidate, PieceRun } from './pieces/types';
-import { replayStep, stepsHold, type RouteStep } from './route-replay';
+import { replayStep, replayWork, stepsHold, type RouteStep } from './route-replay';
 
 export { replayStep, stepsHold } from './route-replay';
 export type { RouteStep } from './route-replay';
@@ -103,8 +103,15 @@ export interface EndlessGenerator {
    * is the full-width ground; every later one is an ordinary-width ledge. Its id ends in `:floor`.
    */
   floor(index: number): PlatformData;
+  /** True when chunk `index` is built and kept, so `chunk(index)` costs nothing (for building ahead of need). */
+  isBuilt(index: number): boolean;
 }
 
+/**
+ * Chunks kept built. A chunk depends only on (seed, index), so one rebuilt later comes out identical; the
+ * stream builds a few ahead of need (chunk-stream.ts `prefetch`), so this holds those and the live window.
+ */
+const CACHE_CHUNKS = 24;
 /** Mixed into the seed for anchors, so an anchor's place does not share the chunk's own random numbers. */
 const ANCHOR_SALT = 0x5bd1e995;
 /** Mixed into the seed for a second or later try at a chunk. */
@@ -233,7 +240,10 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
     let previous: PieceEntry | null = null;
     let excluded = new Set<string>();
     let failures = 0;
-    while (usePieces && failures < tuning.maxPieceFailures) {
+    // Pieces stop once the chunk's replays have simulated `pieceWorkSteps` physics steps: a count, not the clock,
+    // so the chunk is the same on any machine, and the approach ladder (cheap) finishes it.
+    const workAtStart = replayWork();
+    while (usePieces && failures < tuning.maxPieceFailures && replayWork() - workAtStart < tuning.pieceWorkSteps) {
       const entry = current(committed);
       if (topOf(entry) - topOf(nextFloor) <= tuning.approachPx) break;
       const choice = choosePiece(pieces, index, features, { previous, excluded }, tuning, random);
@@ -387,6 +397,7 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
   return {
     floorTopPx,
     floor,
+    isBuilt: (index) => cache.has(index),
     chunk(index) {
       if (!Number.isInteger(index) || index < 0) throw new Error(`endless generator: bad chunk index ${index}`);
       let chunk = cache.get(index);
@@ -394,7 +405,7 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
         chunk = build(index);
         cache.set(index, chunk);
         // Keep the cache small: chunks rebuild identically, so dropping old ones loses nothing.
-        if (cache.size > 12) cache.delete(cache.keys().next().value!);
+        if (cache.size > CACHE_CHUNKS) cache.delete(cache.keys().next().value!);
       }
       return chunk;
     },
