@@ -92,6 +92,10 @@ const KICK_OFFSETS: readonly number[] = (() => {
   for (let k = 1; k <= range; k++) offsets.push(-k, k);
   return offsets;
 })();
+/** The variants a wall step is proved from besides its own (route-replay `stepLands`): every takeoff shift, every press offset. */
+export function wallStepVariants(): Array<{ shiftPx: number; kickOffsetSteps: number }> {
+  return [...SENSITIVE_SHIFTS.map((shiftPx) => ({ shiftPx, kickOffsetSteps: 0 })), ...KICK_OFFSETS.map((kickOffsetSteps) => ({ shiftPx: 0, kickOffsetSteps }))];
+}
 /** The longest flight followed (physics steps, 50 s): a slow sink in a drift column is long, but never this long. */
 const MAX_FLIGHT_STEPS = 6000;
 
@@ -334,6 +338,12 @@ export interface StepBox {
   top: number;
   /** Lowest feet y. */
   bottom: number;
+  /**
+   * A wall step only (Decision D-37): every downward move of the feet in every traced variant, as flat triples
+   * (body x after the move, feet y before, feet y after). A one-way ledge can change such a flight only by
+   * catching one of these moves, so a ledge that crosses none of them is skipped (`affected`).
+   */
+  drops?: number[];
 }
 
 /**
@@ -351,13 +361,24 @@ function sweep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: n
     box.left = Math.min(box.left, state.x); box.right = Math.max(box.right, state.x);
     box.top = Math.min(box.top, state.y + half); box.bottom = Math.max(box.bottom, state.y + half);
   };
-  const flight = flyStep(step, platforms, worldWidth, config, { updrafts, onState });
+  // A wall step's flights are long and checked many times over, so its downward moves are kept (see `drops`).
+  const drops: number[] | undefined = step.kicks ? [] : undefined;
+  const traced = (): ((state: PlayerState) => void) => {
+    let previousFeet = startFeet;
+    return (state) => {
+      onState(state);
+      const feet = state.y + half;
+      if (drops && feet > previousFeet) drops.push(state.x, previousFeet, feet);
+      previousFeet = feet;
+    };
+  };
+  const flight = flyStep(step, platforms, worldWidth, config, { updrafts, onState: traced() });
   if (flight.landedId === null) return null;
   if (sensitive(step, flight, from)) {
-    for (const shiftPx of shiftsFor(flight)) flyStep(step, platforms, worldWidth, config, { updrafts, onState, shiftPx });
+    for (const shiftPx of shiftsFor(flight)) flyStep(step, platforms, worldWidth, config, { updrafts, onState: traced(), shiftPx });
   }
-  if (step.kicks) for (const kickOffsetSteps of KICK_OFFSETS) flyStep(step, platforms, worldWidth, config, { updrafts, onState, kickOffsetSteps });
-  return box;
+  if (step.kicks) for (const kickOffsetSteps of KICK_OFFSETS) flyStep(step, platforms, worldWidth, config, { updrafts, onState: traced(), kickOffsetSteps });
+  return drops ? { ...box, drops } : box;
 }
 
 /**
@@ -411,8 +432,16 @@ export function createRouteChecker(worldWidth: number, config: GameConfig): Rout
         if (!box) return true;
         // A step that starts or ends on a moving ledge is always replayed in full.
         if (onMover(step, ledges)) return true;
-        return top >= box.top - 2 && top <= box.bottom + 2
+        const inBox = top >= box.top - 2 && top <= box.bottom + 2
           && ledge.x + ledge.width / 2 + travel > box.left - reach && ledge.x - ledge.width / 2 - travel < box.right + reach;
+        if (!inBox || !box.drops || travel) return inBox;
+        // A wall step: only if the ledge's top is crossed by one of its traced downward moves (with the ledge reach).
+        const halfSpan = (config.player.width + ledge.width) / 2 + (config.falling?.ledgeReachPx ?? 0) + 1;
+        const drops = box.drops;
+        for (let i = 0; i < drops.length; i += 3) {
+          if (top >= drops[i + 1]! - 0.5 && top <= drops[i + 2]! + 0.5 && Math.abs(drops[i]! - ledge.x) < halfSpan) return true;
+        }
+        return false;
       });
     },
     affectedByColumn(steps, column, ledges, updrafts = []) {

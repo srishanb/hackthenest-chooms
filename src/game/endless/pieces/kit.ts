@@ -29,7 +29,7 @@ import { stepPlayer } from '../../player/movement';
 import { WALL_TYPE } from '../../player/wall';
 import { updraftAt } from '../../player/updraft';
 import { chargeStepsFor, descentAt, standOn, type JumpArc } from '../jump-arcs';
-import { createRouteChecker, flyStep, replayStep, standMsBefore, stepsHold, type RouteStep } from '../route-replay';
+import { createRouteChecker, flyStep, replayStep, standMsBefore, stepsHold, wallStepVariants, type RouteStep } from '../route-replay';
 import type { Candidate, DropSpec, FlightSpec, JumpSpec, PieceFeature, PieceKit, PieceRun } from './types';
 
 /** What has been laid in this chunk before the current piece: the anchor first. */
@@ -462,6 +462,39 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
 
     fly(run, from, spec, fixed) {
       const placedNow = (): PlatformData[] => [...others(run), nextFloor];
+      /**
+       * A wall step is proved from every takeoff shift and press time (route-replay.ts), and those flights part
+       * after the kicks. So its ledge goes only where all of them come down through the same row close enough
+       * together to land on one ledge: for each variant, its downward moves after the last kick (feet before,
+       * feet after, x, highest feet since the kick; a variant need not peak well above the row, only cross it
+       * coming down). Null when a variant does not kick the step's walls.
+       */
+      const variantDescents = (probe: RouteStep): Array<number[]> | null => {
+        const all: Array<number[]> = [];
+        for (const variant of wallStepVariants()) {
+          const moves: number[] = [];
+          let left = probe.kicks!.length, since = Infinity, previous = topOf(from);
+          const flight = flyStep(probe, placedNow(), worldWidth, game, { updrafts: columns(run), maxSteps: tuning.flightSteps, ...variant,
+            onKick: () => { left--; since = Infinity; },
+            onState: (state) => {
+              const feet = state.y + body.height / 2;
+              since = Math.min(since, feet);
+              if (left <= 0 && state.vy > 0 && !state.grounded && feet > previous) moves.push(previous, feet, state.x, since);
+              previous = feet;
+            } });
+          if (!(flight.kicks.length === probe.walls!.length && flight.kicks.every((id, i) => id === probe.walls![i]))) return null;
+          all.push(moves);
+        }
+        return all;
+      };
+      /** Where a variant's feet cross the ledge top `row` coming down after its kicks (arriving falling), or null. */
+      const crossingX = (moves: number[], row: number): number | null => {
+        for (let i = 0; i < moves.length; i += 4) {
+          if (moves[i]! - 1e-6 <= row && row <= moves[i + 1]! + 1e-6) return moves[i + 2]!;
+        }
+        return null;
+      };
+      let descents: Array<number[]> | null | undefined;
       for (let attempt = 0; attempt < tuning.flightAttempts; attempt++) {
         let probe: RouteStep;
         if (fixed) probe = { ...fixed };
@@ -529,12 +562,34 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
           && spot.top >= apexLimitTopPx
           && spot.feet >= ceilingTopPx && spot.feet <= floorTopPx
           && spot.x - slack <= worldWidth - width / 2 - 2 && spot.x + slack >= width / 2 + 2);
+        // A wall step: keep only the rows every variant crosses close enough together, and aim at their middle.
+        // How far the ledge's centre may sit from the spot, by spot (a wall step's variants use up some of the slack).
+        const roomAt = new Map<number, number>();
+        if (probe.kicks && probe.walls && usable.length) {
+          if (descents === undefined || !fixed) descents = variantDescents(probe);
+          if (!descents) { if (fixed) return null; continue; }
+          const agreed: typeof usable = [];
+          for (const spot of usable) {
+            const xs = descents.map((moves) => crossingX(moves, spot.feet));
+            if (xs.some((x) => x === null)) continue;
+            const low = Math.min(spot.x, ...(xs as number[])), high = Math.max(spot.x, ...(xs as number[]));
+            // Every variant must come down well over the ledge (its inset may be spent on them, never more).
+            const spare = slack + config.landingInsetPx - (high - low) / 2 - 2;
+            if (spare < 0) continue;
+            agreed.push({ ...spot, x: (low + high) / 2 });
+            roomAt.set(agreed.length - 1, Math.min(slack, spare));
+          }
+          usable.length = 0;
+          usable.push(...agreed);
+        }
         // A pinned takeoff flies the same way every time: if it gives no spot now, it never will.
         if (!usable.length) { if (fixed) return null; continue; }
-        const spot = usable[Math.floor(random() * usable.length)]!;
+        const pick = Math.floor(random() * usable.length);
+        const spot = usable[pick]!;
+        const room = roomAt.get(pick) ?? slack;
         const centre = Math.round(Math.min(worldWidth - width / 2 - 2, Math.max(width / 2 + 2,
-          spot.x + (random() * 2 - 1) * slack * (spec.jitter01 ?? 0.6))));
-        if (Math.abs(centre - spot.x) > slack) continue;
+          spot.x + (random() * 2 - 1) * room * (spec.jitter01 ?? 0.6))));
+        if (Math.abs(centre - spot.x) > room) continue;
         const id = nextId(run, 'p');
         const top = spot.feet;
         const ledge: PlatformData = { id, x: centre, y: top + config.ledgeHeightPx / 2, width, height: config.ledgeHeightPx, type: 'static' };
