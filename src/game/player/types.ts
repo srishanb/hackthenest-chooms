@@ -67,6 +67,9 @@ export interface StepEvents {
   jumped: { charge01: number } | null;
   /** The body touched a platform from above. `fallHeightPx` is how far below takeoff (0 if not lower). */
   landed: { platformId: string; fallHeightPx: number } | null;
-  /** The body came down on a bounce cap and was launched upward at `launchSpeed` px/s (bounce.ts). */
-  bounced?: { platformId: string; launchSpeed: number } | null;
+  /**
+   * The body came down on a bounce cap and was launched upward at `launchSpeed` px/s (bounce.ts).
+   * `fallHeightPx` is how far below its takeoff it came down on the cap, as for a landing.
+   */
+  bounced?: { platformId: string; launchSpeed: number; fallHeightPx: number } | null;
 }

@@ -21,6 +21,11 @@ export const ENDLESS_CONFIG = {
    * in this one; the window moves down with a fall, one chunk at a time.
    */
   keepBelow: 1,
+  /**
+   * Chunks built ahead of need below the live window, one per frame at most (chunk-stream.ts `prefetch`), so a
+   * long fall never makes one frame build several chunks. Falls reach about 6 chunks a second after 4 s.
+   */
+  prefetchBelow: 4,
   keepAbove: 1,
   /**
    * Each chunk above the ground starts on an anchor: an ordinary main-path ledge at the chunk's known

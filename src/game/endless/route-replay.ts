@@ -20,8 +20,9 @@
  *     step is meant to use);
  *   - a crumbling ledge limits how long the route may stand on it: a step from one is replayed with the
  *     world stepper (player/world-step.ts, the game's own) starting from the time the candle has already
- *     stood there, walking from where the step before it landed (`arriveX`) to `takeoffX`, and charging
- *     step by step; if the ledge falls first, the step misses.
+ *     stood there: a reaction allowance (a held key does nothing on landing, so a person presses after it;
+ *     endless-pieces.config.ts `crumbleReactionMs`), then the walk from where the step before it landed
+ *     (`arriveX`) to `takeoffX`, then the charge step by step; if the ledge falls first, the step misses.
  */
 import type { GameConfig } from '../../shared/contracts/config';
 import type { PlatformData } from '../../shared/contracts/content';
@@ -30,6 +31,7 @@ import { stepPlayer } from '../player/movement';
 import { updraftAt } from '../player/updraft';
 import type { PlatformBox, PlayerInput, PlayerState, UpdraftBox } from '../player/types';
 import { stepWorld } from '../player/world-step';
+import { ENDLESS_PIECES_CONFIG } from '../../config/endless-pieces.config';
 import { launch, standOn } from './jump-arcs';
 
 /**
@@ -58,6 +60,14 @@ const IDLE = { left: false, right: false, jump: false };
 const MAX_WALK_STEPS = 600;
 /** Extra drift allowed for a jump from a moving ledge (px): the bot starts charging within 1.5 px of the takeoff. */
 const DRIFT_TOLERANCE_PX = 2;
+/** Takeoff shifts a sensitive step must also land from (px): every `takeoffSamplePx` across +-`takeoffTolerancePx`. */
+const SENSITIVE_SHIFTS: readonly number[] = (() => {
+  const { takeoffTolerancePx: range, takeoffSamplePx: spacing } = ENDLESS_PIECES_CONFIG;
+  const shifts: number[] = [];
+  for (let k = 1; k * spacing <= range + 1e-9; k++) shifts.push(-k * spacing, k * spacing);
+  return shifts;
+})();
+const END_SHIFTS: readonly number[] = [-ENDLESS_PIECES_CONFIG.takeoffTolerancePx, ENDLESS_PIECES_CONFIG.takeoffTolerancePx];
 /** The longest flight followed (physics steps, 50 s): a slow sink in a drift column is long, but never this long. */
 const MAX_FLIGHT_STEPS = 6000;
 
@@ -65,10 +75,10 @@ const MAX_FLIGHT_STEPS = 6000;
  * How long the route stands on a crumbling ledge before this step leaves it (ms): the walk from
  * `arriveX` to the takeoff at walking speed, the charge, and the release step. 0 for any other step.
  */
-export function standMsBefore(step: RouteStep, config: GameConfig): number {
+export function standMsBefore(step: RouteStep, config: GameConfig, shiftPx = 0): number {
   if (step.kind === 'drop') return Number.POSITIVE_INFINITY;
   const stepMs = 1000 / config.stepHz;
-  const walkSteps = step.arriveX === undefined ? 0 : Math.ceil(Math.abs(step.takeoffX - step.arriveX) / (config.walkSpeed * stepMs / 1000));
+  const walkSteps = step.arriveX === undefined ? 0 : Math.ceil(Math.abs(step.takeoffX + shiftPx - step.arriveX) / (config.walkSpeed * stepMs / 1000));
   return (walkSteps + step.chargeSteps + 1) * stepMs;
 }
 
@@ -107,10 +117,19 @@ export interface Flight {
  * Replay one step and report the whole flight. `onState` sees the candle after every physics step (for
  * the swept region). A step from a crumbling ledge is run with the world stepper (see the header).
  */
+/**
+ * Physics steps simulated by every replay so far (only ever grows). The generator reads it before and
+ * after laying pieces to bound the work of one chunk by a count, never by the clock, so a chunk comes out
+ * the same however fast the machine is.
+ */
+let simulatedSteps = 0;
+export const replayWork = (): number => simulatedSteps;
 export function flyStep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: number, config: GameConfig,
   options: { shiftPx?: number; stopPastTarget?: boolean; updrafts?: readonly UpdraftBox[]; onState?: (state: PlayerState) => void;
     /** Give up after this many physics steps in the air (default 6000, 50 s). */
-    maxSteps?: number } = {}): Flight {
+    maxSteps?: number;
+    /** Off a crumbling ledge: time the candle stands still after landing before it walks (ms; default the config's reaction allowance). */
+    reactionMs?: number } = {}): Flight {
   const updrafts = options.updrafts ?? [];
   const environment = { updrafts };
   const from = platforms.find((platform) => platform.id === step.fromId);
@@ -131,12 +150,14 @@ export function flyStep(step: RouteStep, platforms: readonly PlatformBox[], worl
   let crumble: CrumbleState | null = null;
   const advance = (input: PlayerInput): void => {
     if (crumble) {
+      simulatedSteps++;
       const out = stepWorld(state, crumble, input, platforms, updrafts, worldWidth, config, stepMs);
       crumble = out.crumble;
       if (out.events.bounced) bounces.push(out.events.bounced.platformId);
       seen(out.player);
       return;
     }
+    simulatedSteps++;
     const out = stepPlayer(state, input, platforms, worldWidth, config, stepMs, environment);
     if (out.events.bounced) bounces.push(out.events.bounced.platformId);
     seen(out.state);
@@ -146,8 +167,9 @@ export function flyStep(step: RouteStep, platforms: readonly PlatformBox[], worl
     for (let i = 0; i < MAX_WALK_STEPS && state.grounded; i++) advance(walk);
     if (state.grounded) return missed(state, bounces);
   } else if (from.type === CRUMBLING_TYPE && config.ledgeKinds) {
-    const walkMs = standMsBefore(step, config) - (step.chargeSteps + 1) * stepMs;
-    crumble = new Map([[from.id, { heldMs: walkMs, goneMs: null }]]);
+    // A person first reacts to the landing (the latch ignores a key held through it), then walks, then charges.
+    const walkMs = standMsBefore(step, config, options.shiftPx ?? 0) - (step.chargeSteps + 1) * stepMs;
+    crumble = new Map([[from.id, { heldMs: (options.reactionMs ?? ENDLESS_PIECES_CONFIG.crumbleReactionMs) + walkMs, goneMs: null }]]);
     for (let i = 0; i < step.chargeSteps; i++) advance({ ...IDLE, jump: true });
     advance({ left: step.direction < 0, right: step.direction > 0, jump: false });
     // The ledge fell during the charge: the jump never left it.
@@ -195,21 +217,39 @@ export function chargeDriftPx(ledge: PlatformData, chargeSteps: number, config: 
   return Math.min(2 * motion.distance, (2 * Math.PI * motion.distance / motion.periodMs) * chargeMs) + DRIFT_TOLERANCE_PX;
 }
 
+/** A jump whose landing depends finely on where it starts: through a column, off a cap, or off a crumbling ledge (not a moving one). */
+function sensitive(step: RouteStep, flight: Flight, from: PlatformBox | undefined): boolean {
+  if (step.kind === 'drop' || (from as { motion?: unknown } | undefined)?.motion) return false;
+  return flight.bounces.length > 0 || flight.inColumn || from?.type === CRUMBLING_TYPE;
+}
+
+/**
+ * The takeoff shifts a sensitive step is checked from. Through a column or off a cap: every
+ * `takeoffSamplePx` (the landing is not monotonic in the takeoff). A plain arc off a crumbling ledge moves
+ * its landing smoothly with the takeoff and only its walk time grows with the distance, so the two ends do.
+ */
+function shiftsFor(flight: Flight): readonly number[] {
+  return flight.bounces.length > 0 || flight.inColumn ? SENSITIVE_SHIFTS : END_SHIFTS;
+}
+
 /**
  * One step lands on its target with `ledges` as they are; from a moving ledge, from every shifted takeoff
  * too. A flight that bounces or passes through a column is sensitive to where it starts (a column's edge
- * is sharp, and a bounce doubles any error), so a jump must also land from takeoffs `DRIFT_TOLERANCE_PX`
- * either side (the bot starts charging within 1.5 px of the takeoff, and a person is never exact), and a
- * drop may not do either at all.
+ * is sharp, and a bounce doubles any error), and so is a step off a crumbling ledge (the walk to it is part
+ * of its time). Such a jump must also land from every takeoff `takeoffSamplePx` apart across
+ * +-`takeoffTolerancePx` (endless-pieces.config.ts): the bot starts charging within 1.5 px of the takeoff, a
+ * walking person stops anywhere on a 1.8 px walking step, and whether a column flight lands is not monotonic
+ * in the takeoff (QA found misses at +0.475 and +1 px with both ends landing; the narrowest failing window
+ * seen over 2,150 such steps is 0.25 px wide). A drop may not cross a column or a cap at all.
  */
 function stepLands(step: RouteStep, ledges: readonly PlatformData[], worldWidth: number, config: GameConfig, updrafts: readonly UpdraftBox[]): boolean {
   const flight = flyStep(step, ledges, worldWidth, config, { stopPastTarget: true, updrafts });
   if (flight.landedId !== step.toId || (step.via && !flight.bounces.includes(step.via))) return false;
   // A walk-off starts its fall wherever the walk's last step happens to end, so it may not cross a column or a cap.
   if (step.kind === 'drop' && (flight.bounces.length || flight.inColumn)) return false;
-  if ((flight.bounces.length || flight.inColumn) && step.kind !== 'drop'
-    && ![-DRIFT_TOLERANCE_PX, DRIFT_TOLERANCE_PX].every((shift) => replayStep(step, ledges, worldWidth, config, shift, true, updrafts) === step.toId)) return false;
   const from = ledges.find((ledge) => ledge.id === step.fromId);
+  if (sensitive(step, flight, from)
+    && !shiftsFor(flight).every((shift) => replayStep(step, ledges, worldWidth, config, shift, true, updrafts) === step.toId)) return false;
   if (!from?.motion) return true;
   if (step.kind === 'drop') return false;
   const drift = chargeDriftPx(from, step.chargeSteps, config);
@@ -262,8 +302,8 @@ function sweep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: n
   };
   const flight = flyStep(step, platforms, worldWidth, config, { updrafts, onState });
   if (flight.landedId === null) return null;
-  if ((flight.bounces.length || flight.inColumn) && step.kind !== 'drop') {
-    for (const shiftPx of [-DRIFT_TOLERANCE_PX, DRIFT_TOLERANCE_PX]) flyStep(step, platforms, worldWidth, config, { updrafts, onState, shiftPx });
+  if (sensitive(step, flight, from)) {
+    for (const shiftPx of shiftsFor(flight)) flyStep(step, platforms, worldWidth, config, { updrafts, onState, shiftPx });
   }
   return box;
 }

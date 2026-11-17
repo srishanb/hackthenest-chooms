@@ -15,7 +15,7 @@
  */
 import type { GameConfig } from '../../shared/contracts/config';
 import { createPlayer, stepPlayer } from '../player/movement';
-import type { PlatformBox, PlayerState } from '../player/types';
+import type { PlatformBox, PlayerState, UpdraftBox } from '../player/types';
 
 const IDLE = { left: false, right: false, jump: false };
 const CHARGE_LEVELS = 12;
@@ -32,10 +32,12 @@ const topOf = (platform: PlatformBox): number => platform.y - platform.height / 
 
 /**
  * Ids of ledges higher than `source` (or at most `lowerPx` lower, default 0: strictly higher only) that a
- * sampled jump from `source` lands on, in `platforms` order.
+ * sampled jump from `source` lands on, in `platforms` order. `updrafts` are the updraft columns in reach
+ * (the endless climb, D-36), so a ledge reached only through a column is found too; the authored climb has none.
  */
 export function reachableLedges(source: PlatformBox, platforms: readonly PlatformBox[], world: WorldBounds, config: GameConfig,
-  lowerPx = 0): string[] {
+  lowerPx = 0, updrafts: readonly UpdraftBox[] = []): string[] {
+  const environment = { updrafts };
   const { width: bodyW, height: bodyH } = config.player;
   const stepMs = 1000 / config.stepHz;
   // Long enough to rise and then fall to the world floor, even from the top ledge.
@@ -55,11 +57,11 @@ export function reachableLedges(source: PlatformBox, platforms: readonly Platfor
         let state: PlayerState = { ...createPlayer(x, y), grounded: true, platformId: source.id, jumpLatch: false };
         const chargeSteps = Math.ceil((config.jump.maxChargeMs * level) / CHARGE_LEVELS / stepMs);
         for (let step = 0; step < chargeSteps; step++) {
-          state = stepPlayer(state, { ...IDLE, jump: true }, platforms, world.width, config, stepMs).state;
+          state = stepPlayer(state, { ...IDLE, jump: true }, platforms, world.width, config, stepMs, environment).state;
         }
-        state = stepPlayer(state, { left: direction < 0, right: direction > 0, jump: false }, platforms, world.width, config, stepMs).state;
+        state = stepPlayer(state, { left: direction < 0, right: direction > 0, jump: false }, platforms, world.width, config, stepMs, environment).state;
         for (let step = 0; step < maxSteps; step++) {
-          const result = stepPlayer(state, IDLE, platforms, world.width, config, stepMs);
+          const result = stepPlayer(state, IDLE, platforms, world.width, config, stepMs, environment);
           state = result.state;
           if (result.events.landed) {
             landed.add(result.events.landed.platformId);

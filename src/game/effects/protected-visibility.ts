@@ -13,7 +13,7 @@
  */
 import type * as Phaser from 'phaser';
 import type { GameConfig } from '../../shared/contracts/config';
-import type { PlatformBox } from '../player/types';
+import type { PlatformBox, UpdraftBox } from '../player/types';
 import { outlineSegments, reachableLedges, type WorldBounds } from '../world/reachable-ledges';
 import { fadeSegments } from './outline-fade';
 import { snapToGrid } from '../forest/pixel-grid-snap';
@@ -39,6 +39,8 @@ export function createProtectedVisibility(
   config: GameConfig,
   /** How much lower than the ledge underfoot a reachable ledge may be and still be outlined (px; 0 = only higher ones). */
   lowerReachPx = 0,
+  /** The updraft columns in reach (the endless climb), so ledges reached through one are outlined too. */
+  updraftSource: () => readonly UpdraftBox[] = () => [],
 ): ProtectedVisibility {
   const graphics = scene.add.graphics().setDepth(depth);
   const cache = new Map<string, string[]>();
@@ -59,7 +61,7 @@ export function createProtectedVisibility(
       drawnFor = platformId;
       let reachable = cache.get(platformId);
       if (!reachable) {
-        reachable = reachableLedges(source, platforms, worldNow(), config, lowerReachPx);
+        reachable = reachableLedges(source, platforms, worldNow(), config, lowerReachPx, updraftSource());
         cache.set(platformId, reachable);
         // A streamed world never stops handing out new ids; keep only the recent ones.
         if (cache.size > 200) cache.delete(cache.keys().next().value!);

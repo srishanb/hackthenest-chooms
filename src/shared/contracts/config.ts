@@ -81,9 +81,15 @@ export interface LedgeKindsConfig {
   /**
    * Inside an updraft column, while rising faster than the column's terminal speed, gravity is scaled by
    * `gravity01`; slower than it, vertical speed eases toward it at `brakePerS`. Terminal speed: `driftVy`
-   * (a gentle sink, positive) or `riseVy` (a rise, negative).
+   * (a gentle sink, positive) or `riseVy` (a rise, negative). A candle that has fallen more than
+   * `holdBelowTakeoffPx` below its takeoff is not caught at all (D-36 addendum: falls stay unbounded, D-33).
    */
-  updraft: { gravity01: number; brakePerS: number; driftVy: number; riseVy: number };
+  updraft: { gravity01: number; brakePerS: number; driftVy: number; riseVy: number;
+    /**
+     * A column holds the candle only while its feet are at most this far below where it last took off (px).
+     * Lower than that it is a fall, and a fall passes straight through: a column is not a net.
+     */
+    holdBelowTakeoffPx: number };
 }
 
 export interface EmberConfig {

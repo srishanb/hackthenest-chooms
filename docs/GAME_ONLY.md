@@ -120,27 +120,35 @@ rules (`src/config/game.config.ts` `ledgeKinds`), never driven by the signal.
   upward at 1000 px/s plus 0.12 x the landing speed, at most 1100 px/s, so 357 to 432 px high, about twice a full
   jump (217 px). Sideways speed carries through, so the jump onto the cap aims the throw; normal air steering
   corrects it. A held jump key does nothing at the bounce (you never stand on a cap, so you cannot charge there;
-  the key stays latched until released). The cap squashes for a moment when it throws.
-- **Crumbling ledge** (bare, pale cracked stone, with an orange dashed edge). It holds 400 ms after the candle
-  first stands on it: time for a small charge (8 of 12 levels), never a full one. It shakes as the time runs out,
+  the key stays latched until released). The cap squashes for a moment when it throws. A fall that ends on a cap
+  counts as a fall at its full height (the fall event, the shaken candle, the landing shake), as a landing would.
+- **Crumbling ledge** (bare, pale cracked stone, with an orange dashed edge). It holds 600 ms after the candle
+  first stands on it: exactly a full charge's time, so a full jump off it is never possible. A key held through
+  the landing does nothing (the latch), so the route leaves 250 ms to react before the press, then a small hop
+  (charge level 3 to 5 of 12). A crumbling run ends with a hop onto a firm ledge. It shakes as the time runs out,
   its cracks glow, then it drops away in bits and is not solid; a charge on it is lost and the candle falls
   normally. It grows back 3 s after it fell, once the candle is at least 48 px from where it was.
 - **Updraft column** (a faint column of rising streaks with pale dashed sides). While the candle is in the air
   inside it, rising faster than the column's own speed it feels half gravity (so a jump floats about twice as
   high), and slower than that its speed eases (time constant 0.25 s) to a gentle 60 px/s sink in a drift column
   or a 150 px/s climb in a rise column. Leaving it restores gravity at once. Standing on a ledge inside one does
-  nothing.
+  nothing. **A column never catches a fall**: it holds the candle only while its feet are at most 24 px below where
+  it last took off; lower than that it is falling and passes straight through (D-33: falls stay unbounded). In the
+  snow bands a column is drawn in deep blue so it reads against pale snow.
 
 How the route proves them: `stepPlayer` does the bouncing and the lift (updraft columns are passed with each step),
 and `stepWorld` (`src/game/player/world-step.ts`) steps the crumble timers right after the candle, in the game
 and in the generator's replay alike. A mushroom launch is one route step (the jump that lands on the cap, `via`
 the cap); an updraft piece's step names the column it rides (`ride`). The kit traces the real flight through
 caps and columns and puts the next ledge where it comes down, and a flight that bounces or crosses a column must
-also land from takeoffs 2 px either side. A step from a crumbling ledge is replayed from where the step before
-landed (`arriveX`): the walk plus the charge must fit in 400 ms less a 60 ms margin. A drop never falls through a
-column or onto a cap. Every column stays inside its chunk, so neighbouring chunks never change each other's
+also land from every takeoff 0.25 px apart within 2 px either side (the landing is not monotonic in the takeoff).
+A step from a crumbling ledge is replayed from where the step before landed (`arriveX`): a 250 ms reaction, the
+walk, then the charge must fit in 600 ms less a 60 ms margin, from takeoffs 2 px either side too; and a cap or
+column added later is refused if it would move that landing. A drop never falls through a column or onto a cap.
+Chunks are built ahead of need (up to 4 below, one per frame at most) and the pieces of one chunk stop after
+20,000 replayed physics steps (a count, so chunks are identical on any machine). Every column stays inside its chunk, so neighbouring chunks never change each other's
 routes. In the dark each kind keeps a small accent above the darkness, faded with the light like the ledge
-outlines. Reduced motion: no shake, no falling bits, still streaks.
+outlines, and the outlines' reach search goes through the columns, so a ledge reached by riding one is outlined. Reduced motion: no shake, no falling bits, still streaks.
 
 ## Composure without a headset
 

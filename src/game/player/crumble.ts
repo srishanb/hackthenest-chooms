@@ -30,7 +30,10 @@ export const NO_CRUMBLE: CrumbleState = new Map();
 
 /** The ledges that are solid now: every one but the crumbling ledges that have fallen. */
 export function solidLedges<T extends { id: string }>(platforms: readonly T[], crumble: CrumbleState): readonly T[] {
-  if (crumble.size === 0) return platforms;
+  // The same list (no copy) while nothing has fallen: this runs every physics step.
+  let anyGone = false;
+  for (const timer of crumble.values()) if (timer.goneMs !== null) { anyGone = true; break; }
+  if (!anyGone) return platforms;
   return platforms.filter((platform) => crumble.get(platform.id)?.goneMs == null);
 }
 
@@ -69,9 +72,10 @@ export function stepCrumble(crumble: CrumbleState, platforms: readonly PlatformB
   }
   if (player.grounded) {
     // Whatever crumbling ledge is under the feet starts now (walking onto one counts, not only landing).
-    const standing = platforms.filter((platform) => platform.type === CRUMBLING_TYPE && !crumble.has(platform.id));
-    const under = standing.length ? findSupport(standing, player.x, config.player.width, bottom) : null;
-    if (under) write(under.id, { heldMs: 0, goneMs: null });
+    for (const platform of platforms) {
+      if (platform.type !== CRUMBLING_TYPE || crumble.has(platform.id)) continue;
+      if (findSupport([platform], player.x, config.player.width, bottom)) { write(platform.id, { heldMs: 0, goneMs: null }); break; }
+    }
   }
   return next ?? crumble;
 }

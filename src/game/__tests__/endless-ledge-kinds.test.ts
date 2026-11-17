@@ -12,7 +12,7 @@ import { GAME_CONFIG as G } from '../../config/game.config';
 import type { PlatformData } from '../../shared/contracts/content';
 import { createEndlessGenerator, replayStep, stepsHold, type EndlessChunk, type PieceSpan } from '../endless/generator';
 import { createRouteBot } from '../endless/route-bot';
-import { standMsBefore } from '../endless/route-replay';
+import { flyStep, replayStep as replayFrom, standMsBefore } from '../endless/route-replay';
 import { PIECES } from '../endless/pieces/registry';
 import { NO_CRUMBLE } from '../player/crumble';
 import { teleportPlayer } from '../player/movement';
@@ -85,8 +85,10 @@ describe('special-ledge pieces keep the generator rules', () => {
         expect(caps.has(step.fromId)).toBe(false);
         expect(caps.has(step.toId)).toBe(false);
       }
-      expect(chunk.wax.every((drop) => !caps.has(drop.ledgeId ?? '') && !chunk.platforms.some((p) => caps.has(p.id)
-        && Math.abs(drop.x - p.x) < p.width / 2 && Math.abs(drop.y - topOf(p)) < 40))).toBe(true);
+      // No wax hovers on a cap (a drop just above its top); wax on a ledge under a cap is fine.
+      const onCap = chunk.wax.filter((drop) => caps.has(drop.ledgeId ?? '') || chunk.platforms.some((p) => caps.has(p.id)
+        && Math.abs(drop.x - p.x) < p.width / 2 && topOf(p) - drop.y > 0 && topOf(p) - drop.y < 40));
+      expect(onCap, JSON.stringify({ onCap, caps: chunk.platforms.filter((p) => caps.has(p.id)) })).toEqual([]);
       for (const column of chunk.updrafts) {
         expect(column.x - column.width / 2).toBeGreaterThanOrEqual(0);
         expect(column.x + column.width / 2).toBeLessThanOrEqual(WIDTH);
@@ -132,6 +134,90 @@ describe('each new piece has its shape and needs its kind', () => {
       for (const step of chunk.sideRoute) expect(chunk.platforms.find((p) => p.id === step.fromId)?.type).not.toBe('crumbling');
     }
     expect(checked).toBeGreaterThan(15);
+  });
+
+  it('crumbling timing invariant: each step off a crumbling ledge is timed from where the step onto it really lands', () => {
+    // QA finding 1: a column placed later bent the hop onto a crumbling ledge (seed 780 chunk 24, seed 829 chunk 26),
+    // so the stored walk was 30 px short and the ledge fell during the charge. Checked with the chunks on both sides.
+    const extra = [[780, 24], [829, 26]].map(([seed, index]) => {
+      const g = createEndlessGenerator(seed!, G, C);
+      return { seed: seed!, chunk: g.chunk(index!), prev: g.chunk(index! - 1), next: g.chunk(index! + 1), nextFloor: g.floor(index! + 1) };
+    });
+    let checked = 0;
+    for (const { seed, chunk, prev, next } of [...samples, ...extra]) {
+      const world = [...prev.platforms, ...chunk.platforms, ...next.platforms];
+      const columns = [...prev.updrafts, ...chunk.updrafts, ...next.updrafts];
+      for (const step of [...chunk.route, ...chunk.altRoute]) {
+        if (step.arriveX === undefined) continue;
+        const incoming = [...chunk.route, ...chunk.altRoute].filter((other) => other.toId === step.fromId);
+        expect(incoming.length, `seed ${seed} ${step.fromId}`).toBe(1);
+        const flight = flyStep(incoming[0]!, world, WIDTH, G, { updrafts: columns });
+        expect(flight.landedId).toBe(step.fromId);
+        expect(Math.abs(flight.state.x - step.arriveX), `seed ${seed} ${step.fromId} lands at ${flight.state.x}, timed from ${step.arriveX}`).toBeLessThan(0.02);
+        checked++;
+      }
+    }
+    expect(checked).toBeGreaterThan(30);
+  });
+
+  it('every step off a crumbling ledge can be made by a person who reacts 250 ms after landing, then walks and charges', () => {
+    // QA finding 10: with a 250 ms reaction 56 of 88 crumbling steps could not be made at all.
+    const stepMs = 1000 / G.stepHz;
+    let checked = 0;
+    for (const { seed, chunk, prev, next } of samples) {
+      const world = [...prev.platforms, ...chunk.platforms, ...next.platforms];
+      if (world.some((p) => p.motion)) continue;
+      const columns = [...prev.updrafts, ...chunk.updrafts, ...next.updrafts];
+      for (const step of chunk.route) {
+        if (world.find((p) => p.id === step.fromId)?.type !== 'crumbling') continue;
+        const incoming = chunk.route.find((other) => other.toId === step.fromId)!;
+        const from = world.find((p) => p.id === incoming.fromId)!;
+        let state: PlayerState = { ...teleportPlayer(incoming.takeoffX, topOf(from) - G.player.height / 2), grounded: true, platformId: from.id, jumpLatch: false };
+        let crumble = NO_CRUMBLE;
+        const go = (input: { left: boolean; right: boolean; jump: boolean }): void => {
+          const out = stepWorld(state, crumble, input, world, columns, WIDTH, G, stepMs);
+          state = out.player; crumble = out.crumble;
+        };
+        const idle = { left: false, right: false, jump: false };
+        for (let i = 0; i < incoming.chargeSteps; i++) go({ ...idle, jump: true });
+        go({ left: incoming.direction < 0, right: incoming.direction > 0, jump: false });
+        for (let i = 0; i < 2000 && !state.grounded; i++) go(idle);
+        expect(state.platformId).toBe(step.fromId);
+        for (let i = 0; i < Math.ceil(T.crumbleReactionMs / stepMs); i++) go(idle);
+        for (let i = 0; i < 300 && Math.abs(state.x - step.takeoffX) > 1; i++) go({ left: state.x > step.takeoffX, right: state.x < step.takeoffX, jump: false });
+        for (let i = 0; i < step.chargeSteps; i++) go({ ...idle, jump: true });
+        go({ left: step.direction < 0, right: step.direction > 0, jump: false });
+        for (let i = 0; i < 3000 && !state.grounded; i++) go(idle);
+        expect(state.platformId, `seed ${seed} ${step.fromId}->${step.toId}`).toBe(step.toId);
+        checked++;
+      }
+    }
+    expect(checked).toBeGreaterThan(15);
+  });
+
+  it('a jump through a column, off a cap or off a crumbling ledge lands from every takeoff 0.25 px apart within 2 px', () => {
+    // QA finding 6/7 and the fixer's seed 4 chunk 18 case: misses 0.25 to 1 px from the stored takeoff while both ends landed.
+    const cases: Array<[number, number]> = [[4, 18], [136, 11], [297, 15], [409, 16], [486, 18], [493, 22]];
+    const picked = [...cases.map(([seed, index]) => {
+      const g = createEndlessGenerator(seed, G, C);
+      return { seed, chunk: g.chunk(index), prev: g.chunk(index - 1), next: g.chunk(index + 1) };
+    }), ...samples.slice(0, 60)];
+    let checked = 0;
+    for (const { seed, chunk, prev, next } of picked) {
+      const world = [...prev.platforms, ...chunk.platforms, ...next.platforms];
+      const columns = [...prev.updrafts, ...chunk.updrafts, ...next.updrafts];
+      for (const step of [...chunk.route, ...chunk.altRoute]) {
+        const from = world.find((p) => p.id === step.fromId)!;
+        if (step.kind === 'drop' || from.motion) continue;
+        const flight = flyStep(step, world, WIDTH, G, { updrafts: columns });
+        if (!flight.bounces.length && !flight.inColumn && from.type !== 'crumbling') continue;
+        checked++;
+        for (let shift = -2; shift <= 2 + 1e-9; shift += 0.25) {
+          expect(replayFrom(step, world, WIDTH, G, shift, false, columns), `seed ${seed} ${step.fromId}->${step.toId} at ${shift}`).toBe(step.toId);
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(40);
   });
 
   it('updraft rise and crossing: the step rides its column, and without the column it does not get there', () => {

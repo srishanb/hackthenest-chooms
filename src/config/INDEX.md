@@ -7,7 +7,7 @@ Every tunable number lives here. Search here before adding a constant. Lane owne
 |---|---|---|---|
 | `SIGNAL_CONFIG` | `signal.config.ts` | Signal (Srishan) | Every number in the signal pipeline, with units. Starting guesses, not checked on a real head. |
 | `GAME_CONFIG` | `game.config.ts` | Game (Ali) | Movement and world constants, and `ledgeKinds`: the rules of bounce caps, crumbling ledges and updraft columns (D-36). The EEG never changes these. |
-| `LEDGE_KINDS_VIEW_CONFIG` | `ledge-kinds-view.config.ts` | Game | How bounce caps, crumbling ledges and updraft columns are drawn (colours, sizes, shake, streaks). Drawing only. |
+| `LEDGE_KINDS_VIEW_CONFIG` | `ledge-kinds-view.config.ts` | Game | How bounce caps, crumbling ledges and updraft columns are drawn (colours, sizes, shake, streaks). Drawing only. `updraftSnow`: the palette that reads against snow. |
 | `EMBER_CONFIG` | `ember.config.ts` | Game (Ali) | Recovery ember timing, such as the activation duration. |
 | `UI_CONFIG`, `HUD_WORLD_PIXELS_PER_METRE`, `HUD_LANTERN_FULL_RADIUS_PX`, `UI_SIZE_PREVIEW` | `ui.config.ts` | UI (Amrit) | Which UI components are on, where they sit, HUD scale and the UI size range. |
 | `AUDIO_CONFIG`, `INTRO_MUSIC_DUCK`, `NARRATOR_VOICES`, `DEFAULT_NARRATOR_VOICE`, `NARRATOR_VOICE_STORAGE_KEY`, `NARRATOR_VOICE_EVENT`, `NARRATOR_LEVELS`, `WORLD_AUDIO_CONFIG`, `NARRATOR_MOMENTS` | `audio.config.ts` | Audio and narrator (Amrit) | Music gain, intro ducking, narrator voices and loudness, world audio and narrator moments. |

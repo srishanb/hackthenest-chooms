@@ -56,7 +56,7 @@ import { updraftAt } from '../player/updraft';
 import { stepWorld } from '../player/world-step';
 import type { PlatformBox, PlayerState } from '../player/types';
 import { platformsAt } from '../world/environment';
-import { landingEvents } from '../world/fall-tracker';
+import { bounceEvents, landingEvents } from '../world/fall-tracker';
 import { createPhaseController, type PhaseController } from '../world/phase-controller';
 import { CLIMB_SCENE_KEY } from './boot-scene';
 import { writeSnapshot } from './snapshot-writer';
@@ -291,7 +291,8 @@ export class EndlessScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.ledgeKinds.destroy());
     // Above the darkness: the ledge underfoot and the ledges a real jump reaches stay readable.
     this.visibility = createProtectedVisibility(this, DEPTH.alwaysReadable, () => this.stream.platforms(),
-      () => ({ width, ...this.stream.bounds() }), gameConfig, this.deps.config.outlineLowerReachPx);
+      () => ({ width, ...this.stream.bounds() }), gameConfig, this.deps.config.outlineLowerReachPx,
+      () => this.stream.updrafts());
 
     // Native events reach the buffer immediately; do not let Space/arrows scroll the page.
     this.controls = createKeyboardInput(() => stores.settings.get().keys);
@@ -436,6 +437,14 @@ export class EndlessScene extends Phaser.Scene {
       if (out.events.bounced) {
         this.bouncedIds.push(out.events.bounced.platformId);
         bus.emit({ type: 'bounce', platformId: out.events.bounced.platformId, launchSpeed: out.events.bounced.launchSpeed });
+        // A fall that ends on a cap counts as a fall, at its full height, as a landing would.
+        const fallHeightPx = out.events.bounced.fallHeightPx;
+        if (fallHeightPx > 0) {
+          this.shakeOnLanding(fallHeightPx);
+          this.cleanJumps = 0;
+          this.composure = shake(this.composure, fallHeightPx, config);
+        }
+        for (const event of bounceEvents(out.events.bounced, emberConfig)) bus.emit(event);
         this.kindCounts.bounces++;
       }
       this.kindCounts.crumbled += out.crumbled.length;
@@ -484,6 +493,8 @@ export class EndlessScene extends Phaser.Scene {
       // The wick has gone cold. The body stops here; the end screen opens after a last moment (below).
       if (this.flame.out) { this.endingMs = 0; this.controls.clear(); break; }
     }
+    // Build at most one chunk ahead of need per frame, so a long fall never builds several in one frame.
+    if (running()) this.stream.prefetch(this.feetY(), this.state.vy);
     // The last moment: the candle slumps and the world goes dark, then the end screen opens.
     if (this.endingMs !== null && this.phase.isRunning()) {
       this.endingMs += Math.max(0, deltaMs);
@@ -552,6 +563,7 @@ export class EndlessScene extends Phaser.Scene {
     // Ledge outlines fade with the light in the last moment.
     this.visibility.update(this.state.platformId, this.state.x, this.state.y, radius * (1 - spent01), solid);
     this.ledgeKinds.update({ platforms: this.platforms, updrafts: this.stream.updrafts(), crumble: this.crumble,
+      snowy: (column) => biomeOf(chunkOfPlatform(column.id), config) === 'snow',
       bounced: this.bouncedIds, crumbled: this.crumbledIds, candleX: this.state.x, candleY: this.state.y, radiusPx: radius * (1 - spent01),
       deltaMs, paused: !this.phase.isRunning(), reducedMotion: settings.reducedMotion });
     this.bouncedIds = [];

@@ -11,14 +11,15 @@
  *
  * Bounce: coming down onto a bounce cap never lands; the feet are put on its top and the candle is thrown
  * upward (bounce.ts), keeping its horizontal speed as the new launch speed, so normal air steering goes
- * on from there. The fall height is measured from the cap afterwards.
+ * on from there. The bounce reports the fall that ended on the cap (`bounced.fallHeightPx`, its full
+ * height, like a landing), and the next fall is measured from the cap.
  */
 import type { GameConfig } from '../../shared/contracts/config';
 import { charge01, launchVelocity, steeredVx } from './charge-jump';
 import { BOUNCE_TYPE, bounceSpeed } from './bounce';
 import { clampToWalls, findLanding, findSupport } from './collide';
 import type { PlatformBox, PlayerInput, PlayerState, StepEvents, UpdraftBox } from './types';
-import { updraftAt, updraftVy } from './updraft';
+import { updraftAt, updraftHolds, updraftVy } from './updraft';
 
 const direction = (input: PlayerInput): -1 | 0 | 1 => ((input.right ? 1 : 0) - (input.left ? 1 : 0)) as -1 | 0 | 1;
 
@@ -133,7 +134,7 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
 
   if (!grounded) {
     const column = config.ledgeKinds ? updraftAt(environment.updrafts, x, y) : null;
-    vy = column && config.ledgeKinds ? updraftVy(vy, column.kind, config.ledgeKinds.updraft, config.gravityY, dt) : vy + config.gravityY * dt;
+    vy = column && config.ledgeKinds && updraftHolds(y + height / 2, takeoffBottomY, config.ledgeKinds.updraft) ? updraftVy(vy, column.kind, config.ledgeKinds.updraft, config.gravityY, dt) : vy + config.gravityY * dt;
     const newBottom = prevBottom + vy * dt;
     let platform = vy >= 0 ? findLanding(platforms, x, width, prevBottom, newBottom) : null;
     if (!platform && state.vy > 0 && config.falling) {
@@ -153,8 +154,9 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
       y = top - height / 2;
       vy = -launchSpeed;
       launchVx = vx - windVx;
+      // The way down counts as a fall of its full height; the throw is a new takeoff from the cap.
+      bounced = { platformId: platform.id, launchSpeed, fallHeightPx: Math.max(0, top - takeoffBottomY) };
       takeoffBottomY = top;
-      bounced = { platformId: platform.id, launchSpeed };
     } else if (platform) {
       const top = platform.y - platform.height / 2;
       y = top - height / 2;
