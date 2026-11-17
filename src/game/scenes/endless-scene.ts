@@ -2,7 +2,8 @@
  * The endless scene: the same candle, controls and physics as the authored climb, on platforms
  * generated as you go, with no EEG anywhere.
  *
- * Flow each frame: keys -> fixed steps of `stepPlayer` (src/game/player/, unchanged) -> the chunk
+ * Flow each frame: keys -> fixed steps of `stepWorld` (src/game/player/: `stepPlayer` plus the crumbling
+ * ledges' timers, with the chunk stream's updraft columns; Decision D-36) -> the chunk
  * stream adds and removes ledges around the player -> fuel burns and wax refills it -> draw.
  * The world's mood (forest corruption, tense music, narrower view) follows the fuel through the
  * existing effects table. The run ends when the flame goes out. Nothing here changes gravity,

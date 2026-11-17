@@ -5,7 +5,9 @@
  * run starts on, spans the whole width; every later anchor is an ordinary-width ledge (Decision D-33).
  * In between, the chunk is assembled from set pieces (pieces/, Decision D-35): short runs of ledges
  * with a shape you can recognise, a staircase, a zigzag shaft, a traverse, a detour down, pillar hops,
- * a big leap, a fork, an ice run, a moving crossing, or a plain ladder. pieces/pacing.ts picks them by
+ * a big leap, a fork, an ice run, a moving crossing, or a plain ladder; and from chunk 5 up a mushroom launch
+ * off a bounce cap, a crumbling run, an updraft rise and an updraft crossing (Decision D-36, whose columns are
+ * kept in `chunk.updrafts` and act on every step's replay). pieces/pacing.ts picks them by
  * the seed. When the next anchor is close (`approachPx`), a plain approach ladder climbs the rest and
  * its last jump lands on the next anchor.
  *
