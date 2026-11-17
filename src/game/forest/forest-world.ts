@@ -122,7 +122,9 @@ export function createForestWorld(scene: Scene, world: LoadedWorld, backdrop?: B
       redTerrain.push({ normal: tile, red });
       terrain.push(red);
     }
-    if (propCount < C.maxProps) {
+    // A crumbling ledge stays bare (no plants, no grass), so its cracked stone top reads at a glance.
+    const bare = platform.type === 'crumbling';
+    if (propCount < C.maxProps && !bare) {
       // Stable one/two-plant compositions avoid identical bookends on every platform.
       const composition = stableUnit(`composition:${platform.id}`);
       const slots = composition > 0.55 ? [-0.9, -0.45, 0.25, 0.8] : [-0.8, -0.15, 0.65];
@@ -171,7 +173,7 @@ export function createForestWorld(scene: Scene, world: LoadedWorld, backdrop?: B
       }
     }
     // Swaying grass on forest ledges, and maybe a bird. Snowy ledges keep their bare look, but birds still visit.
-    const tufts = winter ? [] : grass.plant(platform.id, platform.x, artTop, platform.width);
+    const tufts = winter || bare ? [] : grass.plant(platform.id, platform.x, artTop, platform.width);
     // No bird perches on a ledge that may fall away.
     if (platform.type !== 'crumbling') birds.addPerch(platform.id, platform.x, artTop, platform.width);
     // Follow authored moving ledges using simulation positions, never signal values.

@@ -17,6 +17,8 @@ export const LEDGE_KINDS_VIEW_CONFIG = {
   crumble: {
     /** Crack lines across the ledge, and their colour as it is about to fall (they warm toward it). */
     crack: 0x2b1d16, warn: 0xf0a04b,
+    /** The pale cracked stone laid over its top (instead of grass), and the stone's darker seam. */
+    stone: 0xa59682, seam: 0x6d6153,
     /** It starts to shake once this much of its hold time has gone (0..1), by up to `shakePx` either way. */
     shakeFrom01: 0.2, shakePx: 4,
     /** Bits that fall when it goes: how many, and how long they are drawn (ms), under this gravity (px/s^2). */
@@ -24,7 +26,7 @@ export const LEDGE_KINDS_VIEW_CONFIG = {
   },
   updraft: {
     /** The column's faint fill (alpha 0..1) and the streak colour. */
-    fill: 0x9fdcf0, fillAlpha: 0.07, streak: 0xe4f7ff, streakAlpha: 0.55,
+    fill: 0x9fdcf0, fillAlpha: 0.1, streak: 0xe4f7ff, streakAlpha: 0.7,
     /** One streak per this many square px of column, at least `minStreaks`; streak length range (px). */
     pxPerStreak: 5200, minStreaks: 6, streakPx: [10, 24] as const,
     /** How fast the streaks rise (px/s) in a rise column and in a drift column: faster means stronger lift. */

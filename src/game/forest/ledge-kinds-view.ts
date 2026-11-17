@@ -76,13 +76,15 @@ export function createLedgeKindsView(scene: Phaser.Scene, depths: { world: numbe
     const stemTop = top + c.domePx - 2;
     rect(world, snapToGrid(cap.x) - stemW / 2, stemTop, stemW, c.stemPx - 4 * squashed, c.stem);
     rect(world, snapToGrid(cap.x) + stemW / 2 - 4, stemTop, 4, c.stemPx - 4 * squashed, c.stemShade);
-    rect(world, left + 8, top, w - 16, 4, c.light);
-    rect(world, left + 2, top + 4, w - 4, 6, c.red);
+    // A rounded dome: each row a little wider, lit on top, a dark rim underneath.
+    rect(world, left + 14, top, w - 28, 2, c.light);
+    rect(world, left + 8, top + 2, w - 16, 4, c.light);
+    rect(world, left + 4, top + 6, w - 8, 4, c.red);
     rect(world, left, top + 10, w, 4, c.red);
-    rect(world, left + 4, top + 14, w - 8, 2, c.rim);
-    for (let i = 0; i < 3; i++) {
-      const sx = left + 8 + stableUnit(`cap-spot:${cap.id}:${i}`) * (w - 20);
-      rect(world, sx, top + (i % 2 === 0 ? 4 : 8), 4, 4, c.spot);
+    rect(world, left + 2, top + 14, w - 4, 2, c.rim);
+    for (let i = 0; i < 4; i++) {
+      const sx = left + 8 + (w - 22) * (i + stableUnit(`cap-spot:${cap.id}:${i}`) * 0.6) / 4;
+      rect(world, sx, top + (i % 2 === 0 ? 6 : 10), 6, 4, c.spot);
     }
     // Above the darkness: the cap's rim, so a bounce cap reads as one at night.
     rect(readable, left + 6, top, w - 12, 2, V.night.cap, V.night.alpha * fade);
@@ -99,17 +101,21 @@ export function createLedgeKindsView(scene: Phaser.Scene, depths: { world: numbe
     look(ledge.id, offset, !gone);
     const left = snapToGrid(ledge.x - ledge.width / 2) + offset, top = snapToGrid(topOf(ledge)), width = snapToGrid(ledge.width);
     if (!gone) {
-      const cracks = Math.max(2, Math.round(width / 38));
+      // Pale cracked stone over the top, split into blocks by zigzag cracks that glow warmer as it is about to go.
+      rect(world, left, top - 2, width, 8, V.crumble.stone);
+      rect(world, left, top + 4, width, 2, V.crumble.seam);
+      const cracks = Math.max(2, Math.round(width / 30));
       const color = mixColor(V.crumble.crack, V.crumble.warn, warn);
       for (let i = 0; i < cracks; i++) {
         const cx = left + 8 + (width - 18) * (i + 0.3 + stableUnit(`crack:${ledge.id}:${i}`) * 0.4) / cracks;
-        rect(world, cx, top, 2, 6, color);
-        rect(world, cx + 2, top + 6, 2, 4, color);
-        rect(world, cx, top + 10, 2, 6, color);
+        rect(world, cx, top - 2, 4, 4, color);
+        rect(world, cx + 2, top + 2, 4, 6, color);
+        rect(world, cx, top + 8, 4, 6, color);
+        rect(world, cx + 2, top + 14, 2, 6, color);
       }
     }
     // Above the darkness: a dashed edge (faint while it is gone, so you can see where it will grow back).
-    for (let x = left; x < left + width - 4; x += 10) rect(readable, x, top, 6, 2, V.night.crumble, V.night.alpha * fade * (gone ? 0.3 : 1));
+    for (let x = left; x < left + width - 4; x += 10) rect(readable, x, top - 4, 6, 2, V.night.crumble, V.night.alpha * fade * (gone ? 0.3 : 1));
   }
 
   function drawColumn(column: UpdraftBox, fade: number, reducedMotion: boolean): void {
