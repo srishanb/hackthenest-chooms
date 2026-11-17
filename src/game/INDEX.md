@@ -116,8 +116,16 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 |---|---|---|
 | `EndlessScene`, `EndlessSceneDeps` | `scenes/endless-scene.ts` | The generated climb: same input, `stepPlayer`, candle and forest as the climb scene, on streamed chunks. Fuel ends the run; no signal. |
 | `traceArc`, `buildArcTable`, `descentAt`, `launch`, `standOn`, `chargeStepsFor`, `JumpArc`, `ArcPoint` | `endless/jump-arcs.ts` | Sample jump arcs traced with the real `stepPlayer`; the generator places ledges under them. |
-| `createEndlessGenerator`, `replayStep`, `difficultyAt`, `EndlessChunk`, `RouteStep`, `WaxSpot`, `EndlessGenerator` | `endless/generator.ts` | Seeded, random-access chunks, each starting on an anchor ledge (`floor(index)`; only chunk 0's is full width). Every ledge is reachable by construction and its jump is replayed before it is kept. |
+| `createEndlessGenerator`, `replayStep`, `difficultyAt`, `EndlessChunk`, `RouteStep`, `WaxSpot`, `EndlessGenerator`, `PieceSpan` | `endless/generator.ts` | Seeded, random-access chunks, each starting on an anchor ledge (`floor(index)`; only chunk 0's is full width). Each chunk is a seeded run of set pieces then an approach ladder onto the next anchor (D-35); `chunk.pieces` lists them, `chunk.altRoute` holds a fork's other way. Every ledge is reachable by construction and its jump or drop is replayed before it is kept. |
 | `EndlessChunk.sideRoute`, `WaxSpot.ledgeId`, `WaxSpot.ledgeX` | `endless/generator.ts` | The jump to each optional side ledge; wax on a moving side ledge knows which ledge it rides. |
+| `replayStep`, `stepsHold`, `chargeDriftPx`, `createRouteChecker`, `RouteStep`, `RouteChecker`, `StepBox` | `endless/route-replay.ts` | Replays a route step (a jump, or a drop: walk off the edge) with `stepPlayer`; checks a set of steps with every moving ledge at both ends of its travel; remembers each step's swept region so a new ledge only re-checks steps it could catch. |
+| `Piece`, `PieceKit`, `PieceRun`, `JumpSpec`, `DropSpec`, `Candidate`, `PieceFeature` | `endless/pieces/types.ts` | The set-piece interface: a piece lays a short run of ledges from an entry ledge using the kit. Add a piece with one file and a registry line. |
+| `createPieceKit`, `emptyRun`, `traceDrop`, `keepsClear`, `apexLimitTop`, `GeneratorKit`, `Committed` | `endless/pieces/kit.ts` | The tools pieces build with: sampled jumps and drops under real arcs, and the one `accept` check (walls, chunk bounds, clearance, peak height, full replay). |
+| `PIECES`, `PieceEntry` | `endless/pieces/registry.ts` | Every set piece with its weight, unlock chunk, whether it is demanding, and the features it needs. |
+| `choosePiece`, `allowedPieces`, `PacingState` | `endless/pieces/pacing.ts` | Seeded choice of the next piece: never the same twice in a row, calm after demanding, unlock by chunk, fade-in. |
+| `featuresAt` | `endless/pieces/features.ts` | Which piece features a chunk has (snow, moving ledges). |
+| `LADDER`, `STAIRCASE`, `TRAVERSE`, `ZIGZAG`, `DETOUR`, `PILLARS`, `BIG_LEAP`, `FORK`, `ICE_RUN`, `MOVING_CROSSING` | `endless/pieces/*.ts` | The ten set pieces, one file each; the header of each says what the shape is and why it plays well. |
+| `lastLedge`, `roomier`, `eitherWay` | `endless/pieces/shared.ts` | Small helpers the pieces share. |
 | `createChunkStream`, `ChunkStream`, `StreamChange` | `endless/chunk-stream.ts` | Keeps a fixed window of chunks alive around the player, always including the chunk below and every chunk a fast fall can reach before the next update. |
 | `freshFlame`, `stepFlame`, `addWax`, `burnPerSecond`, `isLit`, `FlameState` | `endless/flame-fuel.ts` | Fuel burns with time, wax refills it, a grace time before the run ends. |
 | `moodIntensity` | `endless/mood.ts` | Composure and fuel to the 0..1 intensity fed to the effects table (the mood follows the candle). |
@@ -127,7 +135,7 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 | `createRunScore`, `RunScore`, `rememberSeededBest`, `SEEDED_BESTS_KEPT` | `endless/run-score.ts` | Height of the run (ledges stood on) and the best height on this device; seeded climbs keep their own best, the latest 30 of them. |
 | `biomeOf`, `snowAt`, `chunkOfPlatform`, `Biome` | `endless/biome.ts` | Forest and snow bands by height: platform skin per chunk and snowfall that fades in and out. Presentation only. |
 | `nightAt`, `sightRadius`, `candleRadius`, `nightShadowAlpha` | `endless/night.ts` | Night falls with height; in the dark the view is the candle's own circle, sized by its fuel. Presentation only. |
-| `createRouteBot` | `endless/route-bot.ts` | Development-only player that follows the generated route (`?bot=1`), for automated browser checks. |
+| `createRouteBot`, `heldStepsFor` | `endless/route-bot.ts` | Development-only player that follows the generated route (`?bot=1`), for automated browser checks; walks off the edge for a drop, and holds jump for the launch speed the route assumed when wax has grown the candle. |
 | `ForestWorld.addPlatform`, `ForestWorld.removePlatform` | `forest/forest-world.ts` | Platform art added and removed while playing. |
 
 ## Candle expression

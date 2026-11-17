@@ -23,7 +23,8 @@ describe('chunk stream', () => {
       most = Math.max(most, s.platforms().length);
       expect(s.chunks().length).toBeLessThanOrEqual(C.keepBelow + C.keepAbove + 1);
     }
-    expect(most).toBeLessThan(80);
+    // Three chunks of about 17 ledges each (set pieces, D-35), plus the anchor above.
+    expect(most).toBeLessThan(100);
   });
   it('reports nothing while the player stays in one chunk, and exact adds and removes when they leave', () => {
     const s = stream();

@@ -397,7 +397,8 @@ export class EndlessScene extends Phaser.Scene {
       // Wax growth (+2% per piece, capped) scales walking and jumping; it comes from the wax count only.
       const movement = grownMovement(gameConfig, waxGrowth(this.wax.count(), WAX_CONFIG.growthPerWax, WAX_CONFIG.growthCapWax));
       const input = this.deps.bot
-        ? this.bot.input(this.state, this.stream.chunks().flatMap((chunk) => chunk.route), (id) => this.platforms.find((p) => p.id === id))
+        ? this.bot.input(this.state, this.stream.chunks().flatMap((chunk) => chunk.route), (id) => this.platforms.find((p) => p.id === id),
+          { base: gameConfig, current: movement })
         : this.controls.read();
       this.aim = ((input.right ? 1 : 0) - (input.left ? 1 : 0)) as -1 | 0 | 1;
       const out = stepPlayer(this.state, input, this.platforms, gameConfig.view.width, movement, stepMs);
