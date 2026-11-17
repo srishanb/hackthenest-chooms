@@ -54,13 +54,13 @@ Dev pages for looking at the candle: `/src/game/__tests__/candle-faces.html` (ev
    on, spans the whole width. Nothing else catches a fall: a slip costs as much height as it costs (Decision D-33).
 2. A chunk depends only on the run's seed and its own number, so a chunk below can be rebuilt after a fall. The last
    jump of each chunk lands on the next chunk's anchor, and is replayed like every other jump.
-3. Each ledge is placed under a jump arc traced with the game's own `stepPlayer`. The jump is then replayed against
-   the finished chunk, and a ledge the replay does not land on is thrown away. The test suite replays every jump of
+3. Each ledge is placed under a jump arc (or a walk-off fall) traced with the game's own `stepPlayer`. The step is
+   then replayed against the finished chunk, and a ledge the replay does not land on is thrown away. The test suite replays every jump of
    480 chunks, and drops the candle from high up to check that a long fall through the streamed chunks lands exactly
    where it would with every ledge loaded.
 4. Side ledges hold extra wax. They can be reached, but getting back may mean dropping down. From chunk 4 up some
-   of them slide left and right, carrying their wax; they move only as far as their jump still lands on them, and
-   the main path never moves.
+   of them slide left and right, carrying their wax; they move only as far as their jump still lands on them. The
+   main path moves only in a moving crossing (a set piece, below).
 5. Ledges get narrower and the steps taller over the first 14 chunks. The candle also burns faster with height, and
    keeps burning a little faster after that, so every run ends.
 6. Forest and snow alternate every three chunks. In the snow about a third of the ledges are ice (a bright blue sheet
@@ -69,8 +69,42 @@ Dev pages for looking at the candle: `/src/game/__tests__/candle-faces.html` (ev
 7. Night falls with height. Low down the whole screen is visible; from about chunk 10 the view is the candle's own
    circle of light, wide with a full candle and small with an empty one. Reachable ledges are still outlined inside it.
 
+8. Each chunk is built from **set pieces** (Decision D-34), not one long ladder. See below.
+
+### Set pieces
+
+Between one anchor and the next, the generator strings together short runs of ledges that each have a shape you
+can recognise, then an approach ladder whose last jump lands on the next anchor. The pieces (one file each under
+`src/game/endless/pieces/`, numbers in `src/config/endless-pieces.config.ts`):
+
+| Piece | Shape | From chunk |
+|---|---|---|
+| Ladder | Two or three ordinary jumps up: breathing room | 0 |
+| Staircase | The same short hop again and again, one way: a rhythm section | 0 |
+| Traverse | Long flat jumps sideways across the screen, never landing lower | 1 |
+| Zigzag shaft | Side to side up a narrow column | 1 |
+| Detour down | Walk off the edge onto a lower ledge (once or twice), then a long jump up past the start | 2 |
+| Fork | A safe way of three jumps, or a risky way through one narrow ledge holding wax; they rejoin | 2 |
+| Pillar hops | A row of ledges narrower than any ordinary ledge | 3 |
+| Big leap | One near-full charge from the edge across a wide, empty gap | 3 |
+| Ice run | Snow only: icy ledges, each jump from the far edge of the ice | 3 |
+| Moving crossing | Over a ledge that slides; the only time the main path moves | 4 |
+
+The seed picks them, with rules: never the same piece twice in a row, a calm piece after a demanding one, and a new
+piece fades in over a few chunks after it unlocks. Every jump and every drop of the route (and the fork's other way)
+is replayed with `stepPlayer`; a piece that does not fit is thrown away and another tried, and if nothing works the
+chunk falls back to the plain ladder, so generation always ends. A drop is a route step of its own: the route bot
+walks off the edge and lets go. The drops are shorter than the fall that shakes the candle.
+
+Still hard: no ledge is wider than an ordinary one can be, pillars and the fork's risky ledge are narrower. A set
+piece chunk has more jumps (about 14 against 10), and each missed jump costs a little less on average because more
+ledges catch it, so the height a player loses per chunk is about the same or a little more (measured with
+`npx tsx tools/endless/chunk-map.ts --compare`).
+
+`npx tsx tools/endless/chunk-map.ts --seed 42 --chunks 0,5,9` draws chunks as text with each ledge labelled by its
+piece; `--bot 300 --start 6` lets the route bot climb headless; `--time` measures generation time.
 `npx tsx tools/endless/par.ts` prints how long the route bot needs per chunk and what that means for fuel. Tuning
-numbers are in `src/config/endless.config.ts`.
+numbers are in `src/config/endless.config.ts` and `src/config/endless-pieces.config.ts`.
 
 ## Composure without a headset
 
