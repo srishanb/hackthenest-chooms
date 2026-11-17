@@ -105,3 +105,85 @@ export function stepsHold(steps: readonly RouteStep[], ledges: readonly Platform
   }
   return true;
 }
+
+/** The region a step's feet pass through, from takeoff to landing (world px). */
+export interface StepBox {
+  left: number;
+  right: number;
+  /** Highest feet y (smallest number). */
+  top: number;
+  /** Lowest feet y. */
+  bottom: number;
+}
+
+/** Trace one step as `replayStep` does and return the region its feet sweep, or null if it lands nowhere. */
+function sweep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: number, config: GameConfig, shiftPx: number): StepBox | null {
+  const from = platforms.find((platform) => platform.id === step.fromId);
+  if (!from) return null;
+  const stepMs = 1000 / config.stepHz;
+  const half = config.player.height / 2;
+  let state = standOn(from, step.takeoffX + shiftPx, config);
+  const box: StepBox = { left: state.x, right: state.x, top: state.y + half, bottom: state.y + half };
+  const grow = (): void => {
+    box.left = Math.min(box.left, state.x); box.right = Math.max(box.right, state.x);
+    box.top = Math.min(box.top, state.y + half); box.bottom = Math.max(box.bottom, state.y + half);
+  };
+  if (step.kind === 'drop') {
+    const walk = { left: step.direction < 0, right: step.direction > 0, jump: false };
+    for (let i = 0; i < MAX_WALK_STEPS && state.grounded; i++) { state = stepPlayer(state, walk, platforms, worldWidth, config, stepMs).state; grow(); }
+  } else {
+    state = launch(state, platforms, step.chargeSteps, step.direction, worldWidth, config);
+    grow();
+  }
+  let lowest = -Infinity;
+  for (const platform of platforms) lowest = Math.max(lowest, platform.y);
+  lowest += 200;
+  for (let i = 0; i < 6000; i++) {
+    if (state.grounded) return box;
+    if (state.y > lowest) return null;
+    state = stepPlayer(state, IDLE, platforms, worldWidth, config, stepMs).state;
+    grow();
+  }
+  return null;
+}
+
+/**
+ * Remembers the region each step sweeps, so a check after adding one ledge replays only the steps that
+ * ledge could catch. Adding a ledge outside a step's swept region cannot change where that step lands
+ * (one-way ledges only catch feet coming down through their top), so skipping it gives the same answer
+ * as replaying it, much faster. Boxes are computed once per step, with the ledges it was checked against.
+ */
+export interface RouteChecker {
+  /** The steps among `steps` that `ledge` (over its whole travel, if it moves) could catch. */
+  affected(steps: readonly RouteStep[], ledge: PlatformData, ledges: readonly PlatformData[]): RouteStep[];
+}
+
+export function createRouteChecker(worldWidth: number, config: GameConfig): RouteChecker {
+  const boxes = new Map<RouteStep, StepBox | null>();
+  const boxOf = (step: RouteStep, ledges: readonly PlatformData[]): StepBox | null => {
+    if (boxes.has(step)) return boxes.get(step)!;
+    const from = ledges.find((ledge) => ledge.id === step.fromId);
+    const drift = from ? chargeDriftPx(from, step.chargeSteps, config) : 0;
+    let box = sweep(step, ledges, worldWidth, config, 0);
+    // From a moving ledge the takeoff shifts: widen the region by the most it can shift.
+    if (box && drift) box = { ...box, left: box.left - drift, right: box.right + drift };
+    boxes.set(step, box);
+    return box;
+  };
+  const reach = config.player.width / 2 + (config.falling?.ledgeReachPx ?? 0) + 2;
+  return {
+    affected(steps, ledge, ledges) {
+      const travel = ledge.motion?.distance ?? 0;
+      const top = ledge.y - ledge.height / 2;
+      return steps.filter((step) => {
+        const box = boxOf(step, ledges);
+        // No box (the step does not land as things are): always replay it, so the check fails as it should.
+        if (!box) return true;
+        // A step that starts or ends on a moving ledge is always replayed in full.
+        if (ledges.some((other) => (other.id === step.fromId || other.id === step.toId) && other.motion)) return true;
+        return top >= box.top - 2 && top <= box.bottom + 2
+          && ledge.x + ledge.width / 2 + travel > box.left - reach && ledge.x - ledge.width / 2 - travel < box.right + reach;
+      });
+    },
+  };
+}

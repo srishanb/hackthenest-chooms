@@ -6,10 +6,13 @@ import { describe, expect, it } from 'vitest';
 import { ENDLESS_CONFIG } from '../../config/endless.config';
 import { GAME_CONFIG } from '../../config/game.config';
 import { buildArcTable, descentAt } from '../endless/jump-arcs';
-import { createEndlessGenerator, difficultyAt, replayStep } from '../endless/generator';
+import { ENDLESS_PIECES_CONFIG as T } from '../../config/endless-pieces.config';
+import { createEndlessGenerator, difficultyAt, replayStep, stepsHold } from '../endless/generator';
 
 const WIDTH = GAME_CONFIG.view.width;
 const topOf = (p: { y: number; height: number }): number => p.y - p.height / 2;
+/** The narrowest ledge allowed: ordinary ledges, or the narrower ledges set pieces use on purpose. */
+const NARROWEST = Math.min(ENDLESS_CONFIG.width.minPx, T.pillars.widthPx, T.fork.riskyWidthPx);
 
 describe('jump arcs', () => {
   const arcs = buildArcTable(GAME_CONFIG, ENDLESS_CONFIG.chargeLevels);
@@ -108,7 +111,7 @@ describe('endless generator', () => {
           ledges++;
           expect(p.x - p.width / 2).toBeGreaterThanOrEqual(0);
           expect(p.x + p.width / 2).toBeLessThanOrEqual(WIDTH);
-          expect(p.width).toBeGreaterThanOrEqual(ENDLESS_CONFIG.width.minPx);
+          expect(p.width).toBeGreaterThanOrEqual(NARROWEST);
           // Everything stays between this anchor and the next one.
           expect(topOf(p)).toBeLessThanOrEqual(chunk.floorTopPx);
           expect(topOf(p)).toBeGreaterThan(topOf(nextFloor));
@@ -157,8 +160,9 @@ describe('endless generator', () => {
     expect(icy / snowLedges).toBeLessThan(ENDLESS_CONFIG.ice.chance + 0.1);
   });
 
-  it('only optional side ledges move; each stays in the walls, keeps its jump at both ends, and carries its wax', () => {
+  it('side ledges move, and the main path only in a moving crossing; each stays in the walls, keeps its jump at both ends, and carries its wax', () => {
     let moving = 0;
+    let mainMovers = 0;
     for (let seed = 1; seed <= 16; seed++) {
       const generator = createEndlessGenerator(seed * 15485863, GAME_CONFIG, ENDLESS_CONFIG);
       for (const index of [0, 2, 4, 7, 12, 25]) {
@@ -171,7 +175,15 @@ describe('endless generator', () => {
           moving++;
           expect(index).toBeGreaterThanOrEqual(ENDLESS_CONFIG.moving.fromChunk);
           expect(ledge.type).toBe('moving');
-          expect(onRoute.has(ledge.id)).toBe(false);
+          if (onRoute.has(ledge.id)) {
+            // The main path moves only in a moving crossing, and every step holds wherever the ledge is.
+            mainMovers++;
+            expect(chunk.pieces.find((span) => span.ledgeIds.includes(ledge.id))?.id).toBe('moving-crossing');
+            expect(ledge.motion.distance).toBeGreaterThanOrEqual(T.movingCrossing.distancePx[0]);
+            expect(ledge.motion.distance).toBeLessThanOrEqual(T.movingCrossing.distancePx[1]);
+            expect(stepsHold([...chunk.route, ...chunk.altRoute], all, WIDTH, GAME_CONFIG)).toBe(true);
+            continue;
+          }
           const { distance, periodMs, axis } = ledge.motion;
           expect(axis).toBe('x');
           expect(distance).toBeGreaterThanOrEqual(ENDLESS_CONFIG.moving.minDistancePx);
@@ -193,6 +205,7 @@ describe('endless generator', () => {
       }
     }
     expect(moving).toBeGreaterThan(8);
+    expect(mainMovers).toBeGreaterThan(0);
   });
 
   it('rejects a bad chunk index', () => {

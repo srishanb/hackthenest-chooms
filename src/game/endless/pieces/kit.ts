@@ -14,7 +14,7 @@ import type { EndlessConfig } from '../../../config/endless.config';
 import type { EndlessPiecesConfig } from '../../../config/endless-pieces.config';
 import { stepPlayer } from '../../player/movement';
 import { descentAt, standOn, type JumpArc } from '../jump-arcs';
-import { replayStep, stepsHold, type RouteStep } from '../route-replay';
+import { createRouteChecker, replayStep, stepsHold, type RouteStep } from '../route-replay';
 import type { Candidate, DropSpec, JumpSpec, PieceFeature, PieceKit, PieceRun } from './types';
 
 /** What has been laid in this chunk before the current piece: the anchor first. */
@@ -44,6 +44,8 @@ export interface KitSetup {
 /** The kit, plus what only the generator uses: taking the last ledge back out of a run. */
 export interface GeneratorKit extends PieceKit {
   takeBack(run: PieceRun): void;
+  /** The steps among `steps` that `ledge` could catch, given `ledges` (see route-replay.ts). */
+  affected(steps: readonly RouteStep[], ledge: PlatformData, ledges: readonly PlatformData[]): RouteStep[];
 }
 
 const IDLE = { left: false, right: false, jump: false };
@@ -78,6 +80,27 @@ export function traceDrop(game: GameConfig, depthPx: number): Array<{ dx: number
   return points;
 }
 
+/** True when `candidate` keeps the required distance from every ledge in `placed` (itself excepted). */
+export function keepsClear(candidate: PlatformData, placed: readonly PlatformData[], config: EndlessConfig): boolean {
+  for (const other of placed) {
+    if (other.id === candidate.id) continue;
+    // A ledge that slides needs its whole travel kept clear, not only where it rests.
+    const travel = (other.motion?.distance ?? 0) + (candidate.motion?.distance ?? 0);
+    const gapX = Math.abs(candidate.x - other.x) - (candidate.width + other.width) / 2 - travel;
+    const gapY = Math.abs(topOf(candidate) - topOf(other));
+    if (gapX < config.sideClearancePx && gapY < config.stackClearancePx) return false;
+  }
+  return true;
+}
+
+/**
+ * The highest a jump's feet may reach in a chunk (world y): below every ledge of the next chunk but its
+ * anchor (all at least `rise.minPx` above that anchor), so a chunk built alone is never caught by the next.
+ */
+export function apexLimitTop(nextFloor: PlatformData, config: EndlessConfig): number {
+  return topOf(nextFloor) - config.rise.minPx + config.apexClearancePx;
+}
+
 export function createPieceKit(setup: KitSetup): GeneratorKit {
   const { random, index, game, config, tuning, arcs, committed, nextFloor } = setup;
   const worldWidth = game.view.width;
@@ -87,10 +110,9 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
   const maxRisePx = lerp(config.rise.easyMaxPx, config.rise.hardMaxPx, setup.difficulty);
   const ceilingTopPx = nextTop + config.finalRise.minPx;
   const floorTopPx = setup.floorTopPx - config.rise.minPx;
-  // A jump's feet must stay below every ledge of the next chunk but its anchor (all at least
-  // `rise.minPx` above that anchor), so a chunk built alone can never be caught by the next one.
-  const apexLimitTopPx = nextTop - config.rise.minPx + config.apexClearancePx;
+  const apexLimitTopPx = apexLimitTop(nextFloor, config);
 
+  const checker = createRouteChecker(worldWidth, game);
   const between = (range: readonly [number, number]): number => lerp(range[0], range[1], random());
   const others = (run: PieceRun): PlatformData[] => [...committed.ledges, ...run.ledges];
   const allSteps = (run: PieceRun): RouteStep[] => [...run.steps, ...run.altSteps, ...committed.steps, ...committed.altSteps];
@@ -110,18 +132,7 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
     return `${prefix}${used + 1}`;
   };
 
-  /** True when `candidate` keeps the required distance from every ledge in `placed`. */
-  const clear = (candidate: PlatformData, placed: readonly PlatformData[]): boolean => {
-    for (const other of placed) {
-      if (other.id === candidate.id) continue;
-      // A ledge that slides needs its whole travel kept clear, not only where it rests.
-      const travel = (other.motion?.distance ?? 0) + (candidate.motion?.distance ?? 0);
-      const gapX = Math.abs(candidate.x - other.x) - (candidate.width + other.width) / 2 - travel;
-      const gapY = Math.abs(topOf(candidate) - topOf(other));
-      if (gapX < config.sideClearancePx && gapY < config.stackClearancePx) return false;
-    }
-    return true;
-  };
+  const clear = (candidate: PlatformData, placed: readonly PlatformData[]): boolean => keepsClear(candidate, placed, config);
 
   /** Inside the walls (over its whole travel) and between the chunk's floor limit and ceiling. */
   const inBounds = (ledge: PlatformData): boolean => {
@@ -204,8 +215,9 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
       const placed = others(run);
       if (!clear(ledge, placed)) return false;
       const all = [...placed, ledge, nextFloor];
-      // The new step first: it is the one most likely to miss.
-      if (!stepsHold([step, ...allSteps(run)], all, worldWidth, game)) return false;
+      // The new step first: it is the one most likely to miss. Earlier steps only where the new ledge could catch them.
+      const earlier = checker.affected(allSteps(run), ledge, [...placed, nextFloor]);
+      if (!stepsHold([step, ...earlier], all, worldWidth, game)) return false;
       run.ledges.push(ledge);
       (alt ? run.altSteps : run.steps).push(step);
       return true;
@@ -250,7 +262,8 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
             if (takeoffX < minX || takeoffX > maxX) continue;
             const step: RouteStep = { fromId: from.id, toId: target.id, takeoffX, chargeSteps: arc.chargeSteps, direction };
             if (replayStep(step, all, worldWidth, game) !== target.id) continue;
-            if (!stepsHold([step, ...allSteps(run)], all, worldWidth, game)) continue;
+            // No ledge was added, so only the new step (with any moving ledges at both ends) needs checking.
+            if (!stepsHold([step], all, worldWidth, game)) continue;
             (alt ? run.altSteps : run.steps).push(step);
             return true;
           }
@@ -269,6 +282,8 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
       run.ledges[at] = moved;
       return moved;
     },
+
+    affected: (steps, ledge, ledges) => checker.affected(steps, ledge, ledges),
 
     takeBack(run) {
       const ledge = run.ledges.pop();

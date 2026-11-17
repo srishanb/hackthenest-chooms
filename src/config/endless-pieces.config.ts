@@ -26,11 +26,22 @@ export const ENDLESS_PIECES_CONFIG = {
   approachAttempts: 40,
   /** Ledges the approach ladder may take back in one try (bounds the worst case). */
   approachBacktracks: 24,
+  /** Pieces that may be taken back, last first, when the approach cannot reach the next anchor from where they ended. */
+  approachUndoPieces: 2,
   /**
    * Whole tries at one chunk. Each try uses fresh random numbers from (seed, index, try); the last try
    * lays no pieces, only the plain ladder (the generator before set pieces), so a chunk always comes out.
    */
   chunkTries: 3,
+  /**
+   * A chunk of pieces has more main-path ledges than a plain ladder (traverses and pillar rows gain
+   * little height per jump), so the chance of an optional side ledge per main-path ledge, and of wax on
+   * a main-path ledge (endless.config.ts `sideLedgeChance`, `pathWaxChance`), is scaled by this. It keeps
+   * the number of side ledges, the safety net they make under a miss, and the wax per chunk near what
+   * the plain ladder had (measured with tools/endless/chunk-map.ts --compare).
+   */
+  sideLedgeScale: 0.7,
+  pathWaxScale: 0.75,
   /** A piece reaches its full weight this many chunks after it unlocks (it fades in, no unit). */
   fadeInChunks: 3,
   /** The plain ladder: a few ordinary jumps, mostly zigzag, sometimes straight up. Breathing room. */
@@ -39,13 +50,13 @@ export const ENDLESS_PIECES_CONFIG = {
    * Staircase: the same jump again and again in one direction, a rhythm section. One charge level
    * (`levels`, 1..12 of `chargeLevels`) is picked for the whole stair; each step rises by `risePx`.
    */
-  staircase: { weight: 2, fromChunk: 0, demanding: false, steps: [4, 6] as const, risePx: [54, 72] as const, levels: [6, 8] as const },
+  staircase: { weight: 2, fromChunk: 0, demanding: false, steps: [4, 6] as const, risePx: [54, 70] as const, levels: [7, 9] as const },
   /**
    * Traverse: a long run sideways across the screen that gains little height, before the path turns
    * up. Each hop rises `risePx` (never lower: a landing below the takeoff would shake the candle) and
    * travels at least `minHopPx` sideways. `minSpanPx` is the least total sideways distance.
    */
-  traverse: { weight: 2, fromChunk: 1, demanding: false, hops: [3, 5] as const, risePx: [0, 30] as const, minHopPx: 130, minSpanPx: 380 },
+  traverse: { weight: 1.2, fromChunk: 1, demanding: false, hops: [3, 4] as const, risePx: [0, 30] as const, minHopPx: 170, minSpanPx: 400 },
   /**
    * Zigzag shaft: up a narrow column of space, from one side of it to the other. The column is
    * `columnPx` wide (between the outer edges of its ledges); ledges are `widthScale` of ordinary width.

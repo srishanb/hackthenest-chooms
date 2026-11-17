@@ -49,7 +49,7 @@ describe('long falls through the streamed climb', () => {
     let falls = 0;
     let ground = 0;
     for (const seed of [3, 42, 1234, 98765]) {
-      for (const startChunk of [4, 7, 11]) {
+      for (const startChunk of [1, 4, 7, 11]) {
         for (const direction of [-1, 1] as const) {
           const generator = createEndlessGenerator(seed, G, C);
           const anchor = generator.floor(startChunk);
@@ -77,33 +77,35 @@ describe('long falls through the streamed climb', () => {
       }
     }
     expect(falls).toBeGreaterThanOrEqual(18);
-    // A slip can cost many chunks (one of these falls passes through about nine), and the ground
-    // catches a fall that nothing else does.
-    expect(longest).toBeGreaterThan(5 * C.chunkHeightPx);
+    // A slip can cost more than two whole chunks. (Before set pieces, D-34, one of these falls passed
+    // through about nine; traverses and pillar rows now catch more falls, but a fall is still unbounded.)
+    expect(longest).toBeGreaterThan(2 * C.chunkHeightPx);
     expect(ground).toBeGreaterThan(0);
   });
 
-  it('a candle dropped from high up at many places falls as far as it must, sometimes all the way to the ground', () => {
-    const generator = createEndlessGenerator(42, G, C);
-    const top = 6;
-    const full = everything(generator, top + C.keepAbove);
+  it('a candle dropped from high up at many places falls as far as it must, sometimes more than a whole chunk', () => {
     let longest = 0;
-    // Drop from above the top chunk's anchor, at many places across the screen.
-    for (let x = 14; x < G.view.width - 14; x += 9) {
-      const start = teleportPlayer(x, C.baseFloorTopPx - top * C.chunkHeightPx - 200);
-      const stream = createChunkStream(generator, C);
-      stream.update(feetOf(start));
-      const streamed = fall(start, IDLE, () => stream.platforms(), (state) => {
-        stream.update(feetOf(state), fallAhead(state));
-        return stream.chunks().length;
-      });
-      const reference = fall(start, IDLE, () => full);
-      // Every drop lands somewhere (a ledge or the ground): nothing falls out of the world.
-      expect(streamed.landedOn, `x ${x}`).not.toBeNull();
-      expect(streamed.landedOn, `x ${x}`).toBe(reference.landedOn);
-      expect(streamed.steps).toBe(reference.steps);
-      expect(streamed.mostChunks).toBeLessThanOrEqual(C.keepBelow + C.keepAbove + 1);
-      longest = Math.max(longest, streamed.dropPx);
+    for (const seed of [42, 7, 98765]) {
+      const generator = createEndlessGenerator(seed, G, C);
+      const top = 6;
+      const full = everything(generator, top + C.keepAbove);
+      // Drop from above the top chunk's anchor, at many places across the screen.
+      for (let x = 14; x < G.view.width - 14; x += 9) {
+        const start = teleportPlayer(x, C.baseFloorTopPx - top * C.chunkHeightPx - 200);
+        const stream = createChunkStream(generator, C);
+        stream.update(feetOf(start));
+        const streamed = fall(start, IDLE, () => stream.platforms(), (state) => {
+          stream.update(feetOf(state), fallAhead(state));
+          return stream.chunks().length;
+        });
+        const reference = fall(start, IDLE, () => full);
+        // Every drop lands somewhere (a ledge or the ground): nothing falls out of the world.
+        expect(streamed.landedOn, `seed ${seed} x ${x}`).not.toBeNull();
+        expect(streamed.landedOn, `seed ${seed} x ${x}`).toBe(reference.landedOn);
+        expect(streamed.steps).toBe(reference.steps);
+        expect(streamed.mostChunks).toBeLessThanOrEqual(C.keepBelow + C.keepAbove + 1);
+        longest = Math.max(longest, streamed.dropPx);
+      }
     }
     // Some straight drops pass through more than one whole chunk: a fall is no longer bounded.
     expect(longest).toBeGreaterThan(C.chunkHeightPx);
