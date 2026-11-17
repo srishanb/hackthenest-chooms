@@ -18,7 +18,7 @@ export const STRINGS = {
   'tutorial.terrain.title': 'Read the ledges',
   'tutorial.terrain.keys': 'Outlined ledges · long falls · side ledges',
   'tutorial.terrain.body': 'A pale line marks every ledge a jump can reach from where you stand. Only the ground spans the whole width: a missed jump falls until a ledge below catches it, however far that is.',
-  'tutorial.terrain.tip': 'Side ledges are optional. They hold extra wax, and getting back may mean dropping down. In the snow, pale blue ledges are ice: you slide when you walk, so stop early.',
+  'tutorial.terrain.tip': 'Side ledges are optional. They hold extra wax, and getting back may mean dropping down. In the snow, pale blue ledges are ice: you slide when you walk, so stop early. Higher up, red mushroom caps throw you high, cracked ledges fall soon after you land, and pale rising streaks hold you up.',
   'narrator.voice.title': 'Narrator voice',
   'narrator.voice.label': 'Voice',
   'narrator.voice.chris': 'Chris · conversational',

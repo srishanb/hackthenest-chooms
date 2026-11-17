@@ -12,7 +12,7 @@
  * before the next update, and loads every chunk down to there, so even a very fast fall never steps
  * past a ledge whose chunk was not loaded. The ground (chunk 0) catches the fall in the end.
  */
-import type { PlatformData } from '../../shared/contracts/content';
+import type { PlatformData, UpdraftData } from '../../shared/contracts/content';
 import type { EndlessConfig } from '../../config/endless.config';
 import type { EndlessChunk, EndlessGenerator, WaxSpot } from './generator';
 
@@ -32,6 +32,8 @@ export interface ChunkStream {
   /** Every live ledge, lowest chunk first. The array is replaced only when the window moves. */
   platforms(): readonly PlatformData[];
   wax(): readonly WaxSpot[];
+  /** Every live updraft column (Decision D-36), for the physics and the drawing. Replaced with `platforms()`. */
+  updrafts(): readonly UpdraftData[];
   chunks(): readonly EndlessChunk[];
   /** Highest and lowest y of the live window, for the reach search and the camera. */
   bounds(): { top: number; bottom: number };
@@ -41,6 +43,7 @@ export function createChunkStream(generator: EndlessGenerator, config: EndlessCo
   let live: EndlessChunk[] = [];
   let platforms: PlatformData[] = [];
   let wax: WaxSpot[] = [];
+  let updrafts: UpdraftData[] = [];
   let first = -1;
   let last = -1;
 
@@ -70,10 +73,12 @@ export function createChunkStream(generator: EndlessGenerator, config: EndlessCo
       // One more anchor above the window: the top chunk's last jump lands on it.
       platforms = [...live.flatMap((chunk) => chunk.platforms), generator.floor(to + 1)];
       wax = live.flatMap((chunk) => chunk.wax);
+      updrafts = live.flatMap((chunk) => chunk.updrafts);
       return change;
     },
     platforms: () => platforms,
     wax: () => wax,
+    updrafts: () => updrafts,
     chunks: () => live,
     bounds: () => ({
       top: generator.floorTopPx(Math.max(0, last) + 1) - config.chunkHeightPx / 2,

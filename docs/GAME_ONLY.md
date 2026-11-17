@@ -90,6 +90,10 @@ can recognise, then an approach ladder whose last jump lands on the next anchor.
 | Big leap | One near-full charge from the edge across a wide, empty gap | 3 |
 | Ice run | Snow only: icy ledges, each jump from the far edge of the ice | 3 |
 | Moving crossing | Over a ledge that slides; the only time the main path moves | 4 |
+| Mushroom launch | A jump onto a bounce cap throws the candle up a gap no jump can cross (D-36) | 5 |
+| Crumbling run | Two to four crumbling ledges, each a small hop; no time to wait (D-36) | 6 |
+| Updraft rise | A short hop into a rising column, carried up a tall empty stretch; calm (D-36) | 7 |
+| Updraft crossing | A strong jump floats across a gap too wide for any jump, through drifting air (D-36) | 8 |
 
 The seed picks them, with rules: never the same piece twice in a row, a calm piece after a demanding one, and a new
 piece fades in over a few chunks after it unlocks. Every jump and every drop of the route (and the fork's other way)
@@ -106,6 +110,37 @@ ledges catch it, so the height a player loses per chunk is about the same or a l
 piece; `--bot 300 --start 6` lets the route bot climb headless; `--time` measures generation time.
 `npx tsx tools/endless/par.ts` prints how long the route bot needs per chunk and what that means for fuel. Tuning
 numbers are in `src/config/endless.config.ts` and `src/config/endless-pieces.config.ts`.
+
+### Bounce caps, crumbling ledges and updraft columns (Decision D-36)
+
+Three kinds of terrain the climb generates from chunk 5 up, one at a time. They are game mechanics with fixed
+rules (`src/config/game.config.ts` `ledgeKinds`), never driven by the signal.
+
+- **Bounce cap** (a big red mushroom with white spots). Coming down on it never lands: it throws the candle
+  upward at 1000 px/s plus 0.12 x the landing speed, at most 1100 px/s, so 357 to 432 px high, about twice a full
+  jump (217 px). Sideways speed carries through, so the jump onto the cap aims the throw; normal air steering
+  corrects it. A held jump key does nothing at the bounce (you never stand on a cap, so you cannot charge there;
+  the key stays latched until released). The cap squashes for a moment when it throws.
+- **Crumbling ledge** (bare, pale cracked stone, with an orange dashed edge). It holds 400 ms after the candle
+  first stands on it: time for a small charge (8 of 12 levels), never a full one. It shakes as the time runs out,
+  its cracks glow, then it drops away in bits and is not solid; a charge on it is lost and the candle falls
+  normally. It grows back 3 s after it fell, once the candle is at least 48 px from where it was.
+- **Updraft column** (a faint column of rising streaks with pale dashed sides). While the candle is in the air
+  inside it, rising faster than the column's own speed it feels half gravity (so a jump floats about twice as
+  high), and slower than that its speed eases (time constant 0.25 s) to a gentle 60 px/s sink in a drift column
+  or a 150 px/s climb in a rise column. Leaving it restores gravity at once. Standing on a ledge inside one does
+  nothing.
+
+How the route proves them: `stepPlayer` does the bouncing and the lift (updraft columns are passed with each step),
+and `stepWorld` (`src/game/player/world-step.ts`) steps the crumble timers right after the candle, in the game
+and in the generator's replay alike. A mushroom launch is one route step (the jump that lands on the cap, `via`
+the cap); an updraft piece's step names the column it rides (`ride`). The kit traces the real flight through
+caps and columns and puts the next ledge where it comes down, and a flight that bounces or crosses a column must
+also land from takeoffs 2 px either side. A step from a crumbling ledge is replayed from where the step before
+landed (`arriveX`): the walk plus the charge must fit in 400 ms less a 60 ms margin. A drop never falls through a
+column or onto a cap. Every column stays inside its chunk, so neighbouring chunks never change each other's
+routes. In the dark each kind keeps a small accent above the darkness, faded with the light like the ledge
+outlines. Reduced motion: no shake, no falling bits, still streaks.
 
 ## Composure without a headset
 

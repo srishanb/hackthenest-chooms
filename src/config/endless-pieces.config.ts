@@ -98,6 +98,52 @@ export const ENDLESS_PIECES_CONFIG = {
    * at both ends of its travel. Unlocks with the moving side ledges (endless.config.ts `moving.fromChunk`).
    */
   movingCrossing: { weight: 2, fromChunk: 4, demanding: true, distancePx: [18, 30] as const, periodMs: [4200, 6000] as const, risePx: [0, 50] as const },
+  /**
+   * The special ledges of Decision D-36 unlock one at a time up the ramp, from these chunks (about 30 m
+   * each): bounce caps, then crumbling ledges, then updraft columns. Each piece below needs its kind.
+   */
+  ledgeKinds: { bounceFromChunk: 5, crumbleFromChunk: 6, updraftFromChunk: 7 },
+  /**
+   * Time the route keeps in hand on a crumbling ledge (ms): the walk from the landing plus the charge
+   * must fit in the ledge's hold time (game.config.ts `ledgeKinds.crumble.holdMs`, 400 ms) less this, so
+   * a person (and the bot, which may stop up to 1.5 px early) has a few frames of slack.
+   */
+  crumbleMarginMs: 60,
+  /** Physics steps a traced flight (`fly`) is followed before it counts as lost (120 per second, so 5 s). */
+  flightSteps: 600,
+  /** Takeoffs and charges tried for one traced flight (`fly`) before the piece gives up (bounds the cost). */
+  flightAttempts: 10,
+  /**
+   * Mushroom launch: an ordinary jump (charge `levels`, 1..12) down or across onto a bounce cap
+   * (`capWidthPx` wide, its top `capRisePx` above the takeoff: negative is lower), whose throw carries the
+   * candle to a ledge `risePx` above the takeoff: more than the 217 px a full jump can rise, so the cap is
+   * the only way. Nothing is under the gap; a miss falls.
+   */
+  mushroomLaunch: { weight: 1.6, fromChunk: 5, demanding: true, capWidthPx: [80, 104] as const, capRisePx: [-70, 10] as const,
+    risePx: [240, 330] as const, levels: [3, 9] as const },
+  /**
+   * Crumbling run: `ledges` crumbling ledges in a row, each a small hop (charge `levels`, at most 6 of 12,
+   * which fits the hold time) of `risePx`, at least `minHopPx` sideways. There is no time to wait: each
+   * one falls 400 ms after you land on it.
+   */
+  crumblingRun: { weight: 2.4, fromChunk: 6, demanding: true, ledges: [2, 4] as const, risePx: [-10, 46] as const, levels: [3, 6] as const,
+    minHopPx: 60, widthScale: 0.85 },
+  /**
+   * Updraft rise: a rise column (`widthPx` x `heightPx`) beside the takeoff ledge, `gapPx` from its edge;
+   * a short sideways hop (charge `levels`) into it is carried up and drifts out of its far side onto a
+   * ledge `risePx` above the takeoff (a plain jump rises 169..217 px at most). Calm: a floaty breather.
+   */
+  updraftRise: { weight: 1.5, fromChunk: 7, demanding: false, widthPx: [200, 280] as const, heightPx: [320, 460] as const,
+    risePx: [180, 320] as const, levels: [3, 7] as const, gapPx: [10, 50] as const },
+  /**
+   * Updraft crossing: a drift column (`widthPx` x `heightPx`) in the middle of a wide gap; a strong jump
+   * (charge `levels`) through it floats across onto a ledge at `risePx`, at least `beyondJumpPx` farther
+   * than any ordinary jump reaches at that height (a full jump reaches about 360 px at the same height;
+   * through the column it carries 100..150 px further), so only the column crosses it. `gapPx` is the air between the takeoff ledge and
+   * the column. Nothing is under it but the climb below.
+   */
+  updraftCrossing: { weight: 1.4, fromChunk: 8, demanding: true, widthPx: [170, 240] as const, heightPx: [240, 320] as const,
+    risePx: [-40, 100] as const, levels: [8, 12] as const, beyondJumpPx: 24, gapPx: [30, 90] as const },
 } as const;
 
 export type EndlessPiecesConfig = typeof ENDLESS_PIECES_CONFIG;

@@ -7,15 +7,19 @@
  */
 import { ENDLESS_PIECES_CONFIG as T } from '../../../config/endless-pieces.config';
 import { BIG_LEAP } from './big-leap';
+import { CRUMBLING_RUN } from './crumbling-run';
 import { DETOUR } from './detour';
 import { FORK } from './fork';
 import { ICE_RUN } from './ice-run';
 import { LADDER } from './ladder';
 import { MOVING_CROSSING } from './moving-crossing';
+import { MUSHROOM_LAUNCH } from './mushroom-launch';
 import { PILLARS } from './pillars';
 import { STAIRCASE } from './staircase';
 import { TRAVERSE } from './traverse';
 import type { Piece, PieceFeature } from './types';
+import { UPDRAFT_CROSSING } from './updraft-crossing';
+import { UPDRAFT_RISE } from './updraft-rise';
 import { ZIGZAG } from './zigzag';
 
 export interface PieceEntry {
@@ -44,4 +48,9 @@ export const PIECES: readonly PieceEntry[] = [
   line(FORK, T.fork),
   line(ICE_RUN, T.iceRun, ['snow']),
   line(MOVING_CROSSING, T.movingCrossing, ['moving']),
+  // The special ledges of Decision D-36, each once its kind has unlocked (features.ts).
+  line(MUSHROOM_LAUNCH, T.mushroomLaunch, ['bounce']),
+  line(CRUMBLING_RUN, T.crumblingRun, ['crumble']),
+  line(UPDRAFT_RISE, T.updraftRise, ['updraft']),
+  line(UPDRAFT_CROSSING, T.updraftCrossing, ['updraft']),
 ];

@@ -11,6 +11,10 @@ export type GameEvent =
   | { type: 'wax_collected'; id: string; x: number; y: number; collected: number; total: number | null }
   | { type: 'jump'; charge01: number }
   | { type: 'land'; platformId: string; fallHeightPx: number }
+  /** A bounce cap threw the candle upward at `launchSpeed` px/s (endless climb, Decision D-36). */
+  | { type: 'bounce'; platformId: string; launchSpeed: number }
+  /** A crumbling ledge fell away (endless climb, Decision D-36). */
+  | { type: 'ledge_crumbled'; platformId: string }
   | { type: 'fall'; heightPx: number; big: boolean }
   /** Fell below the active section boundary and was returned to its checkpoint. */
   | { type: 'section_reset'; sectionId: string }
