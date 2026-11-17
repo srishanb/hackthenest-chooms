@@ -25,11 +25,25 @@ export const WALL_TYPE = 'wall';
 const EDGE_EPSILON = 1e-6;
 const NO_WALLS: readonly PlatformBox[] = [];
 
+/**
+ * The last list scanned and its walls. A replay or the game passes the same platform list for many steps in a
+ * row, so it is scanned once, not every physics step (a list is never changed in place while it is in use; the
+ * length and the end entries are compared as well, to be safe).
+ */
+let lastList: readonly PlatformBox[] | null = null;
+let lastLength = -1;
+let lastFirst: PlatformBox | undefined;
+let lastEnd: PlatformBox | undefined;
+let lastWalls: readonly PlatformBox[] = NO_WALLS;
+
 /** The walls among `platforms` (the same empty list when there are none, which is every world without the switch). */
 export function wallsIn(platforms: readonly PlatformBox[]): readonly PlatformBox[] {
+  if (platforms === lastList && platforms.length === lastLength && platforms[0] === lastFirst && platforms[platforms.length - 1] === lastEnd) return lastWalls;
   let walls: PlatformBox[] | null = null;
   for (const platform of platforms) if (platform.type === WALL_TYPE) (walls ??= []).push(platform);
-  return walls ?? NO_WALLS;
+  lastList = platforms; lastLength = platforms.length; lastFirst = platforms[0]; lastEnd = platforms[platforms.length - 1];
+  lastWalls = walls ?? NO_WALLS;
+  return lastWalls;
 }
 
 interface Body { width: number; height: number }

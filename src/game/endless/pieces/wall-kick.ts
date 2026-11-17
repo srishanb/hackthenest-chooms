@@ -15,8 +15,8 @@ import type { Piece } from './types';
 import { firm, standSpan, wallAt } from './walls';
 
 /** Wall placements tried, and takeoffs and charges tried against each (bounds the cost). */
-const WALL_TRIES = 3;
-const FLIGHT_TRIES = 5;
+const WALL_TRIES = 2;
+const FLIGHT_TRIES = 4;
 
 export const WALL_KICK: Piece = {
   id: 'wall-kick',

@@ -364,11 +364,12 @@ function sweep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: n
   // A wall step's flights are long and checked many times over, so its downward moves are kept (see `drops`).
   const drops: number[] | undefined = step.kicks ? [] : undefined;
   const traced = (): ((state: PlayerState) => void) => {
+    if (!drops) return onState;
     let previousFeet = startFeet;
     return (state) => {
       onState(state);
       const feet = state.y + half;
-      if (drops && feet > previousFeet) drops.push(state.x, previousFeet, feet);
+      if (feet > previousFeet) drops.push(state.x, previousFeet, feet);
       previousFeet = feet;
     };
   };

@@ -20,8 +20,8 @@ import type { Piece } from './types';
 import { firm, standSpan, wallAt } from './walls';
 
 /** Chimney shapes tried, and charges tried in each (bounds the cost). */
-const SHAPE_TRIES = 3;
-const FLIGHT_TRIES = 3;
+const SHAPE_TRIES = 2;
+const FLIGHT_TRIES = 2;
 
 export const CHIMNEY: Piece = {
   id: 'chimney',

@@ -211,9 +211,9 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
     }
   }
 
-  const next: PlayerState = { x, y, vx, vy, grounded, platformId, charging, chargeMs, jumpLatch, launchVx, takeoffBottomY, windVx,
-    // The wall fields exist only in a world with walls, so a world without them keeps exactly the old state.
-    ...(hasWalls || state.kickWallId !== undefined ? { kickWallId, wallLockMs } : {}) };
+  const next: PlayerState = { x, y, vx, vy, grounded, platformId, charging, chargeMs, jumpLatch, launchVx, takeoffBottomY, windVx };
+  // The wall fields exist only in a world with walls, so a world without them keeps exactly the old state.
+  if (hasWalls || state.kickWallId !== undefined) { next.kickWallId = kickWallId; next.wallLockMs = wallLockMs; }
   if (wallKicked) return { state: next, events: { jumped, landed, ...(bounced ? { bounced } : {}), wallKicked } };
   return { state: next, events: bounced ? { jumped, landed, bounced } : jumped || landed ? { jumped, landed } : NO_EVENTS };
 }
