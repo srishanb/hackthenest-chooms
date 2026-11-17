@@ -178,6 +178,19 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
       && top >= ceilingTopPx && top <= floorTopPx && ledge.width >= 1;
   };
 
+  /** The farthest sideways an ordinary jump (no steering, no column) travels to come down `risePx` above its takeoff. */
+  const plainReach = new Map<number, number>();
+  const plainReachPx = (risePx: number): number => {
+    const key = Math.round(risePx);
+    let best = plainReach.get(key);
+    if (best === undefined) {
+      best = 0;
+      for (const arc of arcs.side) best = Math.max(best, descentAt(arc, key, 0)?.after.dx ?? 0);
+      plainReach.set(key, best);
+    }
+    return best;
+  };
+
   const kit: GeneratorKit = {
     random, index, difficulty: setup.difficulty, features: setup.features, game, config, tuning, worldWidth,
     maxRisePx, ceilingTopPx, floorTopPx,
@@ -401,6 +414,8 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
         const column = spec.ride ? columns(run).find((c) => c.id === spec.ride) : undefined;
         let bounced = !spec.via, entered = false, left = !column, topFeet = topOf(from);
         let previousVy: number | null = null;
+        let previousFeet = topFeet;
+        // `feet` is a whole-pixel ledge top the feet cross on this physics step (from `previousFeet` down to theirs).
         const spots: Array<{ x: number; feet: number; top: number }> = [];
         const flight = flyStep(probe, placedNow(), worldWidth, game, { updrafts: columns(run), maxSteps: tuning.flightSteps, onState: (state) => {
           const feet = state.y + body.height / 2;
@@ -412,24 +427,32 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
             if (inside) entered = true; else if (entered) left = true;
           }
           topFeet = Math.min(topFeet, feet);
-          if (bounced && left && state.vy > 0 && !state.grounded) spots.push({ x: state.x, feet, top: topFeet });
+          const crossed = Math.ceil(previousFeet);
+          previousFeet = feet;
+          // Like a traced arc (jump-arcs.ts `descentAt`): only once it peaked `apexClearancePx` above, so it arrives falling.
+          if (bounced && left && state.vy > 0 && !state.grounded && crossed <= feet && topFeet <= crossed - config.apexClearancePx) {
+            spots.push({ x: state.x, feet: crossed, top: topFeet });
+          }
         } });
         if (spec.via && !flight.bounces.includes(spec.via)) continue;
         const rise = (feet: number): number => topOf(from) - feet;
+        const width = Math.round(spec.widthPx);
+        const slack = width / 2 - body.width / 2 - config.landingInsetPx;
+        if (slack < 0) return null;
+        // Only spots a ledge can be put under: at the asked height, inside the chunk, with room to the walls.
         const usable = spots.filter((spot) => rise(spot.feet) >= spec.risePx[0] && rise(spot.feet) <= spec.risePx[1]
-          && Math.abs(spot.x - probe.takeoffX) >= (spec.minDxPx ?? 0) && spot.top >= apexLimitTopPx);
+          && Math.abs(spot.x - probe.takeoffX) >= Math.max(spec.minDxPx ?? 0, spec.beyondJumpPx === undefined ? 0 : plainReachPx(rise(spot.feet)) + spec.beyondJumpPx)
+          && spot.top >= apexLimitTopPx
+          && spot.feet >= ceilingTopPx && spot.feet <= floorTopPx
+          && spot.x - slack <= worldWidth - width / 2 - 2 && spot.x + slack >= width / 2 + 2);
         // A pinned takeoff flies the same way every time: if it gives no spot now, it never will.
         if (!usable.length) { if (fixed) return null; continue; }
         const spot = usable[Math.floor(random() * usable.length)]!;
-        const width = Math.round(spec.widthPx);
-        const slack = width / 2 - body.width / 2 - config.landingInsetPx;
-        if (slack < 0) continue;
         const centre = Math.round(Math.min(worldWidth - width / 2 - 2, Math.max(width / 2 + 2,
           spot.x + (random() * 2 - 1) * slack * (spec.jitter01 ?? 0.6))));
         if (Math.abs(centre - spot.x) > slack) continue;
         const id = nextId(run, 'p');
-        // Its top a hair above where the feet passed, so the feet cross it on that step.
-        const top = Math.floor(spot.feet) - 1;
+        const top = spot.feet;
         const ledge: PlatformData = { id, x: centre, y: top + config.ledgeHeightPx / 2, width, height: config.ledgeHeightPx, type: 'static' };
         const step: RouteStep = { ...probe, toId: id };
         if (kit.accept(run, { ledge, step, landingX: spot.x, apexTopPx: spot.top })) {

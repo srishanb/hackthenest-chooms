@@ -124,7 +124,7 @@ export const ENDLESS_PIECES_CONFIG = {
    * which fits the hold time) of `risePx`, at least `minHopPx` sideways. There is no time to wait: each
    * one falls 400 ms after you land on it.
    */
-  crumblingRun: { weight: 1.8, fromChunk: 6, demanding: true, ledges: [2, 4] as const, risePx: [-10, 46] as const, levels: [3, 6] as const,
+  crumblingRun: { weight: 2.4, fromChunk: 6, demanding: true, ledges: [2, 4] as const, risePx: [-10, 46] as const, levels: [3, 6] as const,
     minHopPx: 60, widthScale: 0.85 },
   /**
    * Updraft rise: a rise column (`widthPx` x `heightPx`) beside the takeoff ledge, `gapPx` from its edge;
@@ -135,12 +135,13 @@ export const ENDLESS_PIECES_CONFIG = {
     risePx: [180, 320] as const, levels: [3, 7] as const, gapPx: [10, 50] as const },
   /**
    * Updraft crossing: a drift column (`widthPx` x `heightPx`) in the middle of a wide gap; a strong jump
-   * (charge `levels`) through it floats across onto a ledge at least `minDxPx` away (a full plain jump
-   * reaches about 360 px at the same height) at `risePx`. `gapPx` is the air between the takeoff ledge and
+   * (charge `levels`) through it floats across onto a ledge at `risePx`, at least `beyondJumpPx` farther
+   * than any ordinary jump reaches at that height (a full jump reaches about 360 px at the same height;
+   * through the column it carries 100..150 px further), so only the column crosses it. `gapPx` is the air between the takeoff ledge and
    * the column. Nothing is under it but the climb below.
    */
-  updraftCrossing: { weight: 1.4, fromChunk: 8, demanding: true, widthPx: [150, 220] as const, heightPx: [240, 320] as const,
-    risePx: [-50, 50] as const, levels: [8, 12] as const, minDxPx: 390, gapPx: [40, 110] as const },
+  updraftCrossing: { weight: 1.4, fromChunk: 8, demanding: true, widthPx: [170, 240] as const, heightPx: [240, 320] as const,
+    risePx: [-40, 100] as const, levels: [8, 12] as const, beyondJumpPx: 24, gapPx: [30, 90] as const },
 } as const;
 
 export type EndlessPiecesConfig = typeof ENDLESS_PIECES_CONFIG;

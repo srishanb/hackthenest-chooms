@@ -8,24 +8,17 @@
  * column with the real physics and puts the far ledge where it comes down.
  */
 import type { Piece } from './types';
-import { roomier } from './shared';
+import { besideColumn } from './columns';
 
 export const UPDRAFT_CROSSING: Piece = {
   id: 'updraft-crossing',
   label: 'updraft crossing: a strong jump floats across a wide gap through drifting air',
   build(kit, entry, run) {
     const tuning = kit.tuning.updraftCrossing;
-    const direction = roomier(kit, entry);
-    const width = Math.round(kit.between(tuning.widthPx));
-    const height = Math.round(kit.between(tuning.heightPx));
-    const top = entry.y - entry.height / 2;
-    const x = Math.round(entry.x + direction * (entry.width / 2 + kit.between(tuning.gapPx) + width / 2));
-    const column = { id: `e${kit.index}:u${kit.columns().length + run.updrafts.length + 1}`, kind: 'drift' as const,
-      x, y: Math.round(top - height * 0.35), width, height };
-    if (!kit.addColumn(run, column)) return false;
-    return kit.fly(run, entry, {
-      risePx: tuning.risePx, direction, widthPx: kit.ledgeWidth(), levels: tuning.levels, takeoff: 'front',
-      minDxPx: tuning.minDxPx, ride: column.id,
-    }) !== null;
+    // Most of the column above the takeoff height, where the jump flies.
+    return besideColumn(kit, entry, run, 'drift', tuning, (top, height) => top - height * 0.35, (direction, column) => ({
+      risePx: tuning.risePx, direction, widthPx: kit.ledgeWidth(), levels: tuning.levels, takeoff: 'front' as const,
+      beyondJumpPx: tuning.beyondJumpPx, ride: column,
+    }));
   },
 };

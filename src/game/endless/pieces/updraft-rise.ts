@@ -8,25 +8,19 @@
  * traces the flight through the column with the real physics and puts the ledge where it comes down.
  */
 import type { Piece } from './types';
-import { roomier } from './shared';
+import { besideColumn } from './columns';
 
 export const UPDRAFT_RISE: Piece = {
   id: 'updraft-rise',
   label: 'updraft rise: a rising column carries the candle up a tall stretch',
   build(kit, entry, run) {
     const tuning = kit.tuning.updraftRise;
-    const direction = roomier(kit, entry);
-    const width = Math.round(kit.between(tuning.widthPx));
-    const height = Math.round(kit.between(tuning.heightPx));
-    const top = entry.y - entry.height / 2;
-    const x = Math.round(entry.x + direction * (entry.width / 2 + kit.between(tuning.gapPx) + width / 2));
-    // The column starts a little below the ledge's top, so a hop off its edge goes straight in.
-    const bottom = top + 30;
-    const column = { id: `e${kit.index}:u${kit.columns().length + run.updrafts.length + 1}`, kind: 'rise' as const,
-      x, y: Math.round(bottom - height / 2), width, height };
-    if (!kit.addColumn(run, column)) return false;
-    return kit.fly(run, entry, {
-      risePx: tuning.risePx, direction, widthPx: kit.ledgeWidth(), levels: tuning.levels, takeoff: 'front', ride: column.id,
-    }) !== null;
+    return besideColumn(kit, entry, run, 'rise', tuning, (top, height) => {
+      // The column starts a little below the ledge's top, so a hop off its edge goes straight in.
+      const bottom = top + 30;
+      return bottom - height / 2;
+    }, (direction, column) => ({
+      risePx: tuning.risePx, direction, widthPx: kit.ledgeWidth(), levels: tuning.levels, takeoff: 'front' as const, ride: column,
+    }));
   },
 };

@@ -92,6 +92,8 @@ export interface FlightSpec {
   takeoff?: 'any' | 'front';
   /** The landing must be at least this far sideways from the takeoff (px). */
   minDxPx?: number;
+  /** The landing must be this much farther sideways (px) than any ordinary jump reaches at that height. */
+  beyondJumpPx?: number;
   /** The flight must come down on this bounce cap first (its id; the cap must already be in the run). */
   via?: string;
   /** The flight must have been inside this column and left it before it lands. */

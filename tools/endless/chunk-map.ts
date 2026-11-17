@@ -15,7 +15,8 @@
  *
  * Map legend: one character is 12 px across and 20 px down. Each ledge is drawn with its piece's
  * letter (see LETTERS); `#` is an anchor, `s` an optional side ledge, lower case marks a fork's
- * alternative branch, `~` after a ledge means it slides, `*` that it is icy, `v` a drop step's takeoff.
+ * alternative branch, `~` after a ledge means it slides, `*` that it is icy, `v` a drop step's takeoff,
+ * `%` that it crumbles; `o` is a bounce cap, and `:` the left and right sides of an updraft column.
  */
 import { ENDLESS_CONFIG as C } from '../../src/config/endless.config';
 import { ENDLESS_PIECES_CONFIG as T } from '../../src/config/endless-pieces.config';
@@ -26,13 +27,16 @@ import { grownMovement, waxGrowth } from '../../src/game/candle/growth';
 import { createChunkStream } from '../../src/game/endless/chunk-stream';
 import { createEndlessGenerator, type EndlessChunk } from '../../src/game/endless/generator';
 import { createRouteBot } from '../../src/game/endless/route-bot';
+import { NO_CRUMBLE } from '../../src/game/player/crumble';
 import { stepPlayer, teleportPlayer } from '../../src/game/player/movement';
+import { stepWorld } from '../../src/game/player/world-step';
 import type { PlayerState } from '../../src/game/player/types';
 import { platformsAt } from '../../src/game/world/environment';
 
 const LETTERS: Record<string, string> = {
   ladder: 'L', staircase: 'S', traverse: 'T', zigzag: 'Z', detour: 'D', pillars: 'P', 'big-leap': 'B',
   fork: 'F', 'ice-run': 'I', 'moving-crossing': 'M', approach: 'A',
+  'mushroom-launch': 'O', 'crumbling-run': 'C', 'updraft-rise': 'R', 'updraft-crossing': 'X',
 };
 const CELL_X = 12;
 const CELL_Y = 20;
@@ -61,12 +65,22 @@ function drawChunk(chunk: EndlessChunk, next: PlatformData): string {
     const to = Math.min(cols - 1, Math.ceil((ledge.x + ledge.width / 2) / CELL_X) - 1);
     if (row < 0 || row >= rows) return;
     for (let c = from; c <= to; c++) grid[row]![c] = char;
-    const mark = ledge.motion ? '~' : ledge.type === 'slippery' ? '*' : '';
+    const mark = ledge.motion ? '~' : ledge.type === 'slippery' ? '*' : ledge.type === 'crumbling' ? '%' : '';
     if (mark && to + 1 < cols) grid[row]![to + 1] = mark;
   };
   put(next, '#');
+  for (const column of chunk.updrafts) {
+    const left = Math.max(0, Math.floor((column.x - column.width / 2) / CELL_X));
+    const right = Math.min(cols - 1, Math.floor((column.x + column.width / 2) / CELL_X));
+    for (let r = 0; r < rows; r++) {
+      const y = topY + r * CELL_Y;
+      if (Math.abs(y - column.y) > column.height / 2) continue;
+      grid[r]![left] = ':'; grid[r]![right] = ':';
+    }
+  }
   for (const ledge of chunk.platforms) {
     if (ledge.id.endsWith(':floor')) { put(ledge, '#'); continue; }
+    if (ledge.type === 'bounce') { put(ledge, 'o'); continue; }
     if (ledge.id.includes(':s')) { put(ledge, 's'); continue; }
     const letter = LETTERS[pieceOf.get(ledge.id) ?? ''] ?? '?';
     put(ledge, alt.has(ledge.id) && !chunk.route.some((step) => step.toId === ledge.id) ? letter.toLowerCase() : letter);
@@ -80,7 +94,8 @@ function drawChunk(chunk: EndlessChunk, next: PlatformData): string {
   const lines = grid.map((row, r) => `${String(Math.round(chunk.floorTopPx - (topY + r * CELL_Y))).padStart(5)} |${row.join('')}|`);
   const pieces = chunk.pieces.map((span) => {
     const steps = chunk.route.slice(span.firstStep, span.firstStep + span.stepCount)
-      .map((step) => (step.kind === 'drop' ? 'drop' : `j${step.chargeSteps}${step.direction < 0 ? '<' : step.direction > 0 ? '>' : '^'}`));
+      .map((step) => (step.kind === 'drop' ? 'drop'
+        : `j${step.chargeSteps}${step.direction < 0 ? '<' : step.direction > 0 ? '>' : '^'}${step.via ? ' (bounce)' : step.ride ? ' (ride)' : ''}`));
     const alt = span.altSteps.length ? ` | other way: ${span.altSteps.map((step) => `j${step.chargeSteps}`).join(' ')}` : '';
     return `  ${LETTERS[span.id] ?? '?'} ${span.id.padEnd(16)} ${steps.join(' ')}${alt}`;
   });
@@ -103,12 +118,15 @@ function botClimb(seconds: number, startChunk: number): string {
   let best = 0;
   let bestAtMs = 0;
   let stalls = 0;
+  let crumble = NO_CRUMBLE;
   stream.update(feet());
   for (let ms = 0; ms <= seconds * 1000; ms += STEP_MS) {
     const platforms = platformsAt(stream.platforms(), ms, STEP_MS);
     const movement = flag('no-growth') !== undefined ? G : grownMovement(G, waxGrowth(taken.size, WAX_CONFIG.growthPerWax, WAX_CONFIG.growthCapWax));
     const input = bot.input(state, stream.chunks().flatMap((chunk) => chunk.route), (id) => platforms.find((p) => p.id === id), { base: G, current: movement });
-    state = stepPlayer(state, input, platforms, G.view.width, movement, STEP_MS).state;
+    // The game's own step: crumbling ledges and updraft columns as in the scene.
+    const stepped = stepWorld(state, crumble, input, platforms, stream.updrafts(), G.view.width, movement, STEP_MS);
+    state = stepped.player; crumble = stepped.crumble;
     stream.update(feet(), 2 * Math.max(0, state.vy) / G.stepHz);
     for (const drop of stream.wax()) {
       if (Math.abs(state.x - drop.x) <= G.player.width / 2 + WAX_CONFIG.pickupRadiusPx
