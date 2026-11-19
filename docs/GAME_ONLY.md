@@ -156,7 +156,7 @@ outlines, and the outlines' reach search goes through the columns, so a ledge re
 Off by default. With the switch off every chunk for every seed is byte-for-byte what it was before walls existed,
 and the classic climb never meets a wall. With `?walls=1` (it works in a production build too, so it can be tried on
 the preview deployment) two pieces may appear from chunk 1, and such a run never saves a best height. Try
-`?walls=1&seed=36`: its chunk 1 (the first screen above the ground) holds a wall kick and a chimney.
+`?walls=1&seed=166`: its chunk 1 (just above the ground) holds a wall kick and then a chimney.
 
 - **Wall** (a grey stone pillar of block courses, lit on one face, mossy or snow-capped on top; at night dashed
   lavender lines up both faces). Solid: its sides stop the body, its underside stops a head, its top can be stood
