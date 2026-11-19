@@ -178,13 +178,11 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
     return true;
   };
   /** The takeoffs a step from a crumbling ledge may use: within walking reach of the landing in the time left. */
-  /** `arrivalX` as placed now, remembered until a ledge or column is added (only a cap or column could move it). */
-  const arrivals = new Map<string, number | null>();
-  const arrivalNow = (run: PieceRun, ledge: PlatformData): number | null => {
-    const key = `${ledge.id}|${others(run).length}|${columns(run).length}|${allSteps(run).length}`;
-    if (!arrivals.has(key)) arrivals.set(key, arrivalX(run, ledge));
-    return arrivals.get(key)!;
-  };
+  /**
+   * `arrivalX` as placed now. Not remembered: a remembered value keyed on ledge id and counts went stale when
+   * a discarded try left a different ledge with the same id and the same counts (seed 717 chunk 7).
+   */
+  const arrivalNow = (run: PieceRun, ledge: PlatformData): number | null => arrivalX(run, ledge);
   const crumbleReach = (run: PieceRun, ledge: PlatformData, chargeSteps: number): { arriveX: number; walkPx: number } | null => {
     const budget = crumbleBudgetMs(ledge);
     if (!Number.isFinite(budget)) return null;
