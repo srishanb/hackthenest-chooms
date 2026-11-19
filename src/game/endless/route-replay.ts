@@ -23,6 +23,11 @@
  *     stood there: a reaction allowance (a held key does nothing on landing, so a person presses after it;
  *     endless-pieces.config.ts `crumbleReactionMs`), then the walk from where the step before it landed
  *     (`arriveX`) to `takeoffX`, then the charge step by step; if the ledge falls first, the step misses.
+ *
+ * Walls (Decision D-37, behind `?walls=1`) are platforms of type `wall`, so every replay already meets them.
+ * A step that kicks off walls (`kicks`, `walls`) presses its keys after takeoff as wall-kicks.ts says, and
+ * must kick exactly the walls it names, in order. Such a step, and any flight that touches a wall, is
+ * sensitive: it must also land from shifted takeoffs, and a kick step from earlier and later presses.
  */
 import type { GameConfig } from '../../shared/contracts/config';
 import type { PlatformData } from '../../shared/contracts/content';
@@ -30,9 +35,11 @@ import { CRUMBLING_TYPE, type CrumbleState } from '../player/crumble';
 import { stepPlayer } from '../player/movement';
 import { updraftAt } from '../player/updraft';
 import type { PlatformBox, PlayerInput, PlayerState, UpdraftBox } from '../player/types';
+import { WALL_TYPE, wallBeside, wallsIn } from '../player/wall';
 import { stepWorld } from '../player/world-step';
 import { ENDLESS_PIECES_CONFIG } from '../../config/endless-pieces.config';
 import { launch, standOn } from './jump-arcs';
+import { createKickPolicy } from './wall-kicks';
 
 /**
  * One step of the guaranteed path. A jump: stand at `takeoffX` on `fromId`, hold jump `chargeSteps`,
@@ -53,6 +60,12 @@ export interface RouteStep {
   ride?: string;
   /** From a crumbling ledge: where the step onto it landed (world x), so the walk to `takeoffX` is counted. */
   arriveX?: number;
+  /**
+   * A wall step (Decision D-37): after takeoff, physics steps to wait within kick reach of each wall before the
+   * jump press that kicks off it (wall-kicks.ts). `walls` names the walls kicked, in order.
+   */
+  kicks?: number[];
+  walls?: string[];
 }
 
 const IDLE = { left: false, right: false, jump: false };
@@ -68,6 +81,21 @@ const SENSITIVE_SHIFTS: readonly number[] = (() => {
   return shifts;
 })();
 const END_SHIFTS: readonly number[] = [-ENDLESS_PIECES_CONFIG.takeoffTolerancePx, ENDLESS_PIECES_CONFIG.takeoffTolerancePx];
+/**
+ * Press-time offsets a wall step must also land from (physics steps): every one in +-`kickTimingSteps`. Every one,
+ * not the ends: where a kick flight lands is not monotonic in the press time (an early press can carry it on to a
+ * higher ledge).
+ */
+const KICK_OFFSETS: readonly number[] = (() => {
+  const range = ENDLESS_PIECES_CONFIG.walls.kickTimingSteps;
+  const offsets: number[] = [];
+  for (let k = 1; k <= range; k++) offsets.push(-k, k);
+  return offsets;
+})();
+/** The variants a wall step is proved from besides its own (route-replay `stepLands`): every takeoff shift, every press offset. */
+export function wallStepVariants(): Array<{ shiftPx: number; kickOffsetSteps: number }> {
+  return [...SENSITIVE_SHIFTS.map((shiftPx) => ({ shiftPx, kickOffsetSteps: 0 })), ...KICK_OFFSETS.map((kickOffsetSteps) => ({ shiftPx: 0, kickOffsetSteps }))];
+}
 /** The longest flight followed (physics steps, 50 s): a slow sink in a drift column is long, but never this long. */
 const MAX_FLIGHT_STEPS = 6000;
 
@@ -111,6 +139,10 @@ export interface Flight {
   topFeetY: number;
   /** True when the body was inside an updraft column at some point of the flight. */
   inColumn: boolean;
+  /** Walls it kicked off, in order (Decision D-37). */
+  kicks: string[];
+  /** True when the body touched a wall's side at some point of the flight. */
+  touchedWall: boolean;
 }
 
 /**
@@ -129,13 +161,21 @@ export function flyStep(step: RouteStep, platforms: readonly PlatformBox[], worl
     /** Give up after this many physics steps in the air (default 6000, 50 s). */
     maxSteps?: number;
     /** Off a crumbling ledge: time the candle stands still after landing before it walks (ms; default the config's reaction allowance). */
-    reactionMs?: number } = {}): Flight {
+    reactionMs?: number;
+    /** A wall step: press each kick this many physics steps later than stored (negative: earlier). */
+    kickOffsetSteps?: number;
+    /** Called once per wall kick, with the wall's id. */
+    onKick?: (wallId: string) => void } = {}): Flight {
   const updrafts = options.updrafts ?? [];
   const environment = { updrafts };
   const from = platforms.find((platform) => platform.id === step.fromId);
   const half = config.player.height / 2;
   let inColumn = false;
-  const missed = (state: PlayerState, bounces: string[]): Flight => ({ landedId: null, state, bounces, topFeetY: state.y + half, inColumn });
+  let touchedWall = false;
+  const kicks: string[] = [];
+  const walls = wallsIn(platforms);
+  const policy = step.kicks ? createKickPolicy(step.kicks, step.direction, config, options.kickOffsetSteps ?? 0) : null;
+  const missed = (state: PlayerState, bounces: string[]): Flight => ({ landedId: null, state, bounces, topFeetY: state.y + half, inColumn, kicks, touchedWall });
   if (!from) return missed(standOn({ id: '', x: 0, y: 0, width: 0, height: 0 }, 0, config), []);
   const stepMs = 1000 / config.stepHz;
   let state = standOn(from, step.takeoffX + (options.shiftPx ?? 0), config);
@@ -144,6 +184,7 @@ export function flyStep(step: RouteStep, platforms: readonly PlatformBox[], worl
   const seen = (next: PlayerState): void => {
     state = next; topFeetY = Math.min(topFeetY, next.y + half);
     if (!inColumn && updrafts.length && !next.grounded && updraftAt(updrafts, next.x, next.y)) inColumn = true;
+    if (!touchedWall && walls.length && wallBeside(walls, next.x, next.y, config.player, 0.01)) touchedWall = true;
     options.onState?.(next);
   };
   // A crumbling ledge: the world stepper runs the walk-in time, the charge and the flight, as the game does.
@@ -154,12 +195,14 @@ export function flyStep(step: RouteStep, platforms: readonly PlatformBox[], worl
       const out = stepWorld(state, crumble, input, platforms, updrafts, worldWidth, config, stepMs);
       crumble = out.crumble;
       if (out.events.bounced) bounces.push(out.events.bounced.platformId);
+      if (out.events.wallKicked) { kicks.push(out.events.wallKicked.wallId); options.onKick?.(out.events.wallKicked.wallId); }
       seen(out.player);
       return;
     }
     simulatedSteps++;
     const out = stepPlayer(state, input, platforms, worldWidth, config, stepMs, environment);
     if (out.events.bounced) bounces.push(out.events.bounced.platformId);
+    if (out.events.wallKicked) { kicks.push(out.events.wallKicked.wallId); options.onKick?.(out.events.wallKicked.wallId); }
     seen(out.state);
   };
   if (step.kind === 'drop') {
@@ -185,11 +228,13 @@ export function flyStep(step: RouteStep, platforms: readonly PlatformBox[], worl
   // bounced, nor for a step riding a column (a fall into a rise column comes back up).
   const target = options.stopPastTarget && !step.ride ? platforms.find((platform) => platform.id === step.toId) : undefined;
   const pastPx = target ? target.y - target.height / 2 + 1 : Infinity;
+  // Nor for a wall step before its last kick (it may slide down below its target first).
+  const kicksDone = (): boolean => !step.kicks || kicks.length >= step.kicks.length;
   for (let i = 0; i < (options.maxSteps ?? MAX_FLIGHT_STEPS); i++) {
-    if (state.grounded) return { landedId: state.platformId, state, bounces, topFeetY, inColumn };
-    const past = state.vy > 0 && state.y + half > pastPx && (!step.via || bounces.includes(step.via));
+    if (state.grounded) return { landedId: state.platformId, state, bounces, topFeetY, inColumn, kicks, touchedWall };
+    const past = state.vy > 0 && state.y + half > pastPx && (!step.via || bounces.includes(step.via)) && kicksDone();
     if (state.y > lowest || past) return missed(state, bounces);
-    advance(IDLE);
+    advance(policy ? policy.input(state, walls) : IDLE);
   }
   return missed(state, bounces);
 }
@@ -199,11 +244,19 @@ export function flyStep(step: RouteStep, platforms: readonly PlatformBox[], worl
  * it falls out of `platforms`. `shiftPx` moves the takeoff point (a jump from a moving ledge).
  */
 export function replayStep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: number, config: GameConfig,
-  shiftPx = 0, stopPastTarget = false, updrafts: readonly UpdraftBox[] = []): string | null {
-  const flight = flyStep(step, platforms, worldWidth, config, { shiftPx, stopPastTarget, updrafts });
+  shiftPx = 0, stopPastTarget = false, updrafts: readonly UpdraftBox[] = [], kickOffsetSteps = 0): string | null {
+  const flight = flyStep(step, platforms, worldWidth, config, { shiftPx, stopPastTarget, updrafts, kickOffsetSteps });
   // A step meant to bounce must really bounce on its cap.
   if (step.via && !flight.bounces.includes(step.via)) return null;
+  // A wall step must kick exactly its walls, in order.
+  if (!kickedAsStored(step, flight)) return null;
   return flight.landedId;
+}
+
+/** A wall step kicked exactly the walls it names, in order; any other step kicked none. */
+export function kickedAsStored(step: RouteStep, flight: Flight): boolean {
+  const wanted = step.walls ?? [];
+  return flight.kicks.length === wanted.length && flight.kicks.every((id, i) => id === wanted[i]);
 }
 
 /**
@@ -217,10 +270,10 @@ export function chargeDriftPx(ledge: PlatformData, chargeSteps: number, config: 
   return Math.min(2 * motion.distance, (2 * Math.PI * motion.distance / motion.periodMs) * chargeMs) + DRIFT_TOLERANCE_PX;
 }
 
-/** A jump whose landing depends finely on where it starts: through a column, off a cap, or off a crumbling ledge (not a moving one). */
+/** A jump whose landing depends finely on where it starts: through a column, off a cap, along a wall, or off a crumbling ledge (not a moving one). */
 function sensitive(step: RouteStep, flight: Flight, from: PlatformBox | undefined): boolean {
   if (step.kind === 'drop' || (from as { motion?: unknown } | undefined)?.motion) return false;
-  return flight.bounces.length > 0 || flight.inColumn || from?.type === CRUMBLING_TYPE;
+  return flight.bounces.length > 0 || flight.inColumn || flight.touchedWall || flight.kicks.length > 0 || from?.type === CRUMBLING_TYPE;
 }
 
 /**
@@ -229,7 +282,7 @@ function sensitive(step: RouteStep, flight: Flight, from: PlatformBox | undefine
  * its landing smoothly with the takeoff and only its walk time grows with the distance, so the two ends do.
  */
 function shiftsFor(flight: Flight): readonly number[] {
-  return flight.bounces.length > 0 || flight.inColumn ? SENSITIVE_SHIFTS : END_SHIFTS;
+  return flight.bounces.length > 0 || flight.inColumn || flight.touchedWall || flight.kicks.length > 0 ? SENSITIVE_SHIFTS : END_SHIFTS;
 }
 
 /**
@@ -244,12 +297,14 @@ function shiftsFor(flight: Flight): readonly number[] {
  */
 function stepLands(step: RouteStep, ledges: readonly PlatformData[], worldWidth: number, config: GameConfig, updrafts: readonly UpdraftBox[]): boolean {
   const flight = flyStep(step, ledges, worldWidth, config, { stopPastTarget: true, updrafts });
-  if (flight.landedId !== step.toId || (step.via && !flight.bounces.includes(step.via))) return false;
-  // A walk-off starts its fall wherever the walk's last step happens to end, so it may not cross a column or a cap.
-  if (step.kind === 'drop' && (flight.bounces.length || flight.inColumn)) return false;
+  if (flight.landedId !== step.toId || (step.via && !flight.bounces.includes(step.via)) || !kickedAsStored(step, flight)) return false;
+  // A walk-off starts its fall wherever the walk's last step happens to end, so it may not cross a column, a cap or touch a wall.
+  if (step.kind === 'drop' && (flight.bounces.length || flight.inColumn || flight.touchedWall)) return false;
   const from = ledges.find((ledge) => ledge.id === step.fromId);
   if (sensitive(step, flight, from)
     && !shiftsFor(flight).every((shift) => replayStep(step, ledges, worldWidth, config, shift, true, updrafts) === step.toId)) return false;
+  // A wall step: a person presses a little early or late; it must land from every such press time too.
+  if (step.kicks && !KICK_OFFSETS.every((offset) => replayStep(step, ledges, worldWidth, config, 0, true, updrafts, offset) === step.toId)) return false;
   if (!from?.motion) return true;
   if (step.kind === 'drop') return false;
   const drift = chargeDriftPx(from, step.chargeSteps, config);
@@ -283,6 +338,12 @@ export interface StepBox {
   top: number;
   /** Lowest feet y. */
   bottom: number;
+  /**
+   * A wall step only (Decision D-37): every downward move of the feet in every traced variant, as flat triples
+   * (body x after the move, feet y before, feet y after). A one-way ledge can change such a flight only by
+   * catching one of these moves, so a ledge that crosses none of them is skipped (`affected`).
+   */
+  drops?: number[];
 }
 
 /**
@@ -300,12 +361,25 @@ function sweep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: n
     box.left = Math.min(box.left, state.x); box.right = Math.max(box.right, state.x);
     box.top = Math.min(box.top, state.y + half); box.bottom = Math.max(box.bottom, state.y + half);
   };
-  const flight = flyStep(step, platforms, worldWidth, config, { updrafts, onState });
+  // A wall step's flights are long and checked many times over, so its downward moves are kept (see `drops`).
+  const drops: number[] | undefined = step.kicks ? [] : undefined;
+  const traced = (): ((state: PlayerState) => void) => {
+    if (!drops) return onState;
+    let previousFeet = startFeet;
+    return (state) => {
+      onState(state);
+      const feet = state.y + half;
+      if (feet > previousFeet) drops.push(state.x, previousFeet, feet);
+      previousFeet = feet;
+    };
+  };
+  const flight = flyStep(step, platforms, worldWidth, config, { updrafts, onState: traced() });
   if (flight.landedId === null) return null;
   if (sensitive(step, flight, from)) {
-    for (const shiftPx of shiftsFor(flight)) flyStep(step, platforms, worldWidth, config, { updrafts, onState, shiftPx });
+    for (const shiftPx of shiftsFor(flight)) flyStep(step, platforms, worldWidth, config, { updrafts, onState: traced(), shiftPx });
   }
-  return box;
+  if (step.kicks) for (const kickOffsetSteps of KICK_OFFSETS) flyStep(step, platforms, worldWidth, config, { updrafts, onState: traced(), kickOffsetSteps });
+  return drops ? { ...box, drops } : box;
 }
 
 /**
@@ -344,14 +418,31 @@ export function createRouteChecker(worldWidth: number, config: GameConfig): Rout
     affected(steps, ledge, ledges, updrafts = []) {
       const travel = ledge.motion?.distance ?? 0;
       const top = ledge.y - ledge.height / 2;
+      if (ledge.type === WALL_TYPE) return steps.filter((step) => {
+        // A wall stops a body at any side, so every step whose body passes near its box (kick reach included).
+        const box = boxOf(step, ledges, updrafts);
+        if (!box || onMover(step, ledges)) return true;
+        const { width, height } = config.player;
+        const near = (config.wallMoves?.kickReachPx ?? 0) + 2;
+        return box.right + width / 2 + near >= ledge.x - ledge.width / 2 && box.left - width / 2 - near <= ledge.x + ledge.width / 2
+          && box.bottom + near >= ledge.y - ledge.height / 2 && box.top - height - near <= ledge.y + ledge.height / 2;
+      });
       return steps.filter((step) => {
         const box = boxOf(step, ledges, updrafts);
         // No box (the step does not land as things are): always replay it, so the check fails as it should.
         if (!box) return true;
         // A step that starts or ends on a moving ledge is always replayed in full.
         if (onMover(step, ledges)) return true;
-        return top >= box.top - 2 && top <= box.bottom + 2
+        const inBox = top >= box.top - 2 && top <= box.bottom + 2
           && ledge.x + ledge.width / 2 + travel > box.left - reach && ledge.x - ledge.width / 2 - travel < box.right + reach;
+        if (!inBox || !box.drops || travel) return inBox;
+        // A wall step: only if the ledge's top is crossed by one of its traced downward moves (with the ledge reach).
+        const halfSpan = (config.player.width + ledge.width) / 2 + (config.falling?.ledgeReachPx ?? 0) + 1;
+        const drops = box.drops;
+        for (let i = 0; i < drops.length; i += 3) {
+          if (top >= drops[i + 1]! - 0.5 && top <= drops[i + 2]! + 0.5 && Math.abs(drops[i]! - ledge.x) < halfSpan) return true;
+        }
+        return false;
       });
     },
     affectedByColumn(steps, column, ledges, updrafts = []) {

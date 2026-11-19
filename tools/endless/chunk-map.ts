@@ -12,11 +12,13 @@
  *   --compare                    set pieces against the plain ladder (no pieces): ledges, jumps and
  *                                wax per chunk, and the height lost when a jump is missed by a charge level
  *   --time [--plain]             generation time per chunk, average and worst, over many seeds
+ *   --walls                      with any of the above: the `?walls=1` prototype (wall kick and chimney, D-37)
  *
  * Map legend: one character is 12 px across and 20 px down. Each ledge is drawn with its piece's
  * letter (see LETTERS); `#` is an anchor, `s` an optional side ledge, lower case marks a fork's
  * alternative branch, `~` after a ledge means it slides, `*` that it is icy, `v` a drop step's takeoff,
- * `%` that it crumbles; `o` is a bounce cap, and `:` the left and right sides of an updraft column.
+ * `%` that it crumbles; `o` is a bounce cap, `:` the left and right sides of an updraft column, and `|` a wall
+ * (with `--walls`; `K` marks a wall kick's ledges, `H` a chimney's).
  */
 import { ENDLESS_CONFIG as C } from '../../src/config/endless.config';
 import { ENDLESS_PIECES_CONFIG as T } from '../../src/config/endless-pieces.config';
@@ -37,6 +39,7 @@ const LETTERS: Record<string, string> = {
   ladder: 'L', staircase: 'S', traverse: 'T', zigzag: 'Z', detour: 'D', pillars: 'P', 'big-leap': 'B',
   fork: 'F', 'ice-run': 'I', 'moving-crossing': 'M', approach: 'A',
   'mushroom-launch': 'O', 'crumbling-run': 'C', 'updraft-rise': 'R', 'updraft-crossing': 'X',
+  'wall-kick': 'K', chimney: 'H',
 };
 const CELL_X = 12;
 const CELL_Y = 20;
@@ -49,6 +52,8 @@ const flag = (name: string): string | undefined => {
   return at < 0 ? undefined : args[at + 1] && !args[at + 1]!.startsWith('--') ? args[at + 1] : '';
 };
 const seed = Number(flag('seed') ?? 42);
+/** `--walls`: the wall slide and wall jump prototype (`?walls=1`, Decision D-37). */
+const options = { walls: flag('walls') !== undefined };
 
 /** One chunk as a text map, top row first, with the piece list under it. */
 function drawChunk(chunk: EndlessChunk, next: PlatformData): string {
@@ -78,7 +83,17 @@ function drawChunk(chunk: EndlessChunk, next: PlatformData): string {
       grid[r]![left] = ':'; grid[r]![right] = ':';
     }
   }
+  for (const wall of chunk.platforms.filter((p) => p.type === 'wall')) {
+    const left = Math.max(0, Math.floor((wall.x - wall.width / 2) / CELL_X));
+    const right = Math.min(cols - 1, Math.ceil((wall.x + wall.width / 2) / CELL_X) - 1);
+    for (let r = 0; r < rows; r++) {
+      const y = topY + r * CELL_Y;
+      if (Math.abs(y - wall.y) > wall.height / 2) continue;
+      for (let c = left; c <= right; c++) grid[r]![c] = '|';
+    }
+  }
   for (const ledge of chunk.platforms) {
+    if (ledge.type === 'wall') continue;
     if (ledge.id.endsWith(':floor')) { put(ledge, '#'); continue; }
     if (ledge.type === 'bounce') { put(ledge, 'o'); continue; }
     if (ledge.id.includes(':s')) { put(ledge, 's'); continue; }
@@ -95,7 +110,7 @@ function drawChunk(chunk: EndlessChunk, next: PlatformData): string {
   const pieces = chunk.pieces.map((span) => {
     const steps = chunk.route.slice(span.firstStep, span.firstStep + span.stepCount)
       .map((step) => (step.kind === 'drop' ? 'drop'
-        : `j${step.chargeSteps}${step.direction < 0 ? '<' : step.direction > 0 ? '>' : '^'}${step.via ? ' (bounce)' : step.ride ? ' (ride)' : ''}`));
+        : `j${step.chargeSteps}${step.direction < 0 ? '<' : step.direction > 0 ? '>' : '^'}${step.via ? ' (bounce)' : step.ride ? ' (ride)' : ''}${step.kicks ? ` (${step.kicks.length} kick${step.kicks.length > 1 ? 's' : ''})` : ''}`));
     const alt = span.altSteps.length ? ` | other way: ${span.altSteps.map((step) => `j${step.chargeSteps}`).join(' ')}` : '';
     return `  ${LETTERS[span.id] ?? '?'} ${span.id.padEnd(16)} ${steps.join(' ')}${alt}`;
   });
@@ -106,7 +121,7 @@ function drawChunk(chunk: EndlessChunk, next: PlatformData): string {
 /** The route bot climbing headless, as in the game: moving ledges move, wax is collected and grows the candle. */
 function botClimb(seconds: number, startChunk: number): string {
   const generator = flag('plain') !== undefined
-    ? createEndlessGenerator(seed, G, C, { ...T, sideLedgeScale: 1, pathWaxScale: 1 }, []) : createEndlessGenerator(seed, G, C);
+    ? createEndlessGenerator(seed, G, C, { ...T, sideLedgeScale: 1, pathWaxScale: 1 }, []) : createEndlessGenerator(seed, G, C, undefined, undefined, options);
   const stream = createChunkStream(generator, C);
   const bot = createRouteBot();
   const anchor = generator.floor(startChunk);
@@ -119,6 +134,7 @@ function botClimb(seconds: number, startChunk: number): string {
   let bestAtMs = 0;
   let stalls = 0;
   let crumble = NO_CRUMBLE;
+  let kicks = 0;
   stream.update(feet());
   for (let ms = 0; ms <= seconds * 1000; ms += STEP_MS) {
     const platforms = platformsAt(stream.platforms(), ms, STEP_MS);
@@ -127,6 +143,7 @@ function botClimb(seconds: number, startChunk: number): string {
     // The game's own step: crumbling ledges and updraft columns as in the scene.
     const stepped = stepWorld(state, crumble, input, platforms, stream.updrafts(), G.view.width, movement, STEP_MS);
     state = stepped.player; crumble = stepped.crumble;
+    if (stepped.events.wallKicked) kicks++;
     stream.update(feet(), 2 * Math.max(0, state.vy) / G.stepHz);
     for (const drop of stream.wax()) {
       if (Math.abs(state.x - drop.x) <= G.player.width / 2 + WAX_CONFIG.pickupRadiusPx
@@ -144,7 +161,7 @@ function botClimb(seconds: number, startChunk: number): string {
     }
     if (Math.round(ms) % 5000 === 0) out.push(`  ${String(Math.round(ms / 1000)).padStart(4)} s  height ${String(height).padStart(6)} px  best ${best}  chunk ${stream.indexAt(feet())}  wax ${taken.size}`);
   }
-  return [`route bot, seed ${seed}, from chunk ${startChunk}:`, ...out, `  stalls: ${stalls}`].join('\n');
+  return [`route bot, seed ${seed}, from chunk ${startChunk}${options.walls ? ' (walls)' : ''}:`, ...out, `  stalls: ${stalls}${options.walls ? `  wall kicks: ${kicks}` : ''}`].join('\n');
 }
 
 /** Ledges, jumps and wax per chunk, and the height lost when a jump is held 12 physics steps (two charge levels of 6 steps) too short or too long. */
@@ -187,7 +204,7 @@ function compare(): string {
 /** Generation time per chunk over many seeds, after a warm-up. */
 function time(): string {
   const make = (s: number) => (flag('plain') !== undefined
-    ? createEndlessGenerator(s, G, C, { ...T, sideLedgeScale: 1, pathWaxScale: 1 }, []) : createEndlessGenerator(s, G, C));
+    ? createEndlessGenerator(s, G, C, { ...T, sideLedgeScale: 1, pathWaxScale: 1 }, []) : createEndlessGenerator(s, G, C, undefined, undefined, options));
   for (let s = 0; s < 3; s++) { const generator = make(900 + s); for (let i = 0; i < 10; i++) generator.chunk(i); }
   const times: number[] = [];
   for (let s = 1; s <= 60; s++) {
@@ -204,7 +221,7 @@ if (flag('time') !== undefined) console.log(time());
 else if (flag('compare') !== undefined) console.log(compare());
 else if (flag('bot') !== undefined) console.log(botClimb(Number(flag('bot') || 300), Number(flag('start') ?? 0)));
 else {
-  const generator = createEndlessGenerator(seed, G, C);
+  const generator = createEndlessGenerator(seed, G, C, undefined, undefined, options);
   const chunks = (flag('chunks') ?? '0,1,2,3,4,5,6,7,8,9').split(',').map(Number);
   for (const index of chunks) console.log(drawChunk(generator.chunk(index), generator.floor(index + 1)));
 }

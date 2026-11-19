@@ -38,6 +38,13 @@ export const LEDGE_KINDS_VIEW_CONFIG = {
    * given a pale 2 px core beside it so it still reads against dark rock. Elsewhere the pale look stays.
    */
   updraftSnow: { fill: 0x2c5f8c, fillAlpha: 0.16, streak: 0x1b5f9e, core: 0xe4f7ff, streakAlpha: 0.85, edge: 0x1b5f9e, edgeAlpha: 0.75 },
+  /**
+   * Walls (Decision D-37, only with `?walls=1`): a stone pillar of courses of blocks, lit on one face and shaded
+   * on the other, mossy on top (snow-capped in the snow bands). Upright and grey where a ledge is flat and
+   * earthy, so it never reads as something to land on from the side. `coursePx` is the height of a block row.
+   */
+  wall: { stone: 0x5d6070, light: 0x8d92a6, shade: 0x34363f, seam: 0x40424d, moss: 0x5f8f3e, mossDark: 0x46702d, snow: 0xeef4fb,
+    coursePx: 16, mossTufts: 3 },
   /** Accents drawn above the darkness, faded with the light like the ledge outlines (outline-fade.ts). */
-  night: { cap: 0xff9fb4, crumble: 0xffb15c, updraft: 0x9fe6ff, alpha: 0.85 },
+  night: { cap: 0xff9fb4, crumble: 0xffb15c, updraft: 0x9fe6ff, wall: 0xc9b8ff, alpha: 0.85 },
 } as const;

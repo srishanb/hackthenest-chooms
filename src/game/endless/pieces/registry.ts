@@ -7,6 +7,7 @@
  */
 import { ENDLESS_PIECES_CONFIG as T } from '../../../config/endless-pieces.config';
 import { BIG_LEAP } from './big-leap';
+import { CHIMNEY } from './chimney';
 import { CRUMBLING_RUN } from './crumbling-run';
 import { DETOUR } from './detour';
 import { FORK } from './fork';
@@ -20,6 +21,7 @@ import { TRAVERSE } from './traverse';
 import type { Piece, PieceFeature } from './types';
 import { UPDRAFT_CROSSING } from './updraft-crossing';
 import { UPDRAFT_RISE } from './updraft-rise';
+import { WALL_KICK } from './wall-kick';
 import { ZIGZAG } from './zigzag';
 
 export interface PieceEntry {
@@ -53,4 +55,7 @@ export const PIECES: readonly PieceEntry[] = [
   line(CRUMBLING_RUN, T.crumblingRun, ['crumble']),
   line(UPDRAFT_RISE, T.updraftRise, ['updraft']),
   line(UPDRAFT_CROSSING, T.updraftCrossing, ['updraft']),
+  // Wall slide and wall jump (Decision D-37): only with the `?walls=1` switch (features.ts), never otherwise.
+  line(WALL_KICK, T.wallKick, ['walls']),
+  line(CHIMNEY, T.chimney, ['walls']),
 ];

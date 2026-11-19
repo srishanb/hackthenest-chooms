@@ -37,7 +37,9 @@ const stepsOf = (chunk: EndlessChunk, span: PieceSpan) => chunk.route.slice(span
 describe('set pieces: the rules of the generator still hold', () => {
   it('every piece in the registry appears, and the approach always ends the chunk on the next anchor', () => {
     const seen = new Set(samples.flatMap((s) => s.chunk.pieces.map((span) => span.id)));
-    for (const entry of PIECES) expect(seen.has(entry.piece.id), entry.piece.id).toBe(true);
+    // The wall pieces exist only with the `?walls=1` switch (Decision D-37): endless-walls.test.ts covers them.
+    for (const entry of PIECES) if (!entry.needs.includes('walls')) expect(seen.has(entry.piece.id), entry.piece.id).toBe(true);
+    expect(seen.has('wall-kick') || seen.has('chimney')).toBe(false);
     for (const { chunk, next } of samples) {
       expect(chunk.pieces.at(-1)!.id).toBe('approach');
       expect(chunk.pieces.at(-1)!.exitId).toBe(next.id);

@@ -59,6 +59,10 @@ export interface PlayerState {
   launchVx: number;
   /** Feet y at takeoff, used for the fall height. */
   takeoffBottomY: number;
+  /** The wall last kicked off (wall.ts), until the candle lands; absent in a world without walls. */
+  kickWallId?: string | null;
+  /** Time left (ms) in which held direction is ignored after a wall kick; absent in a world without walls. */
+  wallLockMs?: number;
 }
 
 /** Things that happened during one step, for the scene to turn into bus events. */
@@ -72,4 +76,6 @@ export interface StepEvents {
    * `fallHeightPx` is how far below its takeoff it came down on the cap, as for a landing.
    */
   bounced?: { platformId: string; launchSpeed: number; fallHeightPx: number } | null;
+  /** A jump press kicked the candle off a wall (wall.ts). */
+  wallKicked?: { wallId: string } | null;
 }

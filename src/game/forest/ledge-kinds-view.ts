@@ -10,7 +10,8 @@
  * light exactly like the ledge outlines (outline-fade.ts), so the dark still hides what is far away.
  *
  * Decorative only: the physics never reads anything here. Reduced motion: no shake (the cracks still
- * warm), no falling bits, still streaks. Paused: everything holds still.
+ * warm), no falling bits, still streaks. Paused: everything holds still. Walls (Decision D-37, `?walls=1`) are
+ * drawn here too, by wall-view.ts.
  */
 import type * as Phaser from 'phaser';
 import { LEDGE_KINDS_VIEW_CONFIG as V } from '../../config/ledge-kinds-view.config';
@@ -19,6 +20,8 @@ import { fadeAlpha } from '../effects/outline-fade';
 import { BOUNCE_TYPE } from '../player/bounce';
 import { CRUMBLING_TYPE, crumbleWarn01, type CrumbleState } from '../player/crumble';
 import type { PlatformBox, UpdraftBox } from '../player/types';
+import { WALL_TYPE } from '../player/wall';
+import { drawWall } from './wall-view';
 import { snapToGrid } from './pixel-grid-snap';
 import { mixColor, stableUnit } from './presentation';
 
@@ -26,8 +29,8 @@ export interface LedgeKindsFrame {
   /** Every live ledge at its position now (fallen crumbling ledges included). */
   platforms: readonly PlatformBox[];
   updrafts: readonly UpdraftBox[];
-  /** True for a column in a snow band (drawn in the snow palette, which reads against pale snow). */
-  snowy: (column: UpdraftBox) => boolean;
+  /** True for a column (or a wall) in a snow band (drawn in the snow palette, which reads against pale snow). */
+  snowy: (column: { id: string }) => boolean;
   crumble: CrumbleState;
   /** Caps that threw the candle and crumbling ledges that fell since the last frame. */
   bounced: readonly string[];
@@ -177,6 +180,7 @@ export function createLedgeKindsView(scene: Phaser.Scene, depths: { world: numbe
       for (const platform of frame.platforms) {
         if (platform.type === BOUNCE_TYPE && near(platform)) drawCap(platform, fadeOf(platform));
         else if (platform.type === CRUMBLING_TYPE && near(platform)) drawCrumbling(platform, frame.crumble, fadeOf(platform), frame.reducedMotion);
+        else if (platform.type === WALL_TYPE && near(platform)) drawWall(rect, world, readable, platform, fadeOf(platform), frame.snowy(platform), { top: view.y, bottom: view.bottom });
       }
       if (!frame.paused) {
         const dt = Math.min(frame.deltaMs, 100) / 1000;

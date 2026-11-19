@@ -58,4 +58,27 @@ export const GAME_CONFIG: GameConfig = {
       holdBelowTakeoffPx: 24,
     },
   },
+  // Wall slide and wall jump (prototype behind `?walls=1`; only the endless climb's wall pieces grip, never the
+  // world's edges). Fixed rules, never the signal. With no wall in the world none of this runs.
+  wallMoves: {
+    // px/s: the most a slide falls. Lower feels stickier (more time to think on the wall); higher feels slippery.
+    slideVy: 90,
+    // 1/s: how fast a fall's extra speed bleeds off once you press into a wall. Higher grabs at once; lower skids.
+    slideBrakePerS: 16,
+    // px: a wall grips only while your feet are at most this far below where you last took off or kicked. It is
+    // the safety rule: a long fall (more than this) slides straight past every wall, so walls never catch a miss
+    // (D-33). It also caps a slide's length at about a second. Larger forgives more; smaller asks for a quick kick.
+    gripBelowTakeoffPx: 96,
+    // px/s and degrees: the kick. 620 px/s at 58 deg climbs about 100 px (a full charge jump climbs 170 to 217) and
+    // throws you about 330 px/s sideways: a wall is a tool, never a shortcut over a charge jump.
+    kickSpeed: 620,
+    kickAngleDeg: 58,
+    // px: how close to a wall a jump press still kicks (no need to be pressed flat against it). Larger is easier.
+    kickReachPx: 6,
+    // ms: held direction is ignored this long after a kick, so you cannot steer straight back onto the wall.
+    kickLockMs: 160,
+    // false: the same wall cannot be kicked twice in a row (it needs a landing or another wall first), so one
+    // wall is not a ladder; a chimney of two facing walls is climbed by kicking from one to the other.
+    sameWallTwice: false,
+  },
 };

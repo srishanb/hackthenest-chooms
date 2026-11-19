@@ -87,6 +87,8 @@ export function createForestWorld(scene: Scene, world: LoadedWorld, backdrop?: B
     if (skins.has(platform.id)) return;
     // A bounce cap is a mushroom, drawn whole by ledge-kinds-view.ts: no soil, plants or birds.
     if (platform.type === 'bounce') return;
+    // A wall (Decision D-37) is a stone pillar, drawn whole by wall-view.ts: no soil, plants or birds.
+    if (platform.type === 'wall') return;
     const skin = winter ? ENVIRONMENT_ASSETS.winter : ENVIRONMENT_ASSETS.forest;
     const terrain: PlatformSkin['terrain'] = [], redTerrain: PlatformSkin['redTerrain'] = [], props: PlatformSkin['props'] = [];
     const left = platform.x - platform.width / 2, top = platform.y - platform.height / 2;

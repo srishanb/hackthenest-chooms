@@ -64,6 +64,31 @@ export interface GameConfig {
   falling?: { accelerationX: number; speedX: number; ledgeReachPx: number; activationDelayMs: number };
   /** Bounce caps, crumbling ledges and updraft columns (game mechanics of the endless climb; never signal-driven). */
   ledgeKinds?: LedgeKindsConfig;
+  /**
+   * Wall slide and wall jump on the endless climb's wall pieces (a prototype behind `?walls=1`, never
+   * signal-driven). Absent: walls are still solid, but nothing slides or kicks.
+   */
+  wallMoves?: WallMovesConfig;
+}
+
+/**
+ * Rules of wall slide and wall jump. Speeds in px/s (y grows downward), times in ms, distances in px.
+ * Only platforms of type `wall` grip; the edges of the world never do.
+ */
+export interface WallMovesConfig {
+  /** Sliding (airborne, touching a wall, holding toward it): the fall eases to `slideVy` at `slideBrakePerS`. */
+  slideVy: number;
+  slideBrakePerS: number;
+  /** A wall grips (slide or kick) only while the feet are at most this far below the last takeoff or kick. */
+  gripBelowTakeoffPx: number;
+  /** A fresh jump press within `kickReachPx` of a gripping wall kicks away at `kickSpeed`, `kickAngleDeg` above level. */
+  kickSpeed: number;
+  kickAngleDeg: number;
+  kickReachPx: number;
+  /** After a kick, held direction is ignored this long, so the kick carries the candle away. */
+  kickLockMs: number;
+  /** False: a wall cannot be kicked again until the candle lands or kicks another wall (one wall is no ladder). */
+  sameWallTwice: boolean;
 }
 
 /**
