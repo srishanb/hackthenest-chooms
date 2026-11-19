@@ -33,6 +33,11 @@ export function fallShake(fallPx: number, config: EndlessConfig): number {
   return min01 + (max01 - min01) * unit((fallPx - minPx) / (fullPx - minPx));
 }
 
+/** Whether landing on a bounce cap `fallPx` below takeoff breaks the flow streak: only a real fall does, not the small drop onto a cap on the route. */
+export function bounceBreaksFlow(fallPx: number, config: EndlessConfig): boolean {
+  return Number.isFinite(fallPx) && fallPx >= config.composure.fall.minPx;
+}
+
 /** The candle landed `fallPx` below where it took off. */
 export function shake(state: Composure, fallPx: number, config: EndlessConfig): Composure {
   const amount = fallShake(fallPx, config);

@@ -7,7 +7,7 @@ import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state';
 import type { GameEvent } from '../../shared/contracts/events';
 import { createStore } from '../../shared/store';
 import { createChunkStream } from '../endless/chunk-stream';
-import { burnScale, fallShake, isSteadying, shake, steady, steadyComposure, stepComposure } from '../endless/composure';
+import { bounceBreaksFlow, burnScale, fallShake, isSteadying, shake, steady, steadyComposure, stepComposure } from '../endless/composure';
 import { createEndlessWax } from '../endless/endless-wax';
 import { addWax, burnPerSecond, freshFlame, isLit, stepFlame } from '../endless/flame-fuel';
 import { createEndlessGenerator } from '../endless/generator';
@@ -145,6 +145,11 @@ describe('composure: falls shake the candle, standing still steadies it', () => 
     expect(fallShake(K.fall.minPx, C)).toBeCloseTo(K.fall.min01);
     expect(fallShake(K.fall.fullPx, C)).toBeCloseTo(K.fall.max01);
     expect(fallShake(K.fall.fullPx * 10, C)).toBeCloseTo(K.fall.max01);
+    // A bounce cap breaks the flow streak only for a real fall, not the small drop onto a cap on the route.
+    expect(bounceBreaksFlow(0, C)).toBe(false);
+    expect(bounceBreaksFlow(K.fall.minPx - 1, C)).toBe(false);
+    expect(bounceBreaksFlow(K.fall.minPx, C)).toBe(true);
+    expect(bounceBreaksFlow(K.fall.fullPx, C)).toBe(true);
     expect(fallShake(300, C)).toBeGreaterThan(fallShake(100, C));
     expect(fallShake(Number.NaN, C)).toBe(0);
     expect(shake(steadyComposure(), 20, C)).toEqual(steadyComposure());
