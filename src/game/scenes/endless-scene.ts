@@ -32,7 +32,7 @@ import { createProtectedVisibility, type ProtectedVisibility } from '../effects/
 import { biomeOf, chunkOfPlatform, snowAt } from '../endless/biome';
 import { createChunkStream, type ChunkStream } from '../endless/chunk-stream';
 import { createEndlessWax } from '../endless/endless-wax';
-import { burnScale, isSteadying, shake, steady, steadyComposure, stepComposure, type Composure } from '../endless/composure';
+import { bounceBreaksFlow, burnScale, isSteadying, shake, steady, steadyComposure, stepComposure, type Composure } from '../endless/composure';
 import { addWax, freshFlame, isLit, stepFlame, type FlameState } from '../endless/flame-fuel';
 import { createEndlessGenerator, type EndlessGenerator, type WaxSpot } from '../endless/generator';
 import { moodIntensity } from '../endless/mood';
@@ -455,7 +455,8 @@ export class EndlessScene extends Phaser.Scene {
         const fallHeightPx = out.events.bounced.fallHeightPx;
         if (fallHeightPx > 0) {
           this.shakeOnLanding(fallHeightPx);
-          this.cleanJumps = 0;
+          // The small drop onto a cap on the intended route leaves the streak alone; a real fall breaks it.
+          if (bounceBreaksFlow(fallHeightPx, config)) this.cleanJumps = 0;
           this.composure = shake(this.composure, fallHeightPx, config);
         }
         for (const event of bounceEvents(out.events.bounced, emberConfig)) bus.emit(event);
