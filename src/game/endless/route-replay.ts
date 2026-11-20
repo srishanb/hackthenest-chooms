@@ -270,6 +270,28 @@ export function chargeDriftPx(ledge: PlatformData, chargeSteps: number, config: 
   return Math.min(2 * motion.distance, (2 * Math.PI * motion.distance / motion.periodMs) * chargeMs) + DRIFT_TOLERANCE_PX;
 }
 
+/**
+ * A wall stands where the candle must stand or walk for this step (Decision D-37): its box overlaps the band a
+ * standing body fills on the step's ledge, anywhere from one edge of the ledge (over its travel, if it moves) to
+ * the other, or at the takeoff across the takeoff tolerance (and a moving ledge's drift). The replay puts the
+ * candle at the takeoff directly (`standOn`), and the physics does not stop a body that starts inside a wall,
+ * so without this a takeoff inside a wall, or one cut off by a wall's side from where the candle lands on the
+ * ledge, would look sound here and be unplayable in the game. The arrival and the takeoff both lie on the ledge,
+ * so a wall clear of that whole band can never stand between them.
+ */
+export function wallInTheWay(step: RouteStep, ledges: readonly PlatformData[], walls: readonly PlatformBox[], config: GameConfig): boolean {
+  const from = ledges.find((ledge) => ledge.id === step.fromId);
+  if (!from) return false;
+  const { width, height } = config.player;
+  const travel = from.motion?.distance ?? 0;
+  const reach = ENDLESS_PIECES_CONFIG.takeoffTolerancePx + chargeDriftPx(from, step.chargeSteps, config);
+  const left = Math.min(from.x - from.width / 2 - travel, step.takeoffX - reach - width / 2);
+  const right = Math.max(from.x + from.width / 2 + travel, step.takeoffX + reach + width / 2);
+  const top = from.y - from.height / 2;
+  return walls.some((wall) => wall.id !== from.id && wall.x - wall.width / 2 < right - 1e-6 && wall.x + wall.width / 2 > left + 1e-6
+    && wall.y - wall.height / 2 < top - 1e-6 && wall.y + wall.height / 2 > top - height + 1e-6);
+}
+
 /** A jump whose landing depends finely on where it starts: through a column, off a cap, along a wall, or off a crumbling ledge (not a moving one). */
 function sensitive(step: RouteStep, flight: Flight, from: PlatformBox | undefined): boolean {
   if (step.kind === 'drop' || (from as { motion?: unknown } | undefined)?.motion) return false;
@@ -296,6 +318,8 @@ function shiftsFor(flight: Flight): readonly number[] {
  * seen over 2,150 such steps is 0.25 px wide). A drop may not cross a column or a cap at all.
  */
 function stepLands(step: RouteStep, ledges: readonly PlatformData[], worldWidth: number, config: GameConfig, updrafts: readonly UpdraftBox[]): boolean {
+  const walls = wallsIn(ledges);
+  if (walls.length && wallInTheWay(step, ledges, walls, config)) return false;
   const flight = flyStep(step, ledges, worldWidth, config, { stopPastTarget: true, updrafts });
   if (flight.landedId !== step.toId || (step.via && !flight.bounces.includes(step.via)) || !kickedAsStored(step, flight)) return false;
   // A walk-off starts its fall wherever the walk's last step happens to end, so it may not cross a column, a cap or touch a wall.

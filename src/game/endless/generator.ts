@@ -150,6 +150,8 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
   const dropTrace = traceDrop(gameConfig, config.chunkHeightPx);
   const worldWidth = gameConfig.view.width;
   const body = gameConfig.player;
+  /** The least room a wall leaves over a ledge it overlaps (px; pieces/kit.ts `keepsClear`). */
+  const wallHeadroomPx = body.height + tuning.walls.headroomPx;
   const cache = new Map<number, EndlessChunk>();
 
   const floorTopPx = (index: number): number => config.baseFloorTopPx - index * config.chunkHeightPx;
@@ -334,7 +336,7 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
       const others = [...committed.ledges, ...sides];
       for (const offset of [-distance, -distance / 2, distance / 2, distance]) {
         const shifted = { ...ledge, x: ledge.x + offset };
-        if (!keepsClear(shifted, others, config)) return null;
+        if (!keepsClear(shifted, others, config, wallHeadroomPx)) return null;
         const all = [...others, shifted, nextFloor];
         if (replayStep(step, all, worldWidth, gameConfig, 0, false, columns) !== ledge.id) return null;
         if (!stepsHold(kit.affected(pathSteps, shifted, [...committed.ledges, nextFloor], columns), all, worldWidth, gameConfig, columns)) return null;
@@ -358,7 +360,7 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
         if (!raw || raw.apexTopPx < apexLimit) continue;
         const candidate: Candidate = { ...raw, ledge: { ...raw.ledge, id }, step: { ...raw.step, toId: id } };
         if (topOf(candidate.ledge) < nextTop + config.stackClearancePx) continue;
-        if (!keepsClear(candidate.ledge, [...committed.ledges, ...sides], config)) continue;
+        if (!keepsClear(candidate.ledge, [...committed.ledges, ...sides], config, wallHeadroomPx)) continue;
         const all = ledgesWith(candidate.ledge);
         if (replayStep(candidate.step, all, worldWidth, gameConfig, 0, false, columns) !== id
           || !stepsHold(affected(candidate.ledge), all, worldWidth, gameConfig, columns)

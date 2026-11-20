@@ -173,8 +173,11 @@ export const ENDLESS_PIECES_CONFIG = {
    *   kickTimingSteps  a wall step must land when each kick is pressed up to this many physics steps (120 a
    *                    second) earlier or later than stored: 6 is 50 ms either way, a person's spread in timing
    *   kickDelaySteps   how long a stored route waits within reach of a wall before pressing (physics steps)
+   *   headroomPx       a wall over a ledge it overlaps (or comes within `sideClearancePx` of) leaves at least the
+   *                    candle's height plus this much between the ledge's top and its underside (px), so the candle
+   *                    can stand and walk anywhere on the ledge; a wall never splits a ledge's standing surface
    */
-  walls: { fromChunk: 1, widthPx: 32, kickTimingSteps: 6, kickDelaySteps: [7, 10] as const },
+  walls: { fromChunk: 1, widthPx: 32, kickTimingSteps: 6, kickDelaySteps: [7, 10] as const, headroomPx: 4 },
   /**
    * Wall kick: a wall stands beside a gap next to the entry ledge. Jump at it (charge `levels`), kick back off it,
    * and come down on a ledge `risePx` above the takeoff: higher than any charge jump reaches (217 px straight up),
