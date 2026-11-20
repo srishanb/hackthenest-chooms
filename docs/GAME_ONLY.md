@@ -164,6 +164,11 @@ the preview deployment) two pieces may appear from chunk 1, and such a run never
 - **Grip** (`game.config.ts` `wallMoves.gripBelowTakeoffPx`, 96 px). A wall grips only while the feet are at most
   96 px below where the candle last took off or kicked. A longer fall slides straight past at full speed, and a
   press does nothing: **a wall never catches a fall** (D-33). It also caps a slide at about a second.
+- **Falls after kicks.** A landing measures its fall from where the candle last stood (its last takeoff from a
+  ledge, before any kick), not from the last kick: climbing a chimney and coming down on the ledge above the start
+  is never a fall (the flow streak goes on, composure is not shaken, no hard-landing sound, no `fall` event), and a
+  real fall after a kick counts at its full height below where the candle stood. The grip still measures from the
+  last kick.
 - **Slide.** In the air, pressed against a gripping wall and holding toward it, the fall eases (16/s) to 90 px/s.
 - **Kick.** A fresh jump press (the key released since takeoff: the jump latch is unchanged) within 6 px of a
   gripping wall throws the candle up and away at 620 px/s, 58 degrees above level: about 100 px of climb, less than
@@ -181,10 +186,16 @@ How the route proves them: a wall is a platform of type `wall`, so every replay,
 it. A wall step stores, besides its takeoff and charge, how many physics steps to wait within reach of each wall
 before pressing (`kicks`) and the walls it must kick (`walls`). The replay, the route bot and the night outlines
 press the same keys (`src/game/endless/wall-kicks.ts`: hold toward the wall, press a set time after reaching it,
-then hold the other way). Every wall step must land from every takeoff 0.25 px apart within 2 px either side and
-with every kick pressed up to 6 physics steps (50 ms) early or late, and the kit puts its ledge only where all of
-those flights come down. A drop may never touch a wall. Walls keep clear of other ledges by their whole box and stay
-inside their chunk. The chunk map tool shows them with `--walls` (`|` for a wall, `K` and `H` for the pieces'
+then hold the other way). Every wall step must land from every takeoff 0.25 px apart within 2 px either side
+pressed on time; from the stored takeoff with every kick pressed up to 6 physics steps (50 ms) early or late; and
+from takeoffs 1 and 2 px either side **combined** with every press offset from 1 to 6 steps early or late
+(`walls.crossShiftPx`, `crossOffsetSteps`). Takeoffs between those (for example 1.25 px off and pressed early) are
+not proved together: the full 0.25 px cross costs about 2.5 times the generation time. A sweep of 160 seeds found
+2 of 672 stored wall steps that miss at such an in-between combination. The kit puts a wall step's ledge only where
+all of the proved flights come down. A drop may never touch a wall. Walls keep clear of other ledges by their whole
+box; a wall over a ledge it overlaps leaves the candle's height plus 4 px (`walls.headroomPx`) under it, so a wall
+never splits a ledge, and the replay refuses any step whose ledge or takeoff (across the takeoff tolerance) a wall
+cuts into. Walls stay inside their chunk. The chunk map tool shows them with `--walls` (`|` for a wall, `K` and `H` for the pieces'
 ledges). The numbers to tune by feel are in `game.config.ts` `wallMoves` (rules) and `endless-pieces.config.ts`
 `walls`, `wallKick`, `chimney` (pieces); each has a comment saying what it changes in the hand.
 
