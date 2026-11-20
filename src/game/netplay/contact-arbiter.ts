@@ -35,6 +35,9 @@ type Outgoing = Extract<NetEvent, { kind: 'shove' } | { kind: 'knock' }>;
 /** A rider and its carrier stay a pair (no knocks between them) at most this long after they last touched as one (ms). */
 const PAIR_MAX_MS = 3000;
 
+/** Knocks from the other game kept until the next physics step (the newest): a game that is not stepping cannot pile them up. */
+const MAX_WAITING = 16;
+
 export interface ContactArbiter {
   /**
    * Before a physics step at shared time `nowMs`: apply knocks that arrived and notice a new knock against `other`.
@@ -112,7 +115,10 @@ export function createContactArbiter(rules: VersusConfig, body: { width: number;
       if (event.kind === 'shove') {
         if (nowMs - sentMs > rules.maxEventAgeMs) return;
         push = { vx: event.dir * rules.shoveSpeed01 * walkSpeed, untilMs: nowMs + rules.shoveHoldMs };
-      } else waiting.push({ change: { dvx: event.dvx, dvy: event.dvy }, contactMs: Math.min(sentMs, nowMs) });
+      } else {
+        waiting.push({ change: { dvx: event.dvx, dvy: event.dvy }, contactMs: Math.min(sentMs, nowMs) });
+        if (waiting.length > MAX_WAITING) waiting.shift();
+      }
     },
     knocksTaken: () => taken,
   };

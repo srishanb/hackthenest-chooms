@@ -12,6 +12,7 @@
  * speed to the fastest a candle can go). A list longer than its limit drops the message. The protocol test walks a
  * sample of every message and fails if a number has no row in the table, so a new field cannot skip the check.
  */
+import { ENDLESS_CONFIG } from '../../config/endless.config';
 import { GAME_CONFIG } from '../../config/game.config';
 import type { GameConfig } from '../../shared/contracts/config';
 
@@ -106,6 +107,7 @@ export const LIMITED_FIELDS = [
   'state.body.fuel01', 'state.body.candleSeed', 'state.body.rideOffsetX', 'state.body.run', 'state.body.aim',
   'event.atMs', 'event.shove.dir', 'event.knock.dvx', 'event.knock.dvy', 'event.wax.run', 'event.run_reset.run',
   'event.sync.run', 'event.sync.wax.atMs', 'event.sync.crumble.startedMs',
+  'event.wax.dropId.chunk', 'event.sync.wax.id.chunk',
   'ack.ids#', 'event.sync.wax#', 'event.sync.crumble#',
 ] as const;
 export type LimitedField = (typeof LIMITED_FIELDS)[number];
@@ -116,6 +118,8 @@ export type MessageLimits = Record<LimitedField, Limit>;
 
 /** Largest shared or local time accepted (ms): about 30 years of `performance.now`. */
 const MAX_TIME_MS = 1e12;
+/** Highest a candle can be (px, y grows downward): far above the sky, as the endless climb has no top. */
+const MIN_Y = -1e9;
 const UINT32: Limit = { min: 0, max: 4294967295, int: true };
 
 /** The bounds for a game with this config: the same numbers its own rules use. */
@@ -125,6 +129,7 @@ export function messageLimits(game: GameConfig): MessageLimits {
   const fastest = Math.max(game.walkSpeed, game.jump.maxSpeed, game.falling?.speedX ?? 0, game.ledgeKinds?.bounce.maxLaunchSpeed ?? 0);
   const time: Limit = { min: 0, max: MAX_TIME_MS };
   const run: Limit = { min: 0, max: 1e9, int: true };
+  const chunk: Limit = { min: 0, max: Math.floor(-MIN_Y / ENDLESS_CONFIG.chunkHeightPx), int: true };
   return {
     'join.look.candleSeed': UINT32, 'hello.look.candleSeed': UINT32, 'hello.world.seed': UINT32, 'welcome.look.candleSeed': UINT32,
     'ping.t0': time, 'pong.t0': time, 'pong.hostMs': time,
@@ -132,7 +137,7 @@ export function messageLimits(game: GameConfig): MessageLimits {
     'state.atMs': time,
     // Inside the world's side edges, as clampToWalls keeps a candle; from far above the sky down to well below the ground.
     'state.body.x': { min: half, max: game.view.width - half },
-    'state.body.y': { min: -1e9, max: 1e6 },
+    'state.body.y': { min: MIN_Y, max: 1e6 },
     // The fastest a candle moves on its own, plus one knock. Falls are unbounded in height, so a fall's speed is
     // allowed up to what a 100,000 px fall reaches.
     'state.body.vx': { min: -(fastest + impulse), max: fastest + impulse },
@@ -147,9 +152,14 @@ export function messageLimits(game: GameConfig): MessageLimits {
     'event.knock.dvx': { min: -impulse, max: impulse }, 'event.knock.dvy': { min: -impulse, max: impulse },
     'event.wax.run': run, 'event.run_reset.run': run, 'event.sync.run': run,
     'event.sync.wax.atMs': time, 'event.sync.crumble.startedMs': time,
-    'ack.ids#': { min: 0, max: 256 }, 'event.sync.wax#': { min: 0, max: 1024 }, 'event.sync.crumble#': { min: 0, max: 256 },
+    // A drop's chunk: from the ground up to as high as `state.body.y` reaches (the world is endless, so nothing nearer is known).
+    'event.wax.dropId.chunk': chunk, 'event.sync.wax.id.chunk': chunk,
+    'ack.ids#': { min: 0, max: 256 }, 'event.sync.wax#': { min: 0, max: MAX_SYNC_WAX }, 'event.sync.crumble#': { min: 0, max: 256 },
   };
 }
+
+/** Most drops one `sync` lists (and so the most of this player's claims it sends: the newest). */
+export const MAX_SYNC_WAX = 1024;
 
 const DEFAULT_LIMITS = messageLimits(GAME_CONFIG);
 
@@ -173,6 +183,20 @@ function reader(limits: MessageLimits) {
   };
 }
 type Reader = ReturnType<typeof reader>;
+
+/**
+ * A wax drop id the generator can make: `e<chunk>:wax-<where>` (endless-wax ids, generator.ts). Anything else names no
+ * drop of this world, and a chunk beyond the table's limit is beyond any climb, so the message is refused. A drop in
+ * a chunk this game has not built yet is still accepted (the other player may be far above), so honest claims stand.
+ */
+const WAX_ID = /^e(\d{1,9}):wax-[a-z]{1,8}\d{0,6}$/;
+function waxId(r: Reader, value: unknown, field: LimitedField): string | null {
+  if (!str(value)) return null;
+  const match = WAX_ID.exec(value);
+  if (!match) return null;
+  const chunk = Number(match[1]);
+  return r.num(chunk, field) === chunk ? value : null;
+}
 
 const look = (r: Reader, value: unknown, field: LimitedField): CandleLook | null => {
   const seed = isObject(value) ? r.num(value.candleSeed, field) : null;
@@ -211,10 +235,11 @@ function sync(r: Reader, value: Record<string, unknown>): NetEvent | null {
   if (run === null || !waxList || !crumbleList) return null;
   const wax: WorldSync['wax'] = [];
   for (const item of waxList) {
-    if (!isObject(item) || !str(item.id)) return null;
+    if (!isObject(item)) return null;
+    const id = waxId(r, item.id, 'event.sync.wax.id.chunk');
     const atMs = r.num(item.atMs, 'event.sync.wax.atMs');
-    if (atMs === null) return null;
-    wax.push({ id: item.id, atMs });
+    if (id === null || atMs === null) return null;
+    wax.push({ id, atMs });
   }
   const crumble: WorldSync['crumble'] = [];
   for (const item of crumbleList) {
@@ -235,7 +260,10 @@ function netEvent(r: Reader, value: unknown): NetEvent | null {
       return dvx === null || dvy === null ? null : { kind: 'knock', dvx, dvy };
     }
     case 'crumble': return str(value.ledgeId) ? { kind: 'crumble', ledgeId: value.ledgeId } : null;
-    case 'wax': { const run = r.num(value.run, 'event.wax.run'); return str(value.dropId) && run !== null ? { kind: 'wax', dropId: value.dropId, run } : null; }
+    case 'wax': {
+      const run = r.num(value.run, 'event.wax.run'), dropId = waxId(r, value.dropId, 'event.wax.dropId.chunk');
+      return dropId !== null && run !== null ? { kind: 'wax', dropId, run } : null;
+    }
     case 'run_reset': { const run = r.num(value.run, 'event.run_reset.run'); return run === null ? null : { kind: 'run_reset', run }; }
     case 'sync': return sync(r, value);
     default: return null;

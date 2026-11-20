@@ -12,6 +12,8 @@ import { createEndlessWax } from '../endless/endless-wax';
 import { createBroadcastTransport } from '../netplay/broadcast-transport';
 import { createStore } from '../../shared/store';
 import { PROTOCOL_VERSION, type NetEvent } from '../netplay/protocol';
+import { startRemoteCrumble } from '../netplay/remote-crumble';
+import { NO_CRUMBLE, type CrumbleState } from '../player/crumble';
 import { createSim, type Sim, type SimLedge } from './netplay-sim';
 import type { GameSnapshot } from '../../shared/contracts/game-state';
 import type { EventBus } from '../../shared/contracts/events';
@@ -129,12 +131,20 @@ describe('every other collection fed by received messages is bounded', () => {
     expect(wax.isCollected('e1:wax-p0')).toBe(false);
   });
 
-  it('crumbling ledges the other player names stay under their cap', () => {
+  it('crumbling ledges the other player names stay under their cap, however many it sends', () => {
+    const rules = G.ledgeKinds!.crumble;
+    let crumble: CrumbleState = NO_CRUMBLE;
+    for (let i = 0; i < 5000; i++) crumble = startRemoteCrumble(crumble, `e${i}:p${i}`, 0, rules, N.maxCrumbling);
+    expect(crumble.size).toBe(N.maxCrumbling);
+    // An honest ledge that is already crumbling keeps its own timer, and the cap leaves room for none beyond it.
+    expect(startRemoteCrumble(crumble, 'e0:p0', 500, rules, N.maxCrumbling)).toBe(crumble);
+  });
+
+  it('through the room, a sync of crumbling names and then steps keeps the game running (names that are no ledge are dropped)', () => {
     const sim = connected();
     const forged = forger(sim);
     for (let m = 0; m < 20; m++) forged.send({ kind: 'sync', run: 0, wax: [], crumble: Array.from({ length: 256 }, (_, i) => ({ id: `e${m}:p${i}`, startedMs: 0 })) });
-    // One frame only: the physics step would drop names that are no ledge of this world.
-    sim.run(20);
+    sim.run(200);
     expect(sim.host.crumble.size).toBeLessThanOrEqual(N.maxCrumbling);
   });
 

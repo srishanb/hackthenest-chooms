@@ -50,7 +50,9 @@ export function createReliableEvents(prefix: string, resendMs: number, giveUpMs:
     },
     onAck(ids) { const done = new Set(ids); outbox = outbox.filter((item) => !done.has(item.message.id)); },
     accept(id) {
+      // Acknowledgements are drained once a frame while connected; if they are not, the newest SEEN_LIMIT are kept.
       acks.push(id);
+      if (acks.length > SEEN_LIMIT) acks = acks.slice(acks.length - SEEN_LIMIT / 2);
       if (seen.has(id)) return false;
       seen.add(id); seenOrder.push(id);
       if (seenOrder.length > SEEN_LIMIT) seen.delete(seenOrder.shift()!);

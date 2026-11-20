@@ -190,7 +190,12 @@ export function createNetplaySession(options: SessionOptions): NetplaySession {
         receivedStates++;
         remoteCandle.push(msg.body, msg.atMs, clock.nowMs());
         break;
-      case 'event': if (events.accept(msg.id)) inbox.push({ id: msg.id, atMs: msg.atMs, event: msg.event }); break;
+      case 'event': if (events.accept(msg.id)) {
+          inbox.push({ id: msg.id, atMs: msg.atMs, event: msg.event });
+          // Read once a frame; if it is not, the newest are kept (each was acknowledged, but a flood must not pile up).
+          if (inbox.length > config.maxQueuedMessages) inbox.shift();
+        }
+        break;
       case 'ack': events.onAck(msg.ids); break;
       case 'bye': leave(true); break;
       default: break;

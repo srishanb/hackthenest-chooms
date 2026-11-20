@@ -147,9 +147,9 @@ describe('hold 4: every received number is bounded', () => {
     { type: 'event', id: 'e', atMs: 5, event: { kind: 'shove', dir: 1 } },
     { type: 'event', id: 'e', atMs: 5, event: { kind: 'knock', dvx: 1, dvy: 1 } },
     { type: 'event', id: 'e', atMs: 5, event: { kind: 'crumble', ledgeId: 'c' } },
-    { type: 'event', id: 'e', atMs: 5, event: { kind: 'wax', dropId: 'd', run: 1 } },
+    { type: 'event', id: 'e', atMs: 5, event: { kind: 'wax', dropId: 'e1:wax-p0', run: 1 } },
     { type: 'event', id: 'e', atMs: 5, event: { kind: 'run_reset', run: 1 } },
-    { type: 'event', id: 'e', atMs: 5, event: { kind: 'sync', run: 1, wax: [{ id: 'd', atMs: 3 }], crumble: [{ id: 'c', startedMs: 3 }] } },
+    { type: 'event', id: 'e', atMs: 5, event: { kind: 'sync', run: 1, wax: [{ id: 'e1:wax-p0', atMs: 3 }], crumble: [{ id: 'c', startedMs: 3 }] } },
     { type: 'ack', ids: ['e'] }, { type: 'bye' },
   ];
   /** The table key for a number at `path` in message `msg` (array indices dropped, an event's kind named). */
@@ -289,13 +289,13 @@ describe('should-fix 7: a silence is not the end', () => {
     sim.run(1500);
     sim.link.silence('a', true);
     sim.link.silence('b', true);
-    sim.host.client.waxTaken('e2:w1');
+    sim.host.client.waxTaken('e2:wax-p1');
     // Longer than the event's resend give-up time: only the re-agreement after the silence can carry it.
     sim.run(N.giveUpMs + 2000);
     sim.link.silence('a', false);
     sim.link.silence('b', false);
     sim.run(2000);
-    expect(sim.guest.hidden.has('e2:w1')).toBe(true);
+    expect(sim.guest.hidden.has('e2:wax-p1')).toBe(true);
   });
 });
 
@@ -332,13 +332,13 @@ describe('should-fix 9: a reload whose goodbye was lost', () => {
   it('the new guest takes the silent one\'s place, and is told which drops the host already took', () => {
     const sim = createSim([FLOOR], { host: { x: 400, y: FLOOR_Y }, guest: { x: 600, y: FLOOR_Y } }, { delayMs: 80, jitterMs: 30, loss01: 0.05 }, 4);
     sim.run(1500);
-    sim.host.client.waxTaken('e1:d5');
+    sim.host.client.waxTaken('e1:wax-s5');
     sim.run(500);
     sim.replaceGuest({ x: 600, y: FLOOR_Y });
     sim.run(4000);
     expect(sim.guest.client.session.status()).toBe('connected');
     expect(sim.host.client.session.status()).toBe('connected');
-    expect(sim.guest.hidden.has('e1:d5')).toBe(true);
+    expect(sim.guest.hidden.has('e1:wax-s5')).toBe(true);
   });
 });
 

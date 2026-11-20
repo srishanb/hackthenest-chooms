@@ -5,7 +5,10 @@
  * Every window that opens the same room name hears every message of that room (a third window is refused by the
  * host's session, not here). A window never hears its own messages. The room name comes from the URL
  * (`?mp=host&room=NAME`) and is checked: letters, digits, `-` and `_`, at most 32.
+ * Unread messages are kept to the newest `maxQueuedMessages`: a window that is not drawing (a hidden tab), or a page
+ * that floods the room, cannot make this one hold more.
  */
+import { NETPLAY_CONFIG } from '../../config/netplay.config';
 import type { Transport, TransportState } from './transport';
 
 const ROOM_PATTERN = /^[A-Za-z0-9_-]{1,32}$/;
@@ -19,7 +22,11 @@ export function createBroadcastTransport(room: string): Transport | null {
   const channel = new BroadcastChannel(`lighten-up-mp:${room}`);
   let inbox: unknown[] = [];
   let open = true;
-  channel.onmessage = (event: MessageEvent<unknown>) => { if (open) inbox.push(event.data); };
+  channel.onmessage = (event: MessageEvent<unknown>) => {
+    if (!open) return;
+    inbox.push(event.data);
+    if (inbox.length > NETPLAY_CONFIG.maxQueuedMessages) inbox.shift();
+  };
   return {
     send(data) {
       if (!open) return;
