@@ -231,8 +231,8 @@ only your own candle: the other player's game never freezes. A two-player run ne
 a step up). The connection's numbers are in `src/config/netplay.config.ts`.
 
 What phase A does not do: connect two laptops (no network at all), a lobby or room code screen (it starts from the
-link), reconnect a player who dropped (a guest who reloads joins again; the host's own reload starts a new room
-session), more than two players, light from the other candle's flame at night (its candle is drawn above the
+link), reconnect a dropped player by itself (a guest who reloads its window joins again; if the host reloads, the guest
+carries on alone and must reload to join the new host), more than two players, light from the other candle's flame at night (its candle is drawn above the
 darkness, but it casts no light), or a check of the feel with two real people.
 
 ## Composure without a headset

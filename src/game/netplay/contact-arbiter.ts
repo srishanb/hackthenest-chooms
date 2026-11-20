@@ -39,7 +39,7 @@ export function createContactArbiter(rules: VersusConfig, body: { width: number;
   let lastKnockMs = Number.NEGATIVE_INFINITY;
   let lastShoveSentMs = Number.NEGATIVE_INFINITY;
   let push: { vx: number; untilMs: number } = { vx: 0, untilMs: Number.NEGATIVE_INFINITY };
-  let waiting: { dvx: number; dvy: number }[] = [];
+  let waiting: { dvx: number; dvy: number; sentMs: number }[] = [];
   let taken = 0;
 
   const inWindow = (nowMs: number): boolean => nowMs - lastKnockMs < rules.knock.contactWindowMs;
@@ -56,7 +56,8 @@ export function createContactArbiter(rules: VersusConfig, body: { width: number;
     beforeStep(state, other, nowMs) {
       let next = state;
       const send: Outgoing[] = [];
-      for (const change of waiting) if (!inWindow(nowMs)) next = knock(next, change, nowMs);
+      // A knock that waited (this candle was paused) is still dropped once it is too old.
+      for (const change of waiting) if (!inWindow(nowMs) && nowMs - change.sentMs <= rules.maxEventAgeMs) next = knock(next, change, nowMs);
       waiting = [];
       if (other && !inWindow(nowMs)) {
         const hit = knockBetween(next, other, body, rules, stepMs / 1000);
@@ -77,7 +78,7 @@ export function createContactArbiter(rules: VersusConfig, body: { width: number;
     receive(event, sentMs, nowMs) {
       if (nowMs - sentMs > rules.maxEventAgeMs) return;
       if (event.kind === 'shove') push = { vx: event.dir * rules.shoveSpeed01 * walkSpeed, untilMs: nowMs + rules.shoveHoldMs };
-      else waiting.push({ dvx: event.dvx, dvy: event.dvy });
+      else waiting.push({ dvx: event.dvx, dvy: event.dvy, sentMs });
     },
     knocksTaken: () => taken,
   };
