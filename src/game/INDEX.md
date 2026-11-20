@@ -19,7 +19,8 @@ Owner: Ali. Search here before adding a function.
 | `updraftAt`, `updraftVy`, `updraftHolds`, `terminalVy` | `player/updraft.ts` | Updraft columns (D-36): half gravity while rising fast, a fall eased to the column's sink or rise speed; never catches a fall (`updraftHolds`, D-36a). |
 | `stepCrumble`, `solidLedges`, `crumbleWarn01`, `NO_CRUMBLE`, `CRUMBLING_TYPE`, `CrumbleState` | `player/crumble.ts` | Crumbling ledges (D-36): per-ledge timers in the world, not the player; what is solid now. |
 | `WALL_TYPE`, `wallsIn`, `wallBeside`, `touchingWall`, `blockX`, `bumpHead`, `gripHolds`, `slideVy`, `kickVelocity`, `isSliding` | `player/wall.ts` | Walls (D-37, prototype behind `?walls=1`): platforms of type `wall` with solid sides and underside; slide and kick rules, grip only within `gripBelowTakeoffPx` of the last takeoff or kick (never catches a fall). `StepEvents.wallKicked`, `PlayerState.kickWallId` and `wallLockMs` exist only in a world with walls. |
-| `stepWorld`, `WorldStep` | `player/world-step.ts` | One step of the candle and the crumble timers, in that order; the endless scene and the route replay both call it. |
+| `stepWorld`, `WorldStep` | `player/world-step.ts` | One step of the candle and the crumble timers, in that order; the endless scene and the route replay both call it. An optional last argument passes the other candle and a shove (two-player climb only). |
+| `withHeads`, `resolveSides`, `bumpBodies`, `firstCeiling`, `shoveDirection`, `knockBetween`, `applyKnock`, `headId`, `isHeadId`, `HEAD_TYPE`, `OtherBody`, `Knock` | `player/versus.ts` | Two candles in one world (D-38): the other candle is solid (sides, gentle separation of an overlap), its head is a standable ledge that carries, rising into its feet stops; when a walk is a shove; the knock between two bodies and how a candle takes it. `StepEnvironment.others` and `pushVx` bring them into `stepPlayer`; absent, nothing changes. |
 | `StepEnvironment`, `UpdraftBox` | `player/movement.ts`, `player/types.ts` | What `stepPlayer` gets besides ledges: wind and updraft columns. |
 | `sectionAt`, `lowestPlatformY` | `world/bounds.ts` | Which section a height belongs to (derived from platforms). |
 | `landingEvents`, `bounceEvents` | `world/fall-tracker.ts` | A landing becomes `land`, and past `minFallPxToOffer` also `fall { heightPx, big }`. Never resets or kills. A fall ending on a bounce cap gives the same `fall` (`bounceEvents`, no `land`). |
@@ -231,3 +232,23 @@ is a dev page that shows it at several heights (`?seed=`, `?heights=`, `?zoom=`,
 | `backdropBiomeAt`, `flavourOfBand` | `endless/backdrop-biome.ts` | How cold a height is (smooth, following the snow bands) and each forest band's seeded flavour. |
 | `createForestWorld(scene, world, backdrop?)`, `ForestWorld.reseedBackdrop` | `forest/forest-world.ts` | With a `backdrop` the generated forest replaces the repeating trunks and far garden ledges. |
 
+## Two-player climb (`netplay/`, Decision D-38, behind `?mp=`)
+
+| Export | File | What it does |
+|---|---|---|
+| `PROTOCOL_VERSION`, `parseEnvelope`, `envelope`, `Message`, `Envelope`, `NetEvent`, `BodyState`, `WorldOptions`, `CandleLook`, `Role`, `RefuseReason` | `netplay/protocol.ts` | The versioned messages two games exchange and the check every received one goes through (plain data, JSON- and clone-safe). |
+| `Transport`, `TransportState` | `netplay/transport.ts` | The connection as an interface: send, receive, state, close. Phase B adds a network one behind it. |
+| `createMemoryLink`, `MemoryLink`, `LinkConditions` | `netplay/memory-transport.ts` | Two connected in-process transports for tests: delay, jitter, loss, reordering, a test clock, silencing one end. |
+| `createBroadcastTransport`, `isRoomName` | `netplay/broadcast-transport.ts` | `BroadcastChannel` transport: two windows of one browser, room from the URL. No network. |
+| `createNetplaySession`, `NetplaySession`, `SessionStatus`, `SessionOptions` | `netplay/session.ts` | One player's side: handshake (seed, walls, build, look; polite refusal), states at `sendHz`, pings, reliable events, leaving and silence. |
+| `createSharedClock`, `followSharedTime`, `SharedClock` | `netplay/shared-clock.ts` | The host's clock as estimated by the guest from ping round trips; moving ledges follow it. |
+| `createRemoteCandle`, `RemoteCandle`, `ShownCandle` | `netplay/remote-candle.ts` | Received states played back a little in the past, blended, guessed ahead briefly, corrected smoothly. |
+| `createReliableEvents`, `ReliableEvents` | `netplay/reliable-events.ts` | Events with ids, resent until acknowledged, applied once. |
+| `createContactArbiter`, `ContactArbiter` | `netplay/contact-arbiter.ts` | Who applies a shove or a knock, so each candle takes one per contact. |
+| `createWaxClaims`, `WaxClaims` | `netplay/wax-claims.ts` | First claim on a wax drop wins (shared clock, host on a tie); the loser's pickup is undone. |
+| `startRemoteCrumble` | `netplay/remote-crumble.ts` | Starts a crumbling ledge's timer as of when the other player stood on it. |
+| `createVersusClient`, `VersusClient`, `WorldChanges`, `LocalLook` | `netplay/versus-client.ts` | The two-player game logic around each physics step and each frame, without drawing (tests drive two of them). |
+| `createNetplayLink`, `NetplayLink` | `netplay/scene-link.ts` | What the endless scene calls: world readiness, world time, before and after each step, once a frame. |
+| `createRemoteView`, `edgeMarker`, `markerPixels`, `remoteSeed` | `netplay/remote-view.ts` | Draws the other candle (its own seed, never this player's) and the off-screen marker on the art grid. |
+| `buildId`, `fnv1a`, `WORLD_REVISION` | `netplay/build-id.ts` | The world fingerprint sent as the build version. |
+| `readNetplaySwitch`, `NetplaySwitch` | `netplay/switch.ts` | Reads `?mp=host` or `?mp=join` with `&room=NAME`; null when off. |
