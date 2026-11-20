@@ -101,13 +101,16 @@ export const GAME_CONFIG: GameConfig = {
       restitution: 0.6,
       // px/s: the most one knock changes a candle's speed (about two thirds of a full jump's launch speed, 780).
       maxImpulse: 520,
-      // ms: after a knock a candle takes no other one for this long, so one contact is one knock per candle,
-      // whichever game noticed it first (the other game's notice of the same contact arrives inside this time).
+      // ms: two contacts whose stamped times (shared clock) lie within this PLUS the longest playback delay
+      // (`netplay.config.ts` maxPlaybackDelayMs, 450) are one contact, so one contact is one knock per candle,
+      // whichever game noticed it first: the other game's notice is told apart by its stamp, not by when it arrives.
       contactWindowMs: 450,
       // ms: a standing candle knocked sideways slides (stays standing) at the knock's sideways speed this long.
       groundSlideMs: 160,
     },
-    // ms: a shove or a knock that arrives later than this after it was sent is dropped rather than applied late.
+    // ms: a shove that arrives later than this after it was sent is dropped rather than applied late. A knock is not:
+    // it is applied however late it arrives, up to this plus the same-contact time above after its contact (about
+    // 1.5 s), so the other candle is never knocked alone (D-38a); an older one is dropped.
     maxEventAgeMs: 600,
   },
 };

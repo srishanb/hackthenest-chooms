@@ -3,11 +3,13 @@
  * before the fix, plus the knock window, the event age limit and the crumble timing the earlier tests missed.
  * Two games over the in-process link (no network), with the real `stepWorld`, as netplay-sim.ts runs them.
  */
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { GAME_CONFIG as G } from '../../config/game.config';
 import { NETPLAY_CONFIG as N } from '../../config/netplay.config';
 import { createContactArbiter } from '../netplay/contact-arbiter';
-import { envelope, LIMITED_FIELDS, messageLimits, parseEnvelope, PROTOCOL_VERSION, type Message } from '../netplay/protocol';
+import { envelope, LIMITED_FIELDS, messageLimits, parseEnvelope, PROTOCOL_VERSION, type BodyState, type CandleLook, type Message, type NetEvent,
+  type WorldOptions, type WorldSync } from '../netplay/protocol';
 import { startRemoteCrumble } from '../netplay/remote-crumble';
 import { NO_CRUMBLE } from '../player/crumble';
 import { createPlayer, stepPlayer } from '../player/movement';
@@ -134,23 +136,38 @@ describe('hold 3: a rider and its carrier never knock each other', () => {
 describe('hold 4: every received number is bounded', () => {
   /** Built inside each test, so a game without the table fails test by test. */
   const table = () => messageLimits(G);
-  const BODY = { x: 300, y: 400, vx: 10, vy: -20, grounded: true, platformId: 'p', charging: false, charge01: 0.5, aim: 1 as const, fuel01: 0.5, out: false,
-    candleSeed: 7, rideOffsetX: 3, run: 2 };
+  // Samples are typed so that a new message type, a new event kind or a new field (optional ones too, through
+  // `Required`) without a sample here does not compile: `npm run check` fails until it has one, and a sample with a
+  // number that has no row in the table fails the test below. A new field cannot skip the check by being forgotten.
+  const BODY: Required<BodyState> = { x: 300, y: 400, vx: 10, vy: -20, grounded: true, platformId: 'p', charging: false, charge01: 0.5, aim: 1, fuel01: 0.5,
+    out: false, candleSeed: 7, rideOffsetX: 3, run: 2 };
+  const LOOK: Required<CandleLook> = { candleSeed: 1 };
+  const WORLD: Required<WorldOptions> = { seed: 1, walls: true };
+  const WAX_ITEM: Required<WorldSync['wax'][number]> = { id: 'e1:wax-p0', atMs: 3 };
+  const CRUMBLE_ITEM: Required<WorldSync['crumble'][number]> = { id: 'c', startedMs: 3 };
+  const EVENTS: { [K in NetEvent['kind']]: Extract<NetEvent, { kind: K }> } = {
+    shove: { kind: 'shove', dir: 1 },
+    knock: { kind: 'knock', dvx: 1, dvy: 1 },
+    crumble: { kind: 'crumble', ledgeId: 'c' },
+    wax: { kind: 'wax', dropId: 'e1:wax-p0', run: 1 },
+    run_reset: { kind: 'run_reset', run: 1 },
+    sync: { kind: 'sync', run: 1, wax: [WAX_ITEM], crumble: [CRUMBLE_ITEM] },
+  };
+  const OTHERS: { [K in Exclude<Message['type'], 'event'>]: Extract<Message, { type: K }> } = {
+    join: { type: 'join', build: 'b', look: LOOK },
+    hello: { type: 'hello', build: 'b', world: WORLD, look: LOOK },
+    welcome: { type: 'welcome', look: LOOK },
+    refuse: { type: 'refuse', reason: 'full' },
+    ping: { type: 'ping', t0: 1 },
+    pong: { type: 'pong', t0: 1, hostMs: 2 },
+    state: { type: 'state', seq: 1, atMs: 5, body: BODY },
+    ack: { type: 'ack', ids: ['e'] },
+    bye: { type: 'bye' },
+  };
   /** One message of every kind, with every field, to find every number in them. */
   const SAMPLES: Message[] = [
-    { type: 'join', build: 'b', look: { candleSeed: 1 } },
-    { type: 'hello', build: 'b', world: { seed: 1, walls: true }, look: { candleSeed: 1 } },
-    { type: 'welcome', look: { candleSeed: 1 } },
-    { type: 'refuse', reason: 'full' },
-    { type: 'ping', t0: 1 }, { type: 'pong', t0: 1, hostMs: 2 },
-    { type: 'state', seq: 1, atMs: 5, body: BODY },
-    { type: 'event', id: 'e', atMs: 5, event: { kind: 'shove', dir: 1 } },
-    { type: 'event', id: 'e', atMs: 5, event: { kind: 'knock', dvx: 1, dvy: 1 } },
-    { type: 'event', id: 'e', atMs: 5, event: { kind: 'crumble', ledgeId: 'c' } },
-    { type: 'event', id: 'e', atMs: 5, event: { kind: 'wax', dropId: 'd', run: 1 } },
-    { type: 'event', id: 'e', atMs: 5, event: { kind: 'run_reset', run: 1 } },
-    { type: 'event', id: 'e', atMs: 5, event: { kind: 'sync', run: 1, wax: [{ id: 'd', atMs: 3 }], crumble: [{ id: 'c', startedMs: 3 }] } },
-    { type: 'ack', ids: ['e'] }, { type: 'bye' },
+    ...Object.values(OTHERS),
+    ...Object.values(EVENTS).map((event): Message => ({ type: 'event', id: 'e', atMs: 5, event })),
   ];
   /** The table key for a number at `path` in message `msg` (array indices dropped, an event's kind named). */
   const keyOf = (msg: Message, path: string[]): string => {
@@ -175,6 +192,26 @@ describe('hold 4: every received number is bounded', () => {
     const missing = SAMPLES.flatMap((msg) => numbers(msg).map(({ path }) => keyOf(msg, path)).filter((key) => !keys.has(key)));
     expect(missing).toEqual([]);
     for (const msg of SAMPLES) expect(parseEnvelope(envelope('a', 'b', msg), table()).ok, msg.type).toBe(true);
+  });
+
+  it('the parser copies only the fields it knows: an unlisted field, at any depth, never reaches the game', () => {
+    /** A copy of `value` with an unlisted number and string on every object in it. */
+    const polluted = (value: unknown): unknown => Array.isArray(value) ? value.map(polluted)
+      : typeof value === 'object' && value !== null
+        ? { ...Object.fromEntries(Object.entries(value).map(([k, v]) => [k, polluted(v)])), unlistedNumber: 1e300, unlistedText: 'x' }
+        : value;
+    for (const msg of SAMPLES) {
+      const plain = parseEnvelope(envelope('a', 'b', msg), table());
+      const dirty = parseEnvelope({ v: PROTOCOL_VERSION, from: 'a', to: 'b', msg: polluted(msg) }, table());
+      expect(plain.ok, msg.type).toBe(true);
+      expect(dirty, msg.type).toEqual(plain);
+    }
+  });
+
+  it('protocol.ts reads a number in one place only, the table reader (no raw typeof, parse or spread of raw input); its field name is typed `LimitedField`, a key of the table', () => {
+    const source = readFileSync(new URL('../netplay/protocol.ts', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    expect(source.match(/typeof [^;\n]*'number'/g)?.length).toBe(1);
+    expect(source).not.toMatch(/parseInt|parseFloat|JSON\.parse|\+\s*value\b|\.\.\.\s*(value|item|raw|msg)\b/);
   });
 
   it('each field: a non-finite value drops the message, a huge one is clamped into its limits', () => {
@@ -289,13 +326,13 @@ describe('should-fix 7: a silence is not the end', () => {
     sim.run(1500);
     sim.link.silence('a', true);
     sim.link.silence('b', true);
-    sim.host.client.waxTaken('e2:w1');
+    sim.host.client.waxTaken('e2:wax-p1');
     // Longer than the event's resend give-up time: only the re-agreement after the silence can carry it.
     sim.run(N.giveUpMs + 2000);
     sim.link.silence('a', false);
     sim.link.silence('b', false);
     sim.run(2000);
-    expect(sim.guest.hidden.has('e2:w1')).toBe(true);
+    expect(sim.guest.hidden.has('e2:wax-p1')).toBe(true);
   });
 });
 
@@ -332,13 +369,13 @@ describe('should-fix 9: a reload whose goodbye was lost', () => {
   it('the new guest takes the silent one\'s place, and is told which drops the host already took', () => {
     const sim = createSim([FLOOR], { host: { x: 400, y: FLOOR_Y }, guest: { x: 600, y: FLOOR_Y } }, { delayMs: 80, jitterMs: 30, loss01: 0.05 }, 4);
     sim.run(1500);
-    sim.host.client.waxTaken('e1:d5');
+    sim.host.client.waxTaken('e1:wax-s5');
     sim.run(500);
     sim.replaceGuest({ x: 600, y: FLOOR_Y });
     sim.run(4000);
     expect(sim.guest.client.session.status()).toBe('connected');
     expect(sim.host.client.session.status()).toBe('connected');
-    expect(sim.guest.hidden.has('e1:d5')).toBe(true);
+    expect(sim.guest.hidden.has('e1:wax-s5')).toBe(true);
   });
 });
 

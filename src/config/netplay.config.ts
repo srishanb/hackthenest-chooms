@@ -48,9 +48,25 @@ export interface NetplayConfig {
    */
   worldTimeSlewMs: number;
   worldTimeSnapMs: number;
+  /**
+   * When this game's physics steps are more than this far apart in shared time (ms), it was not stepping (a pause, a hidden
+   * tab, a long hitch): the world time is set to the shared clock at once instead of nudged, even below `worldTimeSnapMs`.
+   * Above a frame at 30 fps, so ordinary frames never count.
+   */
+  worldTimeResumeGapMs: number;
   /** How long the status line shows "connected" and "the other player left" (ms). Waiting shows until it ends. */
   connectedNoticeMs: number;
   leftNoticeMs: number;
+  /**
+   * How many drops the other player has taken, at most, that this game remembers (ids). The oldest is forgotten past
+   * it. Far above what a real climb collects, so an honest claim is never lost, and the same for every list below:
+   * a message from the other window is untrusted, so nothing it feeds may grow without limit.
+   */
+  maxRemoteWax: number;
+  /** Crumbling ledges the other player may have running here at once (a ledge that is no ledge here is dropped by the next step). */
+  maxCrumbling: number;
+  /** Messages kept unread for the next frame (the newest); a window that is not drawing cannot pile up more. */
+  maxQueuedMessages: number;
 }
 
 export const NETPLAY_CONFIG: NetplayConfig = {
@@ -71,6 +87,10 @@ export const NETPLAY_CONFIG: NetplayConfig = {
   guestSpawnOffsetPx: 48,
   worldTimeSlewMs: 0.5, // 0.5 ms per 8.3 ms step: a moving ledge drifts back into line without a visible jerk
   worldTimeSnapMs: 1000,
+  worldTimeResumeGapMs: 50, // a frame at 20 fps: slower than that is a hitch, and setting the clock then is what the nudge was after
   connectedNoticeMs: 4000,
   leftNoticeMs: 6000,
+  maxRemoteWax: 4096,
+  maxCrumbling: 128,
+  maxQueuedMessages: 256,
 };

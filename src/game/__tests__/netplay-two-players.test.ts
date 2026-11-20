@@ -133,23 +133,23 @@ describe.each(DELAYS)('two players at %i ms delay, 30 ms jitter, 5 percent loss'
   it('a wax drop both reach for has one winner', () => {
     const sim = connected(delayMs);
     // Both pick it up before either hears of the other's pickup (the guest a frame later when there is a delay).
-    sim.host.client.waxTaken('e1:w1');
+    sim.host.client.waxTaken('e1:wax-p1');
     if (delayMs > 0) sim.run(10);
-    sim.guest.client.waxTaken('e1:w1');
+    sim.guest.client.waxTaken('e1:wax-p1');
     sim.run(1500);
     // The host claimed first (by the shared clock): the guest's pickup is undone and the drop is gone for both.
     expect(sim.host.revoked).toEqual([]);
-    expect(sim.guest.revoked).toEqual(['e1:w1']);
-    expect(sim.host.hidden.has('e1:w1')).toBe(false);
-    expect(sim.guest.hidden.has('e1:w1')).toBe(true);
+    expect(sim.guest.revoked).toEqual(['e1:wax-p1']);
+    expect(sim.host.hidden.has('e1:wax-p1')).toBe(false);
+    expect(sim.guest.hidden.has('e1:wax-p1')).toBe(true);
     // A later claim the other way round keeps its first winner: the guest first, a frame before the host.
     if (delayMs === 0) return;
-    sim.guest.client.waxTaken('e1:w2');
+    sim.guest.client.waxTaken('e1:wax-p2');
     sim.run(10);
-    sim.host.client.waxTaken('e1:w2');
+    sim.host.client.waxTaken('e1:wax-p2');
     sim.run(1500);
-    expect(sim.host.revoked).toEqual(['e1:w2']);
-    expect(sim.guest.revoked).toEqual(['e1:w1']);
+    expect(sim.host.revoked).toEqual(['e1:wax-p2']);
+    expect(sim.guest.revoked).toEqual(['e1:wax-p1']);
   });
 
   it('a crumbling ledge the host stands on falls on the guest side at about the same time', () => {

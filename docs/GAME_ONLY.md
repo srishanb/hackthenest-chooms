@@ -253,7 +253,11 @@ taken and the crumbling ledges. A guest who reloads its window joins again (it t
 that has been silent for 1.5 s), and is told which drops the host has already taken. The handshake repeats each
 message until the next one arrives, so a lost message only costs time; after 15 s without finishing, the guest says
 it could not reach the other player. Pausing stops
-only your own candle: the other player's game never freezes. A two-player run never saves a best height (a head is
+only your own candle: the other player's game never freezes, and when you resume (after any pause, or a tab that was in
+the background) moving ledges are put back where the shared clock says at once, so a short pause no longer leaves
+them seconds out of step. What the other window sends is untrusted: a wax drop it names must be a real drop id, and
+every list it can fill (taken drops, crumbling ledges, unread messages) has a cap, so a page that floods the room
+cannot freeze or slow the game for long. A two-player run never saves a best height (a head is
 a step up). The connection's numbers are in `src/config/netplay.config.ts`.
 
 What phase A does not do: connect two laptops (no network at all), a lobby or room code screen (it starts from the

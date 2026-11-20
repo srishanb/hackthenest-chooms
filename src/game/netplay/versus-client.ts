@@ -61,6 +61,8 @@ export interface VersusClient {
   runStarted(): void;
   /** For tests and the dev readout. */
   knocksTaken(): number;
+  /** How many wax claims are remembered, for tests. */
+  waxClaimCounts(): { mine: number; theirs: number };
 }
 
 export function createVersusClient(session: NetplaySession, gameConfig: GameConfig, netplay: NetplayConfig = NETPLAY_CONFIG): VersusClient {
@@ -76,7 +78,7 @@ export function createVersusClient(session: NetplaySession, gameConfig: GameConf
   const carryLimit = carryLimitPx(gameConfig);
   let syncedConnection = 0;
   let knownPeer: string | null = null;
-  const claims: WaxClaims = createWaxClaims(role);
+  const claims: WaxClaims = createWaxClaims(role, netplay.maxRemoteWax);
   let run = 0;
   let last: { x: number; y: number } | null = null;
   let anchor01 = 0, anchorAtMs = Number.NEGATIVE_INFINITY;
@@ -138,9 +140,13 @@ export function createVersusClient(session: NetplaySession, gameConfig: GameConf
     takeWorld(crumble) {
       const changes: WorldChanges = { crumble, hide: [], show: [], revoke: [] };
       const now = session.nowMs();
+      /** Wax ids this frame will take from the other player's messages, however many arrive: a flood is cut here. */
+      let waxBudget = netplay.maxRemoteWax;
+      // Appended one by one: an id list that comes from the other player is never spread into a call.
+      const showAll = (ids: readonly string[]): void => { for (const id of ids) changes.show.push(id); };
       // A new other player (a reload): the drops the last one took are free again.
       const peer = session.peerId();
-      if (peer !== null && peer !== knownPeer) { if (knownPeer !== null) changes.show.push(...claims.clearRemote()); knownPeer = peer; }
+      if (peer !== null && peer !== knownPeer) { if (knownPeer !== null) showAll(claims.clearRemote()); knownPeer = peer; }
       // After every (re)connection, tell the other game what outlives a message: this run's wax and the crumbling ledges.
       if (session.status() === 'connected' && session.connectionId() !== syncedConnection) {
         syncedConnection = session.connectionId();
@@ -151,24 +157,26 @@ export function createVersusClient(session: NetplaySession, gameConfig: GameConf
         switch (event.kind) {
           case 'shove': case 'knock': arbiter?.receive(event, atMs, now); break;
           case 'crumble':
-            if (gameConfig.ledgeKinds) changes.crumble = startRemoteCrumble(changes.crumble, event.ledgeId, now - atMs, gameConfig.ledgeKinds.crumble);
+            if (gameConfig.ledgeKinds) changes.crumble = startRemoteCrumble(changes.crumble, event.ledgeId, now - atMs, gameConfig.ledgeKinds.crumble, netplay.maxCrumbling);
             break;
           case 'wax': {
+            if (waxBudget-- <= 0) break;
             const verdict = claims.onRemote(event.dropId, atMs, event.run);
             if (verdict === 'hide') changes.hide.push(event.dropId);
             else if (verdict === 'revoke') { changes.hide.push(event.dropId); changes.revoke.push(event.dropId); }
             break;
           }
-          case 'run_reset': changes.show.push(...claims.onRemoteReset(event.run)); break;
+          case 'run_reset': showAll(claims.onRemoteReset(event.run)); break;
           case 'sync': {
-            changes.show.push(...claims.onRemoteReset(event.run));
+            showAll(claims.onRemoteReset(event.run));
             for (const drop of event.wax) {
+              if (waxBudget-- <= 0) break;
               const verdict = claims.onRemote(drop.id, drop.atMs, event.run);
               if (verdict !== 'ignore') changes.hide.push(drop.id);
               if (verdict === 'revoke') changes.revoke.push(drop.id);
             }
             if (gameConfig.ledgeKinds) {
-              for (const ledge of event.crumble) changes.crumble = startRemoteCrumble(changes.crumble, ledge.id, now - ledge.startedMs, gameConfig.ledgeKinds.crumble);
+              for (const ledge of event.crumble) changes.crumble = startRemoteCrumble(changes.crumble, ledge.id, now - ledge.startedMs, gameConfig.ledgeKinds.crumble, netplay.maxCrumbling);
             }
             break;
           }
@@ -187,5 +195,6 @@ export function createVersusClient(session: NetplaySession, gameConfig: GameConf
       session.sendEvent({ kind: 'run_reset', run });
     },
     knocksTaken: () => arbiter?.knocksTaken() ?? 0,
+    waxClaimCounts: () => claims.size(),
   };
 }
