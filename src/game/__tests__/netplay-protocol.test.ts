@@ -14,7 +14,7 @@ import { createNetplaySession, type SessionOptions } from '../netplay/session';
 import { readNetplaySwitch } from '../netplay/switch';
 import { createPlayer } from '../player/movement';
 
-const BODY = { x: 0, y: 0, vx: 0, vy: 0, grounded: true, platformId: null, charging: false, charge01: 0, aim: 0 as const, fuel01: 1, out: false, candleSeed: 1, run: 0 };
+const BODY = { x: 100, y: 0, vx: 0, vy: 0, grounded: true, platformId: null, charging: false, charge01: 0, aim: 0 as const, fuel01: 1, out: false, candleSeed: 1, run: 0 };
 
 function pair(guestBuild = 'b1') {
   let t = 0;
@@ -80,7 +80,7 @@ describe('handshake', () => {
       look: { candleSeed: 1 }, world: { seed: 1, walls: false }, peerId: 'H' });
     link.b.send({ v: PROTOCOL_VERSION + 1, from: 'old', to: '*', msg: { type: 'join', build: 'b1', look: { candleSeed: 3 } } });
     t += 16; host.update(BODY);
-    const answers = link.b.receive().map(parseEnvelope);
+    const answers = link.b.receive().map((raw) => parseEnvelope(raw));
     expect(answers).toContainEqual({ ok: true, envelope: envelope('H', 'old', { type: 'refuse', reason: 'version' }) });
     expect(host.status()).toBe('waiting');
     // And a guest told by another version's host that it is refused stops asking.
@@ -97,7 +97,7 @@ describe('handshake', () => {
     link.b.send(envelope('X', '*', { type: 'join', build: 'b1', look: { candleSeed: 5 } }));
     advance(16);
     host.update(BODY);
-    const answers = link.b.receive().map(parseEnvelope);
+    const answers = link.b.receive().map((raw) => parseEnvelope(raw));
     expect(answers).toContainEqual({ ok: true, envelope: envelope('H', 'X', { type: 'refuse', reason: 'full' }) });
     expect(host.status()).toBe('connected');
   });

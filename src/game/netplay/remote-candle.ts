@@ -4,7 +4,9 @@
  *
  * - Playback time: shared now minus a delay. The delay is the configured base plus the measured travel time of
  *   updates and twice their spread (capped), eased slowly, so two updates nearly always bracket the playback time.
- * - Between two states: position and speed are blended linearly (a step of 50 ms is short next to a jump).
+ * - Between two states: positions follow a cubic that matches both states' speeds (Hermite: exact for a jump's
+ *   arc), and across a landing or a takeoff the flight is traced with gravity to the ground; the rest is blended.
+ * - Correction offsets (below) only replace a guess ahead; a late state that fills a gap is used as it is.
  * - Past the newest state: guessed ahead from its speed (with gravity in the air) for at most `maxExtrapolateMs`,
  *   then held there.
  * - Correction: when a new state moves where the candle is shown right now, the difference is kept as an offset
@@ -65,7 +67,28 @@ export function createRemoteCandle(config: NetplayConfig, gravityY: number): Rem
     // A restart or a teleport between the two states is not blended across.
     const far = Math.hypot(b.x - a.x, b.y - a.y) > config.snapPx;
     const pick = f < 0.5 && !far ? a : b;
-    return { body: far ? (f < 0.5 ? a : b) : { ...pick, x: mix(a.x, b.x), y: mix(a.y, b.y), vx: mix(a.vx, b.vx), vy: mix(a.vy, b.vy),
+    // Positions follow a cubic through both states that also matches their speeds (Hermite), so a turn or a stop
+    // between two updates (or across a lost one) is not cut straight across.
+    const seconds = span / 1000;
+    const curve = (p: number, q: number, vp: number, vq: number): number => {
+      const f2 = f * f, f3 = f2 * f;
+      return (2 * f3 - 3 * f2 + 1) * p + (f3 - 2 * f2 + f) * seconds * vp + (-2 * f3 + 3 * f2) * q + (f3 - f2) * seconds * vq;
+    };
+    let x = curve(a.x, b.x, a.vx, b.vx), y = curve(a.y, b.y, a.vy, b.vy);
+    if (!a.grounded && b.grounded) {
+      // A landing in between: the candle flew on from the earlier state until it met the ground it stands on later.
+      const since = (t - earlier.atMs) / 1000;
+      y = Math.min(b.y, a.y + a.vy * since + 0.5 * gravityY * since * since);
+      const toward = b.x - a.x;
+      x = a.x + Math.sign(toward) * Math.min(Math.abs(toward), Math.abs(a.vx * since));
+    } else if (a.grounded && !b.grounded) {
+      // A takeoff in between: traced back from the later state, never below the ground it left.
+      const until = (later.atMs - t) / 1000;
+      y = Math.min(a.y, b.y - b.vy * until + 0.5 * gravityY * until * until);
+      const toward = a.x - b.x;
+      x = b.x + Math.sign(toward) * Math.min(Math.abs(toward), Math.abs(b.vx * until));
+    }
+    return { body: far ? (f < 0.5 ? a : b) : { ...pick, x, y, vx: mix(a.vx, b.vx), vy: mix(a.vy, b.vy),
       charge01: mix(a.charge01, b.charge01), fuel01: mix(a.fuel01, b.fuel01) }, extrapolated: false };
   }
 
@@ -85,7 +108,8 @@ export function createRemoteCandle(config: NetplayConfig, gravityY: number): Rem
       else if (samples[index]!.atMs !== atMs) samples.splice(index, 0, { atMs, body });
       if (samples.length > KEEP) samples = samples.slice(samples.length - KEEP);
       const after = raw(playback(nowMs));
-      if (before && after) {
+      // Only a guess ahead that a real state replaces is blended away; a state that fills a gap is simply better.
+      if (before && after && before.extrapolated) {
         offsetX += before.body.x - after.body.x;
         offsetY += before.body.y - after.body.y;
         if (Math.hypot(offsetX, offsetY) > config.snapPx) { offsetX = 0; offsetY = 0; }
