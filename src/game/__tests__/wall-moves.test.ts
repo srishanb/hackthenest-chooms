@@ -174,6 +174,64 @@ describe('a world without walls', () => {
       s = stepPlayer(s, { left: false, right: i > 60, jump: i < 50 }, [ledge, FLOOR], W, G, DT).state;
       expect('kickWallId' in s).toBe(false);
       expect('wallLockMs' in s).toBe(false);
+      expect('standBottomY' in s).toBe(false);
     }
+  });
+});
+
+describe('the grip window edge', () => {
+  it('a fall that starts inside the grip window slides until the feet pass it, then falls freely', () => {
+    // Took off with the feet at 1000, pressed into the wall from there (the window is the 96 px below).
+    const takeoff = 1000;
+    const { states } = run(airborne(besideX, takeoff - H / 2, 0, 0, takeoff), [WALL, FLOOR], 400, () => RIGHT);
+    const below = (s: PlayerState): number => s.y + H / 2 - takeoff;
+    for (let i = 1; i < states.length; i++) {
+      const before = states[i - 1]!, after = states[i]!;
+      if (after.y - H / 2 >= WALL.y + WALL.height / 2) break;
+      // Every step that starts with the feet inside the window slides: never faster than the slide speed.
+      if (below(before) <= R.gripBelowTakeoffPx) expect(after.vy, `step ${i}`).toBeLessThanOrEqual(R.slideVy + 1e-6);
+      // Past it, gravity alone: the speed grows by a full step of gravity.
+      else expect(after.vy - before.vy, `step ${i}`).toBeCloseTo(G.gravityY * DT / 1000, 6);
+    }
+    expect(states.some((s) => below(s) > R.gripBelowTakeoffPx && s.vy > R.slideVy * 1.5)).toBe(true);
+  });
+  it('a kick press works just inside the window and never just past it', () => {
+    const pressAt = (belowPx: number): string[] => run(airborne(besideX, 1000 + belowPx - H / 2, 0, 50, 1000), [WALL, FLOOR], 2,
+      (i) => ({ ...RIGHT, jump: i === 1 })).kicks;
+    expect(pressAt(R.gripBelowTakeoffPx - 2)).toEqual(['w1']);
+    expect(pressAt(R.gripBelowTakeoffPx + 2)).toEqual([]);
+  });
+});
+
+describe('a landing after wall kicks measures its fall from where the candle stood', () => {
+  /** Stand on `ledge`, jump straight up a little into the gap beside WALL, kick off it, land on `target`. */
+  const kickAndLand = (ledge: PlatformBox, target: PlatformBox): { fall: number | null; kicks: string[] } => {
+    const platforms = [WALL, FLOOR, ledge, target];
+    let s: PlayerState = { ...createPlayer(besideX, topOf(ledge) - H / 2), grounded: true, platformId: ledge.id, jumpLatch: false };
+    let fall: number | null = null;
+    const kicks: string[] = [];
+    for (let i = 0; i < 900 && fall === null; i++) {
+      // Charge 20 steps, release, then press jump 10 steps after leaving the ground, then drift left.
+      const input = i < 20 ? { ...IDLE, jump: true } : i === 32 ? { ...RIGHT, jump: true } : i < 32 ? RIGHT : LEFT;
+      const out = stepPlayer(s, input, platforms, W, G, DT);
+      if (out.events.wallKicked) kicks.push(out.events.wallKicked.wallId);
+      if (out.events.landed && i > 20) fall = out.events.landed.fallHeightPx;
+      s = out.state;
+    }
+    return { fall, kicks };
+  };
+  const ledge: PlatformBox = { id: 'start', x: 440, y: 1310, width: 120, height: 20 };
+  it('landing below the kick but above where it stood is no fall', () => {
+    // The ledge it lands on is 20 px above the takeoff ledge, far below where the kick happened.
+    const target: PlatformBox = { id: 't', x: 300, y: topOf(ledge) - 20 + 10, width: 200, height: 20 };
+    const { fall, kicks } = kickAndLand(ledge, target);
+    expect(kicks).toEqual(['w1']);
+    expect(fall).toBe(0);
+  });
+  it('a long fall after a kick still counts, at its full height below where it stood', () => {
+    const target: PlatformBox = { id: 't', x: 200, y: topOf(ledge) + 400 + 10, width: 300, height: 20 };
+    const { fall, kicks } = kickAndLand({ ...ledge, width: 60, x: besideX }, target);
+    expect(kicks).toEqual(['w1']);
+    expect(fall).toBeCloseTo(400, 6);
   });
 });

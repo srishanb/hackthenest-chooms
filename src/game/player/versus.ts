@@ -147,6 +147,8 @@ export function knockBetween(me: { x: number; y: number; vx: number; vy: number;
  * Apply a knock to this candle. In the air it changes the speed (and the launch speed air steering works from).
  * A standing candle knocked upward leaves the ground (a charge is lost; the fall is measured from here); knocked
  * sideways it stays standing and slides at `slideVx` px/s for the caller's `groundSlideMs`.
+ * A knock is not a takeoff from a ledge, so it leaves `standBottomY` (the wall prototype's fall rule) as it is: a
+ * candle knocked off a wall climb still has its fall measured from where it last stood. A standing candle has none.
  */
 export function applyKnock(state: PlayerState, knock: Knock, bodyHeight: number): { state: PlayerState; slideVx: number } {
   if (state.grounded) {
