@@ -110,3 +110,18 @@ Phase B also adds: the room code flow, reconnection, a version check, and the `A
 ## Time estimate
 
 Phase A: one long builder session plus QA. Phase B: one builder session plus a test by two people.
+
+## Phase A: state after QA (20 Nov 2026)
+
+Merged into `game-only` behind `?mp=` (two QA rounds and a final check; no holds left). Carried into phase B, from
+the final check (`_agents_workspace/06_game-qa_netplay_final.md`):
+
+- On a slow machine (frames of about 67 to 108 ms) moving ledges still drift out of step between the two sides, up
+  to 95 px, until the next one-second snap; the candle is never dropped. Treat a frame whose step count was clamped
+  as a resume.
+- The caps that stop a flood have no test of their own (removing one fails no test); add one per cap.
+- The limits test can still be passed by a string turned into a number, a nested optional object, or a field read
+  off the raw message outside the parser. Nothing gets through today.
+- A rider on the head of a candle that stands on a moving ledge can fall when the carrier pauses for 0.7 to 1 s.
+- A real connection can lose and reorder messages and anyone in the room can speak: resend and identity belong to
+  the transport (see the phase B notes in `_agents_workspace/04_game-qa_netplay_findings.md`).

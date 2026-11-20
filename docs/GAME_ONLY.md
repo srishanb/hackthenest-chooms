@@ -257,7 +257,7 @@ only your own candle: the other player's game never freezes, and when you resume
 the background) moving ledges are put back where the shared clock says at once, so a short pause no longer leaves
 them seconds out of step. What the other window sends is untrusted: a wax drop it names must be a real drop id, and
 every list it can fill (taken drops, crumbling ledges, unread messages) has a cap, so a page that floods the room
-cannot freeze or slow the game for long. A two-player run never saves a best height (a head is
+cannot freeze the game or grow its memory; it can slow the game while the flood lasts. A two-player run never saves a best height (a head is
 a step up). The connection's numbers are in `src/config/netplay.config.ts`.
 
 What phase A does not do: connect two laptops (no network at all), a lobby or room code screen (it starts from the
