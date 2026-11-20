@@ -13,11 +13,12 @@ import type { GameConfig } from '../../shared/contracts/config';
 import type { CrumbleState } from '../player/crumble';
 import type { StepEnvironment } from '../player/movement';
 import type { PlayerInput, PlayerState } from '../player/types';
-import { headId, isHeadId, type OtherBody } from '../player/versus';
+import { carryLimitPx, headId, isHeadId, type OtherBody } from '../player/versus';
 import { createContactArbiter, type ContactArbiter } from './contact-arbiter';
 import type { BodyState, Role } from './protocol';
 import { startRemoteCrumble } from './remote-crumble';
 import type { NetplaySession } from './session';
+import { NETPLAY_CONFIG, type NetplayConfig } from '../../config/netplay.config';
 import { createWaxClaims, type WaxClaims } from './wax-claims';
 
 /** How quickly the drawing slides onto (or off) this candle's head when the other candle starts or stops riding it. */
@@ -62,13 +63,19 @@ export interface VersusClient {
   knocksTaken(): number;
 }
 
-export function createVersusClient(session: NetplaySession, gameConfig: GameConfig): VersusClient {
+export function createVersusClient(session: NetplaySession, gameConfig: GameConfig, netplay: NetplayConfig = NETPLAY_CONFIG): VersusClient {
   const role = session.role;
   const otherRole: Role = role === 'host' ? 'guest' : 'host';
   const body = gameConfig.player;
   const stepMs = 1000 / gameConfig.stepHz;
   const arbiter: ContactArbiter | null = gameConfig.versus
-    ? createContactArbiter(gameConfig.versus, body, gameConfig.walkSpeed, stepMs) : null;
+    // Two games may disagree about when one contact happened by up to the knock window plus the longest playback delay.
+    ? createContactArbiter(gameConfig.versus, body, gameConfig.walkSpeed, stepMs, gameConfig.versus.knock.contactWindowMs + netplay.maxPlaybackDelayMs)
+    : null;
+  /** A head that moves more than this between two steps teleported (a restart, a snap): it carries nobody. */
+  const carryLimit = carryLimitPx(gameConfig);
+  let syncedConnection = 0;
+  let knownPeer: string | null = null;
   const claims: WaxClaims = createWaxClaims(role);
   let run = 0;
   let last: { x: number; y: number } | null = null;
@@ -91,7 +98,8 @@ export function createVersusClient(session: NetplaySession, gameConfig: GameConf
     const blend = Math.max(0, Math.min(1, anchor01 + (rides ? 1 : -1) * Math.min(1, dt / ANCHOR_BLEND_MS)));
     const anchoredX = me.x + (b.rideOffsetX ?? 0), anchoredY = me.y - body.height;
     const x = b.x + (anchoredX - b.x) * blend, y = b.y + (anchoredY - b.y) * blend;
-    const moved = last ? { dx: x - last.x, dy: y - last.y } : { dx: 0, dy: 0 };
+    const step = last ? { dx: x - last.x, dy: y - last.y } : { dx: 0, dy: 0 };
+    const moved = Math.hypot(step.dx, step.dy) <= carryLimit ? step : { dx: 0, dy: 0 };
     if (commit) { anchor01 = blend; anchorAtMs = atMs; last = { x, y }; headX = x; }
     return { other: { id: otherRole, x, y, vx: b.vx, vy: b.vy, width: body.width, height: body.height, grounded: b.grounded,
       ...moved, ridesMe: rides, tieSide: role === 'host' ? -1 : 1 }, shown: { ...b, x, y } };
@@ -108,7 +116,8 @@ export function createVersusClient(session: NetplaySession, gameConfig: GameConf
       stepOther = other; stepAtMs = atMs;
       if (!arbiter) return { state, versus: other ? { others: [other] } : {} };
       const out = arbiter.beforeStep(state, other, atMs);
-      for (const event of out.send) session.sendEvent(event);
+      // A knock is stamped with the contact's own time, so the other game can tell one contact from the next.
+      for (const event of out.send) session.sendEvent(event, atMs);
       return { state: out.state, versus: { ...(other ? { others: [other] } : {}), ...(out.pushVx ? { pushVx: out.pushVx } : {}) } };
     },
     afterStep(state, input, before, after) {
@@ -125,6 +134,15 @@ export function createVersusClient(session: NetplaySession, gameConfig: GameConf
     takeWorld(crumble) {
       const changes: WorldChanges = { crumble, hide: [], show: [], revoke: [] };
       const now = session.nowMs();
+      // A new other player (a reload): the drops the last one took are free again.
+      const peer = session.peerId();
+      if (peer !== null && peer !== knownPeer) { if (knownPeer !== null) changes.show.push(...claims.clearRemote()); knownPeer = peer; }
+      // After every (re)connection, tell the other game what outlives a message: this run's wax and the crumbling ledges.
+      if (session.status() === 'connected' && session.connectionId() !== syncedConnection) {
+        syncedConnection = session.connectionId();
+        const crumbling = [...crumble].map(([id, timer]) => ({ id, startedMs: now - timer.heldMs - (timer.goneMs ?? 0) }));
+        session.sendEvent({ kind: 'sync', run, wax: claims.localClaims(), crumble: crumbling });
+      }
       for (const { atMs, event } of session.takeEvents()) {
         switch (event.kind) {
           case 'shove': case 'knock': arbiter?.receive(event, atMs, now); break;
@@ -138,6 +156,18 @@ export function createVersusClient(session: NetplaySession, gameConfig: GameConf
             break;
           }
           case 'run_reset': changes.show.push(...claims.onRemoteReset(event.run)); break;
+          case 'sync': {
+            changes.show.push(...claims.onRemoteReset(event.run));
+            for (const drop of event.wax) {
+              const verdict = claims.onRemote(drop.id, drop.atMs, event.run);
+              if (verdict !== 'ignore') changes.hide.push(drop.id);
+              if (verdict === 'revoke') changes.revoke.push(drop.id);
+            }
+            if (gameConfig.ledgeKinds) {
+              for (const ledge of event.crumble) changes.crumble = startRemoteCrumble(changes.crumble, ledge.id, now - ledge.startedMs, gameConfig.ledgeKinds.crumble);
+            }
+            break;
+          }
         }
       }
       return changes;

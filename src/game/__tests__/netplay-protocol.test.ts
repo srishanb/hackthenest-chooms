@@ -145,8 +145,11 @@ describe('the contact arbiter', () => {
     expect(twice.beforeStep(state, null, 1010 + V.shoveHoldMs + 1).pushVx).toBe(0);
   });
 
-  it('a knock is taken once per contact window, and a late one is dropped', () => {
+  it('a knock is taken once per contact, a late one still lands, and one far too late is dropped', () => {
+    // Contacts are told apart by their own time (protocol 2): a late knock from the other game still lands, so the
+    // other candle is never knocked alone; past maxEventAgeMs + the same-contact time it is dropped.
     const a = arbiter();
+    const same = V.knock.contactWindowMs;
     const state = { ...createPlayer(300, 300), jumpLatch: false };
     a.receive({ kind: 'knock', dvx: 100, dvy: 0 }, 1000, 1050);
     a.receive({ kind: 'knock', dvx: 100, dvy: 0 }, 1001, 1060);
@@ -154,7 +157,10 @@ describe('the contact arbiter', () => {
     expect(after.vx).toBe(100);
     expect(a.knocksTaken()).toBe(1);
     a.receive({ kind: 'knock', dvx: 100, dvy: 0 }, 2000, 2000 + V.maxEventAgeMs + 1);
-    a.beforeStep(after, null, 3000);
-    expect(a.knocksTaken()).toBe(1);
+    a.beforeStep(after, null, 2000 + V.maxEventAgeMs + 2);
+    expect(a.knocksTaken()).toBe(2);
+    a.receive({ kind: 'knock', dvx: 100, dvy: 0 }, 5000, 5000 + V.maxEventAgeMs + same + 1);
+    a.beforeStep(after, null, 5000 + V.maxEventAgeMs + same + 2);
+    expect(a.knocksTaken()).toBe(2);
   });
 });

@@ -472,8 +472,10 @@ export class EndlessScene extends Phaser.Scene {
     while (this.accumulatorMs >= stepMs && running()) {
       this.accumulatorMs -= stepMs;
       // In a two-player climb moving ledges follow the shared clock, so both players see them in the same place.
+      const worldBefore = this.worldTimeMs;
       this.worldTimeMs = this.net ? this.net.worldTime(this.worldTimeMs, stepMs, this.accumulatorMs) : this.worldTimeMs + stepMs;
-      this.platforms = platformsAt(this.stream.platforms(), this.worldTimeMs, stepMs);
+      // When the shared clock sets or nudges the world time, a moving ledge carries its rider by how far it really moved.
+      this.platforms = platformsAt(this.stream.platforms(), this.worldTimeMs, this.net ? this.worldTimeMs - worldBefore : stepMs);
       // Wax growth (+2% per piece, capped) scales walking and jumping; it comes from the wax count only.
       const movement = grownMovement(gameConfig, waxGrowth(this.wax.count(), WAX_CONFIG.growthPerWax, WAX_CONFIG.growthCapWax));
       // Development: a game key pressed during a bot run hands the candle over to the keyboard for the rest of the run.

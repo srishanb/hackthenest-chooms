@@ -11,7 +11,8 @@
  *   - a shove: walking into a standing candle pushes it (`shoveDirection` says when; the pushed player's own game
  *     moves its candle with `StepEnvironment.pushVx`);
  *   - a knock: bodies that meet fast, one of them in the air, both change speed by the relative velocity along the
- *     contact (`knockBetween`, `applyKnock`).
+ *     contact (`knockBetween`, `applyKnock`). A rider and the candle it stands on never knock each other: the carrier
+ *     may jump with a rider on its head (the head is gone, the rider falls) and the rider's jump owes nothing to it.
  * With no other body, none of this is called and `stepPlayer` gives exactly what it gave before. Fixed rules from
  * GameConfig `versus`; never the signal (binding rule 2).
  */
@@ -112,6 +113,18 @@ export function shoveDirection(me: PlayerState, dir: -1 | 0 | 1, other: OtherBod
   return gap <= TOUCH_PX && gap > -body.width / 2 && overlapY > 1 ? dir : 0;
 }
 
+/**
+ * The most a head may move between two physics steps and still carry its rider (px): twice the fastest a candle
+ * moves on its own (walking, a launch, steering in a fall) for one step. More than that is a teleport of the other
+ * player (a restart, a snapped correction, updates resuming after a gap): the rider is not carried, and falls.
+ */
+export function carryLimitPx(config: { walkSpeed: number; stepHz: number; jump: { maxSpeed: number }; falling?: { speedX: number } }): number {
+  return (2 * Math.max(config.walkSpeed, config.jump.maxSpeed, config.falling?.speedX ?? 0)) / config.stepHz;
+}
+
+/** True when this candle stands on the other one's head, or the other stands on this one's. */
+export const riding = (me: { platformId: string | null }, other: OtherBody): boolean => other.ridesMe === true || me.platformId === headId(other.id);
+
 /** A change of speed (px/s) for one candle. */
 export interface Knock { dvx: number; dvy: number }
 
@@ -122,9 +135,11 @@ export interface Knock { dvx: number; dvy: number }
  * by `(1 + restitution) / 2` of the approach speed along it (equal masses), at most `maxImpulse`.
  * Returns both candles' changes, or null.
  */
-export function knockBetween(me: { x: number; y: number; vx: number; vy: number; grounded: boolean }, other: OtherBody, body: Body,
-  rules: VersusConfig, dt: number): { mine: Knock; theirs: Knock } | null {
+export function knockBetween(me: { x: number; y: number; vx: number; vy: number; grounded: boolean; platformId?: string | null }, other: OtherBody,
+  body: Body, rules: VersusConfig, dt: number): { mine: Knock; theirs: Knock } | null {
   if (me.grounded && other.grounded) return null;
+  // A rider and the candle it stands on never knock each other (contact-arbiter.ts keeps this until they part).
+  if (other.ridesMe || me.platformId === headId(other.id)) return null;
   const ax = me.x + me.vx * dt, ay = me.y + me.vy * dt;
   const bx = other.x + other.vx * dt, by = other.y + other.vy * dt;
   const overlapX = (body.width + other.width) / 2 - Math.abs(ax - bx);
