@@ -92,6 +92,8 @@ export function createRemoteCandle(config: NetplayConfig, gravityY: number): Rem
       }
     },
     at(nowMs) {
+      // Nothing to show yet: leave the delay alone, so the first state sets it from its own travel time.
+      if (samples.length === 0) return null;
       const want = Math.min(config.maxPlaybackDelayMs, config.playbackDelayMs + Math.max(0, latency) + 2 * spread);
       if (lastAt !== Number.NEGATIVE_INFINITY) {
         const dt = Math.max(0, nowMs - lastAt);

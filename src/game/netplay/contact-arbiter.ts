@@ -3,8 +3,8 @@
  *
  * Each game sees its own candle as it really is and the other one slightly in the past, so the two games may
  * notice the same contact at different moments, or only one of them may notice it. The rules:
- *   - Shove (both standing, one walks into the other): only the pusher's game notices it (`shoveDirection`), and it
- *     sends a shove to the pushed player every `shoveRepeatMs` while the contact lasts. The pushed player's game
+ *   - Shove (both standing, one walks into the other): only the pusher's game notices it, after a physics step
+ *     that left its candle pressed against the other (`shoveDirection`), and it sends a shove to the pushed player every `shoveRepeatMs` while the contact lasts. The pushed player's game
  *     pushes its own candle at `shoveSpeed01` of walking speed until `shoveHoldMs` after the latest shove arrived.
  *     The pusher stays blocked by the other candle and follows it as its new place arrives, so both screens agree.
  *     A repeat of the same shove only renews the same window: it can never push twice as far.
@@ -23,10 +23,12 @@ type Outgoing = Extract<NetEvent, { kind: 'shove' } | { kind: 'knock' }>;
 
 export interface ContactArbiter {
   /**
-   * Before a physics step at shared time `nowMs`: apply knocks that arrived, notice a new knock or a shove against
-   * `other`. Returns the candle to step, the shove speed for this step, and the events to send.
+   * Before a physics step at shared time `nowMs`: apply knocks that arrived and notice a new knock against `other`.
+   * Returns the candle to step, the shove speed for this step, and the events to send.
    */
-  beforeStep(state: PlayerState, input: PlayerInput, other: OtherBody | null, nowMs: number): { state: PlayerState; pushVx: number; send: Outgoing[] };
+  beforeStep(state: PlayerState, other: OtherBody | null, nowMs: number): { state: PlayerState; pushVx: number; send: Outgoing[] };
+  /** After the step: a shove to send when the step left this candle walking into the standing `other`. */
+  afterStep(state: PlayerState, input: PlayerInput, other: OtherBody | null, nowMs: number): Outgoing[];
   /** A shove or knock from the other game, sent at shared time `sentMs`, arrived at `nowMs`. */
   receive(event: Outgoing, sentMs: number, nowMs: number): void;
   /** How many knocks this candle has taken (for tests and the dev readout). */
@@ -51,7 +53,7 @@ export function createContactArbiter(rules: VersusConfig, body: { width: number;
   };
 
   return {
-    beforeStep(state, input, other, nowMs) {
+    beforeStep(state, other, nowMs) {
       let next = state;
       const send: Outgoing[] = [];
       for (const change of waiting) if (!inWindow(nowMs)) next = knock(next, change, nowMs);
@@ -63,13 +65,14 @@ export function createContactArbiter(rules: VersusConfig, body: { width: number;
           send.push({ kind: 'knock', dvx: hit.theirs.dvx, dvy: hit.theirs.dvy });
         }
       }
-      const dir = ((input.right ? 1 : 0) - (input.left ? 1 : 0)) as -1 | 0 | 1;
-      const shove = other ? shoveDirection(next, dir, other, body) : 0;
-      if (shove !== 0 && nowMs - lastShoveSentMs >= rules.shoveRepeatMs) {
-        lastShoveSentMs = nowMs;
-        send.push({ kind: 'shove', dir: shove });
-      }
       return { state: next, pushVx: nowMs < push.untilMs ? push.vx : 0, send };
+    },
+    afterStep(state, input, other, nowMs) {
+      const dir = ((input.right ? 1 : 0) - (input.left ? 1 : 0)) as -1 | 0 | 1;
+      const shove = other ? shoveDirection(state, dir, other, body) : 0;
+      if (shove === 0 || nowMs - lastShoveSentMs < rules.shoveRepeatMs) return [];
+      lastShoveSentMs = nowMs;
+      return [{ kind: 'shove', dir: shove }];
     },
     receive(event, sentMs, nowMs) {
       if (nowMs - sentMs > rules.maxEventAgeMs) return;

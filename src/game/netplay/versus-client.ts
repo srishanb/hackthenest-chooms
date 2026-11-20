@@ -42,9 +42,12 @@ export interface VersusClient {
   /** The other candle's body at shared time `atMs` for this candle's physics, or null while there is none. */
   otherBody(atMs: number, me: PlayerState): OtherBody | null;
   /** Before a physics step: the candle to step and the extra environment for `stepWorld`. */
-  beforeStep(state: PlayerState, input: PlayerInput, atMs: number): { state: PlayerState; versus: Pick<StepEnvironment, 'others' | 'pushVx'> };
-  /** After a physics step: crumbling ledges this candle started are sent to the other game. */
-  afterStep(before: CrumbleState, after: CrumbleState): void;
+  beforeStep(state: PlayerState, atMs: number): { state: PlayerState; versus: Pick<StepEnvironment, 'others' | 'pushVx'> };
+  /**
+   * After a physics step: a shove when the step left this candle walking into the other one, and the crumbling
+   * ledges this candle started, are sent to the other game.
+   */
+  afterStep(state: PlayerState, input: PlayerInput, crumbleBefore: CrumbleState, crumbleAfter: CrumbleState): void;
   /** Once a frame: send this candle, read what arrived. */
   update(state: PlayerState, look: LocalLook): void;
   /** Once a frame, after `update`: what the other player changed in this world. */
@@ -70,6 +73,9 @@ export function createVersusClient(session: NetplaySession, gameConfig: GameConf
   let anchor01 = 0, anchorAtMs = Number.NEGATIVE_INFINITY;
   /** The other candle's centre x at the latest step, so this candle's report can say where on its head it stands. */
   let headX: number | null = null;
+  /** The other body of the latest step, for the shove check after it. */
+  let stepOther: OtherBody | null = null;
+  let stepAtMs = 0;
   const myHead = headId(role);
 
   function otherBody(atMs: number, me: PlayerState): OtherBody | null {
@@ -94,14 +100,16 @@ export function createVersusClient(session: NetplaySession, gameConfig: GameConf
     role,
     session,
     otherBody,
-    beforeStep(state, input, atMs) {
+    beforeStep(state, atMs) {
       const other = otherBody(atMs, state);
+      stepOther = other; stepAtMs = atMs;
       if (!arbiter) return { state, versus: other ? { others: [other] } : {} };
-      const out = arbiter.beforeStep(state, input, other, atMs);
+      const out = arbiter.beforeStep(state, other, atMs);
       for (const event of out.send) session.sendEvent(event);
       return { state: out.state, versus: { ...(other ? { others: [other] } : {}), ...(out.pushVx ? { pushVx: out.pushVx } : {}) } };
     },
-    afterStep(before, after) {
+    afterStep(state, input, before, after) {
+      if (arbiter) for (const event of arbiter.afterStep(state, input, stepOther, stepAtMs)) session.sendEvent(event);
       if (after === before) return;
       for (const [id, timer] of after) if (!before.has(id) && timer.goneMs === null) session.sendEvent({ kind: 'crumble', ledgeId: id });
     },
