@@ -92,9 +92,30 @@ const KICK_OFFSETS: readonly number[] = (() => {
   for (let k = 1; k <= range; k++) offsets.push(-k, k);
   return offsets;
 })();
-/** The variants a wall step is proved from besides its own (route-replay `stepLands`): every takeoff shift, every press offset. */
+/**
+ * Takeoff shifts and press offsets a wall step must also land from together (Decision D-37): a person is a little
+ * off at the takeoff and a little early or late at the press at the same time, and the two errors add up (QA found
+ * steps that land from each alone and miss from both). Every shift `crossShiftPx` apart across
+ * +-`takeoffTolerancePx`, crossed with every press offset `crossOffsetSteps` apart across +-`kickTimingSteps`.
+ */
+const CROSS: ReadonlyArray<{ shiftPx: number; kickOffsetSteps: number }> = (() => {
+  const { takeoffTolerancePx: range, walls } = ENDLESS_PIECES_CONFIG;
+  const out: Array<{ shiftPx: number; kickOffsetSteps: number }> = [];
+  for (let o = walls.crossOffsetSteps; o <= walls.kickTimingSteps; o += walls.crossOffsetSteps) {
+    for (let k = 1; k * walls.crossShiftPx <= range + 1e-9; k++) {
+      for (const kickOffsetSteps of [-o, o]) for (const shiftPx of [-k * walls.crossShiftPx, k * walls.crossShiftPx]) out.push({ shiftPx, kickOffsetSteps });
+    }
+  }
+  return out;
+})();
+/** The press-time variants of a wall step that `stepLands` checks beyond its takeoff shifts: every offset alone, then the cross. */
+const KICK_VARIANTS: ReadonlyArray<{ shiftPx: number; kickOffsetSteps: number }> = [...KICK_OFFSETS.map((kickOffsetSteps) => ({ shiftPx: 0, kickOffsetSteps })), ...CROSS];
+/**
+ * The variants a wall step is proved from besides its own (route-replay `stepLands`): every takeoff shift on time,
+ * every press offset from the stored takeoff, and the cross of shifts and offsets (`CROSS`).
+ */
 export function wallStepVariants(): Array<{ shiftPx: number; kickOffsetSteps: number }> {
-  return [...SENSITIVE_SHIFTS.map((shiftPx) => ({ shiftPx, kickOffsetSteps: 0 })), ...KICK_OFFSETS.map((kickOffsetSteps) => ({ shiftPx: 0, kickOffsetSteps }))];
+  return [...SENSITIVE_SHIFTS.map((shiftPx) => ({ shiftPx, kickOffsetSteps: 0 })), ...KICK_VARIANTS];
 }
 /** The longest flight followed (physics steps, 50 s): a slow sink in a drift column is long, but never this long. */
 const MAX_FLIGHT_STEPS = 6000;
@@ -328,7 +349,7 @@ function stepLands(step: RouteStep, ledges: readonly PlatformData[], worldWidth:
   if (sensitive(step, flight, from)
     && !shiftsFor(flight).every((shift) => replayStep(step, ledges, worldWidth, config, shift, true, updrafts) === step.toId)) return false;
   // A wall step: a person presses a little early or late; it must land from every such press time too.
-  if (step.kicks && !KICK_OFFSETS.every((offset) => replayStep(step, ledges, worldWidth, config, 0, true, updrafts, offset) === step.toId)) return false;
+  if (step.kicks && !KICK_VARIANTS.every((v) => replayStep(step, ledges, worldWidth, config, v.shiftPx, true, updrafts, v.kickOffsetSteps) === step.toId)) return false;
   if (!from?.motion) return true;
   if (step.kind === 'drop') return false;
   const drift = chargeDriftPx(from, step.chargeSteps, config);
@@ -402,7 +423,7 @@ function sweep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: n
   if (sensitive(step, flight, from)) {
     for (const shiftPx of shiftsFor(flight)) flyStep(step, platforms, worldWidth, config, { updrafts, onState: traced(), shiftPx });
   }
-  if (step.kicks) for (const kickOffsetSteps of KICK_OFFSETS) flyStep(step, platforms, worldWidth, config, { updrafts, onState: traced(), kickOffsetSteps });
+  if (step.kicks) for (const { shiftPx, kickOffsetSteps } of KICK_VARIANTS) flyStep(step, platforms, worldWidth, config, { updrafts, onState: traced(), shiftPx, kickOffsetSteps });
   return drops ? { ...box, drops } : box;
 }
 
