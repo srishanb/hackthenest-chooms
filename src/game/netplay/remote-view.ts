@@ -17,7 +17,7 @@ import type { BodyState } from './protocol';
 /** Above the darkness and the ledge outlines, like the player's own candle (210); the marker sits above both. */
 const MARKER_DEPTH = 290;
 /** The marker's size and how far inside the screen edge it sits (world px; the camera does not zoom). */
-const MARKER_PX = 12;
+const MARKER_PX = 16;
 const MARGIN_PX = 14;
 const MARKER_COLOR = 0xffd98a;
 const MARKER_EDGE = 0x1a1206;
@@ -53,7 +53,7 @@ export function markerPixels(spot: { x: number; y: number; angle: number }): { x
   const cells: { x: number; y: number; fill: boolean }[] = [];
   const r = MARKER_PX * 0.75;
   const corner = (turn: number, reach: number) => ({ x: Math.cos(spot.angle + turn) * reach, y: Math.sin(spot.angle + turn) * reach });
-  const [tip, left, right] = [corner(0, MARKER_PX * 0.6), corner(2.4, MARKER_PX * 0.6), corner(-2.4, MARKER_PX * 0.6)];
+  const [tip, left, right] = [corner(0, MARKER_PX * 0.7), corner(2.5, MARKER_PX * 0.45), corner(-2.5, MARKER_PX * 0.45)];
   const side = (p: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }): number => (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
   const ox = snapToGrid(spot.x), oy = snapToGrid(spot.y);
   for (let gy = -r; gy <= r; gy += PIXEL_GRID) {
