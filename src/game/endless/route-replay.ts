@@ -92,9 +92,30 @@ const KICK_OFFSETS: readonly number[] = (() => {
   for (let k = 1; k <= range; k++) offsets.push(-k, k);
   return offsets;
 })();
-/** The variants a wall step is proved from besides its own (route-replay `stepLands`): every takeoff shift, every press offset. */
+/**
+ * Takeoff shifts and press offsets a wall step must also land from together (Decision D-37): a person is a little
+ * off at the takeoff and a little early or late at the press at the same time, and the two errors add up (QA found
+ * steps that land from each alone and miss from both). Every shift `crossShiftPx` apart across
+ * +-`takeoffTolerancePx`, crossed with every press offset `crossOffsetSteps` apart across +-`kickTimingSteps`.
+ */
+const CROSS: ReadonlyArray<{ shiftPx: number; kickOffsetSteps: number }> = (() => {
+  const { takeoffTolerancePx: range, walls } = ENDLESS_PIECES_CONFIG;
+  const out: Array<{ shiftPx: number; kickOffsetSteps: number }> = [];
+  for (let o = walls.crossOffsetSteps; o <= walls.kickTimingSteps; o += walls.crossOffsetSteps) {
+    for (let k = 1; k * walls.crossShiftPx <= range + 1e-9; k++) {
+      for (const kickOffsetSteps of [-o, o]) for (const shiftPx of [-k * walls.crossShiftPx, k * walls.crossShiftPx]) out.push({ shiftPx, kickOffsetSteps });
+    }
+  }
+  return out;
+})();
+/** The press-time variants of a wall step that `stepLands` checks beyond its takeoff shifts: every offset alone, then the cross. */
+const KICK_VARIANTS: ReadonlyArray<{ shiftPx: number; kickOffsetSteps: number }> = [...KICK_OFFSETS.map((kickOffsetSteps) => ({ shiftPx: 0, kickOffsetSteps })), ...CROSS];
+/**
+ * The variants a wall step is proved from besides its own (route-replay `stepLands`): every takeoff shift on time,
+ * every press offset from the stored takeoff, and the cross of shifts and offsets (`CROSS`).
+ */
 export function wallStepVariants(): Array<{ shiftPx: number; kickOffsetSteps: number }> {
-  return [...SENSITIVE_SHIFTS.map((shiftPx) => ({ shiftPx, kickOffsetSteps: 0 })), ...KICK_OFFSETS.map((kickOffsetSteps) => ({ shiftPx: 0, kickOffsetSteps }))];
+  return [...SENSITIVE_SHIFTS.map((shiftPx) => ({ shiftPx, kickOffsetSteps: 0 })), ...KICK_VARIANTS];
 }
 /** The longest flight followed (physics steps, 50 s): a slow sink in a drift column is long, but never this long. */
 const MAX_FLIGHT_STEPS = 6000;
@@ -270,6 +291,28 @@ export function chargeDriftPx(ledge: PlatformData, chargeSteps: number, config: 
   return Math.min(2 * motion.distance, (2 * Math.PI * motion.distance / motion.periodMs) * chargeMs) + DRIFT_TOLERANCE_PX;
 }
 
+/**
+ * A wall stands where the candle must stand or walk for this step (Decision D-37): its box overlaps the band a
+ * standing body fills on the step's ledge, anywhere from one edge of the ledge (over its travel, if it moves) to
+ * the other, or at the takeoff across the takeoff tolerance (and a moving ledge's drift). The replay puts the
+ * candle at the takeoff directly (`standOn`), and the physics does not stop a body that starts inside a wall,
+ * so without this a takeoff inside a wall, or one cut off by a wall's side from where the candle lands on the
+ * ledge, would look sound here and be unplayable in the game. The arrival and the takeoff both lie on the ledge,
+ * so a wall clear of that whole band can never stand between them.
+ */
+export function wallInTheWay(step: RouteStep, ledges: readonly PlatformData[], walls: readonly PlatformBox[], config: GameConfig): boolean {
+  const from = ledges.find((ledge) => ledge.id === step.fromId);
+  if (!from) return false;
+  const { width, height } = config.player;
+  const travel = from.motion?.distance ?? 0;
+  const reach = ENDLESS_PIECES_CONFIG.takeoffTolerancePx + chargeDriftPx(from, step.chargeSteps, config);
+  const left = Math.min(from.x - from.width / 2 - travel, step.takeoffX - reach - width / 2);
+  const right = Math.max(from.x + from.width / 2 + travel, step.takeoffX + reach + width / 2);
+  const top = from.y - from.height / 2;
+  return walls.some((wall) => wall.id !== from.id && wall.x - wall.width / 2 < right - 1e-6 && wall.x + wall.width / 2 > left + 1e-6
+    && wall.y - wall.height / 2 < top - 1e-6 && wall.y + wall.height / 2 > top - height + 1e-6);
+}
+
 /** A jump whose landing depends finely on where it starts: through a column, off a cap, along a wall, or off a crumbling ledge (not a moving one). */
 function sensitive(step: RouteStep, flight: Flight, from: PlatformBox | undefined): boolean {
   if (step.kind === 'drop' || (from as { motion?: unknown } | undefined)?.motion) return false;
@@ -296,6 +339,8 @@ function shiftsFor(flight: Flight): readonly number[] {
  * seen over 2,150 such steps is 0.25 px wide). A drop may not cross a column or a cap at all.
  */
 function stepLands(step: RouteStep, ledges: readonly PlatformData[], worldWidth: number, config: GameConfig, updrafts: readonly UpdraftBox[]): boolean {
+  const walls = wallsIn(ledges);
+  if (walls.length && wallInTheWay(step, ledges, walls, config)) return false;
   const flight = flyStep(step, ledges, worldWidth, config, { stopPastTarget: true, updrafts });
   if (flight.landedId !== step.toId || (step.via && !flight.bounces.includes(step.via)) || !kickedAsStored(step, flight)) return false;
   // A walk-off starts its fall wherever the walk's last step happens to end, so it may not cross a column, a cap or touch a wall.
@@ -304,7 +349,7 @@ function stepLands(step: RouteStep, ledges: readonly PlatformData[], worldWidth:
   if (sensitive(step, flight, from)
     && !shiftsFor(flight).every((shift) => replayStep(step, ledges, worldWidth, config, shift, true, updrafts) === step.toId)) return false;
   // A wall step: a person presses a little early or late; it must land from every such press time too.
-  if (step.kicks && !KICK_OFFSETS.every((offset) => replayStep(step, ledges, worldWidth, config, 0, true, updrafts, offset) === step.toId)) return false;
+  if (step.kicks && !KICK_VARIANTS.every((v) => replayStep(step, ledges, worldWidth, config, v.shiftPx, true, updrafts, v.kickOffsetSteps) === step.toId)) return false;
   if (!from?.motion) return true;
   if (step.kind === 'drop') return false;
   const drift = chargeDriftPx(from, step.chargeSteps, config);
@@ -378,7 +423,7 @@ function sweep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: n
   if (sensitive(step, flight, from)) {
     for (const shiftPx of shiftsFor(flight)) flyStep(step, platforms, worldWidth, config, { updrafts, onState: traced(), shiftPx });
   }
-  if (step.kicks) for (const kickOffsetSteps of KICK_OFFSETS) flyStep(step, platforms, worldWidth, config, { updrafts, onState: traced(), kickOffsetSteps });
+  if (step.kicks) for (const { shiftPx, kickOffsetSteps } of KICK_VARIANTS) flyStep(step, platforms, worldWidth, config, { updrafts, onState: traced(), shiftPx, kickOffsetSteps });
   return drops ? { ...box, drops } : box;
 }
 

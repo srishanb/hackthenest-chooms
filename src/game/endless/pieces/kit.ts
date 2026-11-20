@@ -97,18 +97,27 @@ export function traceDrop(game: GameConfig, depthPx: number): Array<{ dx: number
   return points;
 }
 
-/** True when `candidate` keeps the required distance from every ledge in `placed` (itself excepted). */
-export function keepsClear(candidate: PlatformData, placed: readonly PlatformData[], config: EndlessConfig): boolean {
+/**
+ * True when `candidate` keeps the required distance from every ledge in `placed` (itself excepted).
+ * `wallHeadroomPx` (the candle's height plus `walls.headroomPx`) is the least room a wall leaves over a ledge it
+ * overlaps sideways: the box gap between the ledge's top and the wall's underside (Decision D-37). Less, and the
+ * wall would split the ledge's standing surface (the candle walking along it stops at the wall's face).
+ */
+export function keepsClear(candidate: PlatformData, placed: readonly PlatformData[], config: EndlessConfig, wallHeadroomPx: number): boolean {
   for (const other of placed) {
     if (other.id === candidate.id) continue;
     // A ledge that slides needs its whole travel kept clear, not only where it rests.
     const travel = (other.motion?.distance ?? 0) + (candidate.motion?.distance ?? 0);
     const gapX = Math.abs(candidate.x - other.x) - (candidate.width + other.width) / 2 - travel;
-    // A wall is tall: what matters is the gap between the two boxes, not between their tops.
-    const gapY = candidate.type === WALL_TYPE || other.type === WALL_TYPE
-      ? 2 * (Math.abs(candidate.y - other.y) - (candidate.height + other.height) / 2)
-      : Math.abs(topOf(candidate) - topOf(other));
-    if (gapX < config.sideClearancePx && gapY < config.stackClearancePx) return false;
+    if (gapX >= config.sideClearancePx) continue;
+    if (candidate.type === WALL_TYPE || other.type === WALL_TYPE) {
+      // A wall is tall: what matters is the real gap between the two boxes, not between their tops.
+      const boxGap = Math.abs(candidate.y - other.y) - (candidate.height + other.height) / 2;
+      // A wall over a ledge (in either order of placing) leaves the candle room to stand under it.
+      const [upper, lower] = candidate.y < other.y ? [candidate, other] : [other, candidate];
+      const least = upper.type === WALL_TYPE && lower.type !== WALL_TYPE ? Math.max(wallHeadroomPx, config.stackClearancePx / 2) : config.stackClearancePx / 2;
+      if (boxGap < least) return false;
+    } else if (Math.abs(topOf(candidate) - topOf(other)) < config.stackClearancePx) return false;
   }
   return true;
 }
@@ -213,7 +222,9 @@ export function createPieceKit(setup: KitSetup): GeneratorKit {
     return `${prefix}${used + 1}`;
   };
 
-  const clear = (candidate: PlatformData, placed: readonly PlatformData[]): boolean => keepsClear(candidate, placed, config);
+  /** The least room a wall leaves over a ledge it overlaps (px): the candle's height and a margin. */
+  const wallHeadroomPx = body.height + tuning.walls.headroomPx;
+  const clear = (candidate: PlatformData, placed: readonly PlatformData[]): boolean => keepsClear(candidate, placed, config, wallHeadroomPx);
 
   /** Inside the walls (over its whole travel) and between the chunk's floor limit and ceiling. */
   const inBounds = (ledge: PlatformData): boolean => {

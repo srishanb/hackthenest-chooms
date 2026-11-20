@@ -5,6 +5,7 @@
  * needs its kicks, no wall catches a long fall, the night outlines find each wall step's target, and the route
  * bot (on the game's own world step) climbs through every one.
  */
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { ENDLESS_CONFIG as C } from '../../config/endless.config';
 import { ENDLESS_PIECES_CONFIG as T } from '../../config/endless-pieces.config';
@@ -25,6 +26,8 @@ import { stepWorld } from '../player/world-step';
 import { platformsAt } from '../world/environment';
 import { reachableLedges } from '../world/reachable-ledges';
 
+/** sha256 of the classic run below, taken on the code before walls (c7dca6f). */
+const CLASSIC_RUN_SHA256 = 'de10e8ff793952707c3963a36ee5032559a08dbe33c267ec849b073d62a19ca5';
 const WIDTH = G.view.width;
 const H = G.player.height;
 const topOf = (p: { y: number; height: number }): number => p.y - p.height / 2;
@@ -86,6 +89,31 @@ describe('the switch', () => {
       expect(outA).toEqual(outB);
       a = outA.state; b = outB.state;
     }
+  });
+});
+
+describe('the classic climb against the code before walls', () => {
+  it('a fixed random-key run over authored kinds of ledge gives the same states as before walls existed (pinned hash)', () => {
+    // The hash was taken with the code before the wall prototype (commit c7dca6f) and still holds: the wall rules
+    // and the shared steering path change no number in a world with no wall.
+    const ledges: PlatformData[] = [
+      { id: 'g', x: 480, y: 1010, width: 960, height: 20, type: 'static' },
+      { id: 'a', x: 300, y: 880, width: 160, height: 20, type: 'static' },
+      { id: 'b', x: 620, y: 760, width: 140, height: 20, type: 'slippery', ice01: 0.9 },
+      { id: 'c', x: 420, y: 640, width: 120, height: 20, type: 'static', dx: 0.5 } as PlatformData,
+      { id: 'd', x: 200, y: 520, width: 100, height: 20, type: 'static' },
+    ];
+    let seed = 2024;
+    const random = (): number => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    const hash = createHash('sha256');
+    let state: PlayerState = createPlayer(480, 1000 - H / 2);
+    for (let i = 0; i < 60_000; i++) {
+      const input = { left: random() < 0.3, right: random() < 0.4, jump: random() < 0.35 };
+      const out = stepPlayer(state, input, ledges, WIDTH, G, 1000 / G.stepHz, { windAccelerationX: Math.sin(i / 300) * 40 });
+      hash.update(JSON.stringify(out));
+      state = out.state;
+    }
+    expect(hash.digest('hex')).toBe(CLASSIC_RUN_SHA256);
   });
 });
 
@@ -259,7 +287,8 @@ describe('the route bot on the game world step', () => {
   }, 120_000);
 
   it('climbs a long wall course headless without stalling (30 s without a new best height at most)', () => {
-    for (const seed of [3, 11]) {
+    // 5, 41, 61 and 119 are seeds whose routes once stored a takeoff inside a wall (QA finding 4).
+    for (const seed of [3, 11, 5, 41, 61, 119]) {
       const generator = createEndlessGenerator(seed, G, C, undefined, undefined, { walls: true });
       const stream = createChunkStream(generator, C);
       const bot = createRouteBot();
