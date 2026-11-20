@@ -19,7 +19,7 @@ import type { PlayerInput, PlayerState } from '../player/types';
 import type { WorldOptions } from './protocol';
 import { createRemoteView } from './remote-view';
 import type { NetplaySession } from './session';
-import { nextWorldTime } from './shared-clock';
+import { createWorldTimeFollower } from './shared-clock';
 import { createVersusClient, type LocalLook, type WorldChanges } from './versus-client';
 
 export interface NetplayLinkOptions {
@@ -71,6 +71,7 @@ export function createNetplayLink(scene: Phaser.Scene, options: NetplayLinkOptio
   const { session, gameConfig, config, stores } = options;
   const client = createVersusClient(session, gameConfig, config);
   const view = createRemoteView(scene, gameConfig, options.flame);
+  const worldClock = createWorldTimeFollower(config.worldTimeSlewMs, config.worldTimeSnapMs, config.worldTimeResumeGapMs);
   /** Fuel each of this player's pickups gave, so a lost claim can take it back. */
   const fuelByDrop = new Map<string, number>();
   let worldSent = session.role === 'host';
@@ -98,7 +99,7 @@ export function createNetplayLink(scene: Phaser.Scene, options: NetplayLinkOptio
     world: () => session.world(),
     spawnOffsetX: () => (session.role === 'guest' ? config.guestSpawnOffsetPx : 0),
     worldTime: (currentMs, stepMs, behindMs) =>
-      nextWorldTime(currentMs, stepMs, session.nowMs() - behindMs, config.worldTimeSlewMs, config.worldTimeSnapMs),
+      worldClock.next(currentMs, stepMs, session.nowMs() - behindMs),
     beforeStep: (state, behindMs) => client.beforeStep(state, session.nowMs() - behindMs),
     afterStep: (state, input, before, after) => client.afterStep(state, input, before, after),
     waxTaken(dropIds, fuelGained01) {

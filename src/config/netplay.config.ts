@@ -48,6 +48,12 @@ export interface NetplayConfig {
    */
   worldTimeSlewMs: number;
   worldTimeSnapMs: number;
+  /**
+   * When this game's physics steps are more than this far apart in shared time (ms), it was not stepping (a pause, a hidden
+   * tab, a long hitch): the world time is set to the shared clock at once instead of nudged, even below `worldTimeSnapMs`.
+   * Above a frame at 30 fps, so ordinary frames never count.
+   */
+  worldTimeResumeGapMs: number;
   /** How long the status line shows "connected" and "the other player left" (ms). Waiting shows until it ends. */
   connectedNoticeMs: number;
   leftNoticeMs: number;
@@ -81,6 +87,7 @@ export const NETPLAY_CONFIG: NetplayConfig = {
   guestSpawnOffsetPx: 48,
   worldTimeSlewMs: 0.5, // 0.5 ms per 8.3 ms step: a moving ledge drifts back into line without a visible jerk
   worldTimeSnapMs: 1000,
+  worldTimeResumeGapMs: 50, // a frame at 20 fps: slower than that is a hitch, and setting the clock then is what the nudge was after
   connectedNoticeMs: 4000,
   leftNoticeMs: 6000,
   maxRemoteWax: 4096,

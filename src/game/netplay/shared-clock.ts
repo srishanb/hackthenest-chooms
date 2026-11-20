@@ -61,10 +61,12 @@ export function createSharedClock(role: Role, now: () => number): SharedClock {
 
 /**
  * The next physics step's world time in the two-player climb: `current + stepMs`, nudged toward the shared clock
- * by at most `slewMs`, or set to it when it is more than `snapMs` off (a new run, a long pause). Both games then
- * see a moving ledge in the same place. Solo play never calls this.
+ * by at most `slewMs`, or set to it when it is more than `snapMs` off (a new run, a long pause) or when `resumed`
+ * (this game's steps stopped for a while: a pause, a hidden tab, a long hitch). Both games then see a moving ledge
+ * in the same place. Solo play never calls this.
  */
-export function followSharedTime(current: number, stepMs: number, sharedMs: number, slewMs: number, snapMs: number): number {
+export function followSharedTime(current: number, stepMs: number, sharedMs: number, slewMs: number, snapMs: number, resumed = false): number {
+  if (resumed) return sharedMs;
   const next = current + stepMs;
   const error = sharedMs - next;
   if (Math.abs(error) > snapMs) return sharedMs;
@@ -76,7 +78,29 @@ export function followSharedTime(current: number, stepMs: number, sharedMs: numb
  * really moved. Moving ledges are placed at the new time and carry their riders by that real change (not by one
  * step's worth), so a candle on a moving ledge stays on it when the world time is set after a pause, or nudged.
  */
-export function nextWorldTime(currentMs: number, stepMs: number, sharedMs: number, slewMs: number, snapMs: number): { timeMs: number; deltaMs: number } {
-  const timeMs = followSharedTime(currentMs, stepMs, sharedMs, slewMs, snapMs);
+export function nextWorldTime(currentMs: number, stepMs: number, sharedMs: number, slewMs: number, snapMs: number, resumed = false): { timeMs: number; deltaMs: number } {
+  const timeMs = followSharedTime(currentMs, stepMs, sharedMs, slewMs, snapMs, resumed);
   return { timeMs, deltaMs: timeMs - currentMs };
+}
+
+/**
+ * The world clock of one game: `nextWorldTime`, plus knowing when this game resumes. Consecutive steps are a frame
+ * apart in shared time at most; a longer gap (more than `resumeGapMs`) means this game was not stepping (paused, tab
+ * hidden, a long hitch), so the world time is set to the shared clock outright instead of being caught up slowly,
+ * which left moving ledges out of step for seconds after a pause under the snap threshold. The nudge stays for the
+ * small drift between two clocks that both ran.
+ */
+export interface WorldTimeFollower {
+  next(currentMs: number, stepMs: number, sharedMs: number): { timeMs: number; deltaMs: number };
+}
+
+export function createWorldTimeFollower(slewMs: number, snapMs: number, resumeGapMs: number): WorldTimeFollower {
+  let lastSharedMs: number | null = null;
+  return {
+    next(currentMs, stepMs, sharedMs) {
+      const resumed = lastSharedMs !== null && sharedMs - lastSharedMs > resumeGapMs;
+      lastSharedMs = sharedMs;
+      return nextWorldTime(currentMs, stepMs, sharedMs, slewMs, snapMs, resumed);
+    },
+  };
 }

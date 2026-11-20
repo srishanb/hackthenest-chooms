@@ -1,7 +1,7 @@
 /**
  * A test harness: two players' games stepped side by side over the in-process link, with a clock the test owns.
  * Each side runs its own candle with the real `stepWorld`, exactly as the scene does (moving ledges placed by the
- * shared world clock with `nextWorldTime`, the netplay client around each step). A side can be paused (its candle
+ * shared world clock (`createWorldTimeFollower`), the netplay client around each step). A side can be paused (its candle
  * stops, its game keeps talking, as in the scene), restarted (its candle teleports to a spawn), or, for the guest,
  * replaced by a new game on the same link (a reload). Not a test file itself (no `.test.ts`); the netplay tests import it.
  */
@@ -10,7 +10,7 @@ import { NETPLAY_CONFIG } from '../../config/netplay.config';
 import type { PlatformData } from '../../shared/contracts/content';
 import { createMemoryLink, type LinkConditions, type MemoryLink } from '../netplay/memory-transport';
 import { createNetplaySession } from '../netplay/session';
-import { nextWorldTime } from '../netplay/shared-clock';
+import { createWorldTimeFollower, type WorldTimeFollower } from '../netplay/shared-clock';
 import { createVersusClient, type VersusClient } from '../netplay/versus-client';
 import { NO_CRUMBLE, type CrumbleState } from '../player/crumble';
 import { createPlayer, teleportPlayer } from '../player/movement';
@@ -40,6 +40,8 @@ export interface Side {
   revoked: string[];
   hidden: Set<string>;
   accumulatorMs: number;
+  /** This side's world clock (the scene's `NetplayLink` has the same). */
+  worldClock: WorldTimeFollower;
   /** While true the candle does not step (a pause); the game still sends and receives. */
   paused: boolean;
 }
@@ -79,6 +81,7 @@ export function createSim(ledges: readonly SimLedge[], start: { host: { x: numbe
   const side = (client: VersusClient, at: { x: number; y: number }): Side => ({
     client, state: { ...createPlayer(at.x, at.y), jumpLatch: false }, crumble: NO_CRUMBLE, worldMs: 0, platforms: platformsAt(world, 0),
     truth: [], throughLedges: [], revoked: [], hidden: new Set(), accumulatorMs: 0, paused: false,
+    worldClock: createWorldTimeFollower(NETPLAY_CONFIG.worldTimeSlewMs, NETPLAY_CONFIG.worldTimeSnapMs, NETPLAY_CONFIG.worldTimeResumeGapMs),
   });
   const host = side(createVersusClient(hostSession, GAME_CONFIG), start.host);
   const guest = side(createVersusClient(guestSession, GAME_CONFIG), start.guest);
@@ -90,7 +93,7 @@ export function createSim(ledges: readonly SimLedge[], start: { host: { x: numbe
     while (s.accumulatorMs >= STEP_MS) {
       s.accumulatorMs -= STEP_MS;
       const atMs = shared - s.accumulatorMs;
-      const clock = nextWorldTime(s.worldMs, STEP_MS, atMs, NETPLAY_CONFIG.worldTimeSlewMs, NETPLAY_CONFIG.worldTimeSnapMs);
+      const clock = s.worldClock.next(s.worldMs, STEP_MS, atMs);
       s.worldMs = clock.timeMs;
       s.platforms = platformsAt(world, s.worldMs, clock.deltaMs);
       const keys = input(who, t);
