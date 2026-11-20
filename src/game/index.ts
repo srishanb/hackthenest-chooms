@@ -17,6 +17,7 @@ import { ENDLESS_PIECES_CONFIG } from '../config/endless-pieces.config';
 import { NETPLAY_CONFIG } from '../config/netplay.config';
 import { createBroadcastTransport } from './netplay/broadcast-transport';
 import { buildId } from './netplay/build-id';
+import { messageLimits } from './netplay/protocol';
 import { createNetplaySession, type NetplaySession } from './netplay/session';
 import type { NetplaySwitch } from './netplay/switch';
 import { BootScene } from './scenes/boot-scene';
@@ -63,6 +64,8 @@ function createSession(deps: GameDeps): NetplaySession | undefined {
     role: choice.role, transport, config: NETPLAY_CONFIG, gravityY: deps.gameConfig.gravityY, now: () => performance.now(),
     build: buildId(deps.gameConfig, endless.config, ENDLESS_PIECES_CONFIG), look: { candleSeed: deps.candleSeed ?? 0 },
     world: choice.role === 'host' ? { seed: endless.seed, walls: endless.walls === true } : undefined,
+    // Every number from the other side is bounded by this game's own rules.
+    limits: messageLimits(deps.gameConfig),
   });
 }
 

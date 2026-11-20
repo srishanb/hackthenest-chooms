@@ -14,7 +14,7 @@ import { createNetplaySession, type SessionOptions } from '../netplay/session';
 import { readNetplaySwitch } from '../netplay/switch';
 import { createPlayer } from '../player/movement';
 
-const BODY = { x: 0, y: 0, vx: 0, vy: 0, grounded: true, platformId: null, charging: false, charge01: 0, aim: 0 as const, fuel01: 1, out: false, candleSeed: 1, run: 0 };
+const BODY = { x: 100, y: 0, vx: 0, vy: 0, grounded: true, platformId: null, charging: false, charge01: 0, aim: 0 as const, fuel01: 1, out: false, candleSeed: 1, run: 0 };
 
 function pair(guestBuild = 'b1') {
   let t = 0;
@@ -80,7 +80,7 @@ describe('handshake', () => {
       look: { candleSeed: 1 }, world: { seed: 1, walls: false }, peerId: 'H' });
     link.b.send({ v: PROTOCOL_VERSION + 1, from: 'old', to: '*', msg: { type: 'join', build: 'b1', look: { candleSeed: 3 } } });
     t += 16; host.update(BODY);
-    const answers = link.b.receive().map(parseEnvelope);
+    const answers = link.b.receive().map((raw) => parseEnvelope(raw));
     expect(answers).toContainEqual({ ok: true, envelope: envelope('H', 'old', { type: 'refuse', reason: 'version' }) });
     expect(host.status()).toBe('waiting');
     // And a guest told by another version's host that it is refused stops asking.
@@ -97,7 +97,7 @@ describe('handshake', () => {
     link.b.send(envelope('X', '*', { type: 'join', build: 'b1', look: { candleSeed: 5 } }));
     advance(16);
     host.update(BODY);
-    const answers = link.b.receive().map(parseEnvelope);
+    const answers = link.b.receive().map((raw) => parseEnvelope(raw));
     expect(answers).toContainEqual({ ok: true, envelope: envelope('H', 'X', { type: 'refuse', reason: 'full' }) });
     expect(host.status()).toBe('connected');
   });
@@ -145,8 +145,11 @@ describe('the contact arbiter', () => {
     expect(twice.beforeStep(state, null, 1010 + V.shoveHoldMs + 1).pushVx).toBe(0);
   });
 
-  it('a knock is taken once per contact window, and a late one is dropped', () => {
+  it('a knock is taken once per contact, a late one still lands, and one far too late is dropped', () => {
+    // Contacts are told apart by their own time (protocol 2): a late knock from the other game still lands, so the
+    // other candle is never knocked alone; past maxEventAgeMs + the same-contact time it is dropped.
     const a = arbiter();
+    const same = V.knock.contactWindowMs;
     const state = { ...createPlayer(300, 300), jumpLatch: false };
     a.receive({ kind: 'knock', dvx: 100, dvy: 0 }, 1000, 1050);
     a.receive({ kind: 'knock', dvx: 100, dvy: 0 }, 1001, 1060);
@@ -154,7 +157,10 @@ describe('the contact arbiter', () => {
     expect(after.vx).toBe(100);
     expect(a.knocksTaken()).toBe(1);
     a.receive({ kind: 'knock', dvx: 100, dvy: 0 }, 2000, 2000 + V.maxEventAgeMs + 1);
-    a.beforeStep(after, null, 3000);
-    expect(a.knocksTaken()).toBe(1);
+    a.beforeStep(after, null, 2000 + V.maxEventAgeMs + 2);
+    expect(a.knocksTaken()).toBe(2);
+    a.receive({ kind: 'knock', dvx: 100, dvy: 0 }, 5000, 5000 + V.maxEventAgeMs + same + 1);
+    a.beforeStep(after, null, 5000 + V.maxEventAgeMs + same + 2);
+    expect(a.knocksTaken()).toBe(2);
   });
 });

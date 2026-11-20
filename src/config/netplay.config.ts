@@ -29,8 +29,15 @@ export interface NetplayConfig {
   giveUpMs: number;
   /** A guest asks to join this often (ms) until the host answers. */
   joinEveryMs: number;
-  /** Nothing heard from the other player for this long (ms): they have left, and their candle fades out. */
+  /**
+   * Nothing heard from the other player for this long (ms): they have left, and their candle fades out. If they are
+   * heard again (a tab brought back), the session picks up and their candle fades back in.
+   */
   silentAfterMs: number;
+  /** A new guest takes the place of one not heard for this long (ms): a reload whose goodbye was lost. */
+  replaceSilentGuestMs: number;
+  /** A handshake not finished in this long (ms) is given up: the guest says so, the host waits for another guest. */
+  handshakeTimeoutMs: number;
   /** How long the other candle takes to fade out (ms). */
   fadeMs: number;
   /** The guest's candle starts this far right of the host's (px), so the two never start inside each other. */
@@ -58,6 +65,8 @@ export const NETPLAY_CONFIG: NetplayConfig = {
   giveUpMs: 8000,
   joinEveryMs: 400,
   silentAfterMs: 4000,
+  replaceSilentGuestMs: 1500, // 30 missed updates: a live guest is never replaced, a reloaded one waits a moment
+  handshakeTimeoutMs: 15000,
   fadeMs: 1000,
   guestSpawnOffsetPx: 48,
   worldTimeSlewMs: 0.5, // 0.5 ms per 8.3 ms step: a moving ledge drifts back into line without a visible jerk

@@ -33,7 +33,7 @@ function connected(delayMs: number, host = { x: 300, y: FLOOR_Y }, guest = { x: 
   return sim;
 }
 
-describe.each(DELAYS)('two players at %i ms delay, 30 ms jitter, 5%% loss', (delayMs) => {
+describe.each(DELAYS)('two players at %i ms delay, 30 ms jitter, 5 percent loss', (delayMs) => {
   it('the guest sees the host candle within 10 px of where it really was at the shown time, and within delay x speed of now', () => {
     const sim = connected(delayMs);
     // The host walks right, jumps, walks back; the guest stands still.
@@ -42,17 +42,21 @@ describe.each(DELAYS)('two players at %i ms delay, 30 ms jitter, 5%% loss', (del
       const phase = (t - 1500) % 3000;
       return phase < 900 ? keys(false, true) : phase < 1250 ? keys(false, false, true) : phase < 2400 ? keys(true, false) : IDLE;
     };
-    let worstShown = 0, worstNow = 0;
+    let worstShown = 0, worstNow = 0, worstClock = 0;
     sim.run(6000, script, () => {
       const shown = sim.guest.client.session.remote(sim.guest.client.session.nowMs());
       if (!shown) return;
+      // States carry the host's own time, and the guest plays them back by that time: compare with where the host
+      // really was at that time. The guest's estimate of the host's clock only shifts how far back it plays; bound it too.
+      worstClock = Math.max(worstClock, Math.abs(sim.guest.client.session.nowMs() - sim.nowMs()));
       const truth = truthAt(sim.host, shown.atMs);
       if (truth) worstShown = Math.max(worstShown, Math.hypot(shown.body.x - truth.x, shown.body.y - truth.y));
       const present = sim.host.truth[sim.host.truth.length - 1]!;
       worstNow = Math.max(worstNow, Math.hypot(shown.body.x - present.x, shown.body.y - present.y));
     });
-    // Measured 7 to 9 px: blending across a lost update while the host turns round, and the clock estimate.
+    // Measured 7 to 9 px: blending across a lost update while the host turns round.
     expect(worstShown).toBeLessThan(10);
+    expect(worstClock).toBeLessThan(2 * STEP_MS + 1);
     // Behind by the playback delay at most: at most 780 px/s (a full jump's launch speed) times that delay.
     expect(worstNow).toBeLessThan(780 * sim.guest.client.session.stats().delayMs / 1000 + 10);
   });

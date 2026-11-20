@@ -84,6 +84,9 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
   // Where the candle last stood before any wall kick since (null: no kick since the takeoff).
   let standBottomY = state.standBottomY ?? null;
   const support = grounded ? platforms.find((platform) => platform.id === platformId) : undefined;
+  // Where the body was before anything moved it this step: a carry (a moving ledge, a head) is checked against walls
+  // and the other candle together with the walk, so nothing carries a candle into something solid.
+  const startX = x;
   if (support) { x += support.dx ?? 0; y += support.dy ?? 0; }
 
   // The latch frees on a release; a press made in the air or at boot is not a fresh press.
@@ -159,7 +162,6 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
   }
 
   const prevBottom = y + height / 2;
-  const prevX = x;
   const push = grounded ? environment.pushVx ?? 0 : 0;
   x += vx * dt;
   if (push) x += push * dt;
@@ -167,11 +169,11 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
   x = wall.x;
   if (wall.hit) vx = 0;
   if (hasWalls) {
-    const blocked = blockX(walls, prevX, x, y, config.player);
+    const blocked = blockX(walls, startX, x, y, config.player);
     if (blocked) { x = blocked.x; vx = 0; }
   }
   if (others && config.versus) {
-    const sides = resolveSides(others, prevX, x, y, config.player, worldWidth, walls, config.versus.separateSpeed, dt);
+    const sides = resolveSides(others, startX, x, y, config.player, worldWidth, walls, config.versus.separateSpeed, dt);
     x = sides.x;
     if (sides.hit) vx = 0;
   }

@@ -19,7 +19,7 @@ import type { PlayerInput, PlayerState } from '../player/types';
 import type { WorldOptions } from './protocol';
 import { createRemoteView } from './remote-view';
 import type { NetplaySession } from './session';
-import { followSharedTime } from './shared-clock';
+import { nextWorldTime } from './shared-clock';
 import { createVersusClient, type LocalLook, type WorldChanges } from './versus-client';
 
 export interface NetplayLinkOptions {
@@ -47,8 +47,11 @@ export interface NetplayLink {
   world(): WorldOptions | null;
   /** How far right of the usual spot this player's candle starts (px). */
   spawnOffsetX(): number;
-  /** The world time of the next physics step (moving ledges), given the current one and the time still to step. */
-  worldTime(currentMs: number, stepMs: number, behindMs: number): number;
+  /**
+   * The world time of the next physics step (moving ledges), given the current one and the time still to step, and how
+   * far it really moved (moving ledges carry their riders by that).
+   */
+  worldTime(currentMs: number, stepMs: number, behindMs: number): { timeMs: number; deltaMs: number };
   beforeStep(state: PlayerState, behindMs: number): ReturnType<ReturnType<typeof createVersusClient>['beforeStep']>;
   afterStep(state: PlayerState, input: PlayerInput, crumbleBefore: CrumbleState, crumbleAfter: CrumbleState): void;
   /** This candle picked up these drops, which gave `fuelGained01` in all. */
@@ -61,17 +64,19 @@ export interface NetplayLink {
   destroy(): void;
 }
 
-type StatusKey = 'netplay.waiting' | 'netplay.connected' | 'netplay.left' | 'netplay.refused.version' | 'netplay.refused.full';
+type StatusKey = 'netplay.waiting' | 'netplay.connected' | 'netplay.back' | 'netplay.left' | 'netplay.refused.version' | 'netplay.refused.full'
+  | 'netplay.refused.timeout';
 
 export function createNetplayLink(scene: Phaser.Scene, options: NetplayLinkOptions): NetplayLink {
   const { session, gameConfig, config, stores } = options;
-  const client = createVersusClient(session, gameConfig);
+  const client = createVersusClient(session, gameConfig, config);
   const view = createRemoteView(scene, gameConfig, options.flame);
   /** Fuel each of this player's pickups gave, so a lost claim can take it back. */
   const fuelByDrop = new Map<string, number>();
   let worldSent = session.role === 'host';
   let status = session.status();
   let statusSinceMs = session.nowMs();
+  let connection = session.connectionId();
   let destroyed = false;
 
   const onPageHide = (): void => session.close();
@@ -80,10 +85,11 @@ export function createNetplayLink(scene: Phaser.Scene, options: NetplayLinkOptio
   const statusKey = (nowMs: number): StatusKey | undefined => {
     const shownFor = nowMs - statusSinceMs;
     switch (status) {
-      case 'waiting': return 'netplay.waiting';
-      case 'connected': return shownFor < config.connectedNoticeMs ? 'netplay.connected' : undefined;
+      // A full room keeps asking (it frees up when a silent guest is replaced): say so while waiting.
+      case 'waiting': return session.refusedReason() === 'full' ? 'netplay.refused.full' : 'netplay.waiting';
+      case 'connected': return shownFor >= config.connectedNoticeMs ? undefined : session.resumed() ? 'netplay.back' : 'netplay.connected';
       case 'left': return shownFor < config.leftNoticeMs ? 'netplay.left' : undefined;
-      case 'refused': return session.refusedReason() === 'full' ? 'netplay.refused.full' : 'netplay.refused.version';
+      case 'refused': return session.refusedReason() === 'timeout' ? 'netplay.refused.timeout' : 'netplay.refused.version';
     }
   };
 
@@ -92,7 +98,7 @@ export function createNetplayLink(scene: Phaser.Scene, options: NetplayLinkOptio
     world: () => session.world(),
     spawnOffsetX: () => (session.role === 'guest' ? config.guestSpawnOffsetPx : 0),
     worldTime: (currentMs, stepMs, behindMs) =>
-      followSharedTime(currentMs, stepMs, session.nowMs() - behindMs, config.worldTimeSlewMs, config.worldTimeSnapMs),
+      nextWorldTime(currentMs, stepMs, session.nowMs() - behindMs, config.worldTimeSlewMs, config.worldTimeSnapMs),
     beforeStep: (state, behindMs) => client.beforeStep(state, session.nowMs() - behindMs),
     afterStep: (state, input, before, after) => client.afterStep(state, input, before, after),
     waxTaken(dropIds, fuelGained01) {
@@ -104,7 +110,7 @@ export function createNetplayLink(scene: Phaser.Scene, options: NetplayLinkOptio
       let fuelLost01 = 0;
       for (const id of changes.revoke) { fuelLost01 += fuelByDrop.get(id) ?? 0; fuelByDrop.delete(id); }
       const now = session.nowMs();
-      if (session.status() !== status) { status = session.status(); statusSinceMs = now; }
+      if (session.status() !== status || session.connectionId() !== connection) { status = session.status(); connection = session.connectionId(); statusSinceMs = now; }
       const key = statusKey(now);
       if (stores.snapshot.get().netplayKey !== key) stores.snapshot.set({ ...stores.snapshot.get(), netplayKey: key });
       view.update(client.shownBody(now, input.state), session.remoteAlpha(), input.candleSeed, input.camera, input.deltaMs, input.paused, input.reducedMotion);

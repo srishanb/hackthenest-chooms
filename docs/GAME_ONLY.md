@@ -219,12 +219,21 @@ The candles are solid to each other. In plain words:
 - **You cannot walk or jump through the other candle.** If a late update ever puts one inside the other, they slide
   apart sideways, gently, never through a wall or the world's edge.
 - **Its head is a ledge.** Land on it like on any ledge (a long drop onto it counts as a fall), ride it while it
-  walks, charge a jump from it. If it jumps or walks out from under you, you fall.
+  walks, charge a jump from it. If it jumps or walks out from under you, you fall. A rider is carried only as far as
+  a candle can really move in a moment: walls, the world's edge and the other candle stop a rider as they stop a
+  walker, and if the candle below vanishes from under you (it restarts, or its updates jump after a gap) you stay
+  where you were and fall.
+- **A rider and the candle it stands on never knock each other** (the lead's rule after QA; the owner may change it).
+  The candle below may jump with a rider on its head: its jump is a normal jump, and the rider is left behind and
+  falls. The rider's jump from a head is a normal jump too, and gets nothing from the candle below moving. So the
+  most a pair can gain together is a head's height plus one jump (about 250 px; a search of 432 pairs of presses at
+  0, 80 and 200 ms stays under 253 px, and a test pins it).
 - **Walk into a standing candle and you push it**, at 0.6 of walking speed, off a ledge too. The pushed player's own
   game moves their candle; the pusher's candle stays pressed against the other one and follows it as it goes.
 - **Meet in the air** (at least 180 px/s toward each other, one of you in the air) and you both bounce off by your
   speeds: each candle changes speed by 0.8 of the approach speed (restitution 0.6), at most 520 px/s. A standing
-  candle hit from the side slides a little instead.
+  candle hit from the side slides a little instead. One contact knocks both candles once, or (when, each seeing the
+  other a moment in the past, neither saw them touch) neither.
 - All of these are fixed game rules in `game.config.ts` `versus`, never the signal.
 
 How it stays fair at any delay: each game runs only its own candle, with the real physics, and sends where it is
@@ -237,13 +246,19 @@ falls for both, and a wax drop belongs to whoever reached it first (if both did,
 
 Each player keeps their own fuel, wax, composure and end of run. When your flame goes out you get the usual end
 screen; **Play again starts you from the ground of the same climb** while the other player climbs on. A player who
-closes the window, or is not heard from for four seconds, fades out, and the other carries on alone. Pausing stops
+closes the window fades out, and the other carries on alone. A player not heard from for four seconds (a tab in the
+background stops the game) fades out too, but **comes back**: when the same window is heard again its candle fades
+back in where it now is, the status line says the other player is back, and the two games agree again on the wax
+taken and the crumbling ledges. A guest who reloads its window joins again (it takes the place of its old self once
+that has been silent for 1.5 s), and is told which drops the host has already taken. The handshake repeats each
+message until the next one arrives, so a lost message only costs time; after 15 s without finishing, the guest says
+it could not reach the other player. Pausing stops
 only your own candle: the other player's game never freezes. A two-player run never saves a best height (a head is
 a step up). The connection's numbers are in `src/config/netplay.config.ts`.
 
 What phase A does not do: connect two laptops (no network at all), a lobby or room code screen (it starts from the
-link), reconnect a dropped player by itself (a guest who reloads its window joins again; if the host reloads, the guest
-carries on alone and must reload to join the new host), more than two players, light from the other candle's flame at night (its candle is drawn above the
+link), let a reloaded host be rejoined by itself (the guest carries on alone and must reload to join the new host),
+more than two players, light from the other candle's flame at night (its candle is drawn above the
 darkness, but it casts no light), or a check of the feel with two real people.
 
 ## Composure without a headset

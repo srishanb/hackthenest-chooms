@@ -4,7 +4,7 @@
  *
  * How: `send` copies the message through JSON (so anything that would not survive a real connection fails here
  * first), then either drops it (`loss01`) or queues it for the other end, due after `delayMs` plus a random part
- * of `jitterMs`. `receive` hands over what is due by the link's clock, in the order it falls due, so jitter also
+ * of `jitterMs`, sometimes twice (`duplicate01`). `receive` hands over what is due by the link's clock, in the order it falls due, so jitter also
  * reorders. `reorder01` swaps a message with the one before it now and then. The randomness is seeded, so a
  * failing test fails the same way every time.
  */
@@ -15,6 +15,8 @@ export interface LinkConditions {
   jitterMs: number;
   loss01: number;
   reorder01: number;
+  /** Chance that a message is delivered twice (the second copy a little later). */
+  duplicate01: number;
 }
 
 export interface MemoryLink {
@@ -43,7 +45,7 @@ function seeded(seed: number): () => number {
 }
 
 export function createMemoryLink(now: () => number, conditions: Partial<LinkConditions> = {}, seed = 1): MemoryLink {
-  let current: LinkConditions = { delayMs: 0, jitterMs: 0, loss01: 0, reorder01: 0, ...conditions };
+  let current: LinkConditions = { delayMs: 0, jitterMs: 0, loss01: 0, reorder01: 0, duplicate01: 0, ...conditions };
   const random = seeded(seed);
   const queues: Record<'a' | 'b', Queued[]> = { a: [], b: [] };
   const silent: Record<'a' | 'b', boolean> = { a: false, b: false };
@@ -61,6 +63,7 @@ export function createMemoryLink(now: () => number, conditions: Partial<LinkCond
         const queue = queues[other];
         const item: Queued = { dueMs: now() + current.delayMs + random() * current.jitterMs, order: order++, data: copy };
         queue.push(item);
+        if (random() < current.duplicate01) queue.push({ dueMs: item.dueMs + random() * (current.jitterMs + 20), order: order++, data: JSON.parse(JSON.stringify(copy)) });
         if (queue.length > 1 && random() < current.reorder01) {
           const last = queue[queue.length - 2]!;
           [last.dueMs, item.dueMs] = [item.dueMs, last.dueMs];
