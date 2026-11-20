@@ -6,7 +6,7 @@
  * by hand when the generator's code changes how it builds chunks. A mismatch ends the handshake with a reason.
  */
 /** Bump when a code change makes the generator build different chunks from the same config. */
-export const WORLD_REVISION = 1;
+export const WORLD_REVISION = 2;
 
 /** FNV-1a over the text, as 8 hex digits. */
 export function fnv1a(text: string): string {
