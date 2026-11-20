@@ -1,6 +1,6 @@
 /**
  * With no other candle, the two-player rules change nothing (Decision D-38): the generator's chunks and long
- * random-input runs of the endless and the classic climb are exactly what they were before versus.ts existed.
+ * random-input runs of the endless climb and an authored-style world are exactly what they were before versus.ts existed.
  *
  * The fingerprint below was computed with this same code against the base commit (7f2a567, `git archive` in a
  * scratch folder) and pinned. It covers worlds without walls only, so the wall prototype's own fixes cannot move it.
@@ -9,15 +9,20 @@ import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { ENDLESS_CONFIG } from '../../config/endless.config';
 import { GAME_CONFIG } from '../../config/game.config';
-import { SECTIONS } from '../../content/sections/index';
 import { createEndlessGenerator } from '../endless/generator';
 import { NO_CRUMBLE } from '../player/crumble';
 import { createPlayer, stepPlayer } from '../player/movement';
+import type { PlatformData } from '../../shared/contracts/content';
 import type { PlayerInput, PlayerState } from '../player/types';
 import { stepWorld } from '../player/world-step';
 import { platformsAt } from '../world/environment';
 
 const DT = 1000 / GAME_CONFIG.stepHz;
+const CLASSIC_LIKE: PlatformData[] = [
+  { id: 'floor', x: 480, y: 500, width: 960, height: 24, type: 'static' },
+  { id: 'mover', x: 400, y: 400, width: 120, height: 16, type: 'moving', motion: { axis: 'x', distance: 80, periodMs: 3000 } },
+  { id: 'ice', x: 700, y: 330, width: 160, height: 16, type: 'slippery' },
+];
 const BASE_FINGERPRINT = 'd5dd019540e19dccf1246f2ccd18b9a793026cfeaa9badb454378927b63eda3b';
 
 function fingerprint(): string {
@@ -50,7 +55,9 @@ describe('no other candle, no change', () => {
     const rand = (): number => ((rng = (rng * 1103515245 + 12345) >>> 0) / 4294967296);
     const worlds = [
       { ledges: [0, 1].flatMap((c) => createEndlessGenerator(5, GAME_CONFIG, ENDLESS_CONFIG).chunk(c).platforms), spawn: { x: 480, y: 482 } },
-      ...SECTIONS.slice(0, 3).map((section) => ({ ledges: section.platforms, spawn: section.spawn })),
+      // Like the authored climb (whose stages live in the content lane, checked by the scratch hash comparison):
+      // a floor, a moving ledge, an icy ledge.
+      { ledges: CLASSIC_LIKE, spawn: { x: 300, y: 450 } },
     ];
     for (const world of worlds) {
       let a: PlayerState = createPlayer(world.spawn.x, world.spawn.y), b = a;
