@@ -175,7 +175,8 @@ export type UiComponentId =
   | 'calibration'
   | 'ember-prompt'
   | 'finish-screen'
-  | 'debug-overlay';
+  | 'debug-overlay'
+  | 'netplay-status';
 
 /** Named areas of the UI grid over the canvas. */
 export type UiSlot = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-center' | 'center' | 'full';
