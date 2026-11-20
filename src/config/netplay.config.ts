@@ -51,6 +51,16 @@ export interface NetplayConfig {
   /** How long the status line shows "connected" and "the other player left" (ms). Waiting shows until it ends. */
   connectedNoticeMs: number;
   leftNoticeMs: number;
+  /**
+   * How many drops the other player has taken, at most, that this game remembers (ids). The oldest is forgotten past
+   * it. Far above what a real climb collects, so an honest claim is never lost, and the same for every list below:
+   * a message from the other window is untrusted, so nothing it feeds may grow without limit.
+   */
+  maxRemoteWax: number;
+  /** Crumbling ledges the other player may have running here at once (a ledge that is no ledge here is dropped by the next step). */
+  maxCrumbling: number;
+  /** Messages kept unread for the next frame (the newest); a window that is not drawing cannot pile up more. */
+  maxQueuedMessages: number;
 }
 
 export const NETPLAY_CONFIG: NetplayConfig = {
@@ -73,4 +83,7 @@ export const NETPLAY_CONFIG: NetplayConfig = {
   worldTimeSnapMs: 1000,
   connectedNoticeMs: 4000,
   leftNoticeMs: 6000,
+  maxRemoteWax: 4096,
+  maxCrumbling: 128,
+  maxQueuedMessages: 256,
 };

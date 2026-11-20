@@ -26,6 +26,8 @@ export interface WaxClaims {
   localClaims(): { id: string; atMs: number }[];
   /** A new other player (a reload): the drops the last one took are free again (returns their ids). */
   clearRemote(): string[];
+  /** How many claims are remembered (for tests and the dev readout). */
+  size(): { mine: number; theirs: number };
 }
 
 export function createWaxClaims(role: Role): WaxClaims {
@@ -50,6 +52,7 @@ export function createWaxClaims(role: Role): WaxClaims {
     },
     resetLocal() { mine.clear(); },
     localClaims: () => [...mine].map(([id, atMs]) => ({ id, atMs })),
+    size: () => ({ mine: mine.size, theirs: theirs.size }),
     clearRemote() {
       const freed = [...theirs.keys()].filter((id) => !mine.has(id));
       theirs.clear();

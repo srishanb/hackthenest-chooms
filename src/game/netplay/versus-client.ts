@@ -61,6 +61,8 @@ export interface VersusClient {
   runStarted(): void;
   /** For tests and the dev readout. */
   knocksTaken(): number;
+  /** How many wax claims are remembered, for tests. */
+  waxClaimCounts(): { mine: number; theirs: number };
 }
 
 export function createVersusClient(session: NetplaySession, gameConfig: GameConfig, netplay: NetplayConfig = NETPLAY_CONFIG): VersusClient {
@@ -187,5 +189,6 @@ export function createVersusClient(session: NetplaySession, gameConfig: GameConf
       session.sendEvent({ kind: 'run_reset', run });
     },
     knocksTaken: () => arbiter?.knocksTaken() ?? 0,
+    waxClaimCounts: () => claims.size(),
   };
 }
