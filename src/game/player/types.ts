@@ -63,6 +63,12 @@ export interface PlayerState {
   kickWallId?: string | null;
   /** Time left (ms) in which held direction is ignored after a wall kick; absent in a world without walls. */
   wallLockMs?: number;
+  /**
+   * After wall kicks: feet y where the candle last took off from a ledge (or a cap), before its first kick. A landing's
+   * fall height is measured from it, not from the last kick, so climbing a chimney is never a fall. Null when no kick
+   * has happened since the last takeoff; absent in a world without walls.
+   */
+  standBottomY?: number | null;
 }
 
 /** Things that happened during one step, for the scene to turn into bus events. */

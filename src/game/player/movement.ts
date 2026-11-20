@@ -17,7 +17,9 @@
  * Walls (wall.ts, a prototype behind `?walls=1`): platforms of type `wall` stop the body at their sides and
  * underside, and in the air the candle slides down one it presses into and kicks off one on a fresh jump
  * press, both only while the wall grips (`gripHolds`). With no wall among the platforms (every world without
- * the switch, and the authored climb) none of this code changes a number.
+ * the switch, and the authored climb) none of this code changes a number. A kick is a new takeoff for the grip
+ * rule, but a landing after kicks reports its fall from where the candle last stood (`standBottomY`), so an
+ * intended climb through walls is never a fall, and a fall after a kick counts in full.
  */
 import type { GameConfig } from '../../shared/contracts/config';
 import { charge01, launchVelocity, steeredVx } from './charge-jump';
@@ -68,6 +70,8 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
   const hasWalls = walls.length > 0;
   let kickWallId = state.kickWallId ?? null;
   let wallLockMs = state.wallLockMs ?? 0;
+  // Where the candle last stood before any wall kick since (null: no kick since the takeoff).
+  let standBottomY = state.standBottomY ?? null;
   const support = grounded ? platforms.find((platform) => platform.id === platformId) : undefined;
   if (support) { x += support.dx ?? 0; y += support.dy ?? 0; }
 
@@ -86,6 +90,7 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
         launchVx = vx;
         windVx = 0;
         takeoffBottomY = y + height / 2;
+        standBottomY = null;
         jumped = { charge01: charge };
         grounded = false;
         platformId = null;
@@ -132,6 +137,8 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
         ({ vx, vy } = kickVelocity(near.side, wallRules));
         launchVx = vx;
         windVx = 0;
+        // The grip rule measures from the kick (D-33); a landing's fall still measures from where the candle stood.
+        if (standBottomY === null) standBottomY = takeoffBottomY;
         takeoffBottomY = y + height / 2;
         kickWallId = near.wall.id;
         wallLockMs = wallRules.kickLockMs;
@@ -159,6 +166,7 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
       launchVx = vx;
       windVx = 0;
       takeoffBottomY = prevBottom;
+      standBottomY = null;
       // A charge cannot go on without ground (a crumbling ledge gone mid-charge): it is lost, and a held
       // key waits for a release like any press in the air.
       if (charging) { charging = false; chargeMs = 0; jumpLatch = input.jump; }
@@ -191,8 +199,9 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
       vy = -launchSpeed;
       launchVx = vx - windVx;
       // The way down counts as a fall of its full height; the throw is a new takeoff from the cap.
-      bounced = { platformId: platform.id, launchSpeed, fallHeightPx: Math.max(0, top - takeoffBottomY) };
+      bounced = { platformId: platform.id, launchSpeed, fallHeightPx: Math.max(0, top - (standBottomY ?? takeoffBottomY)) };
       takeoffBottomY = top;
+      standBottomY = null;
     } else if (platform) {
       const top = platform.y - platform.height / 2;
       y = top - height / 2;
@@ -201,9 +210,11 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
       windVx = 0;
       grounded = true;
       platformId = platform.id;
-      landed = { platformId: platform.id, fallHeightPx: Math.max(0, top - takeoffBottomY) };
+      // Measured from where the candle last stood: after wall kicks, from before the first of them.
+      landed = { platformId: platform.id, fallHeightPx: Math.max(0, top - (standBottomY ?? takeoffBottomY)) };
       kickWallId = null;
       wallLockMs = 0;
+      standBottomY = null;
     } else {
       // Rising into the underside of a wall stops the head there.
       const ceiling = hasWalls && vy < 0 ? bumpHead(walls, x, y - height / 2, y - height / 2 + vy * dt, config.player) : null;
@@ -213,7 +224,7 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
 
   const next: PlayerState = { x, y, vx, vy, grounded, platformId, charging, chargeMs, jumpLatch, launchVx, takeoffBottomY, windVx };
   // The wall fields exist only in a world with walls, so a world without them keeps exactly the old state.
-  if (hasWalls || state.kickWallId !== undefined) { next.kickWallId = kickWallId; next.wallLockMs = wallLockMs; }
+  if (hasWalls || state.kickWallId !== undefined) { next.kickWallId = kickWallId; next.wallLockMs = wallLockMs; next.standBottomY = standBottomY; }
   if (wallKicked) return { state: next, events: { jumped, landed, ...(bounced ? { bounced } : {}), wallKicked } };
   return { state: next, events: bounced ? { jumped, landed, bounced } : jumped || landed ? { jumped, landed } : NO_EVENTS };
 }
