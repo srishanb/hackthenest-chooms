@@ -9,7 +9,7 @@
  */
 import type { GameConfig } from '../../shared/contracts/config';
 import { solidLedges, stepCrumble, type CrumbleState } from './crumble';
-import { stepPlayer } from './movement';
+import { stepPlayer, type StepEnvironment } from './movement';
 import type { PlatformBox, PlayerInput, PlayerState, StepEvents, UpdraftBox } from './types';
 
 export interface WorldStep {
@@ -21,8 +21,10 @@ export interface WorldStep {
 }
 
 export function stepWorld(player: PlayerState, crumble: CrumbleState, input: PlayerInput, platforms: readonly PlatformBox[],
-  updrafts: readonly UpdraftBox[], worldWidth: number, config: GameConfig, dtMs: number): WorldStep {
-  const out = stepPlayer(player, input, solidLedges(platforms, crumble), worldWidth, config, dtMs, { updrafts });
+  updrafts: readonly UpdraftBox[], worldWidth: number, config: GameConfig, dtMs: number,
+  /** Two-player climb only (versus.ts): the other candle and a shove. Absent in solo play and in the replay. */
+  versus?: Pick<StepEnvironment, 'others' | 'pushVx'>): WorldStep {
+  const out = stepPlayer(player, input, solidLedges(platforms, crumble), worldWidth, config, dtMs, versus ? { updrafts, ...versus } : { updrafts });
   const next = stepCrumble(crumble, platforms, out.state, config, dtMs);
   const crumbled: string[] = [];
   if (next !== crumble) {

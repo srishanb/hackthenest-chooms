@@ -12,6 +12,7 @@ Owner: Amrit (`components/debug-overlay/` is Srishan's). Search here before addi
 | `STRINGS`, `t(key)`, `StringKey` | `strings.ts` | All player-facing text. |
 | `createSettingsStore`, `loadSettings`, `validateSettings`, `mergeWithDefaults`, `SETTINGS_STORAGE_KEY`, `CAPTION_SCALE_RANGE` | `settings-store.ts` | Load, validate types/ranges/key codes, apply live and save settings; caption scale 0.75–2. |
 | `sourceBadge` | `components/source-badge/` | Always-visible input source label. |
+| `netplayStatus` | `components/netplay-status/` | The two-player climb's status line (D-38) from `snapshot.netplayKey`; shows nothing in solo play. |
 | `debugOverlay` | `components/debug-overlay/` | Backtick-toggled signal numbers. |
 | `mainMenu` | `components/main-menu/` | On-demand five-step controls/mechanics/journey guide, menu How to Play route and in-game replay; publishes pause/resume through the bus. |
 | `hasSeenTutorial`, `rememberTutorial`, `TUTORIAL_STORAGE_KEY` | `components/main-menu/tutorial-storage.ts` | Safely remember the completed/skipped guide independently of checkpoint saves. |

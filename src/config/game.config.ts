@@ -81,4 +81,33 @@ export const GAME_CONFIG: GameConfig = {
     // wall is not a ladder; a chimney of two facing walls is climbed by kicking from one to the other.
     sameWallTwice: false,
   },
+  // Two candles in one world (the two-player climb behind `?mp=`, Decision D-38). Fixed rules, never the signal; with
+  // no other candle in the world (every solo run) none of this runs. Each player's game applies them to its own candle.
+  versus: {
+    // 0..1 of walking speed (220 px/s): a shoved candle slides at 132 px/s, slower than walking, so the pusher keeps
+    // up and the push reads as an effort. Higher pushes harder; 0 turns shoving off.
+    shoveSpeed01: 0.6,
+    // ms: one shove message keeps pushing this long after it arrives. The pusher repeats it every `shoveRepeatMs`
+    // while it keeps walking into the other candle, so a push lasts as long as the contact plus this tail.
+    shoveHoldMs: 120,
+    shoveRepeatMs: 50,
+    // px/s: two bodies that overlap (a late update can put one inside the other) move apart sideways this fast.
+    // Gentle on purpose: a visible slide, never a jump, and never through a wall or the world's edge.
+    separateSpeed: 160,
+    knock: {
+      // px/s of approach along the contact. A brisk walk into a falling candle (220) knocks; drifting together does not.
+      minRelativeSpeed: 180,
+      // 0..1: 0.6 sends both candles back at a bit over half their approach speed; 1 would be a perfect bounce.
+      restitution: 0.6,
+      // px/s: the most one knock changes a candle's speed (about two thirds of a full jump's launch speed, 780).
+      maxImpulse: 520,
+      // ms: after a knock a candle takes no other one for this long, so one contact is one knock per candle,
+      // whichever game noticed it first (the other game's notice of the same contact arrives inside this time).
+      contactWindowMs: 450,
+      // ms: a standing candle knocked sideways slides (stays standing) at the knock's sideways speed this long.
+      groundSlideMs: 160,
+    },
+    // ms: a shove or a knock that arrives later than this after it was sent is dropped rather than applied late.
+    maxEventAgeMs: 600,
+  },
 };

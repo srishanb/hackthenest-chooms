@@ -17,6 +17,7 @@ import { emberPrompt } from './components/ember-prompt/ember-prompt';
 import { finishScreen } from './components/finish-screen/finish-screen';
 import { hud } from './components/hud/hud';
 import { mainMenu } from './components/main-menu/main-menu';
+import { netplayStatus } from './components/netplay-status/netplay-status';
 import { worldTutorial } from './components/world-tutorial/world-tutorial';
 import { pauseMenu } from './components/pause-menu/pause-menu';
 import { settingsPanel } from './components/settings-panel/settings-panel';
@@ -42,6 +43,7 @@ export const COMPONENTS: readonly UiComponent[] = [
   emberPrompt,
   finishScreen,
   debugOverlay,
+  netplayStatus,
 ];
 
 const SLOTS: readonly UiSlot[] = ['full', 'center', 'top-left', 'top-right', 'bottom-left', 'bottom-center'];

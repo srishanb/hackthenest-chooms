@@ -50,6 +50,9 @@ import { createGridCamera, type GridCamera } from './grid-camera';
 import { snapToGrid } from '../forest/pixel-grid-snap';
 import { createKeyboardInput } from '../keyboard-input';
 import { createLedgeKindsView, type LedgeKindsView } from '../forest/ledge-kinds-view';
+import { NETPLAY_CONFIG } from '../../config/netplay.config';
+import { createNetplayLink, type NetplayLink } from '../netplay/scene-link';
+import type { NetplaySession } from '../netplay/session';
 import { NO_CRUMBLE, solidLedges, type CrumbleState } from '../player/crumble';
 import { teleportPlayer } from '../player/movement';
 import { updraftAt } from '../player/updraft';
@@ -89,6 +92,11 @@ export interface EndlessSceneDeps {
    * Off, every chunk is as without them. A wall run never saves a best height.
    */
   walls?: boolean;
+  /**
+   * Two-player climb (`?mp=host|join&room=`, Decision D-38): the session with the other player. Absent in solo play.
+   * The host's seed and walls switch are the shared world; a guest waits for them. Such a run never saves a best.
+   */
+  netplay?: NetplaySession;
 }
 
 /** The veil sits above the darkness and the ledge outlines but below the candle (210) and the portrait (300). */
@@ -160,6 +168,8 @@ export class EndlessScene extends Phaser.Scene {
   private lastInput: PlayerInput = { left: false, right: false, jump: false };
   /** Development: the keyboard took over from the route bot (any game key pressed during a bot run). */
   private botTakenOver = false;
+  /** The two-player climb's link (netplay/scene-link.ts), or null in solo play. */
+  private net: NetplayLink | null = null;
 
   constructor(private readonly deps: EndlessSceneDeps) {
     super(CLIMB_SCENE_KEY);
@@ -174,7 +184,7 @@ export class EndlessScene extends Phaser.Scene {
     const { gameConfig, config } = this.deps;
     const startChunk = this.deps.startChunk ?? 0;
     const floorTop = config.baseFloorTopPx - startChunk * config.chunkHeightPx;
-    const x = this.generator ? this.generator.floor(startChunk).x : gameConfig.view.width / 2;
+    const x = (this.generator ? this.generator.floor(startChunk).x : gameConfig.view.width / 2) + (this.net?.spawnOffsetX() ?? 0);
     return { x, y: floorTop - gameConfig.player.height / 2 };
   }
 
@@ -204,7 +214,8 @@ export class EndlessScene extends Phaser.Scene {
     for (const platform of this.stream?.platforms() ?? []) this.forest.removePlatform(platform.id);
     this.seed = seed;
     this.forest.reseedBackdrop(seed);
-    this.generator = createEndlessGenerator(seed, gameConfig, config, undefined, undefined, { walls: this.deps.walls === true });
+    // In a two-player climb the host's walls switch is part of the shared world.
+    this.generator = createEndlessGenerator(seed, gameConfig, config, undefined, undefined, { walls: this.net?.world()?.walls ?? this.deps.walls === true });
     this.stream = createChunkStream(this.generator, config);
     // Only the very first run of a development session may start short of fuel.
     this.flame = { ...freshFlame(config), fuel01: firstRun ? this.deps.startFuel ?? 1 : 1 };
@@ -218,6 +229,7 @@ export class EndlessScene extends Phaser.Scene {
     const spawn = this.spawn();
     this.state = teleportPlayer(spawn.x, spawn.y);
     this.accumulatorMs = 0;
+    this.net?.runStarted();
     this.syncWorld();
   }
 
@@ -268,6 +280,12 @@ export class EndlessScene extends Phaser.Scene {
       this.events.off(Phaser.Scenes.Events.RENDER, publishCamera); stores.worldView?.set(null);
     });
 
+    if (this.deps.netplay) {
+      const lantern = effectsTable.find((rule) => rule.id === 'lanternRadius');
+      this.net = createNetplayLink(this, { session: this.deps.netplay, gameConfig, config: NETPLAY_CONFIG, stores,
+        flame: { minRadiusPx: lantern?.min ?? 90, maxRadiusPx: lantern?.max ?? 280 } });
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.net?.destroy());
+    }
     this.wax = createEndlessWax({ gameConfig, bus, snapshot: stores.snapshot });
     this.waxView = createWaxDropsView(this, bus);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.waxView.destroy());
@@ -275,8 +293,8 @@ export class EndlessScene extends Phaser.Scene {
     this.score = createRunScore({ seed: this.deps.seed, originFeetY: this.spawn().y + gameConfig.player.height / 2, storage: this.deps.storage,
       // A climb picked by its seed (today's climb, or `?seed=`) keeps its own best, apart from fresh climbs.
       key: this.deps.fixedSeed ? `${config.bestKey}.seed-${this.deps.seed}` : config.bestKey,
-      indexKey: this.deps.fixedSeed ? `${config.bestKey}.seeds` : undefined, persist: !this.deps.bot && !this.deps.startChunk && !this.deps.walls });
-    this.startRun(this.deps.seed);
+      indexKey: this.deps.fixedSeed ? `${config.bestKey}.seeds` : undefined, persist: !this.deps.bot && !this.deps.startChunk && !this.deps.walls && !this.deps.netplay });
+    this.startRun(this.net?.world()?.seed ?? this.deps.seed);
 
     this.player = this.add.rectangle(this.state.x, this.state.y, gameConfig.player.width, gameConfig.player.height, 0xf2c14e).setDepth(DEPTH.player);
     this.player.setVisible(false); // The candle view draws the body; this rectangle is only the camera's follow target.
@@ -333,7 +351,8 @@ export class EndlessScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.phase.dispose());
     const offRestart = bus.on('run_restart', () => {
       this.score.save();
-      const seed = this.deps.fixedSeed ? this.seed : pickCandleSeed('', false);
+      // A two-player climb restarts on the shared climb, from the ground.
+      const seed = this.deps.fixedSeed || this.net ? this.seed : pickCandleSeed('', false);
       this.wax.reset();
       this.score.reset(seed);
       this.startRun(seed);
@@ -358,6 +377,31 @@ export class EndlessScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, offCamera);
     stores.effects.set(neutralFrame(effectsTable));
     stores.snapshot.set({ ...stores.snapshot.get(), run: this.runSnapshot(), sectionId: SECTION_ID });
+  }
+
+  /**
+   * Two-player climb, once a frame: send this candle and draw the other, then apply what the other player changed
+   * here: crumbling ledges, wax they took (or lost), a pickup of this player's that lost (its fuel goes back), and,
+   * for a guest, the host's world when it first arrives (the climb is rebuilt on it, from the ground).
+   */
+  private syncNetplay(deltaMs: number, reducedMotion: boolean): void {
+    if (!this.net) return;
+    const phase = this.deps.stores.snapshot.get().phase;
+    const changes = this.net.frame({ state: this.state, crumble: this.crumble, camera: this.cameras.main, deltaMs, paused: phase === 'paused', reducedMotion,
+      charge01: this.state.chargeMs / this.deps.gameConfig.jump.maxChargeMs, aim: this.aim, fuel01: this.flame.fuel01, out: this.flame.out || this.endingMs !== null,
+      candleSeed: this.candle.seed() });
+    this.crumble = changes.crumble;
+    for (const id of changes.hide) this.wax.takenElsewhere(id, true);
+    for (const id of changes.show) this.wax.takenElsewhere(id, false);
+    for (const id of changes.revoke) this.wax.revoke(id);
+    if (changes.fuelLost01 > 0) this.flame = { ...this.flame, fuel01: Math.max(0, this.flame.fuel01 - changes.fuelLost01) };
+    if (changes.hide.length || changes.show.length) this.waxView.sync(this.stream.wax(), this.wax.isCollected);
+    if (changes.arrived) {
+      this.wax.reset();
+      this.score.reset(changes.arrived.seed);
+      this.startRun(changes.arrived.seed);
+      this.deps.stores.snapshot.set({ ...this.deps.stores.snapshot.get(), run: this.runSnapshot() });
+    }
   }
 
   /** Play again: the camera slides down to the start (a cut under reduced motion), then follows again. */
@@ -413,7 +457,8 @@ export class EndlessScene extends Phaser.Scene {
   override update(_time: number, deltaMs: number): void {
     const { stores, gameConfig, effectsTable, bus, emberConfig, config } = this.deps;
     const settings = stores.settings.get();
-    const running = (): boolean => this.phase.isRunning() && !this.sliding && this.endingMs === null;
+    // A guest's candle waits until the host's world has arrived.
+    const running = (): boolean => this.phase.isRunning() && !this.sliding && this.endingMs === null && (this.net?.ready() ?? true);
     this.landingPuff.update(deltaMs, this.phase.isRunning(), settings.reducedMotion);
     const stepMs = 1000 / gameConfig.stepHz;
     if (!this.phase.isRunning()) {
@@ -426,7 +471,8 @@ export class EndlessScene extends Phaser.Scene {
     this.accumulatorMs = running() ? Math.min(this.accumulatorMs + deltaMs, stepMs * MAX_STEPS_PER_FRAME) : 0;
     while (this.accumulatorMs >= stepMs && running()) {
       this.accumulatorMs -= stepMs;
-      this.worldTimeMs += stepMs;
+      // In a two-player climb moving ledges follow the shared clock, so both players see them in the same place.
+      this.worldTimeMs = this.net ? this.net.worldTime(this.worldTimeMs, stepMs, this.accumulatorMs) : this.worldTimeMs + stepMs;
       this.platforms = platformsAt(this.stream.platforms(), this.worldTimeMs, stepMs);
       // Wax growth (+2% per piece, capped) scales walking and jumping; it comes from the wax count only.
       const movement = grownMovement(gameConfig, waxGrowth(this.wax.count(), WAX_CONFIG.growthPerWax, WAX_CONFIG.growthCapWax));
@@ -444,7 +490,11 @@ export class EndlessScene extends Phaser.Scene {
       this.aim = ((input.right ? 1 : 0) - (input.left ? 1 : 0)) as -1 | 0 | 1;
       this.lastInput = input;
       // One step of the candle and the world: crumbling ledges hold or fall, updraft columns lift (Decision D-36).
-      const out = stepWorld(this.state, this.crumble, input, this.platforms, this.stream.updrafts(), gameConfig.view.width, movement, stepMs);
+      // Two-player climb: knocks land and the other candle is a solid body for this step (netplay/, player/versus.ts).
+      const versus = this.net?.beforeStep(this.state, this.accumulatorMs);
+      if (versus) this.state = versus.state;
+      const out = stepWorld(this.state, this.crumble, input, this.platforms, this.stream.updrafts(), gameConfig.view.width, movement, stepMs, versus?.versus);
+      this.net?.afterStep(out.player, input, this.crumble, out.crumble);
       this.state = out.player;
       this.crumble = out.crumble;
       for (const id of out.crumbled) { this.crumbledIds.push(id); bus.emit({ type: 'ledge_crumbled', platformId: id }); }
@@ -476,7 +526,9 @@ export class EndlessScene extends Phaser.Scene {
       this.burnt += Math.max(0, before - this.flame.fuel01);
       const wasLit = isLit(this.flame);
       const taken = this.wax.update(this.state, this.liveWax());
+      const fuelBefore = this.flame.fuel01;
       for (let i = 0; i < taken.length; i++) this.flame = addWax(this.flame, config);
+      if (taken.length) this.net?.waxTaken(taken.map((drop) => drop.id), this.flame.fuel01 - fuelBefore);
       if (taken.length) this.composure = steady(this.composure, config.composure.wax01 * taken.length);
       if (taken.length) { this.waxView.sync(this.stream.wax(), this.wax.isCollected); if (wasLit) this.candle.cheer(); else this.candle.relit(); }
 
@@ -510,6 +562,7 @@ export class EndlessScene extends Phaser.Scene {
       // The wick has gone cold. The body stops here; the end screen opens after a last moment (below).
       if (this.flame.out) { this.endingMs = 0; this.controls.clear(); break; }
     }
+    if (this.net) this.syncNetplay(deltaMs, settings.reducedMotion);
     // Build at most one chunk ahead of need per frame, so a long fall never builds several in one frame.
     if (running()) this.stream.prefetch(this.feetY(), this.state.vy);
     // The last moment: the candle slumps and the world goes dark, then the end screen opens.
@@ -639,6 +692,7 @@ export class EndlessScene extends Phaser.Scene {
       data.endlessLedges = String(this.stream.platforms().length);
       data.endlessObjects = String(this.children.length);
       data.endlessSeed = String(this.seed);
+      if (this.net) data.endlessNet = JSON.stringify({ ...this.net.readout(), phase: stores.snapshot.get().phase, ready: this.net.ready() });
       data.endlessPlayer = JSON.stringify({ x: Math.round(this.state.x), y: Math.round(this.state.y), grounded: this.state.grounded,
         on: this.state.platformId, charging: this.state.charging, bot: this.deps.bot && !this.botTakenOver });
       // Wall slide and wall jump (Decision D-37): whether the switch is on, kicks and sliding steps so far.

@@ -55,6 +55,11 @@ export interface GameSnapshot {
   stage?: { id: string; index: number; total: number; completed: number };
   /** Current tutorial lesson string key; presentation resolves it in the UI lane. */
   lessonKey?: string;
+  /**
+   * Two-player climb only (Decision D-38): a key into src/ui/strings.ts for the connection's status line (waiting for
+   * the other player, connected, the other player left, refused). Absent in solo play and once the line has had its time.
+   */
+  netplayKey?: string;
   /** Wax count/bonus; total null means replenishing supply without a collection target. */
   wax?: { collected: number; total: number | null; boostRemainingMs: number };
   phase: GamePhase;

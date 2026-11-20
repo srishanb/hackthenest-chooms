@@ -20,6 +20,9 @@
  * the switch, and the authored climb) none of this code changes a number. A kick is a new takeoff for the grip
  * rule, but a landing after kicks reports its fall from where the candle last stood (`standBottomY`), so an
  * intended climb through walls is never a fall, and a fall after a kick counts in full.
+ *
+ * Two candles (versus.ts, the two-player climb behind `?mp=`): `environment.others` makes the other candle solid,
+ * with a standable head, and `environment.pushVx` moves a shoved candle. Without them nothing changes either.
  */
 import type { GameConfig } from '../../shared/contracts/config';
 import { charge01, launchVelocity, steeredVx } from './charge-jump';
@@ -28,6 +31,7 @@ import { clampToWalls, findLanding, findSupport } from './collide';
 import type { PlatformBox, PlayerInput, PlayerState, StepEvents, UpdraftBox } from './types';
 import { updraftAt, updraftHolds, updraftVy } from './updraft';
 import { blockX, bumpHead, gripHolds, kickVelocity, slideVy, touchingWall, wallBeside, wallsIn } from './wall';
+import { bumpBodies, firstCeiling, resolveSides, withHeads, type OtherBody } from './versus';
 
 const direction = (input: PlayerInput): -1 | 0 | 1 => ((input.right ? 1 : 0) - (input.left ? 1 : 0)) as -1 | 0 | 1;
 
@@ -49,6 +53,10 @@ export interface StepEnvironment {
   windAccelerationX?: number;
   /** Updraft columns in reach (updraft.ts). */
   updrafts?: readonly UpdraftBox[];
+  /** The other candle in a two-player climb (versus.ts): solid, with a standable head. Absent or empty: no change. */
+  others?: readonly OtherBody[];
+  /** Sideways speed (px/s) a shove adds while standing (versus.ts). Absent or 0: no change. */
+  pushVx?: number;
 }
 
 /** Nothing can be stood on but a ledge: a bounce cap throws you instead. */
@@ -59,6 +67,9 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
   const dt = dtMs / 1000;
   const { width, height } = config.player;
   const dir = direction(input);
+  // Two-player climb only: the other candle's head is a ledge (versus.ts). Solo play never enters these branches.
+  const others = environment.others?.length ? environment.others : null;
+  if (others) platforms = withHeads(platforms, others);
   let { x, y, vx, vy, grounded, platformId, charging, chargeMs, jumpLatch, launchVx, takeoffBottomY } = state;
   let jumped: StepEvents['jumped'] = null;
   let landed: StepEvents['landed'] = null;
@@ -149,13 +160,20 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
 
   const prevBottom = y + height / 2;
   const prevX = x;
+  const push = grounded ? environment.pushVx ?? 0 : 0;
   x += vx * dt;
+  if (push) x += push * dt;
   const wall = clampToWalls(x, width, worldWidth);
   x = wall.x;
   if (wall.hit) vx = 0;
   if (hasWalls) {
     const blocked = blockX(walls, prevX, x, y, config.player);
     if (blocked) { x = blocked.x; vx = 0; }
+  }
+  if (others && config.versus) {
+    const sides = resolveSides(others, prevX, x, y, config.player, worldWidth, walls, config.versus.separateSpeed, dt);
+    x = sides.x;
+    if (sides.hit) vx = 0;
   }
 
   if (grounded) {
@@ -164,6 +182,7 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
       grounded = false;
       platformId = null;
       launchVx = vx;
+      if (push) launchVx += push;
       windVx = 0;
       takeoffBottomY = prevBottom;
       standBottomY = null;
@@ -217,7 +236,8 @@ export function stepPlayer(state: PlayerState, input: PlayerInput, platforms: re
       standBottomY = null;
     } else {
       // Rising into the underside of a wall stops the head there.
-      const ceiling = hasWalls && vy < 0 ? bumpHead(walls, x, y - height / 2, y - height / 2 + vy * dt, config.player) : null;
+      const ceiling = firstCeiling(hasWalls && vy < 0 ? bumpHead(walls, x, y - height / 2, y - height / 2 + vy * dt, config.player) : null,
+        others && vy < 0 ? bumpBodies(others, x, y - height / 2, y - height / 2 + vy * dt, config.player) : null);
       if (ceiling !== null) { y = ceiling + height / 2; vy = 0; } else y += vy * dt;
     }
   }

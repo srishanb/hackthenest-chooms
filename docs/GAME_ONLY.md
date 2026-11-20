@@ -45,6 +45,7 @@ The menu has **Today's climb** (the same ledges for everyone on the same day, fr
 | `?fuel=0.05` | Development builds only: the first run starts nearly out of fuel, to look at the flame going out |
 | `?shaken=0.9` | Development builds only: the first run starts with a shaken candle, to look at the forest turning |
 | `?walls=1` | Prototype, **in production builds too**: wall slide and wall jump pieces from chunk 1 (Decision D-37). Never saves a best height |
+| `?mp=host&room=NAME`, `?mp=join&room=NAME` | Two players, phase A, **in production builds too**: two windows of one browser climb the same forest together (Decision D-38, below). Never saves a best height |
 
 Dev pages for looking at the candle: `/src/game/__tests__/candle-faces.html` (every mood on the hero) and
 `/src/game/__tests__/candle-close-up.html` (every mood in the portrait close-up).
@@ -198,6 +199,52 @@ never splits a ledge, and the replay refuses any step whose ledge or takeoff (ac
 cuts into. Walls stay inside their chunk. The chunk map tool shows them with `--walls` (`|` for a wall, `K` and `H` for the pieces'
 ledges). The numbers to tune by feel are in `game.config.ts` `wallMoves` (rules) and `endless-pieces.config.ts`
 `walls`, `wallKick`, `chimney` (pieces); each has a comment saying what it changes in the hand.
+
+## Two players (Decision D-38, phase A behind `?mp=`)
+
+Two people climb the same generated forest at the same time. Each sees their own candle in the middle of their own
+screen, as in solo play, and the other player's candle where it really is, drawn from its own seed so the two never
+look alike. When the other candle is off screen, a small arrow at the edge of the screen points to it. Solo play
+does not change at all: with the switch off, every chunk and every step are what they were (a test pins it).
+
+**Phase A uses no network.** The two players are two windows (or tabs) of one browser on one machine, joined
+through the browser's `BroadcastChannel`. Open the first with `?mp=host&room=NAME` (add `&seed=1234` for a
+particular climb, `&walls=1` for the wall prototype) and the second with `?mp=join&room=NAME`, same name. The room
+name is letters, digits, `-` and `_`. A short line at the top of the screen says when the game is waiting for the
+other player, when they arrive, and when they leave. Phase B (later, after the owner chooses how two laptops find
+each other) puts a real connection behind the same code.
+
+The candles are solid to each other. In plain words:
+
+- **You cannot walk or jump through the other candle.** If a late update ever puts one inside the other, they slide
+  apart sideways, gently, never through a wall or the world's edge.
+- **Its head is a ledge.** Land on it like on any ledge (a long drop onto it counts as a fall), ride it while it
+  walks, charge a jump from it. If it jumps or walks out from under you, you fall.
+- **Walk into a standing candle and you push it**, at 0.6 of walking speed, off a ledge too. The pushed player's own
+  game moves their candle; the pusher's candle stays pressed against the other one and follows it as it goes.
+- **Meet in the air** (at least 180 px/s toward each other, one of you in the air) and you both bounce off by your
+  speeds: each candle changes speed by 0.8 of the approach speed (restitution 0.6), at most 520 px/s. A standing
+  candle hit from the side slides a little instead.
+- All of these are fixed game rules in `game.config.ts` `versus`, never the signal.
+
+How it stays fair at any delay: each game runs only its own candle, with the real physics, and sends where it is
+twenty times a second. The other candle is shown a little in the past (about 100 ms plus the travel time), blended
+between updates and corrected smoothly. A shove or a knock is a message to the player it lands on, who applies it
+to their own candle once; one contact is one knock for each candle, whichever game noticed it. The world is the
+same on both sides: the host's seed and options go out in the handshake (and a different build of the game is
+refused with a reason), moving ledges follow a clock both games agree on, a crumbling ledge one player stands on
+falls for both, and a wax drop belongs to whoever reached it first (if both did, the later pickup is undone).
+
+Each player keeps their own fuel, wax, composure and end of run. When your flame goes out you get the usual end
+screen; **Play again starts you from the ground of the same climb** while the other player climbs on. A player who
+closes the window, or is not heard from for four seconds, fades out, and the other carries on alone. Pausing stops
+only your own candle: the other player's game never freezes. A two-player run never saves a best height (a head is
+a step up). The connection's numbers are in `src/config/netplay.config.ts`.
+
+What phase A does not do: connect two laptops (no network at all), a lobby or room code screen (it starts from the
+link), reconnect a dropped player by itself (a guest who reloads its window joins again; if the host reloads, the guest
+carries on alone and must reload to join the new host), more than two players, light from the other candle's flame at night (its candle is drawn above the
+darkness, but it casts no light), or a check of the feel with two real people.
 
 ## Composure without a headset
 

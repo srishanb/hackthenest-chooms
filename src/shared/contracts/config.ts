@@ -69,6 +69,41 @@ export interface GameConfig {
    * signal-driven). Absent: walls are still solid, but nothing slides or kicks.
    */
   wallMoves?: WallMovesConfig;
+  /**
+   * How two candles meet in the two-player climb (Decision D-38): solid sides, a standable head, a shove on the
+   * ground and a knock in the air. Fixed game rules, never signal-driven. Absent, or with no other candle in
+   * the world (every solo run), none of it runs.
+   */
+  versus?: VersusConfig;
+}
+
+/**
+ * Rules for two candles in one world. Speeds in px/s (y grows downward), times in ms, distances in px.
+ * Each player's own game applies these to their own candle only.
+ */
+export interface VersusConfig {
+  /** Walking into a standing candle pushes it at this fraction of walking speed (0..1). */
+  shoveSpeed01: number;
+  /** One shove keeps pushing this long after it arrives; the pusher repeats it while the contact lasts. */
+  shoveHoldMs: number;
+  /** The pusher repeats its shove at most this often while it keeps walking into the other candle. */
+  shoveRepeatMs: number;
+  /** Two bodies that overlap (for example after a late update) move apart sideways at this speed, never faster. */
+  separateSpeed: number;
+  knock: {
+    /** Bodies meeting at least this fast (relative speed along the contact, px/s) knock each other. */
+    minRelativeSpeed: number;
+    /** 0 (the bodies stop against each other) to 1 (a perfect bounce). */
+    restitution: number;
+    /** Largest change of speed one knock gives a candle (px/s). */
+    maxImpulse: number;
+    /** After a knock a candle takes no other knock for this long: one contact gives one knock. */
+    contactWindowMs: number;
+    /** A standing candle that is knocked sideways slides at the knock's sideways speed for this long. */
+    groundSlideMs: number;
+  };
+  /** A shove or a knock that arrives later than this after it was sent is dropped (it would land out of the blue). */
+  maxEventAgeMs: number;
 }
 
 /**
@@ -140,7 +175,8 @@ export type UiComponentId =
   | 'calibration'
   | 'ember-prompt'
   | 'finish-screen'
-  | 'debug-overlay';
+  | 'debug-overlay'
+  | 'netplay-status';
 
 /** Named areas of the UI grid over the canvas. */
 export type UiSlot = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-center' | 'center' | 'full';

@@ -8,10 +8,10 @@ Owner: integrator (Srishan). **Frozen after P0:** changes go through an integrat
 | `SignalHandle`, `SignalControl`, `SignalDiagnostics`, `CalibrationStep`, `CalibrationResult` | `contracts/signal-api.ts` | What the UI may ask of the signal lane. Never given to the game. |
 | `BandFrame`, `BandPowers`, `Source`, `Features`, `Baseline(s)`, `Scores`, stage types, `Algorithm` | `contracts/signal-internal.ts` | Pipeline shapes for the signal lane and its tools. |
 | `GameEvent`, `GameEventType`, `GameEventOf`, `EventBus` | `contracts/events.ts` | Every game moment and the bus interface. |
-| `GameSnapshot`, `GamePhase`, `EmberSnapshot`, `INITIAL_GAME_SNAPSHOT` | `contracts/game-state.ts` | The game's public state. |
+| `GameSnapshot`, `GamePhase`, `EmberSnapshot`, `INITIAL_GAME_SNAPSHOT` | `contracts/game-state.ts` | The game's public state. `netplayKey`: the two-player status line's string key (D-38). |
 | `EffectId`, `EFFECT_IDS`, `EffectRule`, `EffectsFrame` | `contracts/effects.ts` | Effects as data. |
 | `Settings`, `KeyBindings`, `Volumes`, `DEFAULT_SETTINGS` | `contracts/settings.ts` | Player settings schema and defaults. |
-| `SignalConfig`, `GameConfig`, `EmberConfig`, `UiConfig`, `UiComponentId`, `UiSlot`, `AudioConfig`, `LedgeKindsConfig`, `WallMovesConfig` | `contracts/config.ts` | Types of the files in `src/config/`. `WallMovesConfig`: wall slide and wall jump (D-37, optional `GameConfig.wallMoves`). |
+| `SignalConfig`, `GameConfig`, `EmberConfig`, `UiConfig`, `UiComponentId`, `UiSlot`, `AudioConfig`, `LedgeKindsConfig`, `WallMovesConfig`, `VersusConfig` | `contracts/config.ts` | Types of the files in `src/config/`. `WallMovesConfig`: wall slide and wall jump (D-37, optional `GameConfig.wallMoves`). `VersusConfig`: two candles meeting in the two-player climb (D-38, optional `GameConfig.versus`). `UiComponentId` includes `netplay-status`. |
 | `SectionData` (with `refuge`, `finish`), `PlatformData`, `AreaData`, `NarratorLine` | `contracts/content.ts` | Authored content shapes (starting shape). |
 | `Stores` | `contracts/app.ts` | The three stores `main.ts` creates. |
 | `createEventBus(now?)` | `bus.ts` | Typed event bus. |
