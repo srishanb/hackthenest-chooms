@@ -4,6 +4,8 @@
  *
  * The fingerprint below was computed with this same code against the base commit (7f2a567, `git archive` in a
  * scratch folder) and pinned. It covers worlds without walls only, so the wall prototype's own fixes cannot move it.
+ * It is a tripwire: a change to the generator or to movement that is meant to change solo play (a new piece, a tuned
+ * number) fails it too. Then check the change is the intended one and pin the new fingerprint in the same commit.
  */
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';

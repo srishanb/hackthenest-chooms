@@ -132,7 +132,8 @@ describe('hold 3: a rider and its carrier never knock each other', () => {
 });
 
 describe('hold 4: every received number is bounded', () => {
-  const limits = messageLimits(G);
+  /** Built inside each test, so a game without the table fails test by test. */
+  const table = () => messageLimits(G);
   const BODY = { x: 300, y: 400, vx: 10, vy: -20, grounded: true, platformId: 'p', charging: false, charge01: 0.5, aim: 1 as const, fuel01: 0.5, out: false,
     candleSeed: 7, rideOffsetX: 3, run: 2 };
   /** One message of every kind, with every field, to find every number in them. */
@@ -173,7 +174,7 @@ describe('hold 4: every received number is bounded', () => {
     const keys = new Set<string>(LIMITED_FIELDS);
     const missing = SAMPLES.flatMap((msg) => numbers(msg).map(({ path }) => keyOf(msg, path)).filter((key) => !keys.has(key)));
     expect(missing).toEqual([]);
-    for (const msg of SAMPLES) expect(parseEnvelope(envelope('a', 'b', msg), limits).ok, msg.type).toBe(true);
+    for (const msg of SAMPLES) expect(parseEnvelope(envelope('a', 'b', msg), table()).ok, msg.type).toBe(true);
   });
 
   it('each field: a non-finite value drops the message, a huge one is clamped into its limits', () => {
@@ -181,20 +182,20 @@ describe('hold 4: every received number is bounded', () => {
       for (const { path } of numbers(msg)) {
         const key = keyOf(msg, path) as (typeof LIMITED_FIELDS)[number];
         for (const bad of [Number.NaN, Number.POSITIVE_INFINITY, '7']) {
-          expect(parseEnvelope({ v: PROTOCOL_VERSION, from: 'a', to: 'b', msg: withValue(msg, path, bad) }, limits).ok, `${key} ${String(bad)}`).toBe(false);
+          expect(parseEnvelope({ v: PROTOCOL_VERSION, from: 'a', to: 'b', msg: withValue(msg, path, bad) }, table()).ok, `${key} ${String(bad)}`).toBe(false);
         }
         for (const huge of [1e300, -1e300]) {
-          const parsed = parseEnvelope({ v: PROTOCOL_VERSION, from: 'a', to: 'b', msg: withValue(msg, path, huge) }, limits);
+          const parsed = parseEnvelope({ v: PROTOCOL_VERSION, from: 'a', to: 'b', msg: withValue(msg, path, huge) }, table());
           expect(parsed.ok, key).toBe(true);
           if (!parsed.ok) continue;
           const found = numbers(parsed.envelope.msg).find((entry) => entry.path.join('.') === path.join('.'))!;
-          expect(found.value, key).toBeGreaterThanOrEqual(limits[key].min);
-          expect(found.value, key).toBeLessThanOrEqual(limits[key].max);
+          expect(found.value, key).toBeGreaterThanOrEqual(table()[key].min);
+          expect(found.value, key).toBeLessThanOrEqual(table()[key].max);
         }
       }
     }
     // Lists longer than their limit drop the message.
-    expect(parseEnvelope(envelope('a', 'b', { type: 'ack', ids: Array.from({ length: 257 }, (_, i) => `i${i}`) }), limits).ok).toBe(false);
+    expect(parseEnvelope(envelope('a', 'b', { type: 'ack', ids: Array.from({ length: 257 }, (_, i) => `i${i}`) }), table()).ok).toBe(false);
   });
 
   it('a knock of 1e300 px/s from the room moves the local candle by at most one knock', () => {
@@ -287,10 +288,12 @@ describe('should-fix 7: a silence is not the end', () => {
     const sim = createSim([FLOOR], { host: { x: 400, y: FLOOR_Y }, guest: { x: 600, y: FLOOR_Y } }, { delayMs: 0 }, 2);
     sim.run(1500);
     sim.link.silence('a', true);
-    sim.run(5000);
+    sim.link.silence('b', true);
     sim.host.client.waxTaken('e2:w1');
-    sim.run(1000);
+    // Longer than the event's resend give-up time: only the re-agreement after the silence can carry it.
+    sim.run(N.giveUpMs + 2000);
     sim.link.silence('a', false);
+    sim.link.silence('b', false);
     sim.run(2000);
     expect(sim.guest.hidden.has('e2:w1')).toBe(true);
   });
