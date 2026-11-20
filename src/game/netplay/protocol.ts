@@ -103,8 +103,8 @@ export const LIMITED_FIELDS = [
   'join.look.candleSeed', 'hello.look.candleSeed', 'hello.world.seed', 'welcome.look.candleSeed',
   'ping.t0', 'pong.t0', 'pong.hostMs',
   'state.seq', 'state.atMs', 'state.body.x', 'state.body.y', 'state.body.vx', 'state.body.vy', 'state.body.charge01',
-  'state.body.fuel01', 'state.body.candleSeed', 'state.body.rideOffsetX', 'state.body.run',
-  'event.atMs', 'event.knock.dvx', 'event.knock.dvy', 'event.wax.run', 'event.run_reset.run',
+  'state.body.fuel01', 'state.body.candleSeed', 'state.body.rideOffsetX', 'state.body.run', 'state.body.aim',
+  'event.atMs', 'event.shove.dir', 'event.knock.dvx', 'event.knock.dvy', 'event.wax.run', 'event.run_reset.run',
   'event.sync.run', 'event.sync.wax.atMs', 'event.sync.crumble.startedMs',
   'ack.ids#', 'event.sync.wax#', 'event.sync.crumble#',
 ] as const;
@@ -141,6 +141,8 @@ export function messageLimits(game: GameConfig): MessageLimits {
     'state.body.candleSeed': UINT32,
     'state.body.rideOffsetX': { min: -game.player.width, max: game.player.width },
     'state.body.run': run,
+    // Directions: whole numbers from -1 to 1 (a shove has no 0).
+    'state.body.aim': { min: -1, max: 1, int: true }, 'event.shove.dir': { min: -1, max: 1, int: true },
     'event.atMs': time,
     'event.knock.dvx': { min: -impulse, max: impulse }, 'event.knock.dvy': { min: -impulse, max: impulse },
     'event.wax.run': run, 'event.run_reset.run': run, 'event.sync.run': run,
@@ -155,7 +157,6 @@ const MAX_ID = 64;
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const str = (value: unknown, max = MAX_ID): value is string => typeof value === 'string' && value.length > 0 && value.length <= max;
 const bool = (value: unknown): value is boolean => typeof value === 'boolean';
-const dir = (value: unknown): value is -1 | 1 => value === -1 || value === 1;
 
 /** Read every number through its row of the table; null drops the message. */
 function reader(limits: MessageLimits) {
@@ -186,8 +187,10 @@ function world(r: Reader, value: unknown): WorldOptions | null {
 
 function body(r: Reader, value: unknown): BodyState | null {
   if (!isObject(value)) return null;
-  const { grounded, platformId, charging, aim, out } = value;
-  if (!bool(grounded) || !bool(charging) || !bool(out) || !(platformId === null || str(platformId)) || !(aim === -1 || aim === 0 || aim === 1)) return null;
+  const { grounded, platformId, charging, out } = value;
+  if (!bool(grounded) || !bool(charging) || !bool(out) || !(platformId === null || str(platformId))) return null;
+  const aim = r.num(value.aim, 'state.body.aim');
+  if (aim === null) return null;
   const x = r.num(value.x, 'state.body.x'), y = r.num(value.y, 'state.body.y');
   const vx = r.num(value.vx, 'state.body.vx'), vy = r.num(value.vy, 'state.body.vy');
   const charge01 = r.num(value.charge01, 'state.body.charge01'), fuel01 = r.num(value.fuel01, 'state.body.fuel01');
@@ -199,7 +202,7 @@ function body(r: Reader, value: unknown): BodyState | null {
     if (offset === null) return null;
     rideOffsetX = offset;
   }
-  return { x, y, vx, vy, grounded, platformId, charging, charge01, aim, fuel01, out, candleSeed, run, ...(rideOffsetX !== undefined ? { rideOffsetX } : {}) };
+  return { x, y, vx, vy, grounded, platformId, charging, charge01, aim: aim as -1 | 0 | 1, fuel01, out, candleSeed, run, ...(rideOffsetX !== undefined ? { rideOffsetX } : {}) };
 }
 
 function sync(r: Reader, value: Record<string, unknown>): NetEvent | null {
@@ -226,7 +229,7 @@ function sync(r: Reader, value: Record<string, unknown>): NetEvent | null {
 function netEvent(r: Reader, value: unknown): NetEvent | null {
   if (!isObject(value)) return null;
   switch (value.kind) {
-    case 'shove': return dir(value.dir) ? { kind: 'shove', dir: value.dir } : null;
+    case 'shove': { const d = r.num(value.dir, 'event.shove.dir'); return d === 1 || d === -1 ? { kind: 'shove', dir: d } : null; }
     case 'knock': {
       const dvx = r.num(value.dvx, 'event.knock.dvx'), dvy = r.num(value.dvy, 'event.knock.dvy');
       return dvx === null || dvy === null ? null : { kind: 'knock', dvx, dvy };

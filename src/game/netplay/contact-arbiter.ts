@@ -18,7 +18,7 @@
  *     which covers several resends at long delays), so the other candle is never knocked alone. Its size is clamped
  *     to `knock.maxImpulse` again here.
  *   - A rider and the candle it stands on never knock each other (`riding`): from the moment one stands on the
- *     other's head until this candle stands somewhere else (or `PAIR_MAX_MS` after they last touched as a pair),
+ *     other's head until both stand somewhere else (or `PAIR_MAX_MS` after they last touched as a pair),
  *     no knock between them is noticed or applied. So a carrier can jump with a rider on its head (the rider falls),
  *     and a rider's jump from a head is an ordinary jump.
  * The pure physics are in src/game/player/versus.ts; this file only keeps the timing.
@@ -79,7 +79,8 @@ export function createContactArbiter(rules: VersusConfig, body: { width: number;
   return {
     beforeStep(state, other, nowMs) {
       if (other && riding(state, other)) { paired = true; pairedSeenMs = nowMs; }
-      else if (paired && (state.grounded || nowMs - pairedSeenMs > PAIR_MAX_MS)) paired = false;
+      // They part once both stand on something else (as this game sees them), so both games end the pair alike.
+      else if (paired && (!other || (state.grounded && other.grounded) || nowMs - pairedSeenMs > PAIR_MAX_MS)) paired = false;
       let next = state;
       const send: Outgoing[] = [];
       for (const { change, contactMs } of waiting) {

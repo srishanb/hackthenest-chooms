@@ -66,7 +66,7 @@ export function createRemoteCandle(config: NetplayConfig, gravityY: number): Rem
     const mix = (p: number, q: number): number => p + (q - p) * f;
     // A restart or a teleport between the two states is not blended across.
     const far = Math.hypot(b.x - a.x, b.y - a.y) > config.snapPx;
-    const pick = f < 0.5 && !far ? a : b;
+    let pick = f < 0.5 && !far ? a : b;
     // Positions follow a cubic through both states that also matches their speeds (Hermite), so a turn or a stop
     // between two updates (or across a lost one) is not cut straight across.
     const seconds = span / 1000;
@@ -75,20 +75,26 @@ export function createRemoteCandle(config: NetplayConfig, gravityY: number): Rem
       return (2 * f3 - 3 * f2 + 1) * p + (f3 - 2 * f2 + f) * seconds * vp + (-2 * f3 + 3 * f2) * q + (f3 - f2) * seconds * vq;
     };
     let x = curve(a.x, b.x, a.vx, b.vx), y = curve(a.y, b.y, a.vy, b.vy);
+    let grounded = pick.grounded;
     if (!a.grounded && b.grounded) {
       // A landing in between: the candle flew on from the earlier state until it met the ground it stands on later.
       const since = (t - earlier.atMs) / 1000;
       y = Math.min(b.y, a.y + a.vy * since + 0.5 * gravityY * since * since);
       const toward = b.x - a.x;
       x = a.x + Math.sign(toward) * Math.min(Math.abs(toward), Math.abs(a.vx * since));
+      grounded = y >= b.y;
+      pick = grounded ? b : a;
     } else if (a.grounded && !b.grounded) {
       // A takeoff in between: traced back from the later state, never below the ground it left.
       const until = (later.atMs - t) / 1000;
       y = Math.min(a.y, b.y - b.vy * until + 0.5 * gravityY * until * until);
       const toward = a.x - b.x;
       x = b.x + Math.sign(toward) * Math.min(Math.abs(toward), Math.abs(b.vx * until));
+      // Standing only while still on the ground it left: a head that has begun to rise carries nobody.
+      grounded = y >= a.y;
+      pick = grounded ? a : b;
     }
-    return { body: far ? (f < 0.5 ? a : b) : { ...pick, x, y, vx: mix(a.vx, b.vx), vy: mix(a.vy, b.vy),
+    return { body: far ? (f < 0.5 ? a : b) : { ...pick, x, y, grounded, vx: mix(a.vx, b.vx), vy: mix(a.vy, b.vy),
       charge01: mix(a.charge01, b.charge01), fuel01: mix(a.fuel01, b.fuel01) }, extrapolated: false };
   }
 
