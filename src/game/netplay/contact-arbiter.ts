@@ -19,7 +19,9 @@
  *     to `knock.maxImpulse` again here.
  *   - A rider and the candle it stands on never knock each other (`riding`): from the moment one stands on the
  *     other's head until both stand somewhere else (or `PAIR_MAX_MS` after they last touched as a pair),
- *     no knock between them is noticed or applied. So a carrier can jump with a rider on its head (the rider falls),
+ *     this game notices no knock between them. A knock the other game noticed (it saw no pair) still lands here,
+ *     so one contact knocks both candles or neither; both games keep the pair through a carrier's jump, so a
+ *     carrier jumping with a rider sends no knock from either side. So a carrier can jump with a rider on its head (the rider falls),
  *     and a rider's jump from a head is an ordinary jump.
  * The pure physics are in src/game/player/versus.ts; this file only keeps the timing.
  */
@@ -84,7 +86,9 @@ export function createContactArbiter(rules: VersusConfig, body: { width: number;
       let next = state;
       const send: Outgoing[] = [];
       for (const { change, contactMs } of waiting) {
-        if (paired || sameContact(contactMs) || nowMs - contactMs > rules.maxEventAgeMs + sameContactMs) continue;
+        // A knock the other game sent is applied even if this game sees the two as a pair: the other game saw them
+        // meet, not stack (each sees the other in the past), and one contact must knock both or neither.
+        if (sameContact(contactMs) || nowMs - contactMs > rules.maxEventAgeMs + sameContactMs) continue;
         next = knock(next, change, contactMs, nowMs);
       }
       waiting = [];
