@@ -30,6 +30,7 @@ import { mountCandleEmblem } from './game/candle/emblem';
 import { mountWaxBall } from './game/candle/wax-ball';
 import { mountRunCandle } from './game/candle/run-candle';
 import { createGame } from './game/index';
+import { readNetplaySwitch } from './game/netplay/switch';
 import { createEventBus } from './shared/bus';
 import type { Stores } from './shared/contracts/app';
 import type { WorldViewSnapshot } from './shared/contracts/world-view';
@@ -89,6 +90,12 @@ const endless = classic ? undefined : {
   // Development only: `?shaken=0.8` starts the first run with a shaken candle, to look at the forest turning.
   startShaken: import.meta.env.DEV && query.has('shaken') ? Math.max(0, Math.min(1, Number(query.get('shaken')) || 0)) : undefined,
   startChunk: import.meta.env.DEV ? Math.max(0, Math.min(500, Math.floor(Number(query.get('startChunk')) || 0))) : 0,
+  // Prototype switch, in production builds too (the owner tries it on the preview): `?walls=1` adds wall slide and
+  // wall jump pieces (Decision D-37). Such a run never saves a best height.
+  walls: query.get('walls') === '1',
+  // Two-player climb, in production builds too (Decision D-38): `?mp=host&room=NAME` or `?mp=join&room=NAME`.
+  // Off unless both are given; phase A connects two windows of one browser only. Such a run never saves a best.
+  netplay: readNetplaySwitch(location.search) ?? undefined,
 };
 
 // One candle seed for the first run: the menu emblem and the player are the same candle.

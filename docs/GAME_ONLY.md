@@ -13,11 +13,12 @@ What is different from `main`:
 | World | Five authored stages with a top | An endless climb, generated as you go |
 | What drives the mood | The composure signal | The candle's own composure, from play: falls shake it, standing still steadies it. Low fuel darkens the forest too |
 | How a run ends | Landing on the last ledge | The flame goes out |
-| Recovery | A placed ember (E and R) | A full-width landing at the start of every stretch catches any fall |
+| Recovery | A placed ember (E and R) | None. Above the starting ground no ledge spans the screen, so a missed jump falls until a lower ledge or the ground catches it, however far that is (Decision D-33) |
 | Desktop app | A Windows installer, built by hand | Windows, Linux and macOS apps built by the release workflow; Windows and Linux update themselves |
 | Backdrop | Two layers of repeating bark and two crown pictures | Painted from the run's seed in three layers that pass at different speeds: wandering trunks, branches, vines and floating islands with trees. It turns to pines and snow with height, and each forest stretch has a seeded flavour (leafy, autumn, mushroom or blossom). Drawn by code, like the candle |
 | Background life | None | Birds sit on ledges and fly off as the candle nears, flocks cross far behind, fireflies blink, leaves fall, grass sways and far ledges spill waterfalls. All of it fades as the forest corrupts |
 | The candle | A plain wax block with a flame | A face with fourteen moods, a reacting flame, emotes and a detailed close-up portrait |
+| Pixel grid | Props, birds and particles at mixed sizes, on half pixels | All gameplay art at one pixel size (2 screen px per art pixel at 960x540) on one grid, camera included; the picture is still fitted to the window (Decision D-34) |
 
 ## Play it
 
@@ -39,24 +40,30 @@ The menu has **Today's climb** (the same ledges for everyone on the same day, fr
 | `?seed=1234` | Play one particular climb. The same number always gives the same ledges |
 | `?climb=classic` | The authored five-stage climb, with the still signal (fixed light) |
 | `?bot=1` | Development builds only: a bot climbs by following the generator's route. Never saves a best height |
-| `?startChunk=4` | Development builds only: start higher up. Never saves a best height |
+| `?startChunk=4` | Development builds only: start higher up, standing on that chunk's anchor ledge. Never saves a best height |
 | `?candleSeed=7` | Development builds only: pick the candle |
 | `?fuel=0.05` | Development builds only: the first run starts nearly out of fuel, to look at the flame going out |
 | `?shaken=0.9` | Development builds only: the first run starts with a shaken candle, to look at the forest turning |
+| `?walls=1` | Prototype, **in production builds too**: wall slide and wall jump pieces from chunk 1 (Decision D-37). Never saves a best height |
+| `?mp=host&room=NAME`, `?mp=join&room=NAME` | Two players, phase A, **in production builds too**: two windows of one browser climb the same forest together (Decision D-38, below). Never saves a best height |
 
 Dev pages for looking at the candle: `/src/game/__tests__/candle-faces.html` (every mood on the hero) and
 `/src/game/__tests__/candle-close-up.html` (every mood in the portrait close-up).
 
 ## How the endless climb is made
 
-1. The climb is cut into chunks 960 px tall. Each chunk starts with a landing that spans the whole width.
-2. A chunk depends only on the run's seed and its own number, so a chunk below can be rebuilt after a fall.
-3. Each ledge is placed under a jump arc traced with the game's own `stepPlayer`. The jump is then replayed against
-   the finished chunk, and a ledge the replay does not land on is thrown away. The test suite replays every jump of
-   480 chunks.
+1. The climb is cut into chunks 960 px tall. Each chunk starts on an anchor: an ordinary ledge at a known height, whose
+   place and width come from the seed and the chunk number alone. Only chunk 0's anchor, the ground the run starts
+   on, spans the whole width. Nothing else catches a fall: a slip costs as much height as it costs (Decision D-33).
+2. A chunk depends only on the run's seed and its own number, so a chunk below can be rebuilt after a fall. The last
+   jump of each chunk lands on the next chunk's anchor, and is replayed like every other jump.
+3. Each ledge is placed under a jump arc (or a walk-off fall) traced with the game's own `stepPlayer`. The step is
+   then replayed against the finished chunk, and a ledge the replay does not land on is thrown away. The test suite replays every jump of
+   480 chunks, and drops the candle from high up to check that a long fall through the streamed chunks lands exactly
+   where it would with every ledge loaded.
 4. Side ledges hold extra wax. They can be reached, but getting back may mean dropping down. From chunk 4 up some
-   of them slide left and right, carrying their wax; they move only as far as their jump still lands on them, and
-   the main path never moves.
+   of them slide left and right, carrying their wax; they move only as far as their jump still lands on them. The
+   main path moves only in a moving crossing (a set piece, below).
 5. Ledges get narrower and the steps taller over the first 14 chunks. The candle also burns faster with height, and
    keeps burning a little faster after that, so every run ends.
 6. Forest and snow alternate every three chunks. In the snow about a third of the ledges are ice (a bright blue sheet
@@ -65,8 +72,198 @@ Dev pages for looking at the candle: `/src/game/__tests__/candle-faces.html` (ev
 7. Night falls with height. Low down the whole screen is visible; from about chunk 10 the view is the candle's own
    circle of light, wide with a full candle and small with an empty one. Reachable ledges are still outlined inside it.
 
+8. Each chunk is built from **set pieces** (Decision D-35), not one long ladder. See below.
+
+### Set pieces
+
+Between one anchor and the next, the generator strings together short runs of ledges that each have a shape you
+can recognise, then an approach ladder whose last jump lands on the next anchor. The pieces (one file each under
+`src/game/endless/pieces/`, numbers in `src/config/endless-pieces.config.ts`):
+
+| Piece | Shape | From chunk |
+|---|---|---|
+| Ladder | Two or three ordinary jumps up: breathing room | 0 |
+| Staircase | The same short hop again and again, one way: a rhythm section | 0 |
+| Traverse | Long flat jumps sideways across the screen, never landing lower | 1 |
+| Zigzag shaft | Side to side up a narrow column | 1 |
+| Detour down | Walk off the edge onto a lower ledge (once or twice), then a long jump up past the start | 2 |
+| Fork | A safe way of three jumps, or a risky way through one narrow ledge holding wax; they rejoin | 2 |
+| Pillar hops | A row of ledges narrower than any ordinary ledge | 3 |
+| Big leap | One near-full charge from the edge across a wide, empty gap | 3 |
+| Ice run | Snow only: icy ledges, each jump from the far edge of the ice | 3 |
+| Moving crossing | Over a ledge that slides; the only time the main path moves | 4 |
+| Mushroom launch | A jump onto a bounce cap throws the candle up a gap no jump can cross (D-36) | 5 |
+| Crumbling run | Two to four crumbling ledges, each a small hop; no time to wait (D-36) | 6 |
+| Updraft rise | A short hop into a rising column, carried up a tall empty stretch; calm (D-36) | 7 |
+| Updraft crossing | A strong jump floats across a gap too wide for any jump, through drifting air (D-36) | 8 |
+
+The seed picks them, with rules: never the same piece twice in a row, a calm piece after a demanding one, and a new
+piece fades in over a few chunks after it unlocks. Every jump and every drop of the route (and the fork's other way)
+is replayed with `stepPlayer`; a piece that does not fit is thrown away and another tried, and if nothing works the
+chunk falls back to the plain ladder, so generation always ends. A drop is a route step of its own: the route bot
+walks off the edge and lets go. The drops are shorter than the fall that shakes the candle.
+
+Still hard: no ledge is wider than an ordinary one can be, pillars and the fork's risky ledge are narrower. A set
+piece chunk has more jumps (about 14 against 10), and each missed jump costs a little less on average because more
+ledges catch it, so the height a player loses per chunk is about the same or a little more (measured with
+`npx tsx tools/endless/chunk-map.ts --compare`).
+
+`npx tsx tools/endless/chunk-map.ts --seed 42 --chunks 0,5,9` draws chunks as text with each ledge labelled by its
+piece; `--bot 300 --start 6` lets the route bot climb headless; `--time` measures generation time.
 `npx tsx tools/endless/par.ts` prints how long the route bot needs per chunk and what that means for fuel. Tuning
-numbers are in `src/config/endless.config.ts`.
+numbers are in `src/config/endless.config.ts` and `src/config/endless-pieces.config.ts`.
+
+### Bounce caps, crumbling ledges and updraft columns (Decision D-36)
+
+Three kinds of terrain the climb generates from chunk 5 up, one at a time. They are game mechanics with fixed
+rules (`src/config/game.config.ts` `ledgeKinds`), never driven by the signal.
+
+- **Bounce cap** (a big red mushroom with white spots). Coming down on it never lands: it throws the candle
+  upward at 1000 px/s plus 0.12 x the landing speed, at most 1100 px/s, so 357 to 432 px high, about twice a full
+  jump (217 px). Sideways speed carries through, so the jump onto the cap aims the throw; normal air steering
+  corrects it. A held jump key does nothing at the bounce (you never stand on a cap, so you cannot charge there;
+  the key stays latched until released). The cap squashes for a moment when it throws. A fall that ends on a cap
+  counts as a fall at its full height (the fall event, the shaken candle, the landing shake), as a landing would.
+- **Crumbling ledge** (bare, pale cracked stone, with an orange dashed edge). It holds 600 ms after the candle
+  first stands on it: exactly a full charge's time, so a full jump off it is never possible. A key held through
+  the landing does nothing (the latch), so the route leaves 250 ms to react before the press, then a small hop
+  (charge level 3 to 5 of 12). A crumbling run ends with a hop onto a firm ledge. It shakes as the time runs out,
+  its cracks glow, then it drops away in bits and is not solid; a charge on it is lost and the candle falls
+  normally. It grows back 3 s after it fell, once the candle is at least 48 px from where it was.
+- **Updraft column** (a faint column of rising streaks with pale dashed sides). While the candle is in the air
+  inside it, rising faster than the column's own speed it feels half gravity (so a jump floats about twice as
+  high), and slower than that its speed eases (time constant 0.25 s) to a gentle 60 px/s sink in a drift column
+  or a 150 px/s climb in a rise column. Leaving it restores gravity at once. Standing on a ledge inside one does
+  nothing. **A column never catches a fall**: it holds the candle only while its feet are at most 24 px below where
+  it last took off; lower than that it is falling and passes straight through (D-33: falls stay unbounded). In the
+  snow bands a column is drawn in deep blue so it reads against pale snow.
+
+How the route proves them: `stepPlayer` does the bouncing and the lift (updraft columns are passed with each step),
+and `stepWorld` (`src/game/player/world-step.ts`) steps the crumble timers right after the candle, in the game
+and in the generator's replay alike. A mushroom launch is one route step (the jump that lands on the cap, `via`
+the cap); an updraft piece's step names the column it rides (`ride`). The kit traces the real flight through
+caps and columns and puts the next ledge where it comes down, and a flight that bounces or crosses a column must
+also land from every takeoff 0.25 px apart within 2 px either side (the landing is not monotonic in the takeoff).
+A step from a crumbling ledge is replayed from where the step before landed (`arriveX`): a 250 ms reaction, the
+walk, then the charge must fit in 600 ms less a 60 ms margin, from takeoffs 2 px either side too; and a cap or
+column added later is refused if it would move that landing. A drop never falls through a column or onto a cap.
+Chunks are built ahead of need (up to 4 below, one per frame at most) and the pieces of one chunk stop after
+20,000 replayed physics steps (a count, so chunks are identical on any machine). Every column stays inside its chunk, so neighbouring chunks never change each other's
+routes. In the dark each kind keeps a small accent above the darkness, faded with the light like the ledge
+outlines, and the outlines' reach search goes through the columns, so a ledge reached by riding one is outlined. Reduced motion: no shake, no falling bits, still streaks.
+
+### Wall slide and wall jump (Decision D-37, a prototype behind `?walls=1`)
+
+Off by default. With the switch off every chunk for every seed is byte-for-byte what it was before walls existed,
+and the classic climb never meets a wall. With `?walls=1` (it works in a production build too, so it can be tried on
+the preview deployment) two pieces may appear from chunk 1, and such a run never saves a best height. Try
+`?walls=1&seed=166`: its chunk 1 (just above the ground) holds a wall kick and then a chimney.
+
+- **Wall** (a grey stone pillar of block courses, lit on one face, mossy or snow-capped on top; at night dashed
+  lavender lines up both faces). Solid: its sides stop the body, its underside stops a head, its top can be stood
+  on. Only walls grip; the edges of the world never do, or every fall could be saved.
+- **Grip** (`game.config.ts` `wallMoves.gripBelowTakeoffPx`, 96 px). A wall grips only while the feet are at most
+  96 px below where the candle last took off or kicked. A longer fall slides straight past at full speed, and a
+  press does nothing: **a wall never catches a fall** (D-33). It also caps a slide at about a second.
+- **Falls after kicks.** A landing measures its fall from where the candle last stood (its last takeoff from a
+  ledge, before any kick), not from the last kick: climbing a chimney and coming down on the ledge above the start
+  is never a fall (the flow streak goes on, composure is not shaken, no hard-landing sound, no `fall` event), and a
+  real fall after a kick counts at its full height below where the candle stood. The grip still measures from the
+  last kick.
+- **Slide.** In the air, pressed against a gripping wall and holding toward it, the fall eases (16/s) to 90 px/s.
+- **Kick.** A fresh jump press (the key released since takeoff: the jump latch is unchanged) within 6 px of a
+  gripping wall throws the candle up and away at 620 px/s, 58 degrees above level: about 100 px of climb, less than
+  half a full charge jump (217 px), so a wall is a tool and not a shortcut. There is no ground to charge on, so the
+  kick is fixed. For 160 ms after it, held direction is ignored, so you cannot steer straight back. The same wall
+  cannot be kicked twice in a row (`sameWallTwice: false`): it needs a landing or another wall first, so one wall
+  is no ladder and two facing walls are a chimney.
+- **Wall kick** (piece). A wall stands 40 to 110 px beyond the edge of the entry ledge; the next ledge is 222 to
+  300 px up, higher than any charge jump lifts the feet, and the wall's top stands higher still, so only the kick
+  gets there. Jump at the wall, press, come down on the ledge. Nothing is under the gap.
+- **Chimney** (piece). Two facing walls 64 to 96 px apart above the entry ledge; three or four kicks from one to
+  the other, then out over the shorter wall onto a ledge outside, higher than any jump reaches.
+
+How the route proves them: a wall is a platform of type `wall`, so every replay, reach search and later piece meets
+it. A wall step stores, besides its takeoff and charge, how many physics steps to wait within reach of each wall
+before pressing (`kicks`) and the walls it must kick (`walls`). The replay, the route bot and the night outlines
+press the same keys (`src/game/endless/wall-kicks.ts`: hold toward the wall, press a set time after reaching it,
+then hold the other way). Every wall step must land from every takeoff 0.25 px apart within 2 px either side
+pressed on time; from the stored takeoff with every kick pressed up to 6 physics steps (50 ms) early or late; and
+from takeoffs 1 and 2 px either side **combined** with every press offset from 1 to 6 steps early or late
+(`walls.crossShiftPx`, `crossOffsetSteps`). Takeoffs between those (for example 1.25 px off and pressed early) are
+not proved together: the full 0.25 px cross costs about 2.5 times the generation time. A sweep of 160 seeds found
+2 of 672 stored wall steps that miss at such an in-between combination. The kit puts a wall step's ledge only where
+all of the proved flights come down. A drop may never touch a wall. Walls keep clear of other ledges by their whole
+box; a wall over a ledge it overlaps leaves the candle's height plus 4 px (`walls.headroomPx`) under it, so a wall
+never splits a ledge, and the replay refuses any step whose ledge or takeoff (across the takeoff tolerance) a wall
+cuts into. Walls stay inside their chunk. The chunk map tool shows them with `--walls` (`|` for a wall, `K` and `H` for the pieces'
+ledges). The numbers to tune by feel are in `game.config.ts` `wallMoves` (rules) and `endless-pieces.config.ts`
+`walls`, `wallKick`, `chimney` (pieces); each has a comment saying what it changes in the hand.
+
+## Two players (Decision D-38, phase A behind `?mp=`)
+
+Two people climb the same generated forest at the same time. Each sees their own candle in the middle of their own
+screen, as in solo play, and the other player's candle where it really is, drawn from its own seed so the two never
+look alike. When the other candle is off screen, a small arrow at the edge of the screen points to it. Solo play
+does not change at all: with the switch off, every chunk and every step are what they were (a test pins it).
+
+**Phase A uses no network.** The two players are two windows (or tabs) of one browser on one machine, joined
+through the browser's `BroadcastChannel`. Open the first with `?mp=host&room=NAME` (add `&seed=1234` for a
+particular climb, `&walls=1` for the wall prototype) and the second with `?mp=join&room=NAME`, same name. The room
+name is letters, digits, `-` and `_`. A short line at the top of the screen says when the game is waiting for the
+other player, when they arrive, and when they leave. Phase B (later, after the owner chooses how two laptops find
+each other) puts a real connection behind the same code.
+
+The candles are solid to each other. In plain words:
+
+- **You cannot walk or jump through the other candle.** If a late update ever puts one inside the other, they slide
+  apart sideways, gently, never through a wall or the world's edge.
+- **Its head is a ledge.** Land on it like on any ledge (a long drop onto it counts as a fall), ride it while it
+  walks, charge a jump from it. If it jumps or walks out from under you, you fall. A rider is carried only as far as
+  a candle can really move in a moment: walls, the world's edge and the other candle stop a rider as they stop a
+  walker, and if the candle below vanishes from under you (it restarts, or its updates jump after a gap) you stay
+  where you were and fall.
+- **A rider and the candle it stands on never knock each other** (the lead's rule after QA; the owner may change it).
+  The candle below may jump with a rider on its head: its jump is a normal jump, and the rider is left behind and
+  falls. The rider's jump from a head is a normal jump too, and gets nothing from the candle below moving. So the
+  most a pair can gain together is a head's height plus one jump (about 250 px; a search of 432 pairs of presses at
+  0, 80 and 200 ms stays under 253 px, and a test pins it).
+- **Walk into a standing candle and you push it**, at 0.6 of walking speed, off a ledge too. The pushed player's own
+  game moves their candle; the pusher's candle stays pressed against the other one and follows it as it goes.
+- **Meet in the air** (at least 180 px/s toward each other, one of you in the air) and you both bounce off by your
+  speeds: each candle changes speed by 0.8 of the approach speed (restitution 0.6), at most 520 px/s. A standing
+  candle hit from the side slides a little instead. One contact knocks both candles once, or (when, each seeing the
+  other a moment in the past, neither saw them touch) neither.
+- All of these are fixed game rules in `game.config.ts` `versus`, never the signal.
+
+How it stays fair at any delay: each game runs only its own candle, with the real physics, and sends where it is
+twenty times a second. The other candle is shown a little in the past (about 100 ms plus the travel time), blended
+between updates and corrected smoothly. A shove or a knock is a message to the player it lands on, who applies it
+to their own candle once; one contact is one knock for each candle, whichever game noticed it. The world is the
+same on both sides: the host's seed and options go out in the handshake (and a different build of the game is
+refused with a reason), moving ledges follow a clock both games agree on, a crumbling ledge one player stands on
+falls for both, and a wax drop belongs to whoever reached it first (if both did, the later pickup is undone).
+
+Each player keeps their own fuel, wax, composure and end of run. When your flame goes out you get the usual end
+screen; **Play again starts you from the ground of the same climb** while the other player climbs on. A player who
+closes the window fades out, and the other carries on alone. A player not heard from for four seconds (a tab in the
+background stops the game) fades out too, but **comes back**: when the same window is heard again its candle fades
+back in where it now is, the status line says the other player is back, and the two games agree again on the wax
+taken and the crumbling ledges. A guest who reloads its window joins again (it takes the place of its old self once
+that has been silent for 1.5 s), and is told which drops the host has already taken. The handshake repeats each
+message until the next one arrives, so a lost message only costs time; after 15 s without finishing, the guest says
+it could not reach the other player. Pausing stops
+only your own candle: the other player's game never freezes, and when you resume (after any pause, or a tab that was in
+the background) moving ledges are put back where the shared clock says at once, so a short pause no longer leaves
+them seconds out of step. What the other window sends is untrusted: a wax drop it names must be a real drop id, and
+every list it can fill (taken drops, crumbling ledges, unread messages) has a cap, so a page that floods the room
+cannot freeze the game or grow its memory; it can slow the game while the flood lasts. A two-player run never saves a best height (a head is
+a step up). The connection's numbers are in `src/config/netplay.config.ts`.
+
+What phase A does not do: connect two laptops (no network at all), a lobby or room code screen (it starts from the
+link), let a reloaded host be rejoined by itself (the guest carries on alone and must reload to join the new host),
+more than two players, light from the other candle's flame at night (its candle is drawn above the
+darkness, but it casts no light), or a check of the feel with two real people.
 
 ## Composure without a headset
 
@@ -93,7 +290,7 @@ page on it. Not judged by a person yet: whether the amounts feel fair, and how t
 
 - **Moods.** `src/game/candle/expression.ts` picks one mood at a time from what the body is doing and from short
   events: content, focused (charging), soaring, alarmed (a fast fall), ouch (a hard landing, with a longer daze after a
-  very long fall), relieved (wax relit a glowing wick), delighted (wax), proud (a new best, or a new landing), uneasy
+  very long fall), relieved (wax relit a glowing wick), delighted (wax), proud (a new best, or a new chunk's anchor reached), uneasy
   (sliding on ice), shaken (after a fall: wide darting eyes), steadying (standing still to get over it: eyes shut, a
   slow breath), worried (low fuel), sleepy (long idle) and fading (the flame is out). It blinks, glances about and
   looks up at its own flame, in a rhythm set by the candle's seed.

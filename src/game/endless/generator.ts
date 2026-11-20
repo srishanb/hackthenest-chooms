@@ -1,27 +1,55 @@
 /**
  * The endless generator: builds one chunk of the climb from a seed and a chunk number.
  *
- * A chunk is a full-width landing followed by ledges up to the next landing. Three rules make it
- * safe to run unattended:
+ * A chunk runs from its anchor ledge to the next chunk's anchor. Only chunk 0's anchor, the ground the
+ * run starts on, spans the whole width; every later anchor is an ordinary-width ledge (Decision D-33).
+ * In between, the chunk is assembled from set pieces (pieces/, Decision D-35): short runs of ledges
+ * with a shape you can recognise, a staircase, a zigzag shaft, a traverse, a detour down, pillar hops,
+ * a big leap, a fork, an ice run, a moving crossing, or a plain ladder; and from chunk 5 up a mushroom launch
+ * off a bounce cap, a crumbling run, an updraft rise and an updraft crossing (Decision D-36, whose columns are
+ * kept in `chunk.updrafts` and act on every step's replay); with the `?walls=1` switch (Decision D-37, a prototype)
+ * also a wall kick and a chimney, whose walls are platforms of type `wall`. pieces/pacing.ts picks them by
+ * the seed. When the next anchor is close (`approachPx`), a plain approach ladder climbs the rest and
+ * its last jump lands on the next anchor.
+ *
+ * Four rules make it safe to run unattended:
  *   1. Random access. A chunk depends only on (seed, index), never on its neighbours, because every
- *      landing spans the whole width at a known height. A chunk below can be rebuilt after a fall
- *      and comes out identical.
- *   2. Reachable by construction. Each ledge is placed under a real jump arc (jump-arcs.ts), and the
- *      jump is then replayed with `stepPlayer` against the finished chunk. A ledge that the replay
- *      does not land on is never kept. The inputs of every jump are stored in `route`.
- *   3. Falls are bounded. A landing catches everything, so a fall costs at most one chunk.
+ *      anchor sits at a known height and its position and width come from (seed, index) alone
+ *      (`floor`). A chunk below can be rebuilt after a fall and comes out identical.
+ *   2. Reachable by construction. Each ledge is placed under a real jump arc (jump-arcs.ts) or a real
+ *      walk-off fall, and every step of the route is then replayed with `stepPlayer` against
+ *      everything placed (route-replay.ts); a ledge the replay does not land on is never kept. A jump's
+ *      feet never rise to where a ledge of the next chunk could be, so the next chunk cannot catch it.
+ *   3. It always ends. A piece that cannot be completed is thrown away and another is tried, a bounded
+ *      number of times. If the approach cannot reach the anchor, the whole chunk is tried again with
+ *      fresh numbers from (seed, index, try); the last try is the plain ladder alone.
+ *   4. Falls are not bounded. Nothing catches a missed jump but a ledge below or the ground, so a
+ *      mistake costs as much height as it costs (in the spirit of Bennett Foddy's climbs). The chunk
+ *      stream keeps the chunks below the candle loaded while it falls (chunk-stream.ts).
  *
  * Side ledges hold wax and are optional: they are reachable from the main path, but getting back
  * may mean dropping down. Nothing here reads the signal or changes how the candle moves.
  */
 import type { GameConfig } from '../../shared/contracts/config';
-import type { PlatformData } from '../../shared/contracts/content';
+import type { PlatformData, UpdraftData } from '../../shared/contracts/content';
+import { BOUNCE_TYPE } from '../player/bounce';
+import { CRUMBLING_TYPE } from '../player/crumble';
+import { WALL_TYPE } from '../player/wall';
 import type { EndlessConfig } from '../../config/endless.config';
+import { ENDLESS_PIECES_CONFIG, type EndlessPiecesConfig } from '../../config/endless-pieces.config';
 import { seededRandom } from '../candle/candle-genome';
-import { stepPlayer } from '../player/movement';
-import type { PlatformBox } from '../player/types';
 import { biomeOf } from './biome';
-import { buildArcTable, descentAt, launch, standOn, type JumpArc } from './jump-arcs';
+import { buildArcTable } from './jump-arcs';
+import { featuresAt } from './pieces/features';
+import { apexLimitTop, createPieceKit, emptyRun, keepsClear, traceDrop, type Committed, type GeneratorKit } from './pieces/kit';
+import { choosePiece } from './pieces/pacing';
+import { PIECES, type PieceEntry } from './pieces/registry';
+import { lastLedge } from './pieces/shared';
+import type { Candidate, PieceRun } from './pieces/types';
+import { replayStep, replayWork, stepsHold, type RouteStep } from './route-replay';
+
+export { replayStep, stepsHold } from './route-replay';
+export type { RouteStep } from './route-replay';
 
 export interface WaxSpot {
   id: string;
@@ -33,37 +61,63 @@ export interface WaxSpot {
   ledgeX?: number;
 }
 
-/** One jump of the guaranteed path: stand at `takeoffX` on `fromId`, hold jump `chargeSteps`, release holding `direction`. */
-export interface RouteStep {
-  fromId: string;
-  toId: string;
-  takeoffX: number;
-  chargeSteps: number;
-  direction: -1 | 0 | 1;
+/** One set piece as it was laid in a chunk, for the tests and the dev tool (tools/endless/chunk-map.ts). */
+export interface PieceSpan {
+  /** The piece's id from pieces/registry.ts, or 'approach' for the closing ladder onto the next anchor. */
+  id: string;
+  entryId: string;
+  exitId: string;
+  /** Its main-path steps are `route[firstStep]` .. `route[firstStep + stepCount - 1]`. */
+  firstStep: number;
+  stepCount: number;
+  /** Every ledge it laid (main path and alternative branches). */
+  ledgeIds: string[];
+  /** Steps of its alternative branch (a fork's risky way), also in the chunk's `altRoute`. */
+  altSteps: RouteStep[];
+  /** Ids of the updraft columns it placed. */
+  updraftIds: string[];
 }
 
 export interface EndlessChunk {
   index: number;
-  /** Top surface of this chunk's landing (world y, px). */
+  /** Top surface of this chunk's anchor ledge (world y, px). */
   floorTopPx: number;
-  /** The landing first, then the main path from low to high, then side ledges. */
+  /** The anchor first, then the main path in route order, then alternative-branch ledges, then side ledges. */
   platforms: PlatformData[];
   wax: WaxSpot[];
-  /** Jumps from this chunk's landing to the next chunk's landing. */
+  /** Steps (jumps and drops) from this chunk's anchor to the next chunk's anchor. */
   route: RouteStep[];
+  /** Alternative branches that leave the main path and rejoin it (a fork's other way). */
+  altRoute: RouteStep[];
   /** The jump that reaches each optional side ledge, from a ledge of the main path. */
   sideRoute: RouteStep[];
+  /** The set pieces of this chunk, from the anchor up, ending with the approach. */
+  pieces: PieceSpan[];
+  /** Updraft columns (Decision D-36). Every stored step is replayed through them. */
+  updrafts: UpdraftData[];
 }
 
 export interface EndlessGenerator {
   chunk(index: number): EndlessChunk;
   floorTopPx(index: number): number;
-  /** The landing of any chunk, without generating the rest of it. */
+  /**
+   * The anchor of any chunk, without generating the rest of it: the ledge the chunk starts on. Chunk 0's
+   * is the full-width ground; every later one is an ordinary-width ledge. Its id ends in `:floor`.
+   */
   floor(index: number): PlatformData;
+  /** True when chunk `index` is built and kept, so `chunk(index)` costs nothing (for building ahead of need). */
+  isBuilt(index: number): boolean;
 }
 
-const IDLE = { left: false, right: false, jump: false };
-const ATTEMPTS_PER_LEDGE = 60;
+/**
+ * Chunks kept built. A chunk depends only on (seed, index), so one rebuilt later comes out identical; the
+ * stream builds a few ahead of need (chunk-stream.ts `prefetch`), so this holds those and the live window.
+ */
+const CACHE_CHUNKS = 24;
+/** Mixed into the seed for anchors, so an anchor's place does not share the chunk's own random numbers. */
+const ANCHOR_SALT = 0x5bd1e995;
+/** Mixed into the seed for a second or later try at a chunk. */
+const TRY_SALT = 0x27d4eb2f;
 
 const topOf = (platform: { y: number; height: number }): number => platform.y - platform.height / 2;
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
@@ -80,213 +134,279 @@ export function difficultyAt(index: number, config: EndlessConfig): number {
   return Math.min(1, Math.max(0, index / config.rampChunks));
 }
 
-/**
- * Replay one route step with the real physics. Returns the id of the ledge it lands on, or null
- * if it falls out of `platforms`. Exported for the tests, which replay every route.
- */
-export function replayStep(step: RouteStep, platforms: readonly PlatformBox[], worldWidth: number, config: GameConfig): string | null {
-  const from = platforms.find((platform) => platform.id === step.fromId);
-  if (!from) return null;
-  const stepMs = 1000 / config.stepHz;
-  let state = launch(standOn(from, step.takeoffX, config), platforms, step.chargeSteps, step.direction, worldWidth, config);
-  const lowest = Math.max(...platforms.map((platform) => platform.y)) + 200;
-  for (let i = 0; i < 6000; i++) {
-    if (state.grounded) return state.platformId;
-    if (state.y > lowest) return null;
-    state = stepPlayer(state, IDLE, platforms, worldWidth, config, stepMs).state;
-  }
-  return null;
+interface Assembled {
+  kit: GeneratorKit;
+  committed: Committed;
+  spans: PieceSpan[];
+  waxOn: string[];
 }
 
-export function createEndlessGenerator(seed: number, gameConfig: GameConfig, config: EndlessConfig): EndlessGenerator {
+/** Switches of a climb. `walls`: wall slide and wall jump pieces (Decision D-37, a prototype); off, every chunk is as without them. */
+export interface GeneratorOptions { walls?: boolean }
+
+export function createEndlessGenerator(seed: number, gameConfig: GameConfig, config: EndlessConfig,
+  tuning: EndlessPiecesConfig = ENDLESS_PIECES_CONFIG, pieces: readonly PieceEntry[] = PIECES, options: GeneratorOptions = {}): EndlessGenerator {
   const arcs = buildArcTable(gameConfig, config.chargeLevels);
+  const dropTrace = traceDrop(gameConfig, config.chunkHeightPx);
   const worldWidth = gameConfig.view.width;
   const body = gameConfig.player;
+  /** The least room a wall leaves over a ledge it overlaps (px; pieces/kit.ts `keepsClear`). */
+  const wallHeadroomPx = body.height + tuning.walls.headroomPx;
   const cache = new Map<number, EndlessChunk>();
 
   const floorTopPx = (index: number): number => config.baseFloorTopPx - index * config.chunkHeightPx;
-  const floor = (index: number): PlatformData => ({
-    id: `e${index}:floor`, x: worldWidth / 2, y: floorTopPx(index) + config.ledgeHeightPx / 2,
-    width: worldWidth, height: config.ledgeHeightPx, type: 'static',
-  });
+  /** The anchor of chunk `index`, from (seed, index) only. Firm: never moving, never icy. */
+  const floor = (index: number): PlatformData => {
+    const y = floorTopPx(index) + config.ledgeHeightPx / 2;
+    if (index === 0) return { id: 'e0:floor', x: worldWidth / 2, y, width: worldWidth, height: config.ledgeHeightPx, type: 'static' };
+    const random = seededRandom(chunkSeed(seed ^ ANCHOR_SALT, index));
+    const mean = lerp(config.width.easyPx, config.width.hardPx, difficultyAt(index, config));
+    const width = Math.round(Math.max(config.width.minPx, mean * config.anchor.widthScale));
+    const margin = width / 2 + config.anchor.wallMarginPx;
+    const x = Math.round(lerp(margin, worldWidth - margin, random()));
+    return { id: `e${index}:floor`, x, y, width, height: config.ledgeHeightPx, type: 'static' };
+  };
 
-  /** True when `candidate` keeps the required distance from every ledge already placed. */
-  function clear(candidate: PlatformData, placed: readonly PlatformData[]): boolean {
-    for (const other of placed) {
-      // A ledge that slides needs its whole travel kept clear, not only where it rests.
-      const travel = (other.motion?.distance ?? 0) + (candidate.motion?.distance ?? 0);
-      const gapX = Math.abs(candidate.x - other.x) - (candidate.width + other.width) / 2 - travel;
-      const gapY = Math.abs(topOf(candidate) - topOf(other));
-      if (gapX < config.sideClearancePx && gapY < config.stackClearancePx) return false;
-    }
-    return true;
+  /** The ledge the main path has reached. */
+  const current = (committed: Committed): PlatformData => {
+    const step = committed.steps.at(-1);
+    return step ? committed.ledges.find((ledge) => ledge.id === step.toId)! : committed.ledges[0]!;
+  };
+
+  /** Keep a finished run in the chunk, and note it as a piece. */
+  function commit(assembled: Assembled, id: string, entry: PlatformData, run: PieceRun): void {
+    const { committed } = assembled;
+    assembled.spans.push({ id, entryId: entry.id, exitId: run.steps.at(-1)!.toId, firstStep: committed.steps.length,
+      stepCount: run.steps.length, ledgeIds: run.ledges.map((ledge) => ledge.id), altSteps: run.altSteps,
+      updraftIds: run.updrafts.map((column) => column.id) });
+    committed.ledges.push(...run.ledges);
+    committed.updrafts.push(...run.updrafts);
+    committed.steps.push(...run.steps);
+    committed.altSteps.push(...run.altSteps);
+    assembled.waxOn.push(...run.waxOn);
   }
 
   /**
-   * Try to place a ledge `risePx` above `from`, under one sampled jump. Returns the ledge and the
-   * jump that reaches it, or null when this attempt does not fit the walls.
+   * The approach: ordinary jumps up from where the pieces ended until the next anchor is one jump away,
+   * and that jump has been found and replayed. Leans toward the anchor near the top, since it is an
+   * ordinary ledge, not a full-width landing. False when it cannot get there.
    */
-  function tryLedge(random: () => number, from: PlatformData, id: string, risePx: number, width: number,
-    direction: -1 | 0 | 1): { ledge: PlatformData; step: RouteStep; landingX: number } | null {
-    const table = direction === 0 ? arcs.up : arcs.side;
-    const usable: Array<{ arc: JumpArc; dx: number }> = [];
-    for (const arc of table) {
-      if (arc.level < config.minChargeLevel) continue;
-      const hit = descentAt(arc, risePx, config.apexClearancePx);
-      if (hit) usable.push({ arc, dx: hit.after.dx });
+  function approach(assembled: Assembled, nextFloor: PlatformData): boolean {
+    const { kit, committed } = assembled;
+    const start = current(committed);
+    const run = emptyRun();
+    const nextTop = topOf(nextFloor);
+    let heading: -1 | 1 = kit.random() < 0.5 ? -1 : 1;
+    let backtracks = 0;
+    let done = topOf(start) - nextTop <= config.finalRise.maxPx && kit.link(run, start, nextFloor);
+    for (let guard = 0; guard < 200 && !done; guard++) {
+      const from = lastLedge(run, start);
+      const remaining = topOf(from) - nextTop;
+      const nearTop = remaining <= 2 * kit.maxRisePx + config.finalRise.maxPx;
+      const toward: -1 | 1 = nextFloor.x >= from.x ? 1 : -1;
+      let placed = false;
+      for (let attempt = 0; attempt < tuning.approachAttempts && !placed; attempt++) {
+        // Never leave less than a real jump to the next anchor.
+        const top = Math.min(kit.maxRisePx, remaining - config.finalRise.minPx);
+        const risePx = Math.round(lerp(config.rise.minPx, Math.max(config.rise.minPx, top), kit.random()));
+        // Mostly zig-zag; sometimes keep going the same way, sometimes straight up.
+        const roll = kit.random();
+        const direction: -1 | 0 | 1 = from !== committed.ledges[0] && roll < config.straightUpChance ? 0
+          : nearTop ? (roll < 0.8 ? toward : (-toward as -1 | 1))
+            : roll < 0.75 ? (-heading as -1 | 1) : heading;
+        const candidate = kit.jump(run, from, { risePx: [risePx, risePx], direction, widthPx: kit.ledgeWidth() });
+        if (!candidate || !kit.accept(run, candidate)) continue;
+        // The last ledge of the path must have a real jump onto the next anchor.
+        if (topOf(candidate.ledge) - nextTop <= config.finalRise.maxPx) {
+          if (!kit.link(run, candidate.ledge, nextFloor)) { kit.takeBack(run); continue; }
+          done = true;
+        }
+        placed = true;
+        if (direction !== 0) heading = direction;
+      }
+      if (placed) continue;
+      // A dead end: the path wandered out of reach of the anchor. Take back one ledge and try again.
+      if (run.ledges.length && backtracks++ < tuning.approachBacktracks) { kit.takeBack(run); continue; }
+      return false;
     }
-    if (!usable.length) return null;
-    const pick = usable[Math.floor(random() * usable.length)]!;
-    // Anywhere the body can stand on `from`, inside the walls.
-    const minX = Math.max(body.width / 2 + 1, from.x - from.width / 2 + body.width / 2 + 2);
-    const maxX = Math.min(worldWidth - body.width / 2 - 1, from.x + from.width / 2 - body.width / 2 - 2);
-    if (minX > maxX) return null;
-    const takeoffX = Math.round(lerp(minX, maxX, random()));
-    const landingX = takeoffX + direction * pick.dx;
-    // The landing point must sit well inside the ledge; the ledge may slide sideways within that limit.
-    const slack = width / 2 - body.width / 2 - config.landingInsetPx;
-    if (slack < 0) return null;
-    const centre = Math.min(worldWidth - width / 2 - 2, Math.max(width / 2 + 2, landingX + (random() * 2 - 1) * slack));
-    if (Math.abs(centre - landingX) > slack) return null;
-    const ledge: PlatformData = {
-      id, x: Math.round(centre), y: topOf(from) - risePx + config.ledgeHeightPx / 2,
-      width: Math.round(width), height: config.ledgeHeightPx, type: 'static',
-    };
-    return { ledge, step: { fromId: from.id, toId: id, takeoffX, chargeSteps: pick.arc.chargeSteps, direction }, landingX };
+    if (!done) return false;
+    commit(assembled, 'approach', start, run);
+    return true;
   }
 
-  function build(index: number): EndlessChunk {
-    const random = seededRandom(chunkSeed(seed, index));
-    const difficulty = difficultyAt(index, config);
+  /** One try at a chunk's main path: pieces (unless `usePieces` is false), then the approach. Null when it fails. */
+  function assemble(index: number, attempt: number, usePieces: boolean): Assembled | null {
+    const random = seededRandom(attempt === 0 ? chunkSeed(seed, index) : chunkSeed((seed ^ Math.imul(TRY_SALT, attempt)) >>> 0, index));
     const base = floor(index);
     const nextFloor = floor(index + 1);
-    const nextTop = topOf(nextFloor);
-    const main: PlatformData[] = [base];
-    const route: RouteStep[] = [];
-    const ledgeWidth = (): number => {
-      const mean = lerp(config.width.easyPx, config.width.hardPx, difficulty);
-      return Math.max(config.width.minPx, mean * (1 + (random() * 2 - 1) * config.width.widthJitter01));
-    };
-    const maxRise = lerp(config.rise.easyMaxPx, config.rise.hardMaxPx, difficulty);
-    let heading: -1 | 1 = random() < 0.5 ? -1 : 1;
-
-    // Climb until the next landing is one jump away.
-    for (let guard = 0; guard < 64; guard++) {
-      const from = main[main.length - 1]!;
-      const remaining = topOf(from) - nextTop;
-      if (remaining <= config.finalRise.maxPx) break;
-      let placed: { ledge: PlatformData; step: RouteStep } | null = null;
-      for (let attempt = 0; attempt < ATTEMPTS_PER_LEDGE && !placed; attempt++) {
-        // Never leave less than a real jump to the next landing.
-        const top = Math.min(maxRise, remaining - config.finalRise.minPx);
-        const risePx = Math.round(lerp(config.rise.minPx, Math.max(config.rise.minPx, top), random()));
-        // Mostly zig-zag; sometimes keep going the same way, sometimes straight up.
-        const roll = random();
-        const direction: -1 | 0 | 1 = main.length > 1 && roll < config.straightUpChance ? 0
-          : roll < 0.75 ? (-heading as -1 | 1) : heading;
-        const candidate = tryLedge(random, from, `e${index}:p${main.length}`, risePx, ledgeWidth(), direction);
-        if (!candidate || !clear(candidate.ledge, main.slice(0, -1))) continue;
-        // The new jump must land on the new ledge, and no earlier jump may now be caught by it.
-        const all = [...main, candidate.ledge, nextFloor];
-        if (![...route, candidate.step].every((step) => replayStep(step, all, worldWidth, gameConfig) === step.toId)) continue;
-        placed = candidate;
+    const committed: Committed = { ledges: [base], steps: [], altSteps: [], updrafts: [] };
+    const features = featuresAt(index, config, tuning, options.walls === true);
+    const kit = createPieceKit({ random, index, difficulty: difficultyAt(index, config), features, game: gameConfig, config, tuning,
+      arcs, dropTrace, committed, floorTopPx: floorTopPx(index), nextFloor });
+    const assembled: Assembled = { kit, committed, spans: [], waxOn: [] };
+    let previous: PieceEntry | null = null;
+    let excluded = new Set<string>();
+    let failures = 0;
+    // Pieces stop once the chunk's replays have simulated `pieceWorkSteps` physics steps: a count, not the clock,
+    // so the chunk is the same on any machine, and the approach ladder (cheap) finishes it.
+    const workAtStart = replayWork();
+    while (usePieces && failures < tuning.maxPieceFailures && replayWork() - workAtStart < tuning.pieceWorkSteps) {
+      const entry = current(committed);
+      if (topOf(entry) - topOf(nextFloor) <= tuning.approachPx) break;
+      const choice = choosePiece(pieces, index, features, { previous, excluded }, tuning, random);
+      if (!choice) break;
+      const run = emptyRun();
+      if (choice.piece.build(kit, entry, run) && run.steps.length && run.steps[0]!.fromId === entry.id) {
+        commit(assembled, choice.piece.id, entry, run);
+        previous = choice;
+        excluded = new Set();
+      } else {
+        failures++;
+        excluded = new Set([...excluded, choice.piece.id]);
       }
-      if (!placed) throw new Error(`endless generator: no ledge fits above ${from.id} (seed ${seed})`);
-      main.push(placed.ledge);
-      route.push(placed.step);
-      if (placed.step.direction !== 0) heading = placed.step.direction;
     }
-
-    // The last jump: any arc that clears the next landing. The landing is full width, so it always catches.
-    const last = main[main.length - 1]!;
-    const finalRise = topOf(last) - nextTop;
-    let finalStep: RouteStep | null = null;
-    for (let attempt = 0; attempt < ATTEMPTS_PER_LEDGE && !finalStep; attempt++) {
-      const direction: -1 | 0 | 1 = attempt % 3 === 0 ? 0 : attempt % 3 === 1 ? 1 : -1;
-      const table = (direction === 0 ? arcs.up : arcs.side).filter((arc) =>
-        arc.level >= config.minChargeLevel && arc.apexPx >= finalRise + config.apexClearancePx);
-      if (!table.length) continue;
-      const arc = table[Math.floor(random() * table.length)]!;
-      const step: RouteStep = { fromId: last.id, toId: nextFloor.id, takeoffX: Math.round(last.x), chargeSteps: arc.chargeSteps, direction };
-      if (replayStep(step, [...main, nextFloor], worldWidth, gameConfig) === nextFloor.id) finalStep = step;
+    // If the approach cannot reach the anchor from where the pieces ended, take the last piece back and try again.
+    for (let undo = 0; undo <= tuning.approachUndoPieces; undo++) {
+      if (approach(assembled, nextFloor)) return assembled;
+      const last = assembled.spans.pop();
+      if (!last) return null;
+      committed.ledges.length -= last.ledgeIds.length;
+      committed.steps.length = last.firstStep;
+      committed.altSteps.length -= last.altSteps.length;
+      committed.updrafts.length -= last.updraftIds.length;
+      assembled.waxOn = assembled.waxOn.filter((id) => !last.ledgeIds.includes(id));
     }
-    if (!finalStep) throw new Error(`endless generator: the next landing is out of reach from ${last.id} (seed ${seed})`);
-    route.push(finalStep);
+    return null;
+  }
 
-    // Optional side ledges with wax. Each must be reachable, and must not catch a main-path jump.
+  /** Wax, optional side ledges and ice on a finished main path. */
+  function finish(index: number, assembled: Assembled): EndlessChunk {
+    const { kit, committed, spans, waxOn } = assembled;
+    const random = kit.random;
+    const base = committed.ledges[0]!;
+    const nextFloor = floor(index + 1);
+    const nextTop = topOf(nextFloor);
+    const route = committed.steps;
+    const altRoute = committed.altSteps;
+    const byId = new Map(committed.ledges.map((ledge) => [ledge.id, ledge]));
+    const main = [base, ...route.slice(0, -1).map((step) => byId.get(step.toId)!)];
+    const onMain = new Set(main.map((ledge) => ledge.id));
+    // Bounce caps are never stood on: no wax, no ice, no side ledges from them.
+    const alt = committed.ledges.filter((ledge) => !onMain.has(ledge.id) && ledge.type !== BOUNCE_TYPE && ledge.type !== WALL_TYPE);
+    const caps = committed.ledges.filter((ledge) => ledge.type === BOUNCE_TYPE);
+    // Walls (Decision D-37) hold no wax and are never icy; they are kept as they are.
+    const walls = committed.ledges.filter((ledge) => ledge.type === WALL_TYPE);
+    const columns = committed.updrafts;
+    const pathSteps = [...route, ...altRoute];
+    const apexLimit = apexLimitTop(nextFloor, config);
+
+    // Optional side ledges with wax. Each must be reachable, and must not catch a path jump or an earlier side jump.
     const sides: PlatformData[] = [];
     const sideRoute: RouteStep[] = [];
     const wax: WaxSpot[] = [];
-    const waxAbove = (platform: PlatformData, id: string): WaxSpot => ({ id, x: platform.x,
-      y: topOf(platform) - config.waxHoverPx - body.height / 2 });
-    const routeHolds = (extra: PlatformData): boolean => {
-      const all = [...main, ...sides, extra, nextFloor];
-      return route.every((step) => replayStep(step, all, worldWidth, gameConfig) === step.toId);
+    const waxAbove = (platform: PlatformData, id: string): WaxSpot => {
+      const spot = { id, x: platform.x, y: topOf(platform) - config.waxHoverPx - body.height / 2 };
+      return platform.motion ? { ...spot, ledgeId: platform.id, ledgeX: platform.x } : spot;
+    };
+    const ledgesWith = (extra: PlatformData): PlatformData[] => [...committed.ledges, ...sides, extra, nextFloor];
+    const affected = (ledge: PlatformData): RouteStep[] => kit.affected(pathSteps, ledge, [...committed.ledges, nextFloor], columns);
+    /** Each earlier side jump still lands on its own ledge with `extra` added, wherever a moving one is in its travel. */
+    const sideJumpsHold = (extra: PlatformData): boolean => {
+      const all = ledgesWith(extra);
+      return sideRoute.every((step, k) => {
+        const own = sides[k]!;
+        const distance = own.motion?.distance ?? 0;
+        return (distance ? [-distance, 0, distance] : [0]).every((offset) => replayStep(step,
+          all.map((p) => (p.id === own.id ? { ...p, x: p.x + offset } : p)), worldWidth, gameConfig, 0, false, columns) === step.toId);
+      });
     };
     /**
      * Turn a side ledge into one that slides left and right, if there is room. It may move only as far
      * as the landing spot of its jump stays on it, so the jump lands whenever it is made. At both ends
      * and in between it must stay clear of the walls and other ledges, still catch its own jump, and
-     * never catch a jump of the main path. Returns null when it should stay still.
+     * never catch a jump of the path. Returns null when it should stay still.
      */
-    const moving = (candidate: { ledge: PlatformData; step: RouteStep; landingX: number }): PlatformData | null => {
+    const moving = (candidate: Candidate): PlatformData | null => {
       if (index < config.moving.fromChunk || random() >= config.moving.chance) return null;
       const { ledge, step, landingX } = candidate;
       const room = ledge.width / 2 - body.width / 2 - 4 - Math.abs(ledge.x - landingX);
       const walls = Math.min(ledge.x - ledge.width / 2, worldWidth - ledge.x - ledge.width / 2) - 2;
       const distance = Math.floor(Math.min(config.moving.maxDistancePx, room, walls));
       if (distance < config.moving.minDistancePx) return null;
-      const others = [...main, ...sides];
+      const others = [...committed.ledges, ...sides];
       for (const offset of [-distance, -distance / 2, distance / 2, distance]) {
         const shifted = { ...ledge, x: ledge.x + offset };
-        if (!clear(shifted, others)) return null;
+        if (!keepsClear(shifted, others, config, wallHeadroomPx)) return null;
         const all = [...others, shifted, nextFloor];
-        if (replayStep(step, all, worldWidth, gameConfig) !== ledge.id) return null;
-        if (!route.every((mainStep) => replayStep(mainStep, all, worldWidth, gameConfig) === mainStep.toId)) return null;
+        if (replayStep(step, all, worldWidth, gameConfig, 0, false, columns) !== ledge.id) return null;
+        if (!stepsHold(kit.affected(pathSteps, shifted, [...committed.ledges, nextFloor], columns), all, worldWidth, gameConfig, columns)) return null;
+        if (!sideJumpsHold(shifted)) return null;
       }
       const periodMs = Math.round(lerp(config.moving.periodMs[0], config.moving.periodMs[1], random()));
       return { ...ledge, type: 'moving', motion: { axis: 'x', distance, periodMs } };
     };
+    const sideRun = emptyRun();
     for (let i = 1; i < main.length; i++) {
       const from = main[i]!;
-      if (random() < config.pathWaxChance) wax.push(waxAbove(from, `e${index}:wax-p${i}`));
-      if (random() >= config.sideLedgeChance) continue;
+      if (random() < config.pathWaxChance * tuning.pathWaxScale) wax.push(waxAbove(from, `e${index}:wax-p${i}`));
+      // Never from a moving or crumbling ledge (a side jump is not held to the crumble time).
+      if (from.motion || from.type === CRUMBLING_TYPE || random() >= config.sideLedgeChance * tuning.sideLedgeScale) continue;
       const mainDirection = route[i]?.direction ?? 0;
       for (let attempt = 0; attempt < 12; attempt++) {
         const direction: -1 | 1 = mainDirection !== 0 ? (-mainDirection as -1 | 1) : random() < 0.5 ? -1 : 1;
-        const risePx = Math.round(lerp(config.rise.minPx * 0.7, maxRise * 0.85, random()));
+        const risePx = Math.round(lerp(config.rise.minPx * 0.7, kit.maxRisePx * 0.85, random()));
         const id = `e${index}:s${i}`;
-        const candidate = tryLedge(random, from, id, risePx, Math.max(config.width.minPx, ledgeWidth() * 0.75), direction);
-        if (!candidate || topOf(candidate.ledge) < nextTop + config.stackClearancePx) continue;
-        if (!clear(candidate.ledge, [...main, ...sides])) continue;
-        const all = [...main, ...sides, candidate.ledge, nextFloor];
-        if (replayStep(candidate.step, all, worldWidth, gameConfig) !== id || !routeHolds(candidate.ledge)) continue;
+        const raw = kit.jump(sideRun, from, { risePx: [risePx, risePx], direction, widthPx: Math.max(config.width.minPx, kit.ledgeWidth() * 0.75) });
+        if (!raw || raw.apexTopPx < apexLimit) continue;
+        const candidate: Candidate = { ...raw, ledge: { ...raw.ledge, id }, step: { ...raw.step, toId: id } };
+        if (topOf(candidate.ledge) < nextTop + config.stackClearancePx) continue;
+        if (!keepsClear(candidate.ledge, [...committed.ledges, ...sides], config, wallHeadroomPx)) continue;
+        const all = ledgesWith(candidate.ledge);
+        if (replayStep(candidate.step, all, worldWidth, gameConfig, 0, false, columns) !== id
+          || !stepsHold(affected(candidate.ledge), all, worldWidth, gameConfig, columns)
+          || !sideJumpsHold(candidate.ledge)) continue;
         const ledge = moving(candidate) ?? candidate.ledge;
         sides.push(ledge);
         sideRoute.push(candidate.step);
-        wax.push(ledge.motion ? { ...waxAbove(ledge, `e${index}:wax-s${i}`), ledgeId: ledge.id, ledgeX: ledge.x } : waxAbove(ledge, `e${index}:wax-s${i}`));
+        wax.push(waxAbove(ledge, `e${index}:wax-s${i}`));
         break;
       }
+    }
+    // Wax on alternative branches: always where a piece asks for it (a reward for risk), else by chance.
+    for (const ledge of alt) {
+      if (waxOn.includes(ledge.id) || random() < config.pathWaxChance) wax.push(waxAbove(ledge, `e${index}:wax-${ledge.id.split(':')[1]}`));
     }
     // A chunk never goes without wax: the fuel rule assumes at least one per chunk.
     if (!wax.length && main.length > 1) {
       const holder = main[1 + Math.floor(random() * (main.length - 1))]!;
       wax.push(waxAbove(holder, `e${index}:wax-p`));
     }
-    // Ice, in the snow bands only. It changes how walking feels on a ledge, not the jump from it,
-    // so every stored jump still lands where it says (the tests replay them). Landings stay firm.
+    // Ice, in the snow bands only. It changes how walking feels on a ledge, not a jump from it, so every
+    // stored jump still lands where it says (the tests replay them). Anchors stay firm, and a ledge you
+    // walk off (a drop) is never icy, since walking is the step.
+    const dropFrom = new Set(pathSteps.filter((step) => step.kind === 'drop').map((step) => step.fromId));
     const iced = (ledge: PlatformData): PlatformData => {
-      if (ledge.motion || biomeOf(index, config) !== 'snow' || random() >= config.ice.chance) return ledge;
+      if (ledge.motion || (ledge.type !== undefined && ledge.type !== 'static') || dropFrom.has(ledge.id)) return ledge;
+      if (biomeOf(index, config) !== 'snow' || random() >= config.ice.chance) return ledge;
       const ice01 = Math.round(lerp(config.ice.min01, config.ice.max01, random()) * 100) / 100;
       return { ...ledge, type: 'slippery', ice01 };
     };
-    const ledges = [base, ...main.slice(1).map(iced), ...sides.map(iced)];
-    return { index, floorTopPx: floorTopPx(index), platforms: ledges, wax, route, sideRoute };
+    const platforms = [base, ...main.slice(1).map(iced), ...alt.map(iced), ...caps, ...walls, ...sides.map(iced)];
+    return { index, floorTopPx: floorTopPx(index), platforms, wax, route, altRoute, sideRoute, pieces: spans, updrafts: [...columns] };
+  }
+
+  function build(index: number): EndlessChunk {
+    for (let attempt = 0; attempt < tuning.chunkTries; attempt++) {
+      const assembled = assemble(index, attempt, attempt < tuning.chunkTries - 1);
+      if (assembled) return finish(index, assembled);
+    }
+    throw new Error(`endless generator: the next anchor is out of reach in chunk ${index} (seed ${seed})`);
   }
 
   return {
     floorTopPx,
     floor,
+    isBuilt: (index) => cache.has(index),
     chunk(index) {
       if (!Number.isInteger(index) || index < 0) throw new Error(`endless generator: bad chunk index ${index}`);
       let chunk = cache.get(index);
@@ -294,7 +414,7 @@ export function createEndlessGenerator(seed: number, gameConfig: GameConfig, con
         chunk = build(index);
         cache.set(index, chunk);
         // Keep the cache small: chunks rebuild identically, so dropping old ones loses nothing.
-        if (cache.size > 12) cache.delete(cache.keys().next().value!);
+        if (cache.size > CACHE_CHUNKS) cache.delete(cache.keys().next().value!);
       }
       return chunk;
     },

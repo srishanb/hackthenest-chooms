@@ -1,19 +1,27 @@
 /** Fixed-size, corruption-aware weather overlays. No emitter growth or connection to gameplay wind. */
 import type { Scene } from 'phaser';
 import { ATMOSPHERE_CONFIG as C, DEFAULT_ENVIRONMENT, normalizeEnvironment, unit, type VisualEnvironment } from '../../config/atmosphere.config';
+import { FOREST_CONFIG } from '../../config/forest.config';
 import { mixColor } from './presentation';
+import { snapToGrid } from './pixel-grid-snap';
+
+/** Texture px per art pixel in the wind gust frames (public/assets/wind: 512 px images in 8 px blocks). */
+const GUST_TEXELS_PER_ART_PX = 8;
+const GUST_SCALE = FOREST_CONFIG.pixelScale / GUST_TEXELS_PER_ART_PX;
 export function createAtmosphere(scene: Scene) {
   let base = { ...DEFAULT_ENVIRONMENT };
   let snow = 0, wind = 0, clock = 0, drift = 0;
+  // Clouds were drawn at 2x and 3x; all at the one pixel size now.
   const clouds = Array.from({ length: 3 }, (_, i) => scene.add.image(0, 0, 'grass-cloud')
-    .setScrollFactor(0).setDepth(-31).setScale(2 + i % 2).setAlpha(0));
+    .setScrollFactor(0).setDepth(-31).setScale(FOREST_CONFIG.pixelScale).setAlpha(0));
   const grade = scene.add.rectangle(0, 0, scene.scale.width, scene.scale.height, 0x8abfdb)
     .setOrigin(0).setScrollFactor(0).setDepth(-7).setAlpha(0);
   const overlays = ['snow', 'leaves', 'fog'].map((kind, i) => scene.add.tileSprite(0, 0,
     scene.scale.width, scene.scale.height, `weather-${kind}`, 0).setOrigin(0).setScrollFactor(0)
-    .setTileScale(2).setDepth(5 + i).setAlpha(0));
+    .setTileScale(FOREST_CONFIG.pixelScale).setDepth(5 + i).setAlpha(0));
+  // The gust frames are drawn with 8 texture px per art pixel, so this draws one art pixel as `pixelScale` px.
   const swirls = Array.from({ length: 3 }, () => scene.add.image(0, 0, 'wind-gust-1')
-    .setScrollFactor(0).setDepth(201).setScale(0.5).setAlpha(0));
+    .setScrollFactor(0).setDepth(201).setScale(GUST_SCALE).setAlpha(0));
   return {
     setEnvironment(value: Partial<VisualEnvironment>) { base = normalizeEnvironment(value); },
     update(c: number, dt: number, reduced: boolean, paused: boolean, strength: number) {
@@ -27,7 +35,7 @@ export function createAtmosphere(scene: Scene) {
       for (const [i, cloud] of clouds.entries()) {
         const span = scene.cameras.main.width + cloud.displayWidth * 2;
         const x = ((i * 379 + drift * 0.2) % span + span) % span - cloud.displayWidth;
-        cloud.setPosition(Math.round(x), 80 + i * 130).setTint(mixColor(0x9cb8b2, 0x714560, c))
+        cloud.setPosition(snapToGrid(x), 80 + i * 130).setTint(mixColor(0x9cb8b2, 0x714560, c))
           .setAlpha((wind * 0.1 + snow * 0.08) * (1 - c * 0.3));
       }
       for (const [i, overlay] of overlays.entries()) {
@@ -42,7 +50,7 @@ export function createAtmosphere(scene: Scene) {
         const frame = 1 + Math.floor(clock / 90 + i * 5) % 16;
         const key = `wind-gust-${frame}`;
         if (swirl.texture.key !== key) swirl.setTexture(key);
-        swirl.setPosition((i + 0.5) / 3 * scene.cameras.main.width, 110 + i * 130)
+        swirl.setPosition(snapToGrid((i + 0.5) / 3 * scene.cameras.main.width), 110 + i * 130)
           .setFlipX(target.direction < 0).setTint(mixColor(0xc4ddda, 0xa36690, c)).setAlpha(wind * 0.28);
       }
     },

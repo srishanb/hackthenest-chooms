@@ -136,14 +136,23 @@ const SMOKE = [0x9aa0aa, 0x7d838d, 0x60656e] as const;
  */
 export function wickSmoke(genome: CandleGenome, timeMs: number, reducedMotion: boolean): Pixel[] {
   if (reducedMotion) return [{ x: 0, y: -3, color: SMOKE[1] }, { x: 1, y: -5, color: SMOKE[2] }];
-  const pixels: Pixel[] = [];
+  return wickSmokePuffs(genome, timeMs).map((puff) => puff.pixel);
+}
+
+/** One smoke puff: its pixel (relative to the wick tip), which of the four it is, and how many times it has restarted at the wick. */
+export interface SmokePuff { pixel: Pixel; index: number; cycle: number }
+
+/** The four puffs of smoke (full motion). A puff's `cycle` changes each time it is born at the wick, so the view can pin it where it was born. */
+export function wickSmokePuffs(genome: CandleGenome, timeMs: number): SmokePuff[] {
+  const puffs: SmokePuff[] = [];
   const t = timeMs / 1000;
   for (let i = 0; i < 4; i++) {
-    const age = (t * 0.5 + i / 4 + genome.flame.phaseA / (Math.PI * 2)) % 1;
+    const raw = t * 0.5 + i / 4 + genome.flame.phaseA / (Math.PI * 2);
+    const age = raw % 1;
     const x = Math.round(Math.sin(age * 6 + i * 2.1 + genome.flame.phaseB) * 2.5 * age);
-    pixels.push({ x, y: -2 - Math.round(age * 11), color: SMOKE[Math.min(2, Math.floor(age * 3))]! });
+    puffs.push({ pixel: { x, y: -2 - Math.round(age * 11), color: SMOKE[Math.min(2, Math.floor(age * 3))]! }, index: i, cycle: Math.floor(raw) });
   }
-  return pixels;
+  return puffs;
 }
 
 /** Light radius in px to a 0..1 flame size, using the lantern rule's own caps. */

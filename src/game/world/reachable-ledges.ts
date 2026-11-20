@@ -7,15 +7,35 @@
  * steering) is duplicated from tools/levels/reach.ts so both agree; it is conservative, so a ledge
  * reachable only with steering may stay dark.
  *
- * Only ledges strictly higher than the current one count: falling is always possible, and lighting
- * every lower ledge would undo the darkness. Platforms and physics only, never the signal.
+ * Only ledges strictly higher than the current one count by default (the authored climb): falling is
+ * always possible, and lighting every lower ledge would undo the darkness. The endless climb's set
+ * pieces put the next route ledge level with or a little below the takeoff (detour drops, big leaps,
+ * pillars, traverses), so it passes `lowerPx`: a ledge that much lower still counts, and nothing
+ * deeper does, so the ledges already climbed past stay dark. Platforms and physics only, never the signal.
+ *
+ * Walls (Decision D-37, only with `?walls=1`): when walls are among the platforms, the same samples are fired
+ * again pressing the keys of a wall step (endless/wall-kicks.ts: hold the way of the jump, press jump a little
+ * after reaching a wall, then hold the other way, up to four kicks), and the route's own wall steps from this
+ * ledge (`kickSteps`, proved by the generator) are fired too, so a ledge reached only by kicking is outlined.
  */
 import type { GameConfig } from '../../shared/contracts/config';
 import { createPlayer, stepPlayer } from '../player/movement';
-import type { PlatformBox, PlayerState } from '../player/types';
+import type { PlatformBox, PlayerInput, PlayerState, UpdraftBox } from '../player/types';
+import { wallsIn } from '../player/wall';
+import { createKickPolicy } from '../endless/wall-kicks';
 
 const IDLE = { left: false, right: false, jump: false };
 const CHARGE_LEVELS = 12;
+/** A sampled wall flight presses each kick this many physics steps after reaching the wall, for up to four kicks. */
+const SAMPLE_KICKS = [8, 8, 8, 8];
+
+/** A wall step the route takes from a ledge: where it takes off, how long it charges, its way and its kicks. */
+export interface KickSample {
+  takeoffX: number;
+  chargeSteps: number;
+  direction: -1 | 0 | 1;
+  kicks: readonly number[];
+}
 
 export interface WorldBounds {
   width: number;
@@ -27,8 +47,14 @@ export interface WorldBounds {
 
 const topOf = (platform: PlatformBox): number => platform.y - platform.height / 2;
 
-/** Ids of ledges higher than `source` that a sampled jump from `source` lands on, in `platforms` order. */
-export function reachableLedges(source: PlatformBox, platforms: readonly PlatformBox[], world: WorldBounds, config: GameConfig): string[] {
+/**
+ * Ids of ledges higher than `source` (or at most `lowerPx` lower, default 0: strictly higher only) that a
+ * sampled jump from `source` lands on, in `platforms` order. `updrafts` are the updraft columns in reach
+ * (the endless climb, D-36), so a ledge reached only through a column is found too; the authored climb has none.
+ */
+export function reachableLedges(source: PlatformBox, platforms: readonly PlatformBox[], world: WorldBounds, config: GameConfig,
+  lowerPx = 0, updrafts: readonly UpdraftBox[] = [], kickSteps: readonly KickSample[] = []): string[] {
+  const environment = { updrafts };
   const { width: bodyW, height: bodyH } = config.player;
   const stepMs = 1000 / config.stepHz;
   // Long enough to rise and then fall to the world floor, even from the top ledge.
@@ -42,28 +68,43 @@ export function reachableLedges(source: PlatformBox, platforms: readonly Platfor
   const sourceTop = topOf(source);
   const landed = new Set<string>();
   const y = sourceTop - bodyH / 2;
+  const walls = wallsIn(platforms);
+  /** Charge at `x`, release holding `direction`, then fly with `keys` (none, or a wall step's) until it lands. */
+  const fire = (x: number, chargeSteps: number, direction: -1 | 0 | 1, keys: ((state: PlayerState) => PlayerInput) | null): void => {
+    let state: PlayerState = { ...createPlayer(x, y), grounded: true, platformId: source.id, jumpLatch: false };
+    for (let step = 0; step < chargeSteps; step++) {
+      state = stepPlayer(state, { ...IDLE, jump: true }, platforms, world.width, config, stepMs, environment).state;
+    }
+    state = stepPlayer(state, { left: direction < 0, right: direction > 0, jump: false }, platforms, world.width, config, stepMs, environment).state;
+    for (let step = 0; step < maxSteps; step++) {
+      const result = stepPlayer(state, keys ? keys(state) : IDLE, platforms, world.width, config, stepMs, environment);
+      state = result.state;
+      if (result.events.landed) {
+        landed.add(result.events.landed.platformId);
+        break;
+      }
+      if (state.y > world.bottom + bodyH) break;
+    }
+  };
   for (const x of [minX, (minX + maxX) / 2, maxX]) {
-    for (const direction of [-1, 0, 1]) {
+    for (const direction of [-1, 0, 1] as const) {
       for (let level = 1; level <= CHARGE_LEVELS; level++) {
-        let state: PlayerState = { ...createPlayer(x, y), grounded: true, platformId: source.id, jumpLatch: false };
         const chargeSteps = Math.ceil((config.jump.maxChargeMs * level) / CHARGE_LEVELS / stepMs);
-        for (let step = 0; step < chargeSteps; step++) {
-          state = stepPlayer(state, { ...IDLE, jump: true }, platforms, world.width, config, stepMs).state;
-        }
-        state = stepPlayer(state, { left: direction < 0, right: direction > 0, jump: false }, platforms, world.width, config, stepMs).state;
-        for (let step = 0; step < maxSteps; step++) {
-          const result = stepPlayer(state, IDLE, platforms, world.width, config, stepMs);
-          state = result.state;
-          if (result.events.landed) {
-            landed.add(result.events.landed.platformId);
-            break;
-          }
-          if (state.y > world.bottom + bodyH) break;
+        fire(x, chargeSteps, direction, null);
+        if (walls.length && direction !== 0) {
+          const policy = createKickPolicy(SAMPLE_KICKS, direction, config);
+          fire(x, chargeSteps, direction, (state) => policy.input(state, walls));
         }
       }
     }
   }
-  return platforms.filter((p) => p.id !== source.id && landed.has(p.id) && topOf(p) < sourceTop).map((p) => p.id);
+  if (walls.length) {
+    for (const sample of kickSteps) {
+      const policy = createKickPolicy(sample.kicks, sample.direction, config);
+      fire(sample.takeoffX, sample.chargeSteps, sample.direction, (state) => policy.input(state, walls));
+    }
+  }
+  return platforms.filter((p) => p.id !== source.id && landed.has(p.id) && topOf(p) < sourceTop + lowerPx).map((p) => p.id);
 }
 
 export interface Segment {

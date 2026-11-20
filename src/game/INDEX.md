@@ -15,15 +15,22 @@ Owner: Ali. Search here before adding a function.
 | `stepPlayer`, `createPlayer`, `teleportPlayer` | `player/movement.ts` | Pure fixed-step physics: gravity, walk, charge jump, ascent steering, descent-only horizontal acceleration and bounded edge recovery, one-way platforms, side walls. Never reads the signal. |
 | `charge01`, `launchVelocity`, `steeredVx` | `player/charge-jump.ts` | Charge and launch maths, air-steering cap. |
 | `findLanding`, `findSupport`, `overlapsX`, `clampToWalls` | `player/collide.ts` | Swept one-way landing and wall clamp. |
+| `bounceSpeed`, `BOUNCE_TYPE` | `player/bounce.ts` | Bounce caps (D-36): the launch speed from a landing speed. `stepPlayer` throws the candle instead of landing. |
+| `updraftAt`, `updraftVy`, `updraftHolds`, `terminalVy` | `player/updraft.ts` | Updraft columns (D-36): half gravity while rising fast, a fall eased to the column's sink or rise speed; never catches a fall (`updraftHolds`, D-36a). |
+| `stepCrumble`, `solidLedges`, `crumbleWarn01`, `NO_CRUMBLE`, `CRUMBLING_TYPE`, `CrumbleState` | `player/crumble.ts` | Crumbling ledges (D-36): per-ledge timers in the world, not the player; what is solid now. |
+| `WALL_TYPE`, `wallsIn`, `wallBeside`, `touchingWall`, `blockX`, `bumpHead`, `gripHolds`, `slideVy`, `kickVelocity`, `isSliding` | `player/wall.ts` | Walls (D-37, prototype behind `?walls=1`): platforms of type `wall` with solid sides and underside; slide and kick rules, grip only within `gripBelowTakeoffPx` of the last takeoff or kick (never catches a fall). `StepEvents.wallKicked`, `PlayerState.kickWallId`, `wallLockMs` and `standBottomY` (where the candle last stood before its kicks; a landing's fall is measured from it) exist only in a world with walls. |
+| `stepWorld`, `WorldStep` | `player/world-step.ts` | One step of the candle and the crumble timers, in that order; the endless scene and the route replay both call it. An optional last argument passes the other candle and a shove (two-player climb only). |
+| `withHeads`, `resolveSides`, `bumpBodies`, `firstCeiling`, `shoveDirection`, `knockBetween`, `applyKnock`, `headId`, `isHeadId`, `HEAD_TYPE`, `OtherBody`, `Knock`, `carryLimitPx`, `riding` | `player/versus.ts` | Two candles in one world (D-38): the other candle is solid (sides, gentle separation of an overlap), its head is a standable ledge that carries, rising into its feet stops; when a walk is a shove; the knock between two bodies and how a candle takes it. `StepEnvironment.others` and `pushVx` bring them into `stepPlayer`; absent, nothing changes. |
+| `StepEnvironment`, `UpdraftBox` | `player/movement.ts`, `player/types.ts` | What `stepPlayer` gets besides ledges: wind and updraft columns. |
 | `sectionAt`, `lowestPlatformY` | `world/bounds.ts` | Which section a height belongs to (derived from platforms). |
-| `landingEvents` | `world/fall-tracker.ts` | A landing becomes `land`, and past `minFallPxToOffer` also `fall { heightPx, big }`. Never resets or kills. |
+| `landingEvents`, `bounceEvents` | `world/fall-tracker.ts` | A landing becomes `land`, and past `minFallPxToOffer` also `fall { heightPx, big }`. Never resets or kills. A fall ending on a bounce cap gives the same `fall` (`bounceEvents`, no `land`). |
 | `bodyInArea`, `findFinish`, `altitude01` | `world/finish.ts` | Legacy draft area helpers and altitude to the final stage ledge. Runtime completion uses landing events. |
 | `createPhaseController`, `PhaseController` | `world/phase-controller.ts` | Pause/resume (restores the earlier phase) and one-time finish; stepping only while `'playing'`. |
 | `writeSnapshot`, `SnapshotPatch` | `scenes/snapshot-writer.ts` | Publishes `sectionId`, `altitude01` (the refuge controller owns `inRefuge`) only when a field changes. |
 | `PlayerInput`, `PlayerState`, `PlatformBox`, `StepEvents` | `player/types.ts` | Plain data shared with the level checker (P4.2). |
 | `targetFor`, `stepEffect`, `stepEffects`, `neutralFrame`, `EffectInput` | `effects/effects-engine.ts` | Pure maths: signal → capped, smoothed effect values. |
 | `createDarkness`, `updateDarkness`, `minCoveringRadius` | `effects/darkness.ts` | The darkness sheet with a soft light hole (P0 spike). |
-| `reachableLedges`, `outlineSegments`, `WorldBounds`, `Segment` | `world/reachable-ledges.ts` | Higher ledges a sampled real jump lands on (LAN-3), and the outline segments to draw. No signal. |
+| `reachableLedges`, `outlineSegments`, `WorldBounds`, `Segment`, `KickSample` | `world/reachable-ledges.ts` | Higher ledges (and, with `lowerPx`, ledges up to that far lower: the endless climb) a sampled real jump lands on (LAN-3), and the outline segments to draw. No signal. Takes the updraft columns too (endless climb), so ledges reached through one count; with walls (D-37) also samples kicking flights and the route's own wall steps (`KickSample`). |
 | `createCandleGenome`, `seededRandom`, `pickCandleSeed` | `candle/candle-genome.ts` | Seeded candle shape, colours, drips and flame rhythm; new seed each run, `?candleSeed=` in dev. |
 | `stepPose`, `poseFrame`, `bodyShape`, `POSE_TIMING` | `candle/candle-pose.ts` | Ruby-matched pose choice and frame timing, plus how the body squashes and stretches. |
 | `rasterCandle`, `grownSize` | `candle/candle-raster.ts` | Candle body, outline, drips and wick as art pixels. |
@@ -39,6 +46,7 @@ Owner: Ali. Search here before adding a function.
 | `createPortraitView` | `candle/portrait-view.ts` | Draws the portrait in a gold-rimmed circle fixed at the bottom left (replaces the lantern strength bar). |
 | `waxBallPixels`, `mountWaxBall`, `BALL_W`, `BALL_H` | `candle/wax-ball.ts` | Flaming wax ball for the compass centre (candle colours; tall flame while an ember is placed). Handed to the HUD by main.ts. |
 | `createCandleView` | `candle/candle-view.ts` | Draws the candle in the scene (replaces the Ruby sprite view). |
+| `makeAnchor`, `toWorld`, `stepShed`, `pinPerCycle`, `wickSmokePuffs` | `candle/detached.ts`, `candle/flame.ts` | Droplets, breath, smoke and flight sparks stay where they were shed instead of following the candle. |
 | `createProtectedVisibility` | `effects/protected-visibility.ts` | Outline layer above the darkness: the ledge underfoot and reachable ledges' top edges, faded out at the edge of the light; cached per ledge. |
 | `fadeAlpha`, `fadeSegments`, `FADE_START_FACTOR`, `FADE_END_FACTOR` | `effects/outline-fade.ts` | Outline alpha from distance to the lantern: full inside the radius, gone at 1.5x. |
 | `createRefugeController` | `world/refuge.ts` | Rest-area entry/exit only. No automatic saves, markers or ember refills. |
@@ -63,7 +71,7 @@ Recovery keeps a marker placed after each return. Pickup is required before plac
 | `createForestWorld` | `forest/forest-world.ts` | Decorative scenery, platform skins and bounded particles; no collision writes. |
 | `createRubyView` | `forest/ruby-view.ts` | Legacy: the Ruby sprite view. No longer used by the scene; `createCandleView` replaced it. |
 | `stepForestEffects` | `forest/forest-effects.ts` | Existing engine plus optional visual-only forest field preview. |
-| `stableUnit`, `reveal`, `mixColor`, `fitPropScale` | `forest/presentation.ts` | Deterministic seeds, continuous visual mapping, corrupted-prop scale fitting. |
+| `stableUnit`, `reveal`, `mixColor`, `pickFitting`, `pickPartner`, `DrawnSize` | `forest/presentation.ts` | Deterministic seeds, continuous visual mapping, and picking a ledge prop (and its decayed partner) by what fits instead of scaling it. |
 | `createAtmosphere` | `forest/atmosphere.ts` | Weather and corruption atmosphere; renderer-only. |
 | `createVerticalForest` | `forest/vertical-forest.ts` | Continuous background composition by height (layout helpers in `forest/vertical-layout.ts`). |
 | `createBackdropGardens` | `forest/backdrop-gardens.ts` | Pooled, seeded, non-collidable parallax garden ledges. |
@@ -74,7 +82,7 @@ Atmosphere: createAtmosphere (forest/atmosphere.ts) consumes existing corruption
 
 createBackdropGardens (forest/backdrop-gardens.ts): five pooled, seeded non-collidable parallax garden ledges; no physics or bright landing rims.
 
-fitPropScale (forest/presentation.ts) fits corrupted decorations to their partner's displayed height with a 48 px cap, preventing oversized winter crystals.
+pickPartner (forest/presentation.ts) chooses a decayed partner no taller than its healthy prop, so no oversized decoration grows over a landing; nothing is scaled to fit (Decision D-34).
 
 createCorruptionScreen / createCorruptionFilter (forest/): bounded high-corruption visual-only motion/filter. createLanternFuel / burnFuel (forest/lantern-fuel.ts): actual playing-time resource with wax refill and held airborne light radius; never reads preview values.
 
@@ -115,18 +123,31 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 |---|---|---|
 | `EndlessScene`, `EndlessSceneDeps` | `scenes/endless-scene.ts` | The generated climb: same input, `stepPlayer`, candle and forest as the climb scene, on streamed chunks. Fuel ends the run; no signal. |
 | `traceArc`, `buildArcTable`, `descentAt`, `launch`, `standOn`, `chargeStepsFor`, `JumpArc`, `ArcPoint` | `endless/jump-arcs.ts` | Sample jump arcs traced with the real `stepPlayer`; the generator places ledges under them. |
-| `createEndlessGenerator`, `replayStep`, `difficultyAt`, `EndlessChunk`, `RouteStep`, `WaxSpot`, `EndlessGenerator` | `endless/generator.ts` | Seeded, random-access chunks. Every ledge is reachable by construction and its jump is replayed before it is kept. |
+| `createEndlessGenerator`, `replayStep`, `difficultyAt`, `EndlessChunk`, `RouteStep`, `WaxSpot`, `EndlessGenerator`, `PieceSpan` | `endless/generator.ts` | Seeded, random-access chunks, each starting on an anchor ledge (`floor(index)`; only chunk 0's is full width). Each chunk is a seeded run of set pieces then an approach ladder onto the next anchor (D-35); `chunk.pieces` lists them, `chunk.altRoute` holds a fork's other way. Every ledge is reachable by construction and its jump or drop is replayed before it is kept. `isBuilt(index)` tells the stream which chunks are already built; the pieces of a chunk stop after `pieceWorkSteps` replayed physics steps (a count, never the clock). |
 | `EndlessChunk.sideRoute`, `WaxSpot.ledgeId`, `WaxSpot.ledgeX` | `endless/generator.ts` | The jump to each optional side ledge; wax on a moving side ledge knows which ledge it rides. |
-| `createChunkStream`, `ChunkStream`, `StreamChange` | `endless/chunk-stream.ts` | Keeps a fixed window of chunks alive around the player. |
+| `replayWork`, `replayStep`, `flyStep`, `standMsBefore`, `stepsHold`, `chargeDriftPx`, `createRouteChecker`, `kickedAsStored`, `wallStepVariants`, `wallInTheWay`, `RouteStep`, `Flight`, `RouteChecker`, `StepBox` | `endless/route-replay.ts` | Replays a route step (a jump, or a drop: walk off the edge) with `stepPlayer`, through updraft columns and bounce caps, and from a crumbling ledge with the crumble timer running (D-36); a wall step (`kicks`, `walls`, D-37) presses its kicks and must kick exactly its walls, from every shifted takeoff, every early or late press, and the two combined (`walls.crossShiftPx`, `crossOffsetSteps`); a step whose ledge or takeoff a wall cuts into is refused (`wallInTheWay`); checks a set of steps with every moving ledge at both ends of its travel; remembers each step's swept region so a new ledge, column or wall only re-checks steps it could change. |
+| `createKickPolicy`, `KickPolicy` | `endless/wall-kicks.ts` | The keys a wall step presses after takeoff (hold toward the wall, press a set time after reaching it, hold the other way), shared by the replay, the route bot and the night outlines (D-37). |
+| `Piece`, `PieceKit`, `PieceRun`, `JumpSpec`, `DropSpec`, `FlightSpec`, `Candidate`, `PieceFeature` | `endless/pieces/types.ts` | The set-piece interface: a piece lays a short run of ledges from an entry ledge using the kit. Add a piece with one file and a registry line. |
+| `createPieceKit`, `emptyRun`, `traceDrop`, `keepsClear`, `apexLimitTop`, `GeneratorKit`, `Committed` | `endless/pieces/kit.ts` | The tools pieces build with: sampled jumps and drops under real arcs, and the one `accept` check (walls, chunk bounds, clearance, peak height, full replay); `keepsClear` takes the room a wall must leave over a ledge (`wallHeadroomPx`, D-37); for D-36 also `placeCap`, `addColumn`, `makeCrumbling` and `fly` (a traced flight through caps and columns, the ledge put where it comes down). |
+| `PIECES`, `PieceEntry` | `endless/pieces/registry.ts` | Every set piece with its weight, unlock chunk, whether it is demanding, and the features it needs. |
+| `choosePiece`, `allowedPieces`, `PacingState` | `endless/pieces/pacing.ts` | Seeded choice of the next piece: never the same twice in a row, calm after demanding, unlock by chunk, fade-in. |
+| `featuresAt` | `endless/pieces/features.ts` | Which piece features a chunk has (snow, moving ledges, bounce caps, crumbling ledges, updrafts, and walls only with the `?walls=1` switch). |
+| `GeneratorOptions` | `endless/generator.ts` | Switches of a climb: `walls` (D-37 prototype). Off, every chunk is as before. |
+| `LADDER`, `STAIRCASE`, `TRAVERSE`, `ZIGZAG`, `DETOUR`, `PILLARS`, `BIG_LEAP`, `FORK`, `ICE_RUN`, `MOVING_CROSSING`, `MUSHROOM_LAUNCH`, `CRUMBLING_RUN`, `UPDRAFT_RISE`, `UPDRAFT_CROSSING` | `endless/pieces/*.ts` | The fourteen set pieces, one file each; the header of each says what the shape is and why it plays well. |
+| `WALL_KICK`, `CHIMNEY` | `endless/pieces/wall-kick.ts`, `endless/pieces/chimney.ts` | The wall pieces (D-37, only with `?walls=1`): a wall beside a gap to kick off up to a ledge no jump reaches, and two facing walls climbed by alternating kicks. Kit: `addWall`, `wallId`, `plainApexPx`, `wallFloorPx`; `fly` takes a probe with `kicks`. |
+| `wallAt`, `standSpan`, `firm` | `endless/pieces/walls.ts` | The wall pieces' shared helpers: a wall on the 2x grid, where the body can stand on a ledge, which ledges a wall piece may start from. |
+| `besideColumn` | `endless/pieces/columns.ts` | The two updraft pieces' shared step: a column beside the entry ledge, then a traced flight through it. |
+| `lastLedge`, `roomier`, `eitherWay` | `endless/pieces/shared.ts` | Small helpers the pieces share. |
+| `createChunkStream`, `ChunkStream`, `StreamChange` | `endless/chunk-stream.ts` | Keeps a fixed window of chunks alive around the player, always including the chunk below and every chunk a fast fall can reach before the next update. `prefetch` builds at most one chunk ahead of need per frame (4 below, 1 above). |
 | `freshFlame`, `stepFlame`, `addWax`, `burnPerSecond`, `isLit`, `FlameState` | `endless/flame-fuel.ts` | Fuel burns with time, wax refills it, a grace time before the run ends. |
 | `moodIntensity` | `endless/mood.ts` | Composure and fuel to the 0..1 intensity fed to the effects table (the mood follows the candle). |
-| `steadyComposure`, `shake`, `steady`, `stepComposure`, `isSteadying`, `fallShake`, `burnScale`, `Composure` | `endless/composure.ts` | The candle's composure from play: falls shake it, standing still steadies it; drives the forest's corruption and a faster burn. Never movement. |
+| `steadyComposure`, `shake`, `steady`, `stepComposure`, `isSteadying`, `fallShake`, `bounceBreaksFlow`, `burnScale`, `Composure` | `endless/composure.ts` | The candle's composure from play: falls shake it, standing still steadies it; drives the forest's corruption and a faster burn. Never movement. |
 | `createEndlessWax` | `endless/endless-wax.ts` | One-time wax pickups at generated spots; same snapshot field and bus event as the classic wax. |
 | `createWaxDropsView` | `endless/wax-drops-view.ts` | Draws the live wax drops; marks come and go with the chunks. |
 | `createRunScore`, `RunScore`, `rememberSeededBest`, `SEEDED_BESTS_KEPT` | `endless/run-score.ts` | Height of the run (ledges stood on) and the best height on this device; seeded climbs keep their own best, the latest 30 of them. |
 | `biomeOf`, `snowAt`, `chunkOfPlatform`, `Biome` | `endless/biome.ts` | Forest and snow bands by height: platform skin per chunk and snowfall that fades in and out. Presentation only. |
 | `nightAt`, `sightRadius`, `candleRadius`, `nightShadowAlpha` | `endless/night.ts` | Night falls with height; in the dark the view is the candle's own circle, sized by its fuel. Presentation only. |
-| `createRouteBot` | `endless/route-bot.ts` | Development-only player that follows the generated route (`?bot=1`), for automated browser checks. |
+| `createRouteBot`, `heldStepsFor`, `chooseHold`, `BotWorld` | `endless/route-bot.ts` | Development-only player that follows the generated route (`?bot=1`), for automated browser checks; walks off the edge for a drop, and when wax has grown the candle checks its hold by replaying the jump (`flyStep`), tries neighbouring holds, and never repeats a hold that landed elsewhere. |
 | `ForestWorld.addPlatform`, `ForestWorld.removePlatform` | `forest/forest-world.ts` | Platform art added and removed while playing. |
 
 ## Candle expression
@@ -163,25 +184,71 @@ createLandingPuff (forest/landing-puff.ts): bounded landing-only soil/snow fleck
 `__tests__/candle-close-up.html` draws the close-up for every mood. `__tests__/candle-faces.html` is a dev page that draws every mood for six seeds.
 
 | `stepBird`, `birdFrame`, `perchedBird`, `isAirborne`, `Bird`, `BirdAct` | `forest/bird-behaviour.ts` | What a bird on a ledge does: stands, pecks, chirps, looks around, and flies off when the candle comes near or the forest turns. Pure, decoration only. |
-| `createPerchingBirds` | `forest/perching-birds.ts` | A pool of three bird sprites seated on ledges above the view. |
+| `createPerchingBirds` | `forest/perching-birds.ts` | A pool of three small birds (birb.png at the one pixel size) seated on ledges above the view. |
 | `createAmbientLife` | `forest/ambient-life.ts` | A far flock now and then, fireflies and spores, single falling leaves that redden with corruption. |
 | `createGrassTufts` | `forest/grass-tufts.ts` | Swaying grass on forest ledges; withers with corruption. |
+| `snapToGrid`, `snapInside`, `PIXEL_GRID` | `forest/pixel-grid-snap.ts` | The one art grid (Decision D-34): rounds a drawn position to a multiple of `FOREST_CONFIG.pixelScale`; `snapInside` keeps it within bounds. Only drawing snaps; physics stays exact. |
+| `createGridCamera`, `GridCamera` | `scenes/grid-camera.ts` | Follows the candle with the same easing as `startFollow(player, true, 0.12, 0.12)`, but hands the camera a scroll on the art grid each frame. |
+| `createLedgeKindsView`, `LedgeKindsView`, `LedgeKindsFrame` | `forest/ledge-kinds-view.ts` | Draws bounce caps, crumbling ledges (cracks, shake, falling bits) and updraft streaks by code on the art grid, with accents above the darkness (D-36); and walls through `drawWall`. |
+| `drawWall` | `forest/wall-view.ts` | A wall (D-37) as a grey stone pillar of block courses, mossy or snow-capped, with dashed lavender face lines above the darkness. |
+| `PROP_ART`, `DECAYED_ART`, `FOREST_PROPS`, `WINTER_PROPS`, `FOREST_DECAY`, `WINTER_DECAY`, `PropArt`, `drawnSize`, `addPropFrames` | `forest/prop-art.ts` | The ledge props as whole pieces at the one pixel size; crops of the multi-sprite sheets (single mushroom, thorn bush and so on) added as frames. |
+| `ensureParticleTexture`, `PARTICLE_TEXTURE`, `leafPose`, `leafFrame`, `LEAF_COLOURS`, `LeafColour`, `LeafFrame` | `forest/pixel-particles.ts` | Fireflies, spores and falling leaves as a few code-drawn art pixels, painted once into one texture; leaves turn by three drawn poses and flips instead of free rotation. |
 | `ForestWorld.setCandle` | `forest/forest-world.ts` | The scenes tell the scenery where the candle is. Read by the birds only. |
 
 Far garden ledges (`forest/backdrop-gardens.ts`) now sometimes spill a waterfall, which freezes in the snow.
 
 ## Generated backdrop (`backdrop/`)
 
-The forest behind the endless climb is painted from the run's seed. `__tests__/backdrop-gallery.html` is a dev page
-that shows it at several heights (`?seed=`, `?heights=`, `?zoom=`, `?layer=`).
+The scenery behind the endless climb is painted from the run's seed. Back to front: a gradient sky, a horizon layer
+of far ridges (snowy peaks, rolling hills, jungle table mountains), then far, middle and near forest layers, with mist
+bands between them and animated water over the painted waterfalls. Each forest flavour has a recipe in
+`config/backdrop.config.ts` (crown styles, tree kinds, lianas, waterfalls, petals). `__tests__/backdrop-gallery.html`
+is a dev page that shows it at several heights (`?seed=`, `?heights=`, `?zoom=`, `?layer=`, `?flavour=`, `?falls=1`).
 
 | Export | File | What it does |
 |---|---|---|
-| `TONE`, `TONE_COUNT`, `PixelGrid`, `createGrid`, `put`, `hash`, `noise1`, `subSeed` | `backdrop/pixel-grid.ts` | A grid of colour slots to paint into, and repeatable seeded numbers. |
-| `paintClump`, `paintLimb`, `paintBroadleaf`, `paintPine`, `paintMushroom`, `paintIsland`, `Surface` | `backdrop/shapes.ts` | The pieces: leaves, limbs, three kinds of tree and a floating island, as pixel art from a seed. |
-| `paintChunk`, `trunkLanes`, `ChunkRequest`, `BackdropBiome`, `TrunkLane` | `backdrop/paint-chunk.ts` | One chunk of one layer: full-height trunks, islands with trees, branches and vines, the forest floor. Chunks join exactly. |
-| `colourChunk` | `backdrop/palette.ts` | Slots to colours, row by row: the flavour's palette mixed toward the cold one by height, then toward the sky by the layer's fog. |
-| `createBackdrop`, `BackdropSource` | `backdrop/backdrop-view.ts` | Keeps a few painted chunks per layer on canvas textures and scrolls them with the camera. |
+| `TONE`, `TONE_COUNT`, `PixelGrid`, `createGrid`, `put`, `hash`, `noise1`, `subSeed`, `pickWeighted` | `backdrop/pixel-grid.ts` | A grid of colour slots to paint into, repeatable seeded numbers, and a weighted pick. |
+| `Surface`, `plot`, `misses`, `rowsOf` | `backdrop/surface.ts` | The surface painters draw on, in whole-forest coordinates. |
+| `BackdropBiome`, `ChunkRequest`, `Waterfall` | `backdrop/chunk-types.ts` | Shared types (also re-exported from `paint-chunk.ts`). |
+| `paintClump`, `paintPads`, `paintWeeping`, `paintSparse`, `paintCrown`, `paintPetals` | `backdrop/foliage.ts` | Crown styles: lumpy clump, cedar tiers, umbrella, willow, column, airy twigs; petals or falling leaves. |
+| `paintFronds`, `paintBigLeaves`, `paintBoughs` | `backdrop/foliage-shapes.ts` | Palm fronds and broad jungle leaves; drooping snow-laden boughs. |
+| `crownStyleAt` | `backdrop/crowns.ts` | The crown style for a biome and seed (the cold's styles more often the colder it is). |
+| `paintLimb`, `paintBroadleaf`, `paintPine`, `paintMushroom`, `paintPalm`, `paintShelfFungus`, `paintSmallMushroom`, `paintFern` | `backdrop/trees.ts` | Trees and the small things that grow on islands and trunks. |
+| `paintIsland`, `islandColumn`, `paintCrag`, `cragColumn` | `backdrop/terrain.ts` | A grassy island with roots and vines; a rock crag with strata and snowy ledges. |
+| `paintWaterfall`, `isFrozen`, `fallMistRows` | `backdrop/water.ts` | A painted fall: pool and mossy lip, water (or ice), mist at its foot. |
+| `islandsBetween`, `chunkWaterfalls`, `longestFall`, `recipeOf`, `IslandPlan` | `backdrop/layout.ts` | Where islands are and which spill a fall, from the seed and height only. The painter and the view share it. |
+| `paintIslands` | `backdrop/islands.ts` | Paints island plans: ground or crag, trees by recipe, plants, then the fall. |
+| `trunkLanes`, `paintTrunk`, `paintLedgePines`, `TrunkLane` | `backdrop/trunks.ts` | Full-height trunks; rocky lanes become stepped cliffs with snowy ledges in the cold. |
+| `paintBranches`, `paintVine` | `backdrop/branches.ts` | Branches with recipe crowns, vines, petals, and shelf fungi on the trunk. |
+| `paintLianas` | `backdrop/lianas.ts` | Lianas sagging between trunks (loops at the edges in the near layer). |
+| `paintMist`, `ditherAt` | `backdrop/mist.ts` | See-through mist bands in a layer's empty air; a 4 by 4 ordered dither. |
+| `paintHorizon`, `horizonRangeAt`, `horizonFarBiome`, `rangeKindOf` | `backdrop/horizon.ts` | The horizon layer's ranges, two ridge lines each, coloured per range by its own biome. |
+| `paintChunk`, `renderChunk`, `chunkFarBiome` | `backdrop/paint-chunk.ts` | One chunk of one layer, and paint + colour + waterfall list in one call. Chunks join exactly. |
+| `colourChunk`, `waterColour` | `backdrop/palette.ts` | Slots to colours, row by row: flavour palette mixed toward the cold one, then toward the fog by the layer's fog. |
+| `skyAt`, `mixRgb` | `backdrop/sky.ts` | Top and fog colour of the sky for a biome. |
+| `createSkyGradient` | `backdrop/sky-view.ts` | The banded gradient sky (Phaser). |
+| `createWaterfallStrips`, `StripPlacement` | `backdrop/waterfall-view.ts` | A fixed pool of animated water strips over painted falls (Phaser, the waterfall sheets in CREDITS.md). |
+| `createBackdrop`, `BackdropSource` | `backdrop/backdrop-view.ts` | Keeps a few painted chunks per layer on canvas textures and scrolls them with the camera; `update(corruption, clockMs, skyCorruption)`, `fogAtCamera()`. |
 | `backdropBiomeAt`, `flavourOfBand` | `endless/backdrop-biome.ts` | How cold a height is (smooth, following the snow bands) and each forest band's seeded flavour. |
 | `createForestWorld(scene, world, backdrop?)`, `ForestWorld.reseedBackdrop` | `forest/forest-world.ts` | With a `backdrop` the generated forest replaces the repeating trunks and far garden ledges. |
 
+## Two-player climb (`netplay/`, Decision D-38, behind `?mp=`)
+
+| Export | File | What it does |
+|---|---|---|
+| `PROTOCOL_VERSION`, `parseEnvelope`, `envelope`, `Message`, `Envelope`, `NetEvent`, `BodyState`, `WorldOptions`, `WorldSync`, `CandleLook`, `Role`, `RefuseReason`, `messageLimits`, `LIMITED_FIELDS`, `LimitedField`, `Limit`, `MessageLimits`, `ackChunks`, `MAX_SYNC_WAX` | `netplay/protocol.ts` | The versioned messages two games exchange and the check every received one goes through (plain data, JSON- and clone-safe); every received number is read through one table of limits built from the local game config, a wax id must be a drop id of a chunk inside the world, and the test samples are typed from the message types so a field or kind without a row cannot compile or pass. |
+| `Transport`, `TransportState` | `netplay/transport.ts` | The connection as an interface: send, receive, state, close. Phase B adds a network one behind it. |
+| `createMemoryLink`, `MemoryLink`, `LinkConditions` | `netplay/memory-transport.ts` | Two connected in-process transports for tests: delay, jitter, loss, reordering, a test clock, silencing one end. |
+| `createBroadcastTransport`, `isRoomName` | `netplay/broadcast-transport.ts` | `BroadcastChannel` transport: two windows of one browser, room from the URL. No network. |
+| `createNetplaySession`, `NetplaySession`, `SessionStatus`, `SessionOptions` | `netplay/session.ts` | One player's side: handshake (seed, walls, build, look; polite refusal), states at `sendHz`, pings, reliable events, leaving and silence. |
+| `createSharedClock`, `followSharedTime`, `nextWorldTime`, `createWorldTimeFollower`, `WorldTimeFollower`, `SharedClock` | `netplay/shared-clock.ts` | The host's clock as estimated by the guest from ping round trips; moving ledges follow it (nudged for small drift, set outright when this game resumes from a pause or a hidden tab). |
+| `createRemoteCandle`, `RemoteCandle`, `ShownCandle` | `netplay/remote-candle.ts` | Received states played back a little in the past, blended, guessed ahead briefly, corrected smoothly. |
+| `createReliableEvents`, `ReliableEvents` | `netplay/reliable-events.ts` | Events with ids, resent until acknowledged, applied once. |
+| `createContactArbiter`, `ContactArbiter` | `netplay/contact-arbiter.ts` | Who applies a shove or a knock, so each candle takes one per contact. |
+| `createWaxClaims`, `WaxClaims` | `netplay/wax-claims.ts` | First claim on a wax drop wins (shared clock, host on a tie); the loser's pickup is undone. Claims remembered are capped (`maxRemoteWax`, oldest forgotten). |
+| `startRemoteCrumble` | `netplay/remote-crumble.ts` | Starts a crumbling ledge's timer as of when the other player stood on it. |
+| `createVersusClient`, `VersusClient`, `WorldChanges`, `LocalLook` | `netplay/versus-client.ts` | The two-player game logic around each physics step and each frame, without drawing (tests drive two of them). |
+| `createNetplayLink`, `NetplayLink` | `netplay/scene-link.ts` | What the endless scene calls: world readiness, world time, before and after each step, once a frame. |
+| `createRemoteView`, `edgeMarker`, `markerPixels`, `remoteSeed` | `netplay/remote-view.ts` | Draws the other candle (its own seed, never this player's) and the off-screen marker on the art grid. |
+| `buildId`, `fnv1a`, `WORLD_REVISION` | `netplay/build-id.ts` | The world fingerprint sent as the build version. |
+| `readNetplaySwitch`, `NetplaySwitch` | `netplay/switch.ts` | Reads `?mp=host` or `?mp=join` with `&room=NAME`; null when off. |

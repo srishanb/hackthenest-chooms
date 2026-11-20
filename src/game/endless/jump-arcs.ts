@@ -9,7 +9,7 @@
  */
 import type { GameConfig } from '../../shared/contracts/config';
 import { createPlayer, stepPlayer } from '../player/movement';
-import type { PlatformBox, PlayerState } from '../player/types';
+import type { PlatformBox, PlayerState, UpdraftBox } from '../player/types';
 
 export interface ArcPoint {
   /** Offset from the takeoff position in px. `dy` is negative above the takeoff. */
@@ -47,13 +47,14 @@ export function chargeStepsFor(level: number, levels: number, config: GameConfig
  * airborne state right after the launch step. Shared by the tracer and the route replay.
  */
 export function launch(start: PlayerState, ground: readonly PlatformBox[], chargeSteps: number, direction: -1 | 0 | 1,
-  worldWidth: number, config: GameConfig): PlayerState {
+  worldWidth: number, config: GameConfig, updrafts: readonly UpdraftBox[] = []): PlayerState {
   const stepMs = 1000 / config.stepHz;
+  const environment = { updrafts };
   let state = start;
   for (let step = 0; step < chargeSteps; step++) {
-    state = stepPlayer(state, { ...IDLE, jump: true }, ground, worldWidth, config, stepMs).state;
+    state = stepPlayer(state, { ...IDLE, jump: true }, ground, worldWidth, config, stepMs, environment).state;
   }
-  return stepPlayer(state, { left: direction < 0, right: direction > 0, jump: false }, ground, worldWidth, config, stepMs).state;
+  return stepPlayer(state, { left: direction < 0, right: direction > 0, jump: false }, ground, worldWidth, config, stepMs, environment).state;
 }
 
 /** A player standing still on `platform` at `x`, ready to charge. */

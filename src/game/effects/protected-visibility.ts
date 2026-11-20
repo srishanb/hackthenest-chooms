@@ -13,9 +13,10 @@
  */
 import type * as Phaser from 'phaser';
 import type { GameConfig } from '../../shared/contracts/config';
-import type { PlatformBox } from '../player/types';
-import { outlineSegments, reachableLedges, type WorldBounds } from '../world/reachable-ledges';
+import type { PlatformBox, UpdraftBox } from '../player/types';
+import { outlineSegments, reachableLedges, type KickSample, type WorldBounds } from '../world/reachable-ledges';
 import { fadeSegments } from './outline-fade';
+import { snapToGrid } from '../forest/pixel-grid-snap';
 
 const LINE_WIDTH_PX = 2;
 const CURRENT_COLOR = 0xfff3c4;
@@ -36,6 +37,12 @@ export function createProtectedVisibility(
   platformSource: readonly PlatformBox[] | (() => readonly PlatformBox[]),
   worldSource: WorldBounds | (() => WorldBounds),
   config: GameConfig,
+  /** How much lower than the ledge underfoot a reachable ledge may be and still be outlined (px; 0 = only higher ones). */
+  lowerReachPx = 0,
+  /** The updraft columns in reach (the endless climb), so ledges reached through one are outlined too. */
+  updraftSource: () => readonly UpdraftBox[] = () => [],
+  /** The route's wall steps from a ledge (Decision D-37, `?walls=1`), so a ledge reached only by a kick is outlined too. */
+  kickSource: (platformId: string) => readonly KickSample[] = () => [],
 ): ProtectedVisibility {
   const graphics = scene.add.graphics().setDepth(depth);
   const cache = new Map<string, string[]>();
@@ -56,7 +63,7 @@ export function createProtectedVisibility(
       drawnFor = platformId;
       let reachable = cache.get(platformId);
       if (!reachable) {
-        reachable = reachableLedges(source, platforms, worldNow(), config);
+        reachable = reachableLedges(source, platforms, worldNow(), config, lowerReachPx, updraftSource(), kickSource(platformId));
         cache.set(platformId, reachable);
         // A streamed world never stops handing out new ids; keep only the recent ones.
         if (cache.size > 200) cache.delete(cache.keys().next().value!);
@@ -65,7 +72,11 @@ export function createProtectedVisibility(
         if (piece.current) continue;
         // Style is set before each stroke (Phaser styles are not retroactive).
         graphics.lineStyle(LINE_WIDTH_PX, piece.current ? CURRENT_COLOR : REACHABLE_COLOR, LINE_ALPHA * piece.alpha);
-        graphics.lineBetween(piece.x1, piece.y1, piece.x2, piece.y2);
+        // A 2 px stroke is centred on its line: put a level line's centre between two grid lines (and a
+        // standing one's likewise), and its ends on grid lines, so the stroke covers whole art pixels.
+        const level = piece.y1 === piece.y2, centre = (value: number): number => snapToGrid(value - 1) + 1;
+        graphics.lineBetween(level ? snapToGrid(piece.x1) : centre(piece.x1), level ? centre(piece.y1) : snapToGrid(piece.y1),
+          level ? snapToGrid(piece.x2) : centre(piece.x2), level ? centre(piece.y2) : snapToGrid(piece.y2));
       }
     },
   };

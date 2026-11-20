@@ -9,6 +9,7 @@ import type { GameObjects, Scene } from 'phaser';
 import { FOREST_CONFIG } from '../../config/forest.config';
 import { WILDLIFE_CONFIG } from '../../config/wildlife.config';
 import { mixColor, stableUnit } from './presentation';
+import { snapToGrid } from './pixel-grid-snap';
 
 const C = WILDLIFE_CONFIG.grass;
 
@@ -22,7 +23,7 @@ export function createGrassTufts(scene: Scene) {
       for (let i = 0; i < count; i++) {
         const seed = stableUnit(`grass:${id}:${i}`);
         const x = centreX + (stableUnit(`grass-x:${id}:${i}`) - 0.5) * (width - 36);
-        const sprite = scene.add.sprite(Math.round(x), top + 2, seed < 0.5 ? 'wildlife-grass-1' : 'wildlife-grass-3', 0)
+        const sprite = scene.add.sprite(snapToGrid(x), snapToGrid(top) + 2, seed < 0.5 ? 'wildlife-grass-1' : 'wildlife-grass-3', 0)
           .setOrigin(0.5, C.rootYPx / C.frame.height).setScale(FOREST_CONFIG.pixelScale).setDepth(-0.5).setFlipX(seed * 7 % 1 < 0.5);
         tufts.push({ sprite, seed }); made.push(sprite);
       }

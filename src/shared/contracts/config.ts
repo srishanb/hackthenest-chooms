@@ -62,6 +62,94 @@ export interface GameConfig {
   fallSteer01?: number;
   /** Descent-only horizontal control after activationDelayMs from the apex; px/s² toward a px/s target. */
   falling?: { accelerationX: number; speedX: number; ledgeReachPx: number; activationDelayMs: number };
+  /** Bounce caps, crumbling ledges and updraft columns (game mechanics of the endless climb; never signal-driven). */
+  ledgeKinds?: LedgeKindsConfig;
+  /**
+   * Wall slide and wall jump on the endless climb's wall pieces (a prototype behind `?walls=1`, never
+   * signal-driven). Absent: walls are still solid, but nothing slides or kicks.
+   */
+  wallMoves?: WallMovesConfig;
+  /**
+   * How two candles meet in the two-player climb (Decision D-38): solid sides, a standable head, a shove on the
+   * ground and a knock in the air. Fixed game rules, never signal-driven. Absent, or with no other candle in
+   * the world (every solo run), none of it runs.
+   */
+  versus?: VersusConfig;
+}
+
+/**
+ * Rules for two candles in one world. Speeds in px/s (y grows downward), times in ms, distances in px.
+ * Each player's own game applies these to their own candle only.
+ */
+export interface VersusConfig {
+  /** Walking into a standing candle pushes it at this fraction of walking speed (0..1). */
+  shoveSpeed01: number;
+  /** One shove keeps pushing this long after it arrives; the pusher repeats it while the contact lasts. */
+  shoveHoldMs: number;
+  /** The pusher repeats its shove at most this often while it keeps walking into the other candle. */
+  shoveRepeatMs: number;
+  /** Two bodies that overlap (for example after a late update) move apart sideways at this speed, never faster. */
+  separateSpeed: number;
+  knock: {
+    /** Bodies meeting at least this fast (relative speed along the contact, px/s) knock each other. */
+    minRelativeSpeed: number;
+    /** 0 (the bodies stop against each other) to 1 (a perfect bounce). */
+    restitution: number;
+    /** Largest change of speed one knock gives a candle (px/s). */
+    maxImpulse: number;
+    /** After a knock a candle takes no other knock for this long: one contact gives one knock. */
+    contactWindowMs: number;
+    /** A standing candle that is knocked sideways slides at the knock's sideways speed for this long. */
+    groundSlideMs: number;
+  };
+  /** A shove or a knock that arrives later than this after it was sent is dropped (it would land out of the blue). */
+  maxEventAgeMs: number;
+}
+
+/**
+ * Rules of wall slide and wall jump. Speeds in px/s (y grows downward), times in ms, distances in px.
+ * Only platforms of type `wall` grip; the edges of the world never do.
+ */
+export interface WallMovesConfig {
+  /** Sliding (airborne, touching a wall, holding toward it): the fall eases to `slideVy` at `slideBrakePerS`. */
+  slideVy: number;
+  slideBrakePerS: number;
+  /** A wall grips (slide or kick) only while the feet are at most this far below the last takeoff or kick. */
+  gripBelowTakeoffPx: number;
+  /** A fresh jump press within `kickReachPx` of a gripping wall kicks away at `kickSpeed`, `kickAngleDeg` above level. */
+  kickSpeed: number;
+  kickAngleDeg: number;
+  kickReachPx: number;
+  /** After a kick, held direction is ignored this long, so the kick carries the candle away. */
+  kickLockMs: number;
+  /** False: a wall cannot be kicked again until the candle lands or kicks another wall (one wall is no ladder). */
+  sameWallTwice: boolean;
+}
+
+/**
+ * Rules of the special ledges and zones. Speeds in px/s (y grows downward), times in ms, rates in 1/s.
+ * Absent from a config: those kinds behave as plain ledges and the columns do nothing.
+ */
+export interface LedgeKindsConfig {
+  /** Landing on a bounce cap launches upward at `launchSpeed + impactGain x landing speed`, at most `maxLaunchSpeed`. */
+  bounce: { launchSpeed: number; impactGain: number; maxLaunchSpeed: number };
+  /**
+   * A crumbling ledge holds `holdMs` after the candle first stands on it, then is gone. It grows back
+   * `regrowMs` after it fell, once the candle's body is at least `clearancePx` from where it was.
+   */
+  crumble: { holdMs: number; regrowMs: number; clearancePx: number };
+  /**
+   * Inside an updraft column, while rising faster than the column's terminal speed, gravity is scaled by
+   * `gravity01`; slower than it, vertical speed eases toward it at `brakePerS`. Terminal speed: `driftVy`
+   * (a gentle sink, positive) or `riseVy` (a rise, negative). A candle that has fallen more than
+   * `holdBelowTakeoffPx` below its takeoff is not caught at all (D-36 addendum: falls stay unbounded, D-33).
+   */
+  updraft: { gravity01: number; brakePerS: number; driftVy: number; riseVy: number;
+    /**
+     * A column holds the candle only while its feet are at most this far below where it last took off (px).
+     * Lower than that it is a fall, and a fall passes straight through: a column is not a net.
+     */
+    holdBelowTakeoffPx: number };
 }
 
 export interface EmberConfig {
@@ -87,7 +175,8 @@ export type UiComponentId =
   | 'calibration'
   | 'ember-prompt'
   | 'finish-screen'
-  | 'debug-overlay';
+  | 'debug-overlay'
+  | 'netplay-status';
 
 /** Named areas of the UI grid over the canvas. */
 export type UiSlot = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-center' | 'center' | 'full';

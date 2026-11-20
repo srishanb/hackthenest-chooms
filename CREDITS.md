@@ -16,6 +16,7 @@ Decision D-29). Add a row before you commit an asset, with its licence and the e
 |---|---|---|---|
 | Phaser | 4.2.1 | MIT | https://www.npmjs.com/package/phaser |
 | pieeg.js (vendored in `public/vendor/`) | 1.3.0-octopus | MIT | https://github.com/pieeg-club/hello_world_octopus_16 |
+| Phaser documentation skills (vendored in `.claude/skills/phaser4-api/references/`; developer reference for agents only, not shipped in the game) | 4.2.1, commit `02d8931` | MIT | https://github.com/phaserjs/phaser/tree/02d8931b626d9764c133cbb3fbf99966c03c757c/skills |
 
 Build tools (Vite, TypeScript, Vitest, tsx) are listed in `package.json`.
 

@@ -23,4 +23,94 @@ export const GAME_CONFIG: GameConfig = {
   fallSteer01: 0.24, // +19.8 px/s of correction only after vertical velocity becomes positive
   // Wait 0.35 s after the apex, then build speed at a steady, gentler rate.
   falling: { accelerationX: 1800, speedX: 280, ledgeReachPx: 4, activationDelayMs: 350 },
+  // Special ledges and zones of the endless climb (Decision D-36). Fixed rules, never the signal; the
+  // authored climb has none of these ledges or columns, so nothing there changes.
+  ledgeKinds: {
+    // A full straight-up jump peaks 217 px above its ledge (780^2 / 2 / 1400). A bounce leaves the cap at
+    // 1000..1100 px/s, so it peaks 357..432 px above the cap: about twice a full jump, so it opens gaps no
+    // jump can cross, while the spread from a soft or a hard landing stays small enough to learn.
+    bounce: {
+      launchSpeed: 1000, // px/s upward, from a landing at no speed
+      impactGain: 0.12, // extra launch px/s per px/s of landing speed (a hard landing bounces a little higher)
+      maxLaunchSpeed: 1100, // px/s; the cap on that extra
+    },
+    // 600 ms after first standing on it: exactly a full charge's time, so a full jump off it is never
+    // possible (the charge and the release step take 608 ms). A held key does nothing on landing (the latch),
+    // so the press comes after it: a person who reacts in 250 ms still has time for the small hop the route
+    // asks (charge level 3 to 5 of 12, endless-pieces.config.ts `crumbleReactionMs`). Gone for at least 3 s, so a fall below it costs a real climb back,
+    // but a second try is never locked out. (It was 400 ms; QA: with a 250 ms reaction 56 of 88 steps failed.)
+    crumble: {
+      holdMs: 600, // ms it holds after the candle first stands on it
+      regrowMs: 3000, // ms after it fell before it may grow back
+      clearancePx: 48, // the candle's body must be at least this far from its box for it to grow back (px)
+    },
+    // Inside a column a rising candle feels half gravity (700 px/s^2), so a jump into it floats about twice
+    // as high; a falling candle eases (time constant 0.25 s) to a 60 px/s sink in a drift column, or turns
+    // into a 150 px/s climb in a rise column. Air steering is the normal rule throughout.
+    updraft: {
+      gravity01: 0.5, // fraction of gravity left while rising faster than the column's terminal speed
+      brakePerS: 4, // 1/s: how fast a fall's extra speed bleeds off toward the terminal speed
+      driftVy: 60, // px/s downward: the gentle sink of a drift column
+      riseVy: -150, // px/s upward: the climb of a rise column
+      // px: once the candle's feet are this far below where it last took off, it is falling, and a column lets it
+      // fall straight through, so a column never catches a fall (D-33). Every route flight that rides a column
+      // stays within 4 px of its takeoff height while inside (614 measured), so 24 px leaves room for steering.
+      holdBelowTakeoffPx: 24,
+    },
+  },
+  // Wall slide and wall jump (prototype behind `?walls=1`; only the endless climb's wall pieces grip, never the
+  // world's edges). Fixed rules, never the signal. With no wall in the world none of this runs.
+  wallMoves: {
+    // px/s: the most a slide falls. Lower feels stickier (more time to think on the wall); higher feels slippery.
+    slideVy: 90,
+    // 1/s: how fast a fall's extra speed bleeds off once you press into a wall. Higher grabs at once; lower skids.
+    slideBrakePerS: 16,
+    // px: a wall grips only while your feet are at most this far below where you last took off or kicked. It is
+    // the safety rule: a long fall (more than this) slides straight past every wall, so walls never catch a miss
+    // (D-33). It also caps a slide's length at about a second. Larger forgives more; smaller asks for a quick kick.
+    gripBelowTakeoffPx: 96,
+    // px/s and degrees: the kick. 620 px/s at 58 deg climbs about 100 px (a full charge jump climbs 170 to 217) and
+    // throws you about 330 px/s sideways: a wall is a tool, never a shortcut over a charge jump.
+    kickSpeed: 620,
+    kickAngleDeg: 58,
+    // px: how close to a wall a jump press still kicks (no need to be pressed flat against it). Larger is easier.
+    kickReachPx: 6,
+    // ms: held direction is ignored this long after a kick, so you cannot steer straight back onto the wall.
+    kickLockMs: 160,
+    // false: the same wall cannot be kicked twice in a row (it needs a landing or another wall first), so one
+    // wall is not a ladder; a chimney of two facing walls is climbed by kicking from one to the other.
+    sameWallTwice: false,
+  },
+  // Two candles in one world (the two-player climb behind `?mp=`, Decision D-38). Fixed rules, never the signal; with
+  // no other candle in the world (every solo run) none of this runs. Each player's game applies them to its own candle.
+  versus: {
+    // 0..1 of walking speed (220 px/s): a shoved candle slides at 132 px/s, slower than walking, so the pusher keeps
+    // up and the push reads as an effort. Higher pushes harder; 0 turns shoving off.
+    shoveSpeed01: 0.6,
+    // ms: one shove message keeps pushing this long after it arrives. The pusher repeats it every `shoveRepeatMs`
+    // while it keeps walking into the other candle, so a push lasts as long as the contact plus this tail.
+    shoveHoldMs: 120,
+    shoveRepeatMs: 50,
+    // px/s: two bodies that overlap (a late update can put one inside the other) move apart sideways this fast.
+    // Gentle on purpose: a visible slide, never a jump, and never through a wall or the world's edge.
+    separateSpeed: 160,
+    knock: {
+      // px/s of approach along the contact. A brisk walk into a falling candle (220) knocks; drifting together does not.
+      minRelativeSpeed: 180,
+      // 0..1: 0.6 sends both candles back at a bit over half their approach speed; 1 would be a perfect bounce.
+      restitution: 0.6,
+      // px/s: the most one knock changes a candle's speed (about two thirds of a full jump's launch speed, 780).
+      maxImpulse: 520,
+      // ms: two contacts whose stamped times (shared clock) lie within this PLUS the longest playback delay
+      // (`netplay.config.ts` maxPlaybackDelayMs, 450) are one contact, so one contact is one knock per candle,
+      // whichever game noticed it first: the other game's notice is told apart by its stamp, not by when it arrives.
+      contactWindowMs: 450,
+      // ms: a standing candle knocked sideways slides (stays standing) at the knock's sideways speed this long.
+      groundSlideMs: 160,
+    },
+    // ms: a shove that arrives later than this after it was sent is dropped rather than applied late. A knock is not:
+    // it is applied however late it arrives, up to this plus the same-contact time above after its contact (about
+    // 1.5 s), so the other candle is never knocked alone (D-38a); an older one is dropped.
+    maxEventAgeMs: 600,
+  },
 };

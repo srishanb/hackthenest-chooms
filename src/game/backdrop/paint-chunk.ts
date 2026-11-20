@@ -1,147 +1,35 @@
 /**
  * Paints one chunk of one backdrop layer from the run's seed.
  *
- * A layer is an endless strip of forest, cut into chunks so only what is near the screen is ever
- * painted. Everything is placed from the seed and its own height, never from the chunk it happens
- * to fall in, so a trunk or a tree that crosses a chunk's edge is painted into both chunks and
- * meets exactly. The same seed always gives the same forest.
+ * A layer is an endless strip, cut into chunks so only what is near the screen is ever painted.
+ * Everything is placed from the seed and its own height, never from the chunk it happens to fall
+ * in, so a trunk, cliff, tree or waterfall that crosses a chunk's edge is painted into both chunks
+ * and meets exactly. The same seed always gives the same picture.
  *
- * What a layer holds, back to front: trunks that run the whole height (they wander, thicken and
- * carry moss), floating islands with trees on them, branches with leaves and hanging vines, and
- * the forest floor at the very bottom. What grows depends on the height's biome: pines as it
- * gets cold, tall mushrooms in a mushroom stretch, leafy trees otherwise.
+ * The horizon layer holds far ridges (horizon.ts). A forest layer holds, back to front: trunks
+ * that run the whole height (or rock cliffs where it is cold), lianas between them, floating islands
+ * with trees and plants, branches with crowns and vines, the waterfalls (in front of them),
+ * the forest floor, and last
+ * the mist bands in whatever air is left. What grows follows the height's biome and its recipe.
  * Pure: slots into a grid (pixel-grid.ts); palette.ts turns the slots into colours.
  */
-import { BACKDROP_CONFIG, type BackdropConfig, type BackdropFlavour, type BackdropLayer } from '../../config/backdrop.config';
+import { BACKDROP_CONFIG, type BackdropConfig, type BackdropLayer } from '../../config/backdrop.config';
 import { createGrid, hash, noise1, put, subSeed, TONE, type PixelGrid } from './pixel-grid';
-import { paintBroadleaf, paintClump, paintIsland, paintLimb, paintMushroom, paintPine, type Surface } from './shapes';
+import type { Surface } from './surface';
+import type { BackdropBiome, ChunkRequest, Waterfall } from './chunk-types';
+import { paintLedgePines, paintTrunk, trunkLanes } from './trunks';
+import { paintBranches } from './branches';
+import { paintLianas } from './lianas';
+import { paintFalls, paintIslands } from './islands';
+import { paintClump } from './foliage';
+import { paintMist } from './mist';
+import { horizonFarBiome, paintHorizon } from './horizon';
+import { chunkWaterfalls } from './layout';
+import { colourChunk } from './palette';
 
-/** What grows at a height: how cold it is (0 forest .. 1 deep snow) and the forest's flavour there. */
-export interface BackdropBiome { cold01: number; flavour: BackdropFlavour }
-
-export interface ChunkRequest {
-  seed: number;
-  /** Which layer (0 is the farthest) and which chunk of it; chunk 0 starts at height 0 and chunks above are negative. */
-  layerIndex: number; chunk: number;
-  /** The biome at a height of this layer, in art pixels. */
-  biomeAt(y: number): BackdropBiome;
-  /** Height of the forest floor in this layer, in art pixels. Everything below it is ground. */
-  groundY: number;
-}
-
-/** One full-height trunk of a layer: where its middle is and how wide it is, at any height. */
-export interface TrunkLane { seed: number; centre(y: number): number; half(y: number): number; inward: -1 | 0 | 1 }
-
-/** The full-height trunks of a layer. The same for every chunk, which is what makes them continuous. */
-export function trunkLanes(seed: number, layerIndex: number, groundY: number, config: BackdropConfig = BACKDROP_CONFIG): TrunkLane[] {
-  const layer: BackdropLayer = config.layers[layerIndex]!;
-  const layerSeed = subSeed(seed, 1000 + layerIndex);
-  return Array.from({ length: layer.trunks }, (_, i) => {
-    const laneSeed = subSeed(layerSeed, i);
-    const left = i % 2 === 0;
-    const baseX = layer.trunksAtEdges
-      ? config.chunkWidth * (left ? 0.005 + 0.03 * hash(laneSeed, 1) : 0.995 - 0.03 * hash(laneSeed, 1))
-      : config.chunkWidth * (i + 0.2 + 0.6 * hash(laneSeed, 1)) / layer.trunks;
-    // Most trunks are thick (the upper 60% of the range); now and then one is slender, for variety.
-    const slender = hash(laneSeed, 3) < config.slenderTrunkChance01;
-    const width = slender ? layer.trunkMinWidth * config.slenderTrunkWidth01
-      : layer.trunkMinWidth + (0.4 + 0.6 * hash(laneSeed, 2)) * (layer.trunkMaxWidth - layer.trunkMinWidth);
-    const flareFrom = groundY - 60 * layer.scale;
-    return {
-      seed: laneSeed,
-      inward: layer.trunksAtEdges ? (left ? 1 : -1) : 0,
-      centre: (y) => baseX + (noise1(laneSeed, y / (config.trunkWanderHeight * layer.scale)) - 0.5) * 2 * config.trunkWanderPx * layer.scale,
-      half: (y) => {
-        // Roots: the trunk spreads over its last stretch above the ground.
-        const flare = y > flareFrom ? ((y - flareFrom) / (60 * layer.scale)) ** 2 * width * 0.6 : 0;
-        return width / 2 * (0.82 + 0.36 * noise1(subSeed(laneSeed, 2), y / 170)) + flare;
-      },
-    };
-  });
-}
-
-function paintTrunk(surface: Surface, lane: TrunkLane, cold: Float32Array): void {
-  const { grid, originY } = surface;
-  const anchor = Math.round(lane.centre(0));
-  for (let row = 0; row < grid.height; row++) {
-    const y = originY + row, centre = lane.centre(y), half = lane.half(y);
-    const mossy = noise1(subSeed(lane.seed, 3), y / 55) > 0.66;
-    for (let x = Math.floor(centre - half); x <= centre + half; x++) {
-      const across = (x - centre) / half;
-      if (across < -1 || across > 1) continue;
-      // Each column of bark keeps its own slowly changing brightness, which reads as long vertical grooves.
-      const groove = noise1(subSeed(lane.seed, 100 + x - anchor), y / 46);
-      const shade = -across * 0.55 + (groove - 0.5);
-      let tone: number = Math.abs(across) > 0.9 ? TONE.bark0 : shade > 0.4 ? TONE.bark3 : shade > 0.05 ? TONE.bark2 : shade > -0.45 ? TONE.bark1 : TONE.bark0;
-      const speck = hash(lane.seed, x, y);
-      if (mossy && across < -0.1 && speck > 0.45) tone = speck > 0.75 ? TONE.leaf2 : TONE.leaf1;
-      // Snow clings to the lit side of a cold trunk.
-      if (across < -0.7 && speck < cold[row]! * 0.75) tone = TONE.snow0;
-      put(grid, x, row, tone);
-    }
-  }
-}
-
-function paintBranches(surface: Surface, lane: TrunkLane, request: ChunkRequest, layer: BackdropLayer, config: BackdropConfig): void {
-  const segment = config.branchSegmentHeight * layer.scale, margin = 130 * layer.scale;
-  const first = Math.floor((surface.originY - margin) / segment), last = Math.floor((surface.originY + surface.grid.height + margin) / segment);
-  for (let index = first; index <= last; index++) {
-    const seed = subSeed(lane.seed, 5000 + index);
-    if (hash(seed, 1) >= layer.branchChance01) continue;
-    const y = (index + hash(seed, 2)) * segment;
-    if (y > request.groundY - 24 * layer.scale) continue;
-    // An edge trunk reaches into the screen; others branch either way.
-    const side = lane.inward !== 0 ? lane.inward : hash(seed, 3) < 0.5 ? -1 : 1;
-    const length = (28 + 60 * hash(seed, 4)) * layer.scale * (lane.inward !== 0 ? 1.5 : 1);
-    const rise = length * (0.25 + 0.5 * hash(seed, 5));
-    const startX = lane.centre(y) + side * lane.half(y) * 0.8, girth = Math.min(config.branchMaxGirth * layer.scale, Math.max(2, lane.half(y) * 0.35));
-    const elbowX = startX + side * length * 0.55, elbowY = y - rise * 0.35, tipX = startX + side * length, tipY = y - rise;
-    const cold01 = request.biomeAt(y).cold01, leaves = (12 + 16 * hash(seed, 6)) * layer.scale;
-    paintLimb(surface, startX, y, elbowX, elbowY, girth, Math.max(1.5, girth * 0.6));
-    paintLimb(surface, elbowX, elbowY, tipX, tipY, Math.max(1.5, girth * 0.6), 1);
-    // Vines hang from the branch in the warm forest; in the cold there are none.
-    if (cold01 < 0.5) for (const [n, fromX, fromY] of [[0, elbowX, elbowY], [1, tipX, tipY]] as const) {
-      if (hash(seed, 20 + n) > 0.6) continue;
-      const hang = (10 + 30 * hash(seed, 22 + n)) * layer.scale;
-      for (let d = 0; d < hang; d++) put(surface.grid, Math.round(fromX), Math.round(fromY) + d - surface.originY, d % 3 === 2 ? TONE.leaf2 : TONE.leaf1);
-    }
-    paintClump(surface, elbowX, elbowY - leaves * 0.3, leaves * 0.7, subSeed(seed, 7), cold01);
-    paintClump(surface, tipX, tipY, leaves, subSeed(seed, 8), cold01);
-  }
-}
-
-function paintIslands(surface: Surface, request: ChunkRequest, layer: BackdropLayer, config: BackdropConfig): void {
-  const layerSeed = subSeed(request.seed, 2000 + request.layerIndex);
-  const cell = Math.max(60, config.islandCellHeight * layer.scale);
-  // Trees reach up from an island and its roots hang down, so islands a little outside the chunk still show in it.
-  const above = 60 * layer.scale, below = 240 * layer.scale;
-  const first = Math.floor((surface.originY - above) / cell), last = Math.floor((surface.originY + surface.grid.height + below) / cell);
-  for (let index = first; index <= last; index++) {
-    const count = Math.floor(hash(layerSeed, index) * (layer.islandsPerCell + 1));
-    for (let n = 0; n < count; n++) {
-      const seed = subSeed(layerSeed, index * 8 + n + 17);
-      const topY = Math.round((index + hash(seed, 1)) * cell);
-      if (topY > request.groundY - 14 * layer.scale) continue;
-      const width = (50 + 90 * hash(seed, 2)) * layer.scale, depth = width * (0.18 + 0.14 * hash(seed, 3));
-      // In the nearest layer islands keep to the sides, like its trunks.
-      const spot = hash(seed, 4);
-      const cx = layer.trunksAtEdges ? config.chunkWidth * (spot < 0.5 ? 0.02 + spot * 0.36 : 0.98 - (spot - 0.5) * 0.36) : config.chunkWidth * spot;
-      const biome = request.biomeAt(topY);
-      paintIsland(surface, cx, topY, width, depth, seed, biome.cold01);
-      const trees = 1 + Math.floor(hash(seed, 5) * Math.min(3, width / (34 * layer.scale)));
-      for (let t = 0; t < trees; t++) {
-        const treeSeed = subSeed(seed, 40 + t), x = cx + (hash(treeSeed, 1) - 0.5) * width * 0.76, kind = hash(treeSeed, 2);
-        if (kind < biome.cold01) paintPine(surface, x, topY, (55 + 90 * hash(treeSeed, 3)) * layer.scale, treeSeed, biome.cold01);
-        else if (biome.flavour === 'mushroom' && hash(treeSeed, 4) < 0.7) paintMushroom(surface, x, topY, (28 + 62 * hash(treeSeed, 3)) * layer.scale, treeSeed);
-        else paintBroadleaf(surface, x, topY, (45 + 85 * hash(treeSeed, 3)) * layer.scale, treeSeed, biome.cold01);
-      }
-      // A low bush or two on the grass.
-      for (let b = 0; b < 2; b++) if (hash(seed, 60 + b) < 0.6) {
-        paintClump(surface, cx + (hash(seed, 62 + b) - 0.5) * width * 0.8, topY - 2 * layer.scale, (4 + 3 * hash(seed, 64 + b)) * layer.scale, subSeed(seed, 66 + b), biome.cold01);
-      }
-    }
-  }
-}
+export type { BackdropBiome, ChunkRequest, Waterfall } from './chunk-types';
+export { trunkLanes, type TrunkLane } from './trunks';
+export { chunkWaterfalls } from './layout';
 
 function paintGround(surface: Surface, request: ChunkRequest, layer: BackdropLayer): void {
   const { grid, originY } = surface;
@@ -163,17 +51,49 @@ function paintGround(surface: Surface, request: ChunkRequest, layer: BackdropLay
   }
 }
 
+/** The cold at any height of the request's layer, read from a table for the chunk's own rows (the hot path). */
+function coldReader(request: ChunkRequest, originY: number, rows: number): (y: number) => number {
+  const table = new Float32Array(rows + 4);
+  for (let i = 0; i < table.length; i++) table[i] = request.biomeAt(originY - 2 + i).cold01;
+  return (y) => {
+    const i = y - originY + 2;
+    return Number.isInteger(i) && i >= 0 && i < table.length ? table[i]! : request.biomeAt(y).cold01;
+  };
+}
+
 /** Paint one chunk. The grid is `config.chunkWidth` by `config.chunkHeight` slots. */
 export function paintChunk(request: ChunkRequest, config: BackdropConfig = BACKDROP_CONFIG): PixelGrid {
   const layer: BackdropLayer = config.layers[request.layerIndex]!;
   const grid = createGrid(config.chunkWidth, config.chunkHeight);
   const surface: Surface = { grid, originY: request.chunk * config.chunkHeight };
-  const cold = new Float32Array(grid.height);
-  for (let row = 0; row < grid.height; row++) cold[row] = request.biomeAt(surface.originY + row).cold01;
+  if (layer.kind === 'horizon') {
+    paintHorizon(surface, request, config);
+    paintMist(surface, request, config);
+    return grid;
+  }
+  const coldAt = coldReader(request, surface.originY, grid.height);
   const lanes = trunkLanes(request.seed, request.layerIndex, request.groundY, config);
-  for (const lane of lanes) paintTrunk(surface, lane, cold);
-  paintIslands(surface, request, layer, config);
-  for (const lane of lanes) paintBranches(surface, lane, request, layer, config);
+  for (const lane of lanes) paintTrunk(surface, lane, coldAt);
+  for (const lane of lanes) paintLedgePines(surface, lane, coldAt, layer, config);
+  paintLianas(surface, lanes, request, coldAt, config);
+  const islands = paintIslands(surface, request, config);
+  for (const lane of lanes) paintBranches(surface, lane, request, coldAt, config);
+  // Water in front of the layer's foliage, so the view's moving strips lie over water only; the ground still covers the foot.
+  paintFalls(surface, islands);
   paintGround(surface, request, layer);
+  paintMist(surface, request, config);
   return grid;
+}
+
+/** The biome function a layer's colours use: the horizon colours each far range by its own biome. */
+export function chunkFarBiome(request: Pick<ChunkRequest, 'layerIndex' | 'biomeAt'>, config: BackdropConfig = BACKDROP_CONFIG): ((y: number, parity: 0 | 1) => BackdropBiome) | undefined {
+  return config.layers[request.layerIndex]!.kind === 'horizon' ? horizonFarBiome(request.biomeAt, config) : undefined;
+}
+
+/** Paint a chunk, colour it into `out` (RGBA), and list its waterfalls: everything the view needs for one chunk. */
+export function renderChunk(request: ChunkRequest, out: Uint8ClampedArray, config: BackdropConfig = BACKDROP_CONFIG): { grid: PixelGrid; waterfalls: Waterfall[] } {
+  const layer = config.layers[request.layerIndex]!;
+  const grid = paintChunk(request, config);
+  colourChunk(grid, request.chunk * config.chunkHeight, request.biomeAt, layer.fog01, out, config, chunkFarBiome(request, config));
+  return { grid, waterfalls: chunkWaterfalls(request, config) };
 }

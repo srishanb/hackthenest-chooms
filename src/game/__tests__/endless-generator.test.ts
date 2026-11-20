@@ -6,10 +6,13 @@ import { describe, expect, it } from 'vitest';
 import { ENDLESS_CONFIG } from '../../config/endless.config';
 import { GAME_CONFIG } from '../../config/game.config';
 import { buildArcTable, descentAt } from '../endless/jump-arcs';
-import { createEndlessGenerator, difficultyAt, replayStep } from '../endless/generator';
+import { ENDLESS_PIECES_CONFIG as T } from '../../config/endless-pieces.config';
+import { createEndlessGenerator, difficultyAt, replayStep, stepsHold } from '../endless/generator';
 
 const WIDTH = GAME_CONFIG.view.width;
 const topOf = (p: { y: number; height: number }): number => p.y - p.height / 2;
+/** The narrowest ledge allowed: ordinary ledges, or the narrower ledges set pieces use on purpose. */
+const NARROWEST = Math.min(ENDLESS_CONFIG.width.minPx, T.pillars.widthPx, T.fork.riskyWidthPx);
 
 describe('jump arcs', () => {
   const arcs = buildArcTable(GAME_CONFIG, ENDLESS_CONFIG.chargeLevels);
@@ -42,12 +45,49 @@ describe('endless generator', () => {
     expect(createEndlessGenerator(8, GAME_CONFIG, ENDLESS_CONFIG).chunk(5).platforms).not.toEqual(late.platforms);
   });
 
-  it('every chunk starts with a full-width landing at a fixed height', () => {
-    const generator = createEndlessGenerator(3, GAME_CONFIG, ENDLESS_CONFIG);
-    for (const index of [0, 1, 9]) {
-      const landing = generator.chunk(index).platforms[0]!;
-      expect(landing.width).toBe(WIDTH);
-      expect(topOf(landing)).toBe(ENDLESS_CONFIG.baseFloorTopPx - index * ENDLESS_CONFIG.chunkHeightPx);
+  it('only the ground spans the screen: every later chunk starts on an ordinary anchor ledge at a fixed height', () => {
+    // The widest ordinary ledge the config allows: the easy width at the top of its jitter.
+    const widest = ENDLESS_CONFIG.width.easyPx * (1 + ENDLESS_CONFIG.width.widthJitter01);
+    let anchors = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const generator = createEndlessGenerator(seed * 31337, GAME_CONFIG, ENDLESS_CONFIG);
+      for (const index of [0, 1, 2, 3, 6, 9, 15, 30]) {
+        const chunk = generator.chunk(index);
+        const anchor = chunk.platforms[0]!;
+        expect(anchor.id).toBe(`e${index}:floor`);
+        expect(topOf(anchor)).toBe(ENDLESS_CONFIG.baseFloorTopPx - index * ENDLESS_CONFIG.chunkHeightPx);
+        expect(anchor.type).toBe('static');
+        expect(anchor.motion).toBeUndefined();
+        if (index === 0) expect(anchor.width).toBe(WIDTH);
+        for (const p of index === 0 ? chunk.platforms.slice(1) : chunk.platforms) {
+          expect(p.width, `${p.id} seed ${seed * 31337}`).toBeLessThanOrEqual(widest);
+        }
+        if (index > 0) {
+          anchors++;
+          expect(anchor.width).toBeGreaterThanOrEqual(ENDLESS_CONFIG.width.minPx);
+          expect(anchor.x - anchor.width / 2).toBeGreaterThanOrEqual(0);
+          expect(anchor.x + anchor.width / 2).toBeLessThanOrEqual(WIDTH);
+        }
+      }
+    }
+    expect(anchors).toBe(40 * 7);
+  });
+
+  it('the cheap anchor equals the generated one, and a chunk built alone equals one built after its neighbours', () => {
+    for (const seed of [5, 42, 777, 90210]) {
+      const alone = createEndlessGenerator(seed, GAME_CONFIG, ENDLESS_CONFIG);
+      const inOrder = createEndlessGenerator(seed, GAME_CONFIG, ENDLESS_CONFIG);
+      for (let index = 0; index <= 8; index++) inOrder.chunk(index);
+      const fresh = (index: number) => createEndlessGenerator(seed, GAME_CONFIG, ENDLESS_CONFIG).chunk(index);
+      for (const index of [1, 4, 8]) {
+        expect(alone.floor(index)).toEqual(fresh(index).platforms[0]);
+        expect(fresh(index)).toEqual(inOrder.chunk(index));
+        // The last jump of the chunk below targets exactly this anchor.
+        expect(inOrder.chunk(index - 1).route.at(-1)!.toId).toBe(alone.floor(index).id);
+      }
+      // Anchors move about: they are not all in the middle.
+      const xs = new Set(Array.from({ length: 12 }, (_, i) => alone.floor(i + 1).x));
+      expect(xs.size).toBeGreaterThan(6);
     }
   });
 
@@ -71,18 +111,23 @@ describe('endless generator', () => {
           ledges++;
           expect(p.x - p.width / 2).toBeGreaterThanOrEqual(0);
           expect(p.x + p.width / 2).toBeLessThanOrEqual(WIDTH);
-          expect(p.width).toBeGreaterThanOrEqual(ENDLESS_CONFIG.width.minPx);
-          // Everything stays between this landing and the next one.
+          expect(p.width).toBeGreaterThanOrEqual(NARROWEST);
+          // Everything stays between this anchor and the next one.
           expect(topOf(p)).toBeLessThanOrEqual(chunk.floorTopPx);
           expect(topOf(p)).toBeGreaterThan(topOf(nextFloor));
         }
-        // The guaranteed path: start on this landing, end on the next, each jump lands where it says.
+        // The guaranteed path: start on this anchor, end on the next, each jump lands where it says,
+        // even with the whole next chunk in place (its ledges must not catch the jump onto its anchor).
+        const withNext = [...chunk.platforms, ...generator.chunk(index + 1).platforms];
+        // Updraft columns (Decision D-36) of this chunk, and of the next one too, act on every step.
+        const columns = chunk.updrafts, columnsWithNext = [...chunk.updrafts, ...generator.chunk(index + 1).updrafts];
         expect(chunk.route[0]!.fromId).toBe(chunk.platforms[0]!.id);
         expect(chunk.route.at(-1)!.toId).toBe(nextFloor.id);
         for (let i = 0; i < chunk.route.length; i++) {
           const step = chunk.route[i]!;
           if (i > 0) expect(step.fromId).toBe(chunk.route[i - 1]!.toId);
-          expect(replayStep(step, all, WIDTH, GAME_CONFIG), `seed ${seed * 7919} chunk ${index} step ${i}`).toBe(step.toId);
+          expect(replayStep(step, all, WIDTH, GAME_CONFIG, 0, false, columns), `seed ${seed * 7919} chunk ${index} step ${i}`).toBe(step.toId);
+          expect(replayStep(step, withNext, WIDTH, GAME_CONFIG, 0, false, columnsWithNext), `seed ${seed * 7919} chunk ${index} step ${i} with next`).toBe(step.toId);
         }
         // Wax floats above a ledge of this chunk, and there is always some.
         expect(chunk.wax.length).toBeGreaterThan(0);
@@ -94,7 +139,7 @@ describe('endless generator', () => {
     expect(ledges).toBeGreaterThan(3000);
   }, 60_000);
 
-  it('ice appears only in the snow bands, never on a landing, and within the configured grip', () => {
+  it('ice appears only in the snow bands, never on an anchor, and within the configured grip', () => {
     let icy = 0, snowLedges = 0;
     for (let seed = 1; seed <= 12; seed++) {
       const generator = createEndlessGenerator(seed * 104729, GAME_CONFIG, ENDLESS_CONFIG);
@@ -117,8 +162,9 @@ describe('endless generator', () => {
     expect(icy / snowLedges).toBeLessThan(ENDLESS_CONFIG.ice.chance + 0.1);
   });
 
-  it('only optional side ledges move; each stays in the walls, keeps its jump at both ends, and carries its wax', () => {
+  it('side ledges move, and the main path only in a moving crossing; each stays in the walls, keeps its jump at both ends, and carries its wax', () => {
     let moving = 0;
+    let mainMovers = 0;
     for (let seed = 1; seed <= 16; seed++) {
       const generator = createEndlessGenerator(seed * 15485863, GAME_CONFIG, ENDLESS_CONFIG);
       for (const index of [0, 2, 4, 7, 12, 25]) {
@@ -131,28 +177,42 @@ describe('endless generator', () => {
           moving++;
           expect(index).toBeGreaterThanOrEqual(ENDLESS_CONFIG.moving.fromChunk);
           expect(ledge.type).toBe('moving');
-          expect(onRoute.has(ledge.id)).toBe(false);
           const { distance, periodMs, axis } = ledge.motion;
+          // Every mover, on the route or off it: slides sideways and keeps inside the walls at both ends.
           expect(axis).toBe('x');
+          expect(ledge.x - ledge.width / 2 - distance).toBeGreaterThanOrEqual(0);
+          expect(ledge.x + ledge.width / 2 + distance).toBeLessThanOrEqual(WIDTH);
+          const drop = chunk.wax.find((w) => w.ledgeId === ledge.id);
+          if (onRoute.has(ledge.id)) {
+            // The main path moves only in a moving crossing, and every step holds wherever the ledge is.
+            mainMovers++;
+            expect(chunk.pieces.find((span) => span.ledgeIds.includes(ledge.id))?.id).toBe('moving-crossing');
+            expect(distance).toBeGreaterThanOrEqual(T.movingCrossing.distancePx[0]);
+            expect(distance).toBeLessThanOrEqual(T.movingCrossing.distancePx[1]);
+            expect(periodMs).toBeGreaterThanOrEqual(T.movingCrossing.periodMs[0]);
+            expect(periodMs).toBeLessThanOrEqual(T.movingCrossing.periodMs[1]);
+            expect(stepsHold([...chunk.route, ...chunk.altRoute], all, WIDTH, GAME_CONFIG, chunk.updrafts)).toBe(true);
+            // Wax on a main-path mover (if the chunk put any there) rides it too.
+            if (drop) expect(drop.ledgeX).toBe(ledge.x);
+            continue;
+          }
           expect(distance).toBeGreaterThanOrEqual(ENDLESS_CONFIG.moving.minDistancePx);
           expect(distance).toBeLessThanOrEqual(ENDLESS_CONFIG.moving.maxDistancePx);
           expect(periodMs).toBeGreaterThanOrEqual(ENDLESS_CONFIG.moving.periodMs[0]);
-          expect(ledge.x - ledge.width / 2 - distance).toBeGreaterThanOrEqual(0);
-          expect(ledge.x + ledge.width / 2 + distance).toBeLessThanOrEqual(WIDTH);
           // Its own jump lands on it wherever it is in its travel, and the main path is never caught by it.
           const jump = chunk.sideRoute.find((step) => step.toId === ledge.id)!;
           for (const offset of [-distance, 0, distance]) {
             const shifted = all.map((p) => (p.id === ledge.id ? { ...p, x: p.x + offset } : p));
-            expect(replayStep(jump, shifted, WIDTH, GAME_CONFIG), `seed ${seed} chunk ${index} ${ledge.id} at ${offset}`).toBe(ledge.id);
-            for (const step of chunk.route) expect(replayStep(step, shifted, WIDTH, GAME_CONFIG)).toBe(step.toId);
+            expect(replayStep(jump, shifted, WIDTH, GAME_CONFIG, 0, false, chunk.updrafts), `seed ${seed} chunk ${index} ${ledge.id} at ${offset}`).toBe(ledge.id);
+            for (const step of chunk.route) expect(replayStep(step, shifted, WIDTH, GAME_CONFIG, 0, false, chunk.updrafts)).toBe(step.toId);
           }
           // Its wax knows which ledge it rides.
-          const drop = chunk.wax.find((w) => w.ledgeId === ledge.id)!;
-          expect(drop.ledgeX).toBe(ledge.x);
+          expect(drop!.ledgeX).toBe(ledge.x);
         }
       }
     }
     expect(moving).toBeGreaterThan(8);
+    expect(mainMovers).toBeGreaterThan(0);
   });
 
   it('rejects a bad chunk index', () => {

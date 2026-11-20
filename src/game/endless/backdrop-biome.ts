@@ -4,7 +4,7 @@
  * The climb already alternates forest and snow in bands (biome.ts). This gives the backdrop the
  * same bands, but as a smooth 0..1 "cold" that rises before a snowy band and falls after it, so the
  * painted forest turns to pines and snow gradually. Each forest band also gets a seeded flavour
- * (leafy, autumn, mushroom or blossom); the flavour changes in the middle of a snowy band, where
+ * (leafy, autumn, mushroom, blossom or jungle); the flavour changes in the middle of a snowy band, where
  * everything is pine and the change cannot be seen. Presentation only.
  */
 import { BACKDROP_CONFIG, type BackdropConfig, type BackdropFlavour } from '../../config/backdrop.config';

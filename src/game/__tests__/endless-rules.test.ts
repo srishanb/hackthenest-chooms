@@ -7,7 +7,7 @@ import { INITIAL_GAME_SNAPSHOT } from '../../shared/contracts/game-state';
 import type { GameEvent } from '../../shared/contracts/events';
 import { createStore } from '../../shared/store';
 import { createChunkStream } from '../endless/chunk-stream';
-import { burnScale, fallShake, isSteadying, shake, steady, steadyComposure, stepComposure } from '../endless/composure';
+import { bounceBreaksFlow, burnScale, fallShake, isSteadying, shake, steady, steadyComposure, stepComposure } from '../endless/composure';
 import { createEndlessWax } from '../endless/endless-wax';
 import { addWax, burnPerSecond, freshFlame, isLit, stepFlame } from '../endless/flame-fuel';
 import { createEndlessGenerator } from '../endless/generator';
@@ -23,7 +23,8 @@ describe('chunk stream', () => {
       most = Math.max(most, s.platforms().length);
       expect(s.chunks().length).toBeLessThanOrEqual(C.keepBelow + C.keepAbove + 1);
     }
-    expect(most).toBeLessThan(80);
+    // Three chunks of about 17 ledges each (set pieces, D-35), plus the anchor above.
+    expect(most).toBeLessThan(100);
   });
   it('reports nothing while the player stays in one chunk, and exact adds and removes when they leave', () => {
     const s = stream();
@@ -33,7 +34,7 @@ describe('chunk stream', () => {
     expect(up.added.map((c) => c.index)).toEqual([2, 3]);
     expect(up.removed.map((c) => c.index)).toEqual([0]);
   });
-  it('rebuilds a chunk identically after a fall, and includes the landing above the window', () => {
+  it('rebuilds a chunk identically after a fall, and includes the anchor above the window', () => {
     const s = stream();
     s.update(C.baseFloorTopPx);
     const before = structuredClone(s.chunks()[0]);
@@ -44,16 +45,20 @@ describe('chunk stream', () => {
     const bounds = s.bounds();
     expect(bounds.bottom).toBeGreaterThan(bounds.top);
   });
-  it('drops the chunk below once the player has climbed out of sight of it, and brings it back on a fall', () => {
+  it('always keeps the chunk below (nothing else catches a fall), and loads down to where a fast fall can reach', () => {
     const s = stream();
-    const landing = C.baseFloorTopPx - 3 * C.chunkHeightPx;
-    s.update(landing - 10);
+    const anchorTop = C.baseFloorTopPx - 3 * C.chunkHeightPx;
+    s.update(anchorTop - 10);
     expect(s.chunks().map((c) => c.index)).toEqual([2, 3, 4]);
-    const up = s.update(landing - C.belowViewPx - 20)!;
-    expect(up.removed.map((c) => c.index)).toEqual([2]);
-    expect(s.chunks().map((c) => c.index)).toEqual([3, 4]);
-    const back = s.update(landing - 40)!;
-    expect(back.added.map((c) => c.index)).toEqual([2]);
+    // High in the chunk the chunk below stays: a missed jump falls into it.
+    expect(s.update(anchorTop - C.chunkHeightPx + 30)).toBeNull();
+    expect(s.chunks().map((c) => c.index)).toEqual([2, 3, 4]);
+    // A body about to fall further than one chunk in one step has those chunks loaded first.
+    s.update(anchorTop - 10, 2.5 * C.chunkHeightPx);
+    expect(s.chunks().map((c) => c.index)).toEqual([0, 1, 2, 3, 4]);
+    // Bad numbers are ignored.
+    s.update(anchorTop - 10, Number.NaN);
+    expect(s.chunks().map((c) => c.index)).toEqual([2, 3, 4]);
   });
 
   it('never reports a chunk below the first one', () => {
@@ -140,6 +145,11 @@ describe('composure: falls shake the candle, standing still steadies it', () => 
     expect(fallShake(K.fall.minPx, C)).toBeCloseTo(K.fall.min01);
     expect(fallShake(K.fall.fullPx, C)).toBeCloseTo(K.fall.max01);
     expect(fallShake(K.fall.fullPx * 10, C)).toBeCloseTo(K.fall.max01);
+    // A bounce cap breaks the flow streak only for a real fall, not the small drop onto a cap on the route.
+    expect(bounceBreaksFlow(0, C)).toBe(false);
+    expect(bounceBreaksFlow(K.fall.minPx - 1, C)).toBe(false);
+    expect(bounceBreaksFlow(K.fall.minPx, C)).toBe(true);
+    expect(bounceBreaksFlow(K.fall.fullPx, C)).toBe(true);
     expect(fallShake(300, C)).toBeGreaterThan(fallShake(100, C));
     expect(fallShake(Number.NaN, C)).toBe(0);
     expect(shake(steadyComposure(), 20, C)).toEqual(steadyComposure());
