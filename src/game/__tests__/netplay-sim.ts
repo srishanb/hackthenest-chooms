@@ -1,29 +1,38 @@
 /**
  * A test harness: two players' games stepped side by side over the in-process link, with a clock the test owns.
- * Each side runs its own candle with the real `stepWorld`, exactly as the scene does, and the netplay client in
- * between. Not a test file itself (no `.test.ts`); the netplay tests import it.
+ * Each side runs its own candle with the real `stepWorld`, exactly as the scene does (moving ledges placed by the
+ * shared world clock with `nextWorldTime`, the netplay client around each step). A side can be paused (its candle
+ * stops, its game keeps talking, as in the scene), restarted (its candle teleports to a spawn), or, for the guest,
+ * replaced by a new game on the same link (a reload). Not a test file itself (no `.test.ts`); the netplay tests import it.
  */
 import { GAME_CONFIG } from '../../config/game.config';
 import { NETPLAY_CONFIG } from '../../config/netplay.config';
+import type { PlatformData } from '../../shared/contracts/content';
 import { createMemoryLink, type LinkConditions, type MemoryLink } from '../netplay/memory-transport';
 import { createNetplaySession } from '../netplay/session';
-import { followSharedTime } from '../netplay/shared-clock';
+import { nextWorldTime } from '../netplay/shared-clock';
 import { createVersusClient, type VersusClient } from '../netplay/versus-client';
 import { NO_CRUMBLE, type CrumbleState } from '../player/crumble';
-import { createPlayer } from '../player/movement';
+import { createPlayer, teleportPlayer } from '../player/movement';
 import type { PlatformBox, PlayerInput, PlayerState } from '../player/types';
 import { stepWorld } from '../player/world-step';
+import { platformsAt } from '../world/environment';
 
 export const STEP_MS = 1000 / GAME_CONFIG.stepHz;
-const FRAME_MS = 1000 / 60;
+export const FRAME_MS = 1000 / 60;
 const H = GAME_CONFIG.player.height;
 export const IDLE: PlayerInput = { left: false, right: false, jump: false };
+
+/** A ledge of the test world; `motion` makes it a moving ledge (as in the authored and endless climbs). */
+export type SimLedge = PlatformBox & { motion?: PlatformData['motion'] };
 
 export interface Side {
   client: VersusClient;
   state: PlayerState;
   crumble: CrumbleState;
   worldMs: number;
+  /** The ledges as placed at this side's world time in its latest step. */
+  platforms: PlatformBox[];
   /** This candle's true positions by shared time, to compare with what the other side shows. */
   truth: { atMs: number; x: number; y: number }[];
   /** Every feet crossing of a ledge top from above without landing on it (must stay empty). */
@@ -31,6 +40,8 @@ export interface Side {
   revoked: string[];
   hidden: Set<string>;
   accumulatorMs: number;
+  /** While true the candle does not step (a pause); the game still sends and receives. */
+  paused: boolean;
 }
 
 export interface Sim {
@@ -40,6 +51,10 @@ export interface Sim {
   nowMs(): number;
   /** Run `ms` of game time; `input(side, t)` gives each side's keys at each step. */
   run(ms: number, input?: (who: 'host' | 'guest', tMs: number) => PlayerInput, onFrame?: () => void): void;
+  /** A side starts a new run: its candle appears at `at`, standing still (as the scene's Play again). */
+  restart(who: 'host' | 'guest', at: { x: number; y: number }): void;
+  /** The guest's window reloads without a goodbye: a new game joins on the same link. */
+  replaceGuest(at: { x: number; y: number }): void;
 }
 
 function crossedThrough(before: PlayerState, after: PlayerState, platforms: readonly PlatformBox[], landedOn: string | null): string | null {
@@ -52,32 +67,36 @@ function crossedThrough(before: PlayerState, after: PlayerState, platforms: read
   return null;
 }
 
-export function createSim(platforms: readonly PlatformBox[], start: { host: { x: number; y: number }; guest: { x: number; y: number } },
+export function createSim(ledges: readonly SimLedge[], start: { host: { x: number; y: number }; guest: { x: number; y: number } },
   conditions: Partial<LinkConditions> = {}, seed = 1): Sim {
   let t = 0;
   const now = (): number => t;
   const link = createMemoryLink(now, conditions, seed);
+  const world: PlatformData[] = ledges.map((ledge) => ({ ...ledge, type: ledge.type ?? 'static' }));
   const common = { config: NETPLAY_CONFIG, gravityY: GAME_CONFIG.gravityY, now, build: 'test-build' };
   const hostSession = createNetplaySession({ ...common, role: 'host', transport: link.a, look: { candleSeed: 1 }, world: { seed: 42, walls: false } });
   const guestSession = createNetplaySession({ ...common, role: 'guest', transport: link.b, look: { candleSeed: 2 } });
   const side = (client: VersusClient, at: { x: number; y: number }): Side => ({
-    client, state: { ...createPlayer(at.x, at.y), jumpLatch: false }, crumble: NO_CRUMBLE, worldMs: 0, truth: [], throughLedges: [], revoked: [],
-    hidden: new Set(), accumulatorMs: 0,
+    client, state: { ...createPlayer(at.x, at.y), jumpLatch: false }, crumble: NO_CRUMBLE, worldMs: 0, platforms: platformsAt(world, 0),
+    truth: [], throughLedges: [], revoked: [], hidden: new Set(), accumulatorMs: 0, paused: false,
   });
   const host = side(createVersusClient(hostSession, GAME_CONFIG), start.host);
   const guest = side(createVersusClient(guestSession, GAME_CONFIG), start.guest);
+  const sides = { host, guest };
 
   function frame(s: Side, who: 'host' | 'guest', input: (who: 'host' | 'guest', tMs: number) => PlayerInput): void {
     const shared = s.client.session.nowMs();
-    s.accumulatorMs += FRAME_MS;
+    s.accumulatorMs = s.paused ? 0 : s.accumulatorMs + FRAME_MS;
     while (s.accumulatorMs >= STEP_MS) {
       s.accumulatorMs -= STEP_MS;
       const atMs = shared - s.accumulatorMs;
-      s.worldMs = followSharedTime(s.worldMs, STEP_MS, atMs, NETPLAY_CONFIG.worldTimeSlewMs, NETPLAY_CONFIG.worldTimeSnapMs);
+      const clock = nextWorldTime(s.worldMs, STEP_MS, atMs, NETPLAY_CONFIG.worldTimeSlewMs, NETPLAY_CONFIG.worldTimeSnapMs);
+      s.worldMs = clock.timeMs;
+      s.platforms = platformsAt(world, s.worldMs, clock.deltaMs);
       const keys = input(who, t);
       const before = s.client.beforeStep(s.state, atMs);
-      const out = stepWorld(before.state, s.crumble, keys, platforms, [], 960, GAME_CONFIG, STEP_MS, before.versus);
-      const through = crossedThrough(before.state, out.player, platforms, out.events.landed?.platformId ?? null);
+      const out = stepWorld(before.state, s.crumble, keys, s.platforms, [], 960, GAME_CONFIG, STEP_MS, before.versus);
+      const through = crossedThrough(before.state, out.player, s.platforms, out.events.landed?.platformId ?? null);
       if (through) s.throughLedges.push(through);
       s.client.afterStep(out.player, keys, s.crumble, out.crumble);
       s.state = out.player;
@@ -85,11 +104,11 @@ export function createSim(platforms: readonly PlatformBox[], start: { host: { x:
       s.truth.push({ atMs, x: s.state.x, y: s.state.y });
     }
     s.client.update(s.state, { charge01: 0, aim: 0, fuel01: 1, out: false, candleSeed: who === 'host' ? 1 : 2 });
-    const world = s.client.takeWorld(s.crumble);
-    s.crumble = world.crumble;
-    for (const id of world.hide) s.hidden.add(id);
-    for (const id of world.show) s.hidden.delete(id);
-    s.revoked.push(...world.revoke);
+    const changes = s.client.takeWorld(s.crumble);
+    s.crumble = changes.crumble;
+    for (const id of changes.hide) s.hidden.add(id);
+    for (const id of changes.show) s.hidden.delete(id);
+    s.revoked.push(...changes.revoke);
   }
 
   return {
@@ -103,6 +122,15 @@ export function createSim(platforms: readonly PlatformBox[], start: { host: { x:
         frame(guest, 'guest', input);
         onFrame?.();
       }
+    },
+    restart(who, at) {
+      const s = sides[who];
+      s.state = { ...teleportPlayer(at.x, at.y), jumpLatch: false };
+      s.client.runStarted();
+    },
+    replaceGuest(at) {
+      const session = createNetplaySession({ ...common, role: 'guest', transport: link.b, look: { candleSeed: 3 } });
+      Object.assign(guest, side(createVersusClient(session, GAME_CONFIG), at));
     },
   };
 }

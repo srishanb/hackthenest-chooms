@@ -19,7 +19,7 @@ import type { PlayerInput, PlayerState } from '../player/types';
 import type { WorldOptions } from './protocol';
 import { createRemoteView } from './remote-view';
 import type { NetplaySession } from './session';
-import { followSharedTime } from './shared-clock';
+import { nextWorldTime } from './shared-clock';
 import { createVersusClient, type LocalLook, type WorldChanges } from './versus-client';
 
 export interface NetplayLinkOptions {
@@ -47,8 +47,11 @@ export interface NetplayLink {
   world(): WorldOptions | null;
   /** How far right of the usual spot this player's candle starts (px). */
   spawnOffsetX(): number;
-  /** The world time of the next physics step (moving ledges), given the current one and the time still to step. */
-  worldTime(currentMs: number, stepMs: number, behindMs: number): number;
+  /**
+   * The world time of the next physics step (moving ledges), given the current one and the time still to step, and how
+   * far it really moved (moving ledges carry their riders by that).
+   */
+  worldTime(currentMs: number, stepMs: number, behindMs: number): { timeMs: number; deltaMs: number };
   beforeStep(state: PlayerState, behindMs: number): ReturnType<ReturnType<typeof createVersusClient>['beforeStep']>;
   afterStep(state: PlayerState, input: PlayerInput, crumbleBefore: CrumbleState, crumbleAfter: CrumbleState): void;
   /** This candle picked up these drops, which gave `fuelGained01` in all. */
@@ -95,7 +98,7 @@ export function createNetplayLink(scene: Phaser.Scene, options: NetplayLinkOptio
     world: () => session.world(),
     spawnOffsetX: () => (session.role === 'guest' ? config.guestSpawnOffsetPx : 0),
     worldTime: (currentMs, stepMs, behindMs) =>
-      followSharedTime(currentMs, stepMs, session.nowMs() - behindMs, config.worldTimeSlewMs, config.worldTimeSnapMs),
+      nextWorldTime(currentMs, stepMs, session.nowMs() - behindMs, config.worldTimeSlewMs, config.worldTimeSnapMs),
     beforeStep: (state, behindMs) => client.beforeStep(state, session.nowMs() - behindMs),
     afterStep: (state, input, before, after) => client.afterStep(state, input, before, after),
     waxTaken(dropIds, fuelGained01) {

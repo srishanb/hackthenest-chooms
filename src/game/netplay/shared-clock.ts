@@ -70,3 +70,13 @@ export function followSharedTime(current: number, stepMs: number, sharedMs: numb
   if (Math.abs(error) > snapMs) return sharedMs;
   return next + Math.max(-slewMs, Math.min(slewMs, error));
 }
+
+/**
+ * One physics step of the world clock in the two-player climb: the new world time (`followSharedTime`) and how far it
+ * really moved. Moving ledges are placed at the new time and carry their riders by that real change (not by one
+ * step's worth), so a candle on a moving ledge stays on it when the world time is set after a pause, or nudged.
+ */
+export function nextWorldTime(currentMs: number, stepMs: number, sharedMs: number, slewMs: number, snapMs: number): { timeMs: number; deltaMs: number } {
+  const timeMs = followSharedTime(currentMs, stepMs, sharedMs, slewMs, snapMs);
+  return { timeMs, deltaMs: timeMs - currentMs };
+}
