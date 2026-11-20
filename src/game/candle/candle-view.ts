@@ -286,6 +286,8 @@ export function createCandleView(scene: Phaser.Scene, bodyHeight: number, seed: 
         }
       }
     },
+    /** Fade the whole candle (the other player's candle fades out when they leave). 1 by default. */
+    setAlpha(alpha: number): void { graphics.setAlpha(alpha); shedGraphics.setAlpha(alpha); },
     destroy(): void { graphics.destroy(); shedGraphics.destroy(); },
   };
 }

@@ -41,6 +41,8 @@ export interface VersusClient {
   session: NetplaySession;
   /** The other candle's body at shared time `atMs` for this candle's physics, or null while there is none. */
   otherBody(atMs: number, me: PlayerState): OtherBody | null;
+  /** The other candle to draw at `atMs` (where it is felt, as a state), without moving anything forward. */
+  shownBody(atMs: number, me: PlayerState): BodyState | null;
   /** Before a physics step: the candle to step and the extra environment for `stepWorld`. */
   beforeStep(state: PlayerState, atMs: number): { state: PlayerState; versus: Pick<StepEnvironment, 'others' | 'pushVx'> };
   /**
@@ -78,28 +80,29 @@ export function createVersusClient(session: NetplaySession, gameConfig: GameConf
   let stepAtMs = 0;
   const myHead = headId(role);
 
-  function otherBody(atMs: number, me: PlayerState): OtherBody | null {
+  /** The other body at `atMs`; `commit` (physics steps only) moves the blend and the carry forward. */
+  function bodyAt(atMs: number, me: PlayerState, commit: boolean): { other: OtherBody; shown: BodyState } | null {
     const shown = session.status() === 'connected' ? session.remote(atMs) : null;
-    if (!shown) { last = null; headX = null; return null; }
+    if (!shown) { if (commit) { last = null; headX = null; } return null; }
     const b = shown.body;
     // While it rides this candle, it is drawn and felt on this candle's real head, not where it saw the head.
     const rides = b.platformId === myHead;
     const dt = Math.max(0, atMs - anchorAtMs);
-    anchorAtMs = atMs;
-    anchor01 = Math.max(0, Math.min(1, anchor01 + (rides ? 1 : -1) * Math.min(1, dt / ANCHOR_BLEND_MS)));
+    const blend = Math.max(0, Math.min(1, anchor01 + (rides ? 1 : -1) * Math.min(1, dt / ANCHOR_BLEND_MS)));
     const anchoredX = me.x + (b.rideOffsetX ?? 0), anchoredY = me.y - body.height;
-    const x = b.x + (anchoredX - b.x) * anchor01, y = b.y + (anchoredY - b.y) * anchor01;
+    const x = b.x + (anchoredX - b.x) * blend, y = b.y + (anchoredY - b.y) * blend;
     const moved = last ? { dx: x - last.x, dy: y - last.y } : { dx: 0, dy: 0 };
-    last = { x, y };
-    headX = x;
-    return { id: otherRole, x, y, vx: b.vx, vy: b.vy, width: body.width, height: body.height, grounded: b.grounded,
-      ...moved, ridesMe: rides, tieSide: role === 'host' ? -1 : 1 };
+    if (commit) { anchor01 = blend; anchorAtMs = atMs; last = { x, y }; headX = x; }
+    return { other: { id: otherRole, x, y, vx: b.vx, vy: b.vy, width: body.width, height: body.height, grounded: b.grounded,
+      ...moved, ridesMe: rides, tieSide: role === 'host' ? -1 : 1 }, shown: { ...b, x, y } };
   }
+  const otherBody = (atMs: number, me: PlayerState): OtherBody | null => bodyAt(atMs, me, true)?.other ?? null;
 
   return {
     role,
     session,
     otherBody,
+    shownBody: (atMs, me) => bodyAt(atMs, me, false)?.shown ?? null,
     beforeStep(state, atMs) {
       const other = otherBody(atMs, state);
       stepOther = other; stepAtMs = atMs;

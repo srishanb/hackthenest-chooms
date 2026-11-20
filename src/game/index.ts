@@ -13,6 +13,12 @@ import type { SectionData } from '../shared/contracts/content';
 import type { EffectRule } from '../shared/contracts/effects';
 import type { EventBus } from '../shared/contracts/events';
 import type { EndlessConfig } from '../config/endless.config';
+import { ENDLESS_PIECES_CONFIG } from '../config/endless-pieces.config';
+import { NETPLAY_CONFIG } from '../config/netplay.config';
+import { createBroadcastTransport } from './netplay/broadcast-transport';
+import { buildId } from './netplay/build-id';
+import { createNetplaySession, type NetplaySession } from './netplay/session';
+import type { NetplaySwitch } from './netplay/switch';
 import { BootScene } from './scenes/boot-scene';
 import { ClimbScene } from './scenes/climb-scene';
 import { EndlessScene } from './scenes/endless-scene';
@@ -38,7 +44,26 @@ export interface GameDeps {
    */
   endless?: { config: EndlessConfig; seed: number; fixedSeed: boolean; bot: boolean; startChunk?: number; startFuel?: number; startShaken?: number;
     /** Prototype switch: wall slide and wall jump pieces (`?walls=1`, Decision D-37). */
-    walls?: boolean };
+    walls?: boolean;
+    /** Two-player climb (`?mp=host|join&room=`, Decision D-38): this player's role and the room. Absent: solo. */
+    netplay?: NetplaySwitch };
+}
+
+/**
+ * The two-player session for the endless climb, over `BroadcastChannel` (two windows of one browser; no network in
+ * phase A). Null when the switch is off or the browser has no `BroadcastChannel`: then the climb is solo.
+ */
+function createSession(deps: GameDeps): NetplaySession | undefined {
+  const endless = deps.endless;
+  const choice = endless?.netplay;
+  if (!endless || !choice) return undefined;
+  const transport = createBroadcastTransport(choice.room);
+  if (!transport) return undefined;
+  return createNetplaySession({
+    role: choice.role, transport, config: NETPLAY_CONFIG, gravityY: deps.gameConfig.gravityY, now: () => performance.now(),
+    build: buildId(deps.gameConfig, endless.config, ENDLESS_PIECES_CONFIG), look: { candleSeed: deps.candleSeed ?? 0 },
+    world: choice.role === 'host' ? { seed: endless.seed, walls: endless.walls === true } : undefined,
+  });
 }
 
 export function createGame(deps: GameDeps): Phaser.Game {
@@ -60,6 +85,7 @@ export function createGame(deps: GameDeps): Phaser.Game {
         startFuel: deps.endless.startFuel,
         startShaken: deps.endless.startShaken,
         walls: deps.endless.walls,
+        netplay: createSession(deps),
       })
     : new ClimbScene({
         startAt: deps.startAt,
