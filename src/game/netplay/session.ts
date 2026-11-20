@@ -62,8 +62,11 @@ export interface NetplaySession {
   remoteLook(): CandleLook | null;
   /** The shared time (ms). */
   nowMs(): number;
-  /** Once a frame: read what arrived, answer, send this candle's state when it is due, resend events. */
-  update(local: BodyState): void;
+  /**
+   * Once a frame: read what arrived, answer, send this candle's state when it is due, resend events. `localAtMs` is
+   * the shared time the state is for (its last physics step); now by default.
+   */
+  update(local: BodyState, localAtMs?: number): void;
   /** Where to show the other candle at shared time `atMs` (null before its first state or once it has left). */
   remote(atMs: number): ShownCandle | null;
   /** 1 while the other player is here (fading in after a resume), fading to 0 once they left. */
@@ -201,7 +204,7 @@ export function createNetplaySession(options: SessionOptions): NetplaySession {
     world: () => world,
     remoteLook: () => remoteLook,
     nowMs: () => clock.nowMs(),
-    update(local) {
+    update(local, localAtMs) {
       if (transport.state() === 'closed') return;
       for (const raw of transport.receive()) {
         const parsed = parseEnvelope(raw, options.limits);
@@ -237,7 +240,7 @@ export function createNetplaySession(options: SessionOptions): NetplaySession {
       if (t - lastStateMs >= 1000 / config.sendHz && clock.synced()) {
         lastStateMs = t;
         sentStates++;
-        post(peer, { type: 'state', seq: ++seq, atMs: clock.nowMs(), body: local });
+        post(peer, { type: 'state', seq: ++seq, atMs: Math.min(localAtMs ?? Number.POSITIVE_INFINITY, clock.nowMs()), body: local });
       }
       if (silentLeft) return;
       for (const message of events.due(t)) post(peer, message);

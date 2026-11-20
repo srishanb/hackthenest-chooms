@@ -85,6 +85,8 @@ export function createVersusClient(session: NetplaySession, gameConfig: GameConf
   /** The other body of the latest step, for the shove check after it. */
   let stepOther: OtherBody | null = null;
   let stepAtMs = 0;
+  /** A physics step ran since the last report: the report is for that step's time. */
+  let steppedSinceReport = false;
   const myHead = headId(role);
 
   /** The other body at `atMs`; `commit` (physics steps only) moves the blend and the carry forward. */
@@ -113,7 +115,7 @@ export function createVersusClient(session: NetplaySession, gameConfig: GameConf
     shownBody: (atMs, me) => bodyAt(atMs, me, false)?.shown ?? null,
     beforeStep(state, atMs) {
       const other = otherBody(atMs, state);
-      stepOther = other; stepAtMs = atMs;
+      stepOther = other; stepAtMs = atMs; steppedSinceReport = true;
       if (!arbiter) return { state, versus: other ? { others: [other] } : {} };
       const out = arbiter.beforeStep(state, other, atMs);
       // A knock is stamped with the contact's own time, so the other game can tell one contact from the next.
@@ -129,7 +131,9 @@ export function createVersusClient(session: NetplaySession, gameConfig: GameConf
       const report: BodyState = { x: state.x, y: state.y, vx: state.vx, vy: state.vy, grounded: state.grounded, platformId: state.platformId,
         charging: state.charging, charge01: look.charge01, aim: look.aim, fuel01: look.fuel01, out: look.out, candleSeed: look.candleSeed, run,
         ...(isHeadId(state.platformId) && headX !== null ? { rideOffsetX: state.x - headX } : {}) };
-      session.update(report);
+      // Stamped with the time of the step it comes from, so the other game places it exactly in time.
+      session.update(report, steppedSinceReport ? stepAtMs : undefined);
+      steppedSinceReport = false;
     },
     takeWorld(crumble) {
       const changes: WorldChanges = { crumble, hide: [], show: [], revoke: [] };

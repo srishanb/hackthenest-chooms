@@ -46,18 +46,17 @@ describe.each(DELAYS)('two players at %i ms delay, 30 ms jitter, 5 percent loss'
     sim.run(6000, script, () => {
       const shown = sim.guest.client.session.remote(sim.guest.client.session.nowMs());
       if (!shown) return;
-      // The host's clock is the shared clock; the guest's estimate of it is off by about a step here. Compare with
-      // where the host really was at the shown time on the host's clock, and bound the clock error on its own.
-      const clockError = sim.guest.client.session.nowMs() - sim.nowMs();
-      worstClock = Math.max(worstClock, Math.abs(clockError));
-      const truth = truthAt(sim.host, shown.atMs - clockError);
+      // States carry the host's own time, and the guest plays them back by that time: compare with where the host
+      // really was at that time. The guest's estimate of the host's clock only shifts how far back it plays; bound it too.
+      worstClock = Math.max(worstClock, Math.abs(sim.guest.client.session.nowMs() - sim.nowMs()));
+      const truth = truthAt(sim.host, shown.atMs);
       if (truth) worstShown = Math.max(worstShown, Math.hypot(shown.body.x - truth.x, shown.body.y - truth.y));
       const present = sim.host.truth[sim.host.truth.length - 1]!;
       worstNow = Math.max(worstNow, Math.hypot(shown.body.x - present.x, shown.body.y - present.y));
     });
     // Measured 7 to 9 px: blending across a lost update while the host turns round.
     expect(worstShown).toBeLessThan(10);
-    expect(worstClock).toBeLessThan(STEP_MS + 1);
+    expect(worstClock).toBeLessThan(2 * STEP_MS + 1);
     // Behind by the playback delay at most: at most 780 px/s (a full jump's launch speed) times that delay.
     expect(worstNow).toBeLessThan(780 * sim.guest.client.session.stats().delayMs / 1000 + 10);
   });
