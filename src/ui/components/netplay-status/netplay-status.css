@@ -12,3 +12,6 @@
 .netplay-status[data-key^='netplay.refused'] {
   color: var(--color-warn);
 }
+
+/* Top centre, clear of the HUD's metrics on the right and the controls on the left (as the source badge does). */
+.ui-slot[data-slot='top-right']:has([data-component='netplay-status']) { right: auto; left: 50%; transform: translateX(-50%); align-items: center; }
