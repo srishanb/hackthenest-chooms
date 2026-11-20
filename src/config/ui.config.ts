@@ -21,6 +21,8 @@ export const UI_CONFIG: UiConfig = {
     'ember-prompt': { enabled: true, slot: 'center' },
     'finish-screen': { enabled: true, slot: 'center' },
     'debug-overlay': { enabled: false, slot: 'bottom-left' },
+    // The two-player climb's status line (Decision D-38). Shows nothing in solo play.
+    'netplay-status': { enabled: true, slot: 'top-right' },
   },
 };
 
